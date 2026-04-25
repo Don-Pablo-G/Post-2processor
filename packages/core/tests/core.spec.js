@@ -1,0 +1,718 @@
+import { describe, expect, it } from "vitest";
+import { applyProveout, applyShopFixtureAutoFixes, analyzeProgram, buildTimelineFindingsExportBundle, buildSetupSheet, exportWorkshopFiles, format, getTemplateLibrary, parameterReserveProfiles, parameterize, parseTemplateLibrary, parse, previewShopFixtureAutoFixes, proveoutProgram, removeProveout, restoreShopFixtureManifestBackup, runJobCheck, simulate, toolingReport } from "../src/index.js";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+const haasNgcProfile = {
+    id: "haas-ngc",
+    name: "Haas NGC",
+    defaultFormatStyle: {
+        upperCaseWords: true,
+        normalizeSpacing: true,
+        removeStandaloneOptionalStops: false
+    }
+};
+describe("core pipeline", () => {
+    async function readFixture(relativePath) {
+        const fixturePath = path.resolve(process.cwd(), "..", "test-fixtures", relativePath);
+        const content = await readFile(fixturePath, "utf8");
+        return content.replace(/\r\n/g, "\n").trim();
+    }
+    it("parses and formats basic program", () => {
+        const input = "g0x0y0\nG1x10.0 y5.0 f200.";
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile);
+        expect(ast.blocks.length).toBe(2);
+        expect(output).toContain("G0 X0 Y0");
+    });
+    it("can remove standalone M01/M1 lines without comments", () => {
+        const input = "G0 X0\nM01\nM1\nM01 (KEEP)\nG1 X1";
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile, { removeStandaloneOptionalStops: true });
+        expect(output).not.toContain("\nM01\n");
+        expect(output).not.toContain("\nM1\n");
+        expect(output).toContain("M01 (KEEP)");
+    });
+    it("preserves assignment/control-flow lines while normalizing motion blocks", () => {
+        const input = [
+            "#100=0",
+            "WHILE [#100 LT 3] DO1",
+            "G1x10.0 y5.0 f200.",
+            "IF [#100 EQ 2] GOTO100",
+            "#100 = #100 + 1",
+            "END1",
+            "N100 M30"
+        ].join("\n");
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile);
+        expect(output).toContain("#100=0");
+        expect(output).toContain("WHILE [#100 LT 3] DO1");
+        expect(output).toContain("IF [#100 EQ 2] GOTO100");
+        expect(output).toContain("#100 = #100 + 1");
+        expect(output).toContain("G1 X10.0 Y5.0 F200.");
+    });
+    it("matches golden fixture formatting for basic Haas sample", async () => {
+        const input = await readFixture(path.join("haas-ngc", "format", "input-basic.nc"));
+        const expected = await readFixture(path.join("haas-ngc", "format", "expected-basic.nc"));
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile).trim();
+        expect(output).toBe(expected);
+    });
+    it("matches golden fixture formatting with optional stop cleanup enabled", async () => {
+        const input = await readFixture(path.join("haas-ngc", "format", "input-optional-stop-cleanup.nc"));
+        const expected = await readFixture(path.join("haas-ngc", "format", "expected-optional-stop-cleanup.nc"));
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile, { removeStandaloneOptionalStops: true }).trim();
+        expect(output).toBe(expected);
+    });
+    it("matches golden fixture formatting for messy spacing/comment styles", async () => {
+        const input = await readFixture(path.join("haas-ngc", "format", "input-parser-robustness.nc"));
+        const expected = await readFixture(path.join("haas-ngc", "format", "expected-parser-robustness.nc"));
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile).trim();
+        expect(output).toBe(expected);
+    });
+    it("matches golden fixture formatting for macro value expressions", async () => {
+        const input = await readFixture(path.join("haas-ngc", "format", "input-parser-macro-expr.nc"));
+        const expected = await readFixture(path.join("haas-ngc", "format", "expected-parser-macro-expr.nc"));
+        const ast = parse(input, haasNgcProfile);
+        const output = format(ast, haasNgcProfile).trim();
+        expect(output).toBe(expected);
+    });
+    it("creates repeated-literal parameter suggestions", () => {
+        const input = "G1 X10.0 Y5.0\nG1 X10.0 Y8.0";
+        const ast = parse(input, haasNgcProfile);
+        const result = parameterize(ast);
+        expect(result.suggestions.some((s) => s.literal === "10.0")).toBe(true);
+    });
+    it("allocates only free parameters starting from #100", () => {
+        const input = "#100=1\n#101=2\nG1 X10. Y5.\nG1 X10. Y5.\nG1 Z3. Z3.";
+        const ast = parse(input, haasNgcProfile);
+        const result = parameterize(ast);
+        const replacements = result.suggestions.map((s) => s.replacement);
+        expect(replacements[0]).toBe("#102");
+        expect(replacements[1]).toBe("#103");
+    });
+    it("respects parameter blacklist during allocation", () => {
+        const input = "G1 X10. Y5.\nG1 X10. Y5.";
+        const ast = parse(input, haasNgcProfile);
+        const result = parameterize(ast, { blacklistedParameters: [100, 101, 102], startAt: 100 });
+        expect(result.suggestions[0]?.replacement).toBe("#103");
+    });
+    it("provides controller reserve presets", () => {
+        const presets = parameterReserveProfiles();
+        expect(presets.some((p) => p.id === "haas-ngc-safe")).toBe(true);
+        expect(presets.some((p) => p.id === "fanuc-safe")).toBe(true);
+        expect(presets.find((p) => p.id === "haas-ngc-safe")?.blacklistedParameters.includes(500)).toBe(true);
+    });
+    it("simulates with step limit", () => {
+        const input = "G0 X0\nG1 X1\nG1 X2";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 2, maxLoopIterations: 100 });
+        expect(result.trace.length).toBe(2);
+        expect(result.warnings.length).toBe(1);
+        expect(result.estimatedCycleTimeSeconds).toBeGreaterThanOrEqual(0);
+    });
+    it("simulates macro while loop and variable updates", () => {
+        const input = "#100=0\nWHILE [#100 LT 3] DO1\n#100=#100+1\nEND1\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 20 });
+        expect(result.state.variables["#100"]).toBe(3);
+        expect(result.warnings).toHaveLength(0);
+        expect(result.state.halted).toBe(true);
+    });
+    it("evaluates macro math/trig helper functions", () => {
+        const input = [
+            "#100=ABS[-3.2]",
+            "#101=ROUND[2.6]",
+            "#102=FIX[-1.2]",
+            "#103=FUP[-1.2]",
+            "#104=SQRT[9]",
+            "#105=SIN[30]",
+            "#106=COS[60]",
+            "#107=TAN[45]",
+            "#108=ATAN[1]",
+            "M30"
+        ].join("\n");
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 200, maxLoopIterations: 20 });
+        const v = result.state.variables;
+        expect(v["#100"]).toBeCloseTo(3.2, 6);
+        expect(v["#101"]).toBe(3);
+        expect(v["#102"]).toBe(-2);
+        expect(v["#103"]).toBe(-1);
+        expect(v["#104"]).toBe(3);
+        expect(v["#105"]).toBeCloseTo(0.5, 6);
+        expect(v["#106"]).toBeCloseTo(0.5, 6);
+        expect(v["#107"]).toBeCloseTo(1, 6);
+        expect(v["#108"]).toBeCloseTo(45, 6);
+    });
+    it("warns for unsupported macro function in selected controller mode", () => {
+        const input = "#100=FUP[-1.2]\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "fanuc" });
+        expect(result.warnings.some((w) => w.includes("not supported in fanuc mode"))).toBe(true);
+    });
+    it("evaluates LN/LOG/EXP with controller gating", () => {
+        const input = ["#110=LN[2.718281828]", "#111=LOG[100]", "#112=EXP[1]", "M30"].join("\n");
+        const ast = parse(input, haasNgcProfile);
+        const haasNgc = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+        const fanuc = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 10, controllerMode: "fanuc" });
+        expect(haasNgc.state.variables["#110"]).toBeCloseTo(1, 4);
+        expect(haasNgc.state.variables["#112"]).toBeCloseTo(2.718281828, 4);
+        expect(fanuc.state.variables["#110"]).toBeCloseTo(1, 4);
+        expect(fanuc.warnings.some((w) => w.includes("Function EXP is not supported in fanuc mode"))).toBe(true);
+    });
+    it("warns on log domain errors", () => {
+        const input = "#120=LOG[-1]\n#121=LN[0]\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+        expect(result.warnings.some((w) => w.includes("domain error"))).toBe(true);
+    });
+    it("supports configurable LOG semantics", () => {
+        const input = "#130=LOG[100]\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const fanucDefault = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "fanuc" });
+        const fanucNatural = simulate(ast, {}, {
+            maxSteps: 50,
+            maxLoopIterations: 10,
+            controllerMode: "fanuc",
+            logSemantics: "natural"
+        });
+        const haasBase10 = simulate(ast, {}, {
+            maxSteps: 50,
+            maxLoopIterations: 10,
+            controllerMode: "haas-ngc",
+            logSemantics: "base10"
+        });
+        expect(fanucDefault.state.variables["#130"]).toBeCloseTo(2, 6);
+        expect(fanucNatural.state.variables["#130"]).toBeCloseTo(Math.log(100), 6);
+        expect(haasBase10.state.variables["#130"]).toBeCloseTo(2, 6);
+    });
+    it("captures #3000/#3006 alarms and halts simulation", () => {
+        const input = "#3000=12 (TOOL LIFE EXPIRED)\n#3006=7 (OPERATOR CHECK)\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 10 });
+        expect(result.alarms).toHaveLength(1);
+        expect(result.alarms[0]?.parameter).toBe(3000);
+        expect(result.alarms[0]?.code).toBe(12);
+        expect(result.alarms[0]?.message).toContain("TOOL LIFE EXPIRED");
+        expect(result.state.halted).toBe(true);
+    });
+    it("simulates M98 subprogram repeats with M99 return", () => {
+        const input = "M98 P1000 L3\nM30\nO1000\n#100=#100+1\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 200, maxLoopIterations: 20, maxCallDepth: 4 });
+        expect(result.state.variables["#100"]).toBe(3);
+        expect(result.warnings).toHaveLength(0);
+        expect(result.state.halted).toBe(true);
+        expect(result.trace.some((t) => t.event?.kind === "subprogram_call" && t.event.via === "M98")).toBe(true);
+        expect(result.trace.some((t) => t.event?.kind === "subprogram_repeat")).toBe(true);
+        expect(result.trace.some((t) => t.event?.kind === "subprogram_return")).toBe(true);
+    });
+    it("simulates G65 arguments and enforces call depth limit", () => {
+        const input = "G65 P9010 A5.5 B2.\nM30\nO9010\n#100=#1+#2\nG65 P9010 A1.\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 200, maxLoopIterations: 20, maxCallDepth: 1 });
+        expect(result.state.variables["#100"]).toBeCloseTo(7.5, 6);
+        expect(result.warnings.some((w) => w.includes("Max call depth"))).toBe(true);
+        expect(result.trace.some((t) => t.event?.kind === "call_depth_limit" && t.event.via === "G65")).toBe(true);
+    });
+    it("supports Haas-style M97 P.. calls to N.. local subprograms", () => {
+        const input = "M97 P100\nM30\nN100\n#120=#120+1\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 200, maxLoopIterations: 20, controllerMode: "haas-ngc" });
+        expect(result.state.variables["#120"]).toBe(1);
+        expect(result.warnings).toHaveLength(0);
+        expect(result.state.halted).toBe(true);
+    });
+    it("supports multiple local N subprogram operations in one file", () => {
+        const input = "M97 P100\nM97 P200\nM30\nN100\n#101=#101+1\nM99\nN200\n#102=#102+2\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 300, maxLoopIterations: 20, controllerMode: "haas-ngc" });
+        expect(result.state.variables["#101"]).toBe(1);
+        expect(result.state.variables["#102"]).toBe(2);
+        expect(result.warnings).toHaveLength(0);
+    });
+    it("warns when M97 is used in fanuc mode", () => {
+        const input = "M97 P100\nM30\nN100\n#120=#120+1\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 200, maxLoopIterations: 20, controllerMode: "fanuc" });
+        expect(result.warnings.some((w) => w.includes("M97 local subprogram call is not supported in fanuc mode"))).toBe(true);
+    });
+    it("emits profile-specific main-level M99 warning/event", () => {
+        const input = "G90\nM99\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const fanucResult = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "fanuc" });
+        const haasResult = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+        expect(fanucResult.warnings.some((w) => w.includes("Fanuc mode: M99 in main program"))).toBe(true);
+        expect(haasResult.warnings.some((w) => w.includes("M99 encountered in main program"))).toBe(true);
+        expect(fanucResult.trace.some((t) => t.event?.kind === "main_m99")).toBe(true);
+        expect(haasResult.trace.some((t) => t.event?.kind === "main_m99")).toBe(true);
+    });
+    it("warns when subprogram return path is unfinished", () => {
+        const input = "M98 P1000\nM30\nO1000\n#100=#100+1";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+        expect(result.warnings.some((w) => w.includes("unfinished subprogram return path"))).toBe(true);
+    });
+    it("allows fanuc M98 to resolve N-label in shop-friendly mode", () => {
+        const input = "M98 P100\nM30\nN100\n#140=#140+1\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, {
+            maxSteps: 200,
+            maxLoopIterations: 20,
+            controllerMode: "fanuc",
+            subprogramTargetPolicy: "shop_friendly"
+        });
+        expect(result.state.variables["#140"]).toBe(1);
+        expect(result.warnings).toHaveLength(0);
+    });
+    it("enforces fanuc O-label M98 target in strict-controller mode", () => {
+        const input = "M98 P100\nM30\nN100\n#140=#140+1\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, {
+            maxSteps: 200,
+            maxLoopIterations: 20,
+            controllerMode: "fanuc",
+            subprogramTargetPolicy: "strict_controller"
+        });
+        expect(result.state.variables["#140"] ?? 0).toBe(0);
+        expect(result.warnings.some((w) => w.includes("M98 target O100 not found"))).toBe(true);
+    });
+    it("allows fanuc G65 to resolve N-label in shop-friendly mode", () => {
+        const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, {
+            maxSteps: 200,
+            maxLoopIterations: 20,
+            controllerMode: "fanuc",
+            subprogramTargetPolicy: "shop_friendly"
+        });
+        expect(result.state.variables["#150"]).toBe(12);
+        expect(result.warnings).toHaveLength(0);
+    });
+    it("enforces fanuc O-label G65 target in strict-controller mode with clear warning", () => {
+        const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, {
+            maxSteps: 200,
+            maxLoopIterations: 20,
+            controllerMode: "fanuc",
+            subprogramTargetPolicy: "strict_controller"
+        });
+        expect(result.state.variables["#150"] ?? 0).toBe(0);
+        expect(result.warnings.some((w) => w.includes("G65 target O9010 not found in strict fanuc mode"))).toBe(true);
+    });
+    it("estimates canned cycle and feed based time", () => {
+        const input = "G0 X0 Y0 Z5.\nG1 X60. F600.\nG99 G81 X60. Y0. Z-10. R2. F300. P500 L2\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 20, rapidRateMmPerMin: 12000 });
+        expect(result.estimatedCycleTimeSeconds).toBeGreaterThan(4);
+        expect(result.estimatedCycleTimeSeconds).toBeLessThan(20);
+    });
+    it("has distinct timing behavior across canned cycles", () => {
+        const cycles = [
+            "G81 X0 Y0 Z-10. R2. F250.",
+            "G82 X0 Y0 Z-10. R2. F250. P500",
+            "G83 X0 Y0 Z-10. R2. F250. Q2.",
+            "G84 X0 Y0 Z-10. R2. F250.",
+            "G89 X0 Y0 Z-10. R2. F250. P500"
+        ];
+        const times = cycles.map((line) => {
+            const ast = parse(`G0 Z5.\n${line}\nM30`, haasNgcProfile);
+            return simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 20 }).estimatedCycleTimeSeconds;
+        });
+        expect(times[1]).toBeGreaterThan(times[0]);
+        expect(times[2]).toBeGreaterThan(times[0]);
+        expect(times[4]).toBeGreaterThan(times[0]);
+        expect(times[3]).toBeGreaterThan(0);
+    });
+    it("warns on invalid canned cycle parameter combinations", () => {
+        const input = "G83 X0 Y0 Z-10. R2. F200.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10 });
+        expect(result.warnings.some((w) => w.includes("missing Q"))).toBe(true);
+    });
+    it("builds tooling report with lowest Z and 80mm printable text", () => {
+        const input = "#600=1\n#700=12\nG54\nT1 M6\nG43 H#600 D#700 Z20.\nG1 Z-5.\nG154 P12\n#603=3\nT3 M6\nB30. C20.\nG43 H#603\nG1 Z-18.5\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const report = toolingReport(ast, {}, {
+            fiveAxis: { enabled: true, machine: "umc" },
+            toolCommentSelections: { 1: "FACE MILL D63", 3: "BALL END D10" }
+        });
+        expect(report.programLowestZ).toBe(-18.5);
+        expect(report.tools.length).toBe(2);
+        expect(report.tools.find((t) => t.toolNumber === 1)?.hOffset).toBe(1);
+        expect(report.tools.find((t) => t.toolNumber === 1)?.hOffsetParameter).toBe("#600");
+        expect(report.tools.find((t) => t.toolNumber === 1)?.dOffsetParameter).toBe("#700");
+        expect(report.tools.find((t) => t.toolNumber === 3)?.hOffsetParameter).toBe("#603");
+        expect(report.tools.find((t) => t.toolNumber === 3)?.workOffsetsUsed).toContain("G154 P12");
+        expect(report.tools.find((t) => t.toolNumber === 3)?.estimatedStickoutMm).toBeGreaterThan(0);
+        expect(report.tools.find((t) => t.toolNumber === 1)?.selectedToolComment).toBe("FACE MILL D63");
+        expect(report.setupInstructions.length).toBeGreaterThan(0);
+        expect(report.printable80mm).toContain("#600");
+        expect(report.printable80mm).toContain("NAME:");
+        expect(report.printable80mm).toContain("SETTER REPORT");
+    });
+    it("collects tool comment candidates around T call", () => {
+        const input = "(ROUGH ENDMILL D12)\nM01\nT7 M6 (LOAD TOOL)\nG43 H7 D7\nG1 Z-1.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const report = toolingReport(ast, {}, {});
+        const t7 = report.tools.find((t) => t.toolNumber === 7);
+        expect(t7?.toolCommentCandidates.some((c) => c.includes("ROUGH ENDMILL"))).toBe(true);
+        expect(t7?.selectedToolComment).toContain("LOAD TOOL");
+    });
+    it("can disable automatic tool comment selection", () => {
+        const input = "(FACE TOOL)\nT1 M6\nG43 H1 D1\nG1 Z-1.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const report = toolingReport(ast, {}, { autoSelectToolComments: false });
+        expect(report.tools.find((t) => t.toolNumber === 1)?.selectedToolComment).toBeUndefined();
+    });
+    it("warns when Haas D policy is violated", () => {
+        const input = "T5 M6\nG43 H5\nG41 X10.\nG42 D12 X20.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const report = toolingReport(ast, {}, { dOffsetCallStyle: "haas_g43_d_with_h_only" });
+        expect(report.warnings.some((w) => w.includes("expects D on G43 H line"))).toBe(true);
+        expect(report.warnings.some((w) => w.includes("expects no D on G41/G42"))).toBe(true);
+    });
+    it("validates Fanuc D policy with G41/G42 and G40 D00", () => {
+        const input = "T5 M6\nG43 H5\nG41 D12 X10.\nG40 D00\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const report = toolingReport(ast, {}, { dOffsetCallStyle: "fanuc_wear_on_g41_g42_with_g40_d00" });
+        expect(report.warnings.some((w) => w.includes("Fanuc style"))).toBe(false);
+    });
+    it("warns when Fanuc D policy is violated", () => {
+        const input = "T5 M6\nG43 H5 D5\nG41 X10.\nG40 D01\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const report = toolingReport(ast, {}, { dOffsetCallStyle: "fanuc_wear_on_g41_g42_with_g40_d00" });
+        expect(report.warnings.some((w) => w.includes("expects no D on G43 H line"))).toBe(true);
+        expect(report.warnings.some((w) => w.includes("expects D on G41/G42 line"))).toBe(true);
+        expect(report.warnings.some((w) => w.includes("expects G40 with D00"))).toBe(true);
+    });
+    it("builds workshop advisor report with score and checklist", () => {
+        const input = "T1 M6\nG90 G17\nG0 Z5.\nG1 Z-2. F150.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const advisor = analyzeProgram(ast, {});
+        expect(advisor.readyToRunScore).toBeGreaterThanOrEqual(0);
+        expect(advisor.readyToRunScore).toBeLessThanOrEqual(100);
+        expect(advisor.checklist.length).toBeGreaterThan(0);
+        expect(advisor.criticalEvents.some((e) => e.kind === "deepest_z")).toBe(true);
+        expect(advisor.optionalStopSuggestions.length).toBeGreaterThan(0);
+        expect(advisor.parameterFrontMatter).toContain("SHOP PARAM FRONT-MATTER");
+        expect(advisor.operatorViewProgram).toContain("OPERATOR");
+    });
+    it("flags clamp-zone collision risk when envelope is configured", () => {
+        const input = "G90 G17\nG0 X5. Y50. Z10.\nG1 X5. Y50. Z-2.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const advisor = analyzeProgram(ast, {}, {
+            clampZones: [{ name: "JAW", minX: 0, maxX: 10, minY: 0, maxY: 100, minZ: -5, maxZ: 20 }]
+        });
+        expect(advisor.safetyFindings.some((f) => f.code === "CLAMP_ZONE_COLLISION_RISK")).toBe(true);
+        expect(advisor.readyToRunScore).toBeLessThan(50);
+    });
+    it("provides workshop templates", () => {
+        const library = getTemplateLibrary();
+        const templates = library.templates;
+        expect(templates.length).toBeGreaterThan(0);
+        expect(templates[0].code).toContain("M30");
+        expect(library.settings?.parameterDefaults?.["haas-ngc"]?.presetId).toBe("haas-ngc-safe");
+    });
+    it("imports template library from json", () => {
+        const source = JSON.stringify({
+            templates: [{ id: "x", name: "X", description: "d", code: "M30" }],
+            settings: {
+                parameterDefaults: {
+                    "haas-ngc": {
+                        presetId: "haas-ngc-safe",
+                        startAt: 100,
+                        blacklistedParameters: [500, 501]
+                    }
+                }
+            }
+        });
+        const parsed = parseTemplateLibrary(source);
+        expect(parsed.templates).toHaveLength(1);
+        expect(parsed.templates[0].id).toBe("x");
+        expect(parsed.settings?.parameterDefaults?.["haas-ngc"]?.blacklistedParameters).toContain(500);
+    });
+    it("builds setup sheet and proveout program", () => {
+        const input = "G90 G17\nT1 M6\nG43 H1 Z20.\nG1 Z-1. F100.\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const sheet = buildSetupSheet(ast, {});
+        const proveout = proveoutProgram(ast, {});
+        expect(sheet.printable80mm).toContain("SETUP SHEET");
+        expect(sheet.printable80mm).toContain("HANDOFF:");
+        expect(proveout.code).toContain("PROVEOUT MODE ENABLED");
+        expect(proveout.insertedCheckpoints).toBeGreaterThanOrEqual(0);
+        expect(sheet.exportTxt).toContain("SETUP SHEET");
+        expect(sheet.exportMarkdown).toContain("# Workshop Setup Sheet");
+    });
+    it("marks setup sheet handoff as NO-GO when blockers exist", () => {
+        const input = "G90 G17\nG1 Z-2.\n";
+        const ast = parse(input, haasNgcProfile);
+        const sheet = buildSetupSheet(ast, {});
+        expect(sheet.exportTxt).toContain("HANDOFF: NO-GO");
+    });
+    it("applies and removes proveout markers reversibly", () => {
+        const input = "G90\nM30";
+        const applied = applyProveout(input, ["(OPTIONAL STOP: CHECK FIRST CUT) M01"]);
+        expect(applied.markersAdded).toBeGreaterThan(0);
+        expect(applied.code).toContain("PROVEOUT MODE ENABLED");
+        const removed = removeProveout(applied.code);
+        expect(removed.markersRemoved).toBeGreaterThan(0);
+        expect(removed.code).toContain("G90");
+    });
+    it("exports setup and proveout files to timestamped directory", async () => {
+        const os = await import("node:os");
+        const path = await import("node:path");
+        const fs = await import("node:fs/promises");
+        const base = await fs.mkdtemp(path.join(os.tmpdir(), "cnc-workbench-"));
+        const result = await exportWorkshopFiles({
+            baseDirectory: base,
+            baseName: "job_42",
+            setupSheetTxt: "SETUP",
+            setupSheetMarkdown: "# Setup",
+            proveoutCode: "M30"
+        });
+        expect(result.artifacts).toHaveLength(3);
+        const txt = await fs.readFile(result.artifacts.find((a) => a.kind === "setup_txt").path, "utf8");
+        const md = await fs.readFile(result.artifacts.find((a) => a.kind === "setup_md").path, "utf8");
+        const nc = await fs.readFile(result.artifacts.find((a) => a.kind === "proveout_nc").path, "utf8");
+        expect(txt).toBe("SETUP");
+        expect(md).toContain("# Setup");
+        expect(nc).toContain("M30");
+    });
+    it("runs one-click job check workflow and blocks export on blockers", async () => {
+        const input = "G90 G17\nG1 Z-2.\n";
+        const ast = parse(input, haasNgcProfile);
+        const result = await runJobCheck({
+            ast,
+            exportOptions: {
+                enabled: true,
+                allowExportWithBlockers: false,
+                baseDirectory: ".",
+                baseName: "blocked_job"
+            }
+        });
+        expect(result.blockerCount).toBeGreaterThan(0);
+        expect(result.blocked).toBe(true);
+        expect(result.exportResult).toBeUndefined();
+    });
+    it("surfaces macro alarms in job check output as blockers", async () => {
+        const input = "G90 G17\n#3006=3 (CHECK CHIP LOAD)\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = await runJobCheck({
+            ast,
+            exportOptions: {
+                enabled: false,
+                baseDirectory: ".",
+                baseName: "alarm_job"
+            }
+        });
+        expect(result.simulation.alarms).toHaveLength(1);
+        expect(result.simulationFindings.some((f) => f.code === "SIM_MACRO_ALARM")).toBe(true);
+        expect(result.blockerCount).toBeGreaterThan(0);
+        expect(result.messages.some((m) => m.includes("Macro alarm #3006"))).toBe(true);
+    });
+    it("adds simulation finding for fanuc main-level M99", async () => {
+        const input = "M99\nM30";
+        const ast = parse(input, haasNgcProfile);
+        const result = await runJobCheck({
+            ast,
+            simulationLimits: { controllerMode: "fanuc" },
+            exportOptions: { enabled: false, baseDirectory: ".", baseName: "m99_job" }
+        });
+        expect(result.simulationFindings.some((f) => f.code === "SIM_MAIN_M99")).toBe(true);
+        expect(result.blockerCount).toBeGreaterThan(0);
+    });
+    it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
+        const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json")));
+        expect(manifest.fixtures.length).toBeGreaterThan(0);
+        for (const fixture of manifest.fixtures) {
+            const input = await readFixture(fixture.path);
+            const ast = parse(input, haasNgcProfile);
+            const formatted = format(ast, haasNgcProfile).trim();
+            expect(formatted.length).toBeGreaterThan(0);
+            const sim = simulate(ast, {}, { maxSteps: 2000, maxLoopIterations: 200, controllerMode: fixture.controller });
+            const hasMainM99Event = sim.trace.some((t) => t.event?.kind === "main_m99");
+            expect(hasMainM99Event).toBe(fixture.expectations.expectsMainM99);
+            if (fixture.expectations.expectsSimulationWarnings) {
+                expect(sim.warnings.length).toBeGreaterThan(0);
+            }
+            else {
+                expect(sim.warnings.length).toBe(0);
+            }
+            const job = await runJobCheck({
+                ast,
+                simulationLimits: { controllerMode: fixture.controller },
+                exportOptions: { enabled: false, baseDirectory: ".", baseName: fixture.id }
+            });
+            if (fixture.expectations.expectsSimulationFindings) {
+                expect(job.simulationFindings.length).toBeGreaterThan(0);
+            }
+            else {
+                expect(job.simulationFindings.length).toBe(0);
+            }
+            if (fixture.expectations.expectedFindingCodes && fixture.expectations.expectedFindingCodes.length > 0) {
+                const actualCodes = [...new Set(job.simulationFindings.map((f) => f.code))].sort();
+                const expectedCodes = [...fixture.expectations.expectedFindingCodes].sort();
+                expect(actualCodes).toEqual(expectedCodes);
+            }
+        }
+    });
+    it("rejects auto-fix apply when preview fingerprint is stale", async () => {
+        const os = await import("node:os");
+        const fs = await import("node:fs/promises");
+        const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cnc-fixtures-fingerprint-"));
+        const fixturesRoot = path.join(tempRoot, "packages", "test-fixtures");
+        const manifestDir = path.join(fixturesRoot, "shop-regressions");
+        const fanucDir = path.join(manifestDir, "fanuc");
+        await fs.mkdir(fanucDir, { recursive: true });
+        await fs.writeFile(path.join(fanucDir, "one.nc"), "O9000 (FANUC SAMPLE)\nG90 G17\nM99\nM30\n", "utf8");
+        await fs.writeFile(path.join(manifestDir, "manifest.json"), JSON.stringify({
+            fixtures: [
+                {
+                    id: "one",
+                    controller: "haas-ngc",
+                    path: "shop-regressions/fanuc/one.nc",
+                    expectations: {
+                        expectsMainM99: true,
+                        expectsSimulationWarnings: true,
+                        expectsSimulationFindings: true
+                    }
+                }
+            ]
+        }, null, 2), "utf8");
+        const preview = await previewShopFixtureAutoFixes({
+            fixturesRootDirectory: fixturesRoot,
+            includeControllerMismatchFixes: true,
+            includeStrictFromSimulationFixes: true
+        });
+        await expect(applyShopFixtureAutoFixes({
+            fixturesRootDirectory: fixturesRoot,
+            includeControllerMismatchFixes: true,
+            includeStrictFromSimulationFixes: true,
+            expectedPreviewFingerprint: `${preview.fingerprint}-stale`
+        })).rejects.toThrow("stale");
+    });
+    it("applies only high-confidence controller fixes when configured", async () => {
+        const os = await import("node:os");
+        const fs = await import("node:fs/promises");
+        const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cnc-fixtures-confidence-"));
+        const fixturesRoot = path.join(tempRoot, "packages", "test-fixtures");
+        const manifestDir = path.join(fixturesRoot, "shop-regressions");
+        const fanucDir = path.join(manifestDir, "fanuc");
+        await fs.mkdir(fanucDir, { recursive: true });
+        await fs.writeFile(path.join(fanucDir, "high.nc"), "O9100 (FANUC JOB)\nM30\n", "utf8");
+        await fs.writeFile(path.join(fanucDir, "low.nc"), "O9200\nM30\n", "utf8");
+        await fs.writeFile(path.join(manifestDir, "manifest.json"), JSON.stringify({
+            fixtures: [
+                {
+                    id: "high_conf",
+                    controller: "haas-ngc",
+                    path: "shop-regressions/fanuc/high.nc",
+                    expectations: {
+                        expectsMainM99: false,
+                        expectsSimulationWarnings: false,
+                        expectsSimulationFindings: false
+                    }
+                },
+                {
+                    id: "low_conf",
+                    controller: "fanuc",
+                    path: "shop-regressions/fanuc/low.nc",
+                    expectations: {
+                        expectsMainM99: false,
+                        expectsSimulationWarnings: false,
+                        expectsSimulationFindings: false
+                    }
+                }
+            ]
+        }, null, 2), "utf8");
+        const preview = await previewShopFixtureAutoFixes({
+            fixturesRootDirectory: fixturesRoot,
+            includeControllerMismatchFixes: true,
+            includeStrictFromSimulationFixes: false
+        });
+        expect(preview.changes.some((c) => c.fixtureId === "high_conf" && c.confidence === "high")).toBe(true);
+        const applied = await applyShopFixtureAutoFixes({
+            fixturesRootDirectory: fixturesRoot,
+            includeControllerMismatchFixes: true,
+            includeStrictFromSimulationFixes: false,
+            minimumControllerFixConfidence: "high",
+            expectedPreviewFingerprint: preview.fingerprint
+        });
+        expect(applied.appliedChanges).toBe(1);
+        const manifestAfter = JSON.parse(await fs.readFile(path.join(manifestDir, "manifest.json"), "utf8"));
+        expect(manifestAfter.fixtures.find((f) => f.id === "high_conf")?.controller).toBe("fanuc");
+        expect(manifestAfter.fixtures.find((f) => f.id === "low_conf")?.controller).toBe("fanuc");
+    });
+    it("restores manifest from backup after auto-fix apply", async () => {
+        const os = await import("node:os");
+        const fs = await import("node:fs/promises");
+        const tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), "cnc-fixtures-restore-"));
+        const fixturesRoot = path.join(tempRoot, "packages", "test-fixtures");
+        const manifestDir = path.join(fixturesRoot, "shop-regressions");
+        const fanucDir = path.join(manifestDir, "fanuc");
+        await fs.mkdir(fanucDir, { recursive: true });
+        await fs.writeFile(path.join(fanucDir, "restore.nc"), "O9300 (FANUC)\nM30\n", "utf8");
+        const manifestPath = path.join(manifestDir, "manifest.json");
+        const originalManifest = JSON.stringify({
+            fixtures: [
+                {
+                    id: "restore_case",
+                    controller: "haas-ngc",
+                    path: "shop-regressions/fanuc/restore.nc",
+                    expectations: {
+                        expectsMainM99: false,
+                        expectsSimulationWarnings: false,
+                        expectsSimulationFindings: false
+                    }
+                }
+            ]
+        }, null, 2);
+        await fs.writeFile(manifestPath, originalManifest, "utf8");
+        const preview = await previewShopFixtureAutoFixes({
+            fixturesRootDirectory: fixturesRoot,
+            includeControllerMismatchFixes: true,
+            includeStrictFromSimulationFixes: false
+        });
+        const applied = await applyShopFixtureAutoFixes({
+            fixturesRootDirectory: fixturesRoot,
+            includeControllerMismatchFixes: true,
+            includeStrictFromSimulationFixes: false,
+            expectedPreviewFingerprint: preview.fingerprint
+        });
+        expect(applied.backupPath).toBeTruthy();
+        await restoreShopFixtureManifestBackup({
+            manifestPath,
+            backupPath: applied.backupPath
+        });
+        const restored = await fs.readFile(manifestPath, "utf8");
+        expect(JSON.parse(restored)).toEqual(JSON.parse(originalManifest));
+    });
+    it("builds stable timeline/findings export bundle format", () => {
+        const bundle = buildTimelineFindingsExportBundle({
+            timestampIso: "2026-04-25T12:00:00.000Z",
+            controller: "fanuc",
+            subprogramTargetPolicy: "strict_controller",
+            logSemantics: "base10",
+            score: 84,
+            timelineEntries: [{ blockIndex: 12, kind: "main_m99", message: "Main program contains M99." }],
+            findings: [
+                {
+                    severity: "blocker",
+                    code: "SIM_MAIN_M99",
+                    message: "Main program contains M99.",
+                    blockIndex: 12
+                }
+            ]
+        });
+        expect(bundle.timelineTxt).toContain("WORKSHOP TIMELINE + FINDINGS");
+        expect(bundle.timelineTxt).toContain("controller: fanuc");
+        expect(bundle.timelineTxt).toContain("[CONTROL] B12: [main_m99] Main program contains M99.");
+        expect(bundle.findingsMarkdown).toContain("## Findings");
+        expect(bundle.findingsMarkdown).toContain("[BLOCKER] SIM_MAIN_M99 @ B12");
+    });
+});
+//# sourceMappingURL=core.spec.js.map

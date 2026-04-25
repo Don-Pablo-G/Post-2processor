@@ -1,0 +1,21 @@
+{
+  "name": "cnc-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "packages/*/*"
+  ],
+  "scripts": {
+    "build": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/desktop build",
+    "dev": "npm run --workspace @cnc/desktop dev",
+    "test": "npm run --workspace @cnc/core test",
+    "typecheck": "npm run --workspaces typecheck",
+    "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,8 @@
+import type { ApplyShopFixtureAutoFixesInput, ApplyShopFixtureAutoFixesResult, AnalyzeShopFixturesInput, AnalyzeShopFixturesResult, ImportShopFixtureInput, ImportShopFixtureResult, PreviewShopFixtureAutoFixesInput, PreviewShopFixtureAutoFixesResult, RunShopRegressionTestsInput, RunShopRegressionTestsResult, RestoreShopFixtureManifestBackupInput, RestoreShopFixtureManifestBackupResult, ValidateShopFixturesInput, ValidateShopFixturesResult } from "../types.js";
+export declare function importShopFixture(input: ImportShopFixtureInput): Promise<ImportShopFixtureResult>;
+export declare function validateShopFixturesManifest(input: ValidateShopFixturesInput): Promise<ValidateShopFixturesResult>;
+export declare function runShopRegressionTests(input: RunShopRegressionTestsInput): Promise<RunShopRegressionTestsResult>;
+export declare function analyzeShopFixtures(input: AnalyzeShopFixturesInput): Promise<AnalyzeShopFixturesResult>;
+export declare function previewShopFixtureAutoFixes(input: PreviewShopFixtureAutoFixesInput): Promise<PreviewShopFixtureAutoFixesResult>;
+export declare function applyShopFixtureAutoFixes(input: ApplyShopFixtureAutoFixesInput): Promise<ApplyShopFixtureAutoFixesResult>;
+export declare function restoreShopFixtureManifestBackup(input: RestoreShopFixtureManifestBackupInput): Promise<RestoreShopFixtureManifestBackupResult>;
