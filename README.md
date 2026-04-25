@@ -309,6 +309,18 @@ Optional tuning (`commitLimit depth topN`):
 node scripts/checkpoint-scope.mjs 300 2 25
 ```
 
+To rank files by checkpoint touch frequency and recency:
+
+```bash
+npm run checkpoint:touchmap
+```
+
+Optional tuning (`commitLimit topN`):
+
+```bash
+node scripts/checkpoint-touchmap.mjs 400 30
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
