@@ -453,6 +453,18 @@ Optional tuning (`days topN`):
 node scripts/checkpoint-weekly.mjs 7 15
 ```
 
+To generate a central checkpoint reports index:
+
+```bash
+npm run checkpoint:index
+```
+
+Optional tuning (`limit`):
+
+```bash
+node scripts/checkpoint-index.mjs 15
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
