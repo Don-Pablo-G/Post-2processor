@@ -513,6 +513,12 @@ To run full checkpoint readiness in one command:
 npm run checkpoint:suite
 ```
 
+To print a concise release-readiness checklist:
+
+```bash
+npm run checkpoint:release-ready
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
