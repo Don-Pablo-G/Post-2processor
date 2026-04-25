@@ -966,4 +966,58 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("G0 G90 G54\nG0 Z1.", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("Last block has no M02"))).toBe(true);
   });
+
+  it("warns spindle on without S", () => {
+    const ast = parse("M3\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without S"))).toBe(true);
+  });
+
+  it("warns G41 without D", () => {
+    const ast = parse("G41 X1.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G41/G42 without D"))).toBe(true);
+  });
+
+  it("does not warn G41.1 without D", () => {
+    const ast = parse("G41.1 X1.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G41/G42 without D"))).toBe(false);
+  });
+
+  it("warns duplicate N labels", () => {
+    const ast = parse("N10 G0 X0\nN10 G0 Y0\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("Duplicate sequence number"))).toBe(true);
+  });
+});
+
+describe("Haas NGC simulation extras", () => {
+  it("applies IF [cond] THEN #n = value on a single line (haas-ngc)", () => {
+    const ast = parse(
+      "#100 = 0\nIF [#100 EQ 0] THEN #100 = 1\n#101 = #100\nM30",
+      haasNgcProfile
+    );
+    const r = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    expect(r.state.variables["#100"]).toBe(1);
+    expect(r.state.variables["#101"]).toBe(1);
+  });
+
+  it("skips IF…THEN assignment when condition is false", () => {
+    const ast = parse(
+      "#100 = 1\nIF [#100 EQ 0] THEN #100 = 2\n#101 = #100\nM30",
+      haasNgcProfile
+    );
+    const r = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    expect(r.state.variables["#100"]).toBe(1);
+    expect(r.state.variables["#101"]).toBe(1);
+  });
+
+  it("warns on rapid G0 Z plunge in haas-ngc mode", () => {
+    const ast = parse("G90 G0 Z0.\nG0 Z-10.\nM30", haasNgcProfile);
+    const r = simulate(ast, {}, { maxSteps: 30, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    expect(r.warnings.some((w) => w.includes("rapid (G0) Z move down"))).toBe(true);
+  });
+
+  it("does not warn rapid Z plunge in fanuc mode", () => {
+    const ast = parse("G90 G0 Z0.\nG0 Z-10.\nM30", haasNgcProfile);
+    const r = simulate(ast, {}, { maxSteps: 30, maxLoopIterations: 10, controllerMode: "fanuc" });
+    expect(r.warnings.some((w) => w.includes("rapid (G0) Z move down"))).toBe(false);
+  });
 });

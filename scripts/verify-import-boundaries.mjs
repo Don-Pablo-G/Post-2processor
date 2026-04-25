@@ -62,6 +62,15 @@ async function main() {
     }
   }
 
+  const shadowedJsFiles = await findShadowedSourceJsFiles();
+  if (shadowedJsFiles.length > 0) {
+    process.stderr.write("Source JS shadowing violations found:\n");
+    for (const file of shadowedJsFiles) {
+      process.stderr.write(`- ${file} (remove checked-in .js sibling of a .ts source)\n`);
+    }
+    process.exit(1);
+  }
+
   if (violations.length > 0) {
     process.stderr.write("Import boundary violations found:\n");
     for (const v of violations) {
@@ -78,6 +87,46 @@ async function main() {
   }
 
   process.stdout.write("Import boundaries verified.\n");
+}
+
+async function findShadowedSourceJsFiles() {
+  const shadowed = [];
+  const forbiddenShadowedJsRelPaths = new Set([
+    path.join("packages", "core", "src", "simulator", "simpleSimulator.js")
+  ]);
+  const candidateRoots = [path.join(root, "packages"), path.join(root, "apps")];
+
+  for (const candidateRoot of candidateRoots) {
+    let packageEntries = [];
+    try {
+      packageEntries = await readdir(candidateRoot, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of packageEntries) {
+      if (!entry.isDirectory()) continue;
+      const srcDir = path.join(candidateRoot, entry.name, "src");
+      let srcFiles = [];
+      try {
+        srcFiles = await collectFiles(srcDir);
+      } catch {
+        continue;
+      }
+      for (const file of srcFiles) {
+        if (!file.endsWith(".js")) continue;
+        const siblingTs = `${file.slice(0, -3)}.ts`;
+        const siblingTsx = `${file.slice(0, -3)}.tsx`;
+        const allFiles = new Set(srcFiles);
+        if (allFiles.has(siblingTs) || allFiles.has(siblingTsx)) {
+          const rel = path.relative(root, file);
+          if (forbiddenShadowedJsRelPaths.has(rel)) shadowed.push(rel);
+        }
+      }
+    }
+  }
+
+  return shadowed.sort();
 }
 
 main().catch((error) => {

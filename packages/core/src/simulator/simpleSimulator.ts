@@ -58,7 +58,13 @@ export function simpleSimulate(
 
   while (currentBlock >= 0 && currentBlock < ast.blocks.length && steps < limits.maxSteps && !halted) {
     const block = ast.blocks[currentBlock];
-    const code = cleanCode(block.raw).toUpperCase();
+    let code = applyHaasNgcIfThenLine(
+      cleanCode(block.raw).toUpperCase(),
+      variables,
+      warnings,
+      currentBlock,
+      profile
+    );
     let blockTimeSeconds = 0;
     let nextBlock = currentBlock + 1;
     let blockEvent: SimulationResult["trace"][number]["event"];
@@ -378,7 +384,11 @@ export function simpleSimulate(
 }
 
 function cleanCode(raw: string): string {
-  return raw.replace(/\([^)]*\)/g, "").replace(/;.*$/g, "").trim();
+  return raw
+    .replace(/\r/g, "")
+    .replace(/\([^)]*\)/g, "")
+    .replace(/;.*$/g, "")
+    .trim();
 }
 
 function parseWords(code: string, fallback: Word[]): Word[] {
@@ -561,6 +571,29 @@ function evaluateCondition(
 ): boolean {
   const value = evaluateExpression(expr, variables, warnings, blockIndex, profile);
   return Number.isFinite(value) && value !== 0;
+}
+
+/** Haas NGC: single-line `IF [cond] THEN #n = expr` (processed before other `#=` assignments on the line). */
+function applyHaasNgcIfThenLine(
+  codeUpper: string,
+  variables: Record<string, number>,
+  warnings: string[],
+  blockIndex: number,
+  profile: MacroRuntimeProfile
+): string {
+  if (profile.mode !== "haas-ngc") return codeUpper;
+  const re = /\bIF\s*(\[[^\]]+\])\s*THEN\s*#(\d+)\s*=\s*(.+)$/;
+  const m = codeUpper.match(re);
+  if (!m) return codeUpper;
+  const [, cond, idStr, rhsRaw] = m;
+  const passes = evaluateCondition(cond, variables, warnings, blockIndex, profile);
+  if (passes) {
+    const rhs = rhsRaw.trim();
+    const value = evalNumeric(rhs, variables, warnings, blockIndex, profile);
+    if (Number.isFinite(value)) variables[`#${idStr}`] = value;
+    else warnings.push(`IF…THEN assignment RHS invalid at block ${blockIndex}.`);
+  }
+  return codeUpper.replace(re, "").trim();
 }
 
 function parseWhile(code: string): { condition: string; doLabel: number } | null {
@@ -787,10 +820,16 @@ function estimateMotionSeconds(
   const distance = Math.hypot(target.X - position.X, target.Y - position.Y, target.Z - position.Z);
   if (distance <= 0) return 0;
 
+  const dzRapid = target.Z - position.Z;
   const rate = modal.motionMode === "G0" ? rapidRateMmPerMin : Math.max(1, modal.feedMmPerMin);
   position.X = target.X;
   position.Y = target.Y;
   position.Z = target.Z;
+  if (profile.mode === "haas-ngc" && modal.motionMode === "G0" && dzRapid < -5) {
+    warnings.push(
+      `Haas NGC: rapid (G0) Z move down ~${Math.abs(dzRapid).toFixed(3)} mm at block ${blockIndex} — confirm clearance / retract plane.`
+    );
+  }
   return (distance / rate) * 60;
 }
 

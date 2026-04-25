@@ -16,6 +16,28 @@ function hasLetter(block: { words: Word[] }, letter: string): boolean {
   return block.words.some((w) => w.letter === letter);
 }
 
+/** True only for plain G41 / G42 (not G41.1 etc.). */
+function hasExactG41Or42(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    const v = Number.parseFloat(w.value);
+    return v === 41 || v === 42;
+  });
+}
+
+function hasSpindleOn(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "M") return false;
+    const m = Math.trunc(Number.parseFloat(w.value));
+    return m === 3 || m === 4 || m === 13 || m === 14;
+  });
+}
+
+function lastWordValue(block: { words: Word[] }, letter: string): string | undefined {
+  const w = block.words.filter((x) => x.letter === letter).at(-1);
+  return w?.value;
+}
+
 /**
  * Haas NGC mill-oriented checks that do not depend on a specific control software revision.
  * Conservative: favor warnings over errors except clear structural mistakes.
@@ -47,7 +69,80 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         blockIndex: index
       });
     }
+
+    if (hasSpindleOn(block) && !hasLetter(block, "S")) {
+      issues.push({
+        severity: "warning",
+        message: "Spindle start (M3/M4/M13/M14) without S on the same block — set RPM explicitly.",
+        blockIndex: index
+      });
+    }
+
+    const sVal = lastWordValue(block, "S");
+    if (hasSpindleOn(block) && sVal !== undefined && Number.parseFloat(sVal) === 0) {
+      issues.push({
+        severity: "warning",
+        message: "Spindle start with S0 — verify intentional stop or missing speed.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG41Or42(block) && !hasLetter(block, "D")) {
+      issues.push({
+        severity: "warning",
+        message: "G41/G42 without D on the same block — cutter comp normally requires a D offset.",
+        blockIndex: index
+      });
+    }
+
+    const tWord = block.words.filter((w) => w.letter === "T").at(-1);
+    if (tWord && Math.trunc(Number.parseFloat(tWord.value)) === 0) {
+      issues.push({
+        severity: "warning",
+        message: "T0 selects tool zero — usually invalid for a real tool change.",
+        blockIndex: index
+      });
+    }
   });
+
+  const nOcc = new Map<string, number[]>();
+  const oOcc = new Map<string, number[]>();
+  ast.blocks.forEach((block, index) => {
+    const nWord = block.words.find((w) => w.letter === "N");
+    if (nWord) {
+      const key = nWord.value.trim();
+      const arr = nOcc.get(key) ?? [];
+      arr.push(index);
+      nOcc.set(key, arr);
+    }
+    const oWord = block.words.find((w) => w.letter === "O");
+    if (oWord) {
+      const key = oWord.value.trim();
+      const arr = oOcc.get(key) ?? [];
+      arr.push(index);
+      oOcc.set(key, arr);
+    }
+  });
+  for (const [nVal, indices] of nOcc) {
+    if (indices.length <= 1) continue;
+    for (const idx of indices.slice(1)) {
+      issues.push({
+        severity: "warning",
+        message: `Duplicate sequence number N${nVal} — GOTO/M97 targets may be ambiguous.`,
+        blockIndex: idx
+      });
+    }
+  }
+  for (const [oVal, indices] of oOcc) {
+    if (indices.length <= 1) continue;
+    for (const idx of indices.slice(1)) {
+      issues.push({
+        severity: "warning",
+        message: `Duplicate program label O${oVal} — subprogram/call targets may be ambiguous.`,
+        blockIndex: idx
+      });
+    }
+  }
 
   const m30Blocks = ast.blocks
     .map((b, i) => (hasWordM(b, 30) ? i : -1))
