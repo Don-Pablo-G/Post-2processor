@@ -333,6 +333,18 @@ Optional tuning (`commitLimit topN`):
 node scripts/checkpoint-entropy.mjs 400 15
 ```
 
+To compare recent checkpoint activity vs earlier baseline (drift):
+
+```bash
+npm run checkpoint:drift
+```
+
+Optional tuning (`commitLimit recentWindow topN`):
+
+```bash
+node scripts/checkpoint-drift.mjs 240 40 20
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

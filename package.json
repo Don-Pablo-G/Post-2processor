@@ -15,6 +15,7 @@
     "checkpoint:authors": "node ./scripts/checkpoint-authors.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:diff": "node ./scripts/checkpoint-diff.mjs",
+    "checkpoint:drift": "node ./scripts/checkpoint-drift.mjs",
     "checkpoint:entropy": "node ./scripts/checkpoint-entropy.mjs",
     "checkpoint:focus": "node ./scripts/checkpoint-focus.mjs",
     "checkpoint:first-last": "node ./scripts/checkpoint-first-last.mjs",
