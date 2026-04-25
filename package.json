@@ -36,6 +36,7 @@
     "checkpoint:first-last": "node ./scripts/checkpoint-first-last.mjs",
     "checkpoint:gaps": "node ./scripts/checkpoint-gaps.mjs",
     "checkpoint:handoff": "node ./scripts/checkpoint-handoff.mjs",
+    "checkpoint:handoff-list": "node ./scripts/checkpoint-handoff-list.mjs",
     "checkpoint:handoff-package": "node ./scripts/checkpoint-handoff-package.mjs",
     "checkpoint:hotspots": "node ./scripts/checkpoint-hotspots.mjs",
     "checkpoint:index": "node ./scripts/checkpoint-index.mjs",

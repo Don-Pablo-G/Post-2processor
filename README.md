@@ -710,6 +710,22 @@ To create a compressed handoff package from a verified release bundle:
 npm run checkpoint:handoff-package
 ```
 
+To list recent handoff packages (default: latest 10):
+
+```bash
+npm run checkpoint:handoff-list
+```
+
+Optional examples:
+
+```bash
+# latest 5
+node scripts/checkpoint-handoff-list.mjs 5
+
+# show absolute paths
+node scripts/checkpoint-handoff-list.mjs 10 --full-path
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
