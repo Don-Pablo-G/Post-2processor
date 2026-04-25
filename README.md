@@ -213,6 +213,18 @@ To inspect current and longest daily checkpoint streaks:
 npm run checkpoint:streaks
 ```
 
+To identify the largest inactive gaps between checkpoint days:
+
+```bash
+npm run checkpoint:gaps
+```
+
+Optional custom result limit:
+
+```bash
+node scripts/checkpoint-gaps.mjs 10
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

@@ -13,6 +13,7 @@
     "checkpoint:authors": "node ./scripts/checkpoint-authors.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:diff": "node ./scripts/checkpoint-diff.mjs",
+    "checkpoint:gaps": "node ./scripts/checkpoint-gaps.mjs",
     "checkpoint:hotspots": "node ./scripts/checkpoint-hotspots.mjs",
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
