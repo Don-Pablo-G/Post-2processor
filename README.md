@@ -638,6 +638,18 @@ One-shot JSON mode (no server):
 node scripts/checkpoint-api.mjs --once
 ```
 
+To stream checkpoint metadata/events as NDJSON for agents/tools:
+
+```bash
+npm run checkpoint:agent-feed
+```
+
+Optional custom recent event limit:
+
+```bash
+node scripts/checkpoint-agent-feed.mjs 30
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
