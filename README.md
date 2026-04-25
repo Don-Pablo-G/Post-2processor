@@ -321,6 +321,18 @@ Optional tuning (`commitLimit topN`):
 node scripts/checkpoint-touchmap.mjs 400 30
 ```
 
+To measure checkpoint change concentration vs spread (entropy):
+
+```bash
+npm run checkpoint:entropy
+```
+
+Optional tuning (`commitLimit topN`):
+
+```bash
+node scripts/checkpoint-entropy.mjs 400 15
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
