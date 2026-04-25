@@ -23,12 +23,12 @@ import {
   simulate,
   toolingReport,
   validateShopFixturesManifest
-} from "@cnc/core";
+} from "@cnc/core/browser";
 import type {
   AnalyzeShopFixturesResult,
   PreviewShopFixtureAutoFixesResult,
   RunJobCheckResult
-} from "@cnc/core";
+} from "@cnc/core/browser";
 import { haasNgcProfile } from "@cnc/profile-haas-ngc";
 import { useEffect, useMemo, useRef, useState } from "react";
 

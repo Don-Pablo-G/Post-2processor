@@ -3,6 +3,18 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@cnc/core": [
+        "packages/core/src/index.ts"
+      ],
+      "@cnc/core/node": [
+        "packages/core/src/index.node.ts"
+      ],
+      "@cnc/core/browser": [
+        "packages/core/src/index.browser.ts"
+      ]
+    },
     "strict": true,
     "declaration": true,
     "sourceMap": true,
