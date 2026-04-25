@@ -10,9 +10,10 @@
   "scripts": {
     "build": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/desktop build",
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
-    "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
-    "dev": "npm run --workspace @cnc/desktop dev",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
+    "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
+    "checkpoint:stats": "node ./scripts/checkpoint-stats.mjs",
+    "dev": "npm run --workspace @cnc/desktop dev",
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",
     "precommit:check": "node ./scripts/pre-commit-check.mjs",
     "repo:health": "node ./scripts/repo-health.mjs",

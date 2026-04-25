@@ -114,6 +114,12 @@ Optional hash:
 node scripts/checkpoint-open.mjs <checkpoint-hash>
 ```
 
+For checkpoint cadence metrics (total/today/average interval):
+
+```bash
+npm run checkpoint:stats
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
