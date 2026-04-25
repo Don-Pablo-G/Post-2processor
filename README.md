@@ -465,6 +465,18 @@ Optional tuning (`limit`):
 node scripts/checkpoint-index.mjs 15
 ```
 
+To get safe, non-destructive cleanup suggestions for checkpoint artifacts:
+
+```bash
+npm run checkpoint:cleanup
+```
+
+Optional tuning (`keepDigests keepWeekly keepReports`):
+
+```bash
+node scripts/checkpoint-cleanup.mjs 14 12 20
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
