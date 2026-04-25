@@ -46,6 +46,7 @@
     "checkpoint:search": "node ./scripts/checkpoint-search.mjs",
     "checkpoint:since": "node ./scripts/checkpoint-since.mjs",
     "checkpoint:status": "node ./scripts/checkpoint-status.mjs",
+    "checkpoint:ship": "node ./scripts/checkpoint-ship.mjs",
     "checkpoint:suite": "node ./scripts/checkpoint-suite.mjs",
     "checkpoint:stability": "node ./scripts/checkpoint-stability.mjs",
     "checkpoint:streaks": "node ./scripts/checkpoint-streaks.mjs",

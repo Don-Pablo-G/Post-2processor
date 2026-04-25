@@ -519,6 +519,12 @@ To print a concise release-readiness checklist:
 npm run checkpoint:release-ready
 ```
 
+To run final pre-release gate with go/no-go summary:
+
+```bash
+npm run checkpoint:ship
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
