@@ -507,6 +507,12 @@ To run deeper consistency diagnostics across reporting/export utilities:
 npm run checkpoint:doctor:extended
 ```
 
+To run full checkpoint readiness in one command:
+
+```bash
+npm run checkpoint:suite
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
