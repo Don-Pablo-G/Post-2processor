@@ -650,6 +650,18 @@ Optional custom recent event limit:
 node scripts/checkpoint-agent-feed.mjs 30
 ```
 
+To generate a deterministic webhook-ready JSON payload:
+
+```bash
+npm run checkpoint:webhook-payload
+```
+
+Optional custom recent event limit:
+
+```bash
+node scripts/checkpoint-webhook-payload.mjs 15
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

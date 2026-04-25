@@ -74,6 +74,7 @@
     "checkpoint:weekly": "node ./scripts/checkpoint-weekly.mjs",
     "checkpoint:weekend": "node ./scripts/checkpoint-weekend.mjs",
     "checkpoint:weekday": "node ./scripts/checkpoint-weekday.mjs",
+    "checkpoint:webhook-payload": "node ./scripts/checkpoint-webhook-payload.mjs",
     "dev": "npm run --workspace @cnc/desktop dev",
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",
     "precommit:check": "node ./scripts/pre-commit-check.mjs",
