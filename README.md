@@ -754,6 +754,19 @@ node scripts/checkpoint-handoff-cleanup.mjs 5
 node scripts/checkpoint-handoff-cleanup.mjs 5 --apply
 ```
 
+To run a full handoff cycle (package -> list -> status -> cleanup preview):
+
+```bash
+npm run checkpoint:handoff-cycle
+```
+
+Optional example:
+
+```bash
+# preview cleanup with keep target 5
+node scripts/checkpoint-handoff-cycle.mjs 5
+```
+
 To view a compact handoff status snapshot:
 
 ```bash

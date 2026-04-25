@@ -36,6 +36,7 @@
     "checkpoint:first-last": "node ./scripts/checkpoint-first-last.mjs",
     "checkpoint:gaps": "node ./scripts/checkpoint-gaps.mjs",
     "checkpoint:handoff": "node ./scripts/checkpoint-handoff.mjs",
+    "checkpoint:handoff-cycle": "node ./scripts/checkpoint-handoff-cycle.mjs",
     "checkpoint:handoff-cleanup": "node ./scripts/checkpoint-handoff-cleanup.mjs",
     "checkpoint:handoff-list": "node ./scripts/checkpoint-handoff-list.mjs",
     "checkpoint:handoff-open": "node ./scripts/checkpoint-handoff-open.mjs",
