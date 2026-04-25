@@ -285,6 +285,18 @@ Optional tuning (`days topN`):
 node scripts/checkpoint-focus.mjs 14 20
 ```
 
+To see which file pairs most often change together in checkpoints:
+
+```bash
+npm run checkpoint:cochange
+```
+
+Optional tuning (`commitLimit topN`):
+
+```bash
+node scripts/checkpoint-cochange.mjs 300 25
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

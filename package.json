@@ -11,6 +11,7 @@
     "build": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/desktop build",
     "checkpoint:burst": "node ./scripts/checkpoint-burst.mjs",
     "checkpoint:catalog": "node ./scripts/checkpoint-catalog.mjs",
+    "checkpoint:cochange": "node ./scripts/checkpoint-cochange.mjs",
     "checkpoint:authors": "node ./scripts/checkpoint-authors.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:diff": "node ./scripts/checkpoint-diff.mjs",
