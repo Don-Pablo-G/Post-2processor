@@ -405,6 +405,18 @@ Optional tuning (`commitLimit gapMinutes topN`):
 node scripts/checkpoint-clusters.mjs 300 45 15
 ```
 
+To generate a concise development handoff note from recent checkpoints:
+
+```bash
+npm run checkpoint:handoff
+```
+
+Optional tuning (`commitLimit recentN`):
+
+```bash
+node scripts/checkpoint-handoff.mjs 80 12
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

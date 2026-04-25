@@ -22,6 +22,7 @@
     "checkpoint:focus": "node ./scripts/checkpoint-focus.mjs",
     "checkpoint:first-last": "node ./scripts/checkpoint-first-last.mjs",
     "checkpoint:gaps": "node ./scripts/checkpoint-gaps.mjs",
+    "checkpoint:handoff": "node ./scripts/checkpoint-handoff.mjs",
     "checkpoint:hotspots": "node ./scripts/checkpoint-hotspots.mjs",
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
