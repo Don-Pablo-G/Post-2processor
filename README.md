@@ -38,6 +38,16 @@ Use `isNodeCapable()` when wiring UI actions that may require Node-only workflow
 
 Node-only workflows (fixture import/validation, regression runs, file export) are intentionally blocked in the browser entry with clear runtime errors.
 
+## Development Checkpoints
+
+This repository is configured for local checkpoint snapshots and automatic checkpoint commits during development:
+
+- Hook config: `.cursor/hooks.json`
+- Hook script: `.cursor/hooks/auto-checkpoint.mjs`
+- Snapshot folder: `.checkpoints/` (gitignored)
+
+Successful verification commands (`npm run test`, `npm run typecheck`, `npm run build`) trigger checkpoint behavior.
+
 ## Current Status
 
 This is a foundation scaffold. Core logic is intentionally simple and ready for incremental replacement with full Haas NGC semantics.
