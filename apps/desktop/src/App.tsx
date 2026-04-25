@@ -359,6 +359,7 @@ const UI_TEXT: Record<
 
 export function App() {
   const nodeCapable = isNodeCapable();
+  const nodeOnlyDisabled = !nodeCapable;
   const [code, setCode] = useState(SAMPLE);
   const [language, setLanguage] = useState<UiLanguage>("pl");
   const [operatorReviewMode, setOperatorReviewMode] = useState(false);
@@ -433,6 +434,7 @@ export function App() {
   const [templateJson, setTemplateJson] = useState(() => getTemplateLibrary().sourceJson);
   const codeTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const t = UI_TEXT[language];
+  const nodeOnlyWithBusyDisabled = nodeOnlyDisabled || fixtureOpsBusy;
   const parameterPresets = useMemo(() => parameterReserveProfiles(), []);
   const selectedPreset = parameterPresets.find((p) => p.id === parameterPresetId);
   const templateLibrary = useMemo(() => parseTemplateLibrary(templateJson), [templateJson]);
@@ -1146,6 +1148,9 @@ export function App() {
     <main style={{ padding: 16, fontFamily: "Segoe UI, sans-serif" }}>
       <h1>{t.title}</h1>
       <p>{t.subtitle}</p>
+      <p style={{ marginTop: -6, opacity: 0.85 }}>
+        Runtime mode: {nodeCapable ? "Node-capable" : "Browser-only"}
+      </p>
 
       <label style={{ display: "block", marginBottom: 12 }}>
         {t.languageLabel}:{" "}
@@ -1553,7 +1558,7 @@ export function App() {
           />{" "}
           {t.includeTimelineFindingsExport}
         </label>
-        <button onClick={() => void handleExport()} disabled={!nodeCapable}>
+        <button onClick={() => void handleExport()} disabled={nodeOnlyDisabled}>
           {t.exportNow}
         </button>
         <label style={{ display: "block", marginTop: 8 }}>
@@ -1666,7 +1671,7 @@ export function App() {
           />{" "}
           {t.autoRunTestsAfterImport}
         </label>
-        <button onClick={() => void handleImportShopFixture()} disabled={!nodeCapable || fixtureOpsBusy}>
+        <button onClick={() => void handleImportShopFixture()} disabled={nodeOnlyWithBusyDisabled}>
           {fixtureOpsBusy ? t.fixtureOpsInProgress : t.fixtureImportNow}
         </button>
         <button onClick={handleResetFixturePrefsForController} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
@@ -1675,7 +1680,7 @@ export function App() {
         <button
           onClick={() => void handleValidateFixturesManifest()}
           style={{ marginLeft: 8 }}
-          disabled={!nodeCapable || fixtureOpsBusy}
+          disabled={nodeOnlyWithBusyDisabled}
         >
           {t.validateFixtures}
         </button>
@@ -1683,16 +1688,16 @@ export function App() {
           {t.testsWorkspaceRoot}:{" "}
           <input value={testsWorkspaceRoot} onChange={(event) => setTestsWorkspaceRoot(event.target.value)} />
         </label>
-        <button onClick={() => void handleRunFixtureTests()} disabled={!nodeCapable || fixtureOpsBusy}>
+        <button onClick={() => void handleRunFixtureTests()} disabled={nodeOnlyWithBusyDisabled}>
           {t.runFixtureTests}
         </button>
-        <button onClick={() => void handleRefreshFixtureHealth()} style={{ marginLeft: 8 }} disabled={!nodeCapable || fixtureOpsBusy}>
+        <button onClick={() => void handleRefreshFixtureHealth()} style={{ marginLeft: 8 }} disabled={nodeOnlyWithBusyDisabled}>
           {t.refreshFixtureHealth}
         </button>
         <button
           onClick={() => void handleUpgradeFixtureToStrictMode()}
           style={{ marginLeft: 8 }}
-          disabled={!nodeCapable || fixtureOpsBusy}
+          disabled={nodeOnlyWithBusyDisabled}
         >
           {t.upgradeToStrict}
         </button>
@@ -1731,20 +1736,20 @@ export function App() {
           />{" "}
           {t.autoRunTestsAfterApply}
         </label>
-        <button onClick={() => void handlePreviewAutoFixes()} disabled={!nodeCapable || fixtureOpsBusy}>
+        <button onClick={() => void handlePreviewAutoFixes()} disabled={nodeOnlyWithBusyDisabled}>
           {t.previewAutoFixes}
         </button>
         <button
           onClick={() => void handleApplyAutoFixes()}
           style={{ marginLeft: 8 }}
-          disabled={!nodeCapable || fixtureOpsBusy || !autoFixPreviewMatchesCurrentSettings}
+          disabled={nodeOnlyWithBusyDisabled || !autoFixPreviewMatchesCurrentSettings}
         >
           {t.applyAutoFixes}
         </button>
-        <button onClick={() => void handleRollbackAutoFixBackup()} style={{ marginLeft: 8 }} disabled={!nodeCapable || fixtureOpsBusy}>
+        <button onClick={() => void handleRollbackAutoFixBackup()} style={{ marginLeft: 8 }} disabled={nodeOnlyWithBusyDisabled}>
           {t.rollbackFromBackup}
         </button>
-        {!nodeCapable && (
+        {nodeOnlyDisabled && (
           <pre style={{ marginTop: 8 }}>
             Node-only QA/fixture operations are disabled in browser runtime. Use @cnc/core/node in a Node environment.
           </pre>

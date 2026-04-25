@@ -20,6 +20,11 @@ import {
   simulate,
   toolingReport
 } from "../src/index.js";
+import {
+  exportWorkshopFiles as exportWorkshopFilesBrowser,
+  isNodeCapable as isNodeCapableBrowser
+} from "../src/index.browser.js";
+import { isNodeCapable as isNodeCapableNode } from "../src/index.node.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
@@ -846,5 +851,22 @@ describe("core pipeline", () => {
     expect(bundle.timelineTxt).toContain("[CONTROL] B12: [main_m99] Main program contains M99.");
     expect(bundle.findingsMarkdown).toContain("## Findings");
     expect(bundle.findingsMarkdown).toContain("[BLOCKER] SIM_MAIN_M99 @ B12");
+  });
+
+  it("reports node capability by entry point", () => {
+    expect(isNodeCapableNode()).toBe(true);
+    expect(isNodeCapableBrowser()).toBe(false);
+  });
+
+  it("rejects node-only export workflow from browser entry", async () => {
+    await expect(
+      exportWorkshopFilesBrowser({
+        baseDirectory: ".",
+        baseName: "browser",
+        setupSheetTxt: "SETUP",
+        setupSheetMarkdown: "# Setup",
+        proveoutCode: "M30"
+      })
+    ).rejects.toThrow("not available from @cnc/core/browser");
   });
 });
