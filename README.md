@@ -621,6 +621,23 @@ To export aggregated checkpoint metadata as JSON:
 npm run checkpoint:meta
 ```
 
+To serve checkpoint metadata over a tiny local HTTP API:
+
+```bash
+npm run checkpoint:api
+```
+
+Endpoints:
+
+- `GET /health`
+- `GET /meta`
+
+One-shot JSON mode (no server):
+
+```bash
+node scripts/checkpoint-api.mjs --once
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
