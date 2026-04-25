@@ -164,6 +164,13 @@ To export checkpoint history as machine-readable JSON:
 npm run checkpoint:catalog
 ```
 
+To search commit history (including checkpoints) by keyword/regex:
+
+```bash
+npm run checkpoint:search -- verify
+npm run checkpoint:search -- "browser|node"
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
