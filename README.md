@@ -171,6 +171,18 @@ npm run checkpoint:search -- verify
 npm run checkpoint:search -- "browser|node"
 ```
 
+To see which files are touched most often across checkpoints:
+
+```bash
+npm run checkpoint:hotspots
+```
+
+Optional custom limit:
+
+```bash
+node scripts/checkpoint-hotspots.mjs 25
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

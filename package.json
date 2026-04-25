@@ -12,6 +12,7 @@
     "checkpoint:catalog": "node ./scripts/checkpoint-catalog.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:diff": "node ./scripts/checkpoint-diff.mjs",
+    "checkpoint:hotspots": "node ./scripts/checkpoint-hotspots.mjs",
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
     "checkpoint:menu": "node ./scripts/checkpoint-menu.mjs",
