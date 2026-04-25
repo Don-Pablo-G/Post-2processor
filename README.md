@@ -207,6 +207,12 @@ Optional custom window (days):
 node scripts/checkpoint-velocity.mjs 21
 ```
 
+To inspect current and longest daily checkpoint streaks:
+
+```bash
+npm run checkpoint:streaks
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
