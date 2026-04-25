@@ -127,6 +127,13 @@ npm run checkpoint:since -- 2026-04-25
 npm run checkpoint:since -- cd44137
 ```
 
+To list checkpoints between two dates or checkpoint hashes:
+
+```bash
+npm run checkpoint:range -- 2026-04-25 2026-04-26
+npm run checkpoint:range -- cd44137 e4631fd
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
