@@ -790,6 +790,8 @@ To run non-invasive diagnostics for handoff tooling:
 npm run checkpoint:handoff-doctor
 ```
 
+Covers status, list, cleanup preview, full `checkpoint:validate` (meta, webhook, handoff), and an optional handoff package build when a release bundle exists.
+
 To run a lightweight daily handoff profile:
 
 ```bash

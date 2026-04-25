@@ -24,7 +24,10 @@ function main() {
     runCheck("handoff status", "node scripts/checkpoint-handoff-status.mjs"),
     runCheck("handoff list", "node scripts/checkpoint-handoff-list.mjs 5"),
     runCheck("handoff cleanup preview", "node scripts/checkpoint-handoff-cleanup.mjs 10"),
-    runCheck("handoff cycle preview flow", "node scripts/checkpoint-handoff-cycle.mjs 10"),
+    runCheck(
+      "handoff validate (checkpoint:validate incl. handoff)",
+      "node scripts/checkpoint-handoff-validate.mjs"
+    ),
     runCheck(
       "handoff package build + verify",
       "node scripts/checkpoint-handoff-package.mjs",
