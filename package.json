@@ -37,6 +37,7 @@
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
     "checkpoint:menu": "node ./scripts/checkpoint-menu.mjs",
+    "checkpoint:meta": "node ./scripts/checkpoint-meta.mjs",
     "checkpoint:morning": "node ./scripts/checkpoint-morning.mjs",
     "checkpoint:momentum": "node ./scripts/checkpoint-momentum.mjs",
     "checkpoint:nightly": "node ./scripts/checkpoint-nightly.mjs",

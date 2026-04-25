@@ -615,6 +615,12 @@ To run full checkpoint docs/taxonomy synchronization in one pass:
 npm run checkpoint:sync-all
 ```
 
+To export aggregated checkpoint metadata as JSON:
+
+```bash
+npm run checkpoint:meta
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
