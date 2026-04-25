@@ -28,6 +28,7 @@
     "checkpoint:streaks": "node ./scripts/checkpoint-streaks.mjs",
     "checkpoint:stats": "node ./scripts/checkpoint-stats.mjs",
     "checkpoint:velocity": "node ./scripts/checkpoint-velocity.mjs",
+    "checkpoint:weekday": "node ./scripts/checkpoint-weekday.mjs",
     "dev": "npm run --workspace @cnc/desktop dev",
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",
     "precommit:check": "node ./scripts/pre-commit-check.mjs",

@@ -225,6 +225,18 @@ Optional custom result limit:
 node scripts/checkpoint-gaps.mjs 10
 ```
 
+To analyze checkpoint distribution by weekday and hour:
+
+```bash
+npm run checkpoint:weekday
+```
+
+Optional custom day window:
+
+```bash
+node scripts/checkpoint-weekday.mjs 14
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
