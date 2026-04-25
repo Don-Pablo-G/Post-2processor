@@ -24,6 +24,7 @@
     "checkpoint:backlog": "node ./scripts/checkpoint-backlog.mjs",
     "checkpoint:bootstrap": "node ./scripts/checkpoint-bootstrap.mjs",
     "checkpoint:brief": "node ./scripts/checkpoint-brief.mjs",
+    "checkpoint:bundle-verify": "node ./scripts/checkpoint-bundle-verify.mjs",
     "checkpoint:anomalies": "node ./scripts/checkpoint-anomalies.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:doctor:extended": "node ./scripts/checkpoint-doctor-extended.mjs",

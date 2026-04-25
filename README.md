@@ -692,6 +692,18 @@ To generate a handoff/archive release bundle with key artifacts:
 npm run checkpoint:release-bundle
 ```
 
+To verify a release bundle manifest and required files:
+
+```bash
+npm run checkpoint:bundle-verify
+```
+
+Optional custom bundle path:
+
+```bash
+node scripts/checkpoint-bundle-verify.mjs .checkpoints/release-bundles/<bundle-folder>
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
