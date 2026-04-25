@@ -134,6 +134,12 @@ npm run checkpoint:range -- 2026-04-25 2026-04-26
 npm run checkpoint:range -- cd44137 e4631fd
 ```
 
+To compare two checkpoints (summary + changed files):
+
+```bash
+npm run checkpoint:diff -- cd44137 7a825f3
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
