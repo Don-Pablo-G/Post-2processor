@@ -237,6 +237,18 @@ Optional custom day window:
 node scripts/checkpoint-weekday.mjs 14
 ```
 
+To summarize first and last checkpoint times per day:
+
+```bash
+npm run checkpoint:first-last
+```
+
+Optional custom day window:
+
+```bash
+node scripts/checkpoint-first-last.mjs 21
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
