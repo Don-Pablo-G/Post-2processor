@@ -597,6 +597,12 @@ To generate a newcomer quick-start checkpoint guide:
 npm run checkpoint:onboarding
 ```
 
+To generate a canonical checkpoint command taxonomy (JSON + markdown):
+
+```bash
+npm run checkpoint:taxonomy
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
