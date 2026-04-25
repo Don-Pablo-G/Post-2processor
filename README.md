@@ -369,6 +369,18 @@ Optional tuning (`commitLimit windowSize`):
 node scripts/checkpoint-momentum.mjs 160 20
 ```
 
+To print a compact checkpoint change-intensity scorecard:
+
+```bash
+npm run checkpoint:radar
+```
+
+Optional tuning (`commitLimit windowSize`):
+
+```bash
+node scripts/checkpoint-radar.mjs 220 16
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
