@@ -561,6 +561,12 @@ To print an ultra-short standup-style checkpoint summary:
 npm run checkpoint:brief
 ```
 
+To generate a longer-form weekly recap with next-week priorities:
+
+```bash
+npm run checkpoint:weekend
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
