@@ -146,6 +146,12 @@ For a quick daily checkpoint command dashboard:
 npm run checkpoint:menu
 ```
 
+To run diagnostics across all checkpoint utilities:
+
+```bash
+npm run checkpoint:doctor
+```
+
 To get non-destructive suggestions for dense checkpoint streaks:
 
 ```bash
