@@ -393,6 +393,18 @@ Optional tuning (`commitLimit baselineSize zThreshold`):
 node scripts/checkpoint-anomalies.mjs 220 50 1.8
 ```
 
+To cluster checkpoints into activity sessions by time gap:
+
+```bash
+npm run checkpoint:clusters
+```
+
+Optional tuning (`commitLimit gapMinutes topN`):
+
+```bash
+node scripts/checkpoint-clusters.mjs 300 45 15
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
