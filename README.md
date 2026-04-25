@@ -54,7 +54,9 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 - Command: `npm run guard:imports`
 - Script: `scripts/verify-import-boundaries.mjs`
-- Current rule: files in `apps/desktop/src` must use `@cnc/core/browser` (not `@cnc/core`)
+- Current rules:
+  - files in `apps/desktop/src` must use `@cnc/core/browser` (not `@cnc/core`)
+  - files in `packages/core/tests` must use `../src/index.node.js` (not `../src/index.js`)
 
 ## Current Status
 
