@@ -14,6 +14,7 @@
     "checkpoint:catalog:md": "node ./scripts/checkpoint-catalog-md.mjs",
     "checkpoint:cleanup": "node ./scripts/checkpoint-cleanup.mjs",
     "checkpoint:clusters": "node ./scripts/checkpoint-clusters.mjs",
+    "checkpoint:command-map": "node ./scripts/checkpoint-command-map.mjs",
     "checkpoint:cochange": "node ./scripts/checkpoint-cochange.mjs",
     "checkpoint:authors": "node ./scripts/checkpoint-authors.mjs",
     "checkpoint:all": "node ./scripts/checkpoint-all.mjs",

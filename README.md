@@ -585,6 +585,12 @@ To generate a 1-2 week prioritized checkpoint roadmap:
 npm run checkpoint:roadmap
 ```
 
+To auto-generate a categorized checkpoint command reference:
+
+```bash
+npm run checkpoint:command-map
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
