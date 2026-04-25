@@ -543,6 +543,12 @@ To run nightly checkpoint maintenance and write a report:
 npm run checkpoint:nightly
 ```
 
+To run morning quick-start (status + handoff + backlog + digest recap):
+
+```bash
+npm run checkpoint:morning
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
