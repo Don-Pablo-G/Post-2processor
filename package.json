@@ -43,6 +43,7 @@
     "checkpoint:morning": "node ./scripts/checkpoint-morning.mjs",
     "checkpoint:momentum": "node ./scripts/checkpoint-momentum.mjs",
     "checkpoint:nightly": "node ./scripts/checkpoint-nightly.mjs",
+    "checkpoint:notify-preview": "node ./scripts/checkpoint-notify-preview.mjs",
     "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
     "checkpoint:onboarding": "node ./scripts/checkpoint-onboarding.mjs",
     "checkpoint:ops": "node ./scripts/checkpoint-ops.mjs",

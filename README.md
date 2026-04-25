@@ -662,6 +662,12 @@ Optional custom recent event limit:
 node scripts/checkpoint-webhook-payload.mjs 15
 ```
 
+To render a human-friendly notification preview from checkpoint payload:
+
+```bash
+npm run checkpoint:notify-preview
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
