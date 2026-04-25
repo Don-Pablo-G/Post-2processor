@@ -261,6 +261,18 @@ Optional tuning (`days windowMinutes minCount`):
 node scripts/checkpoint-burst.mjs 7 20 3
 ```
 
+To print a combined chronological checkpoint digest (daily counts, spans, bursts):
+
+```bash
+npm run checkpoint:timeline
+```
+
+Optional custom day window:
+
+```bash
+node scripts/checkpoint-timeline.mjs 21
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

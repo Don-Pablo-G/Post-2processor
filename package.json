@@ -29,6 +29,7 @@
     "checkpoint:since": "node ./scripts/checkpoint-since.mjs",
     "checkpoint:streaks": "node ./scripts/checkpoint-streaks.mjs",
     "checkpoint:stats": "node ./scripts/checkpoint-stats.mjs",
+    "checkpoint:timeline": "node ./scripts/checkpoint-timeline.mjs",
     "checkpoint:velocity": "node ./scripts/checkpoint-velocity.mjs",
     "checkpoint:weekday": "node ./scripts/checkpoint-weekday.mjs",
     "dev": "npm run --workspace @cnc/desktop dev",
