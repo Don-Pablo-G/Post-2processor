@@ -579,6 +579,12 @@ To print a single-line checkpoint health pulse (statusline-friendly):
 npm run checkpoint:pulse
 ```
 
+To generate a 1-2 week prioritized checkpoint roadmap:
+
+```bash
+npm run checkpoint:roadmap
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

@@ -44,6 +44,7 @@
     "checkpoint:pulse": "node ./scripts/checkpoint-pulse.mjs",
     "checkpoint:prune-suggestions": "node ./scripts/checkpoint-prune-suggestions.mjs",
     "checkpoint:radar": "node ./scripts/checkpoint-radar.mjs",
+    "checkpoint:roadmap": "node ./scripts/checkpoint-roadmap.mjs",
     "checkpoint:release-ready": "node ./scripts/checkpoint-release-ready.mjs",
     "checkpoint:retro": "node ./scripts/checkpoint-retro.mjs",
     "checkpoint:report": "node ./scripts/checkpoint-report.mjs",
