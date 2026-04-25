@@ -609,6 +609,12 @@ To synchronize the README auto-generated checkpoint command reference:
 npm run checkpoint:sync-docs
 ```
 
+To run full checkpoint docs/taxonomy synchronization in one pass:
+
+```bash
+npm run checkpoint:sync-all
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
@@ -648,7 +654,7 @@ This repo includes a local pre-commit helper that is intentionally non-blocking:
 <!-- checkpoint-commands:start -->
 ### Auto-generated Checkpoint Command Reference
 
-_Generated from `package.json` scripts. Total: 61_
+_Generated from `package.json` scripts. Total: 62_
 
 #### Status
 - `checkpoint:brief` -> `node ./scripts/checkpoint-brief.mjs`
@@ -716,6 +722,7 @@ _Generated from `package.json` scripts. Total: 61_
 - `checkpoint:stability` -> `node ./scripts/checkpoint-stability.mjs`
 - `checkpoint:stats` -> `node ./scripts/checkpoint-stats.mjs`
 - `checkpoint:streaks` -> `node ./scripts/checkpoint-streaks.mjs`
+- `checkpoint:sync-all` -> `node ./scripts/checkpoint-sync-all.mjs`
 - `checkpoint:sync-docs` -> `node ./scripts/checkpoint-sync-docs.mjs`
 - `checkpoint:taxonomy` -> `node ./scripts/checkpoint-taxonomy.mjs`
 - `checkpoint:timeline` -> `node ./scripts/checkpoint-timeline.mjs`
