@@ -603,6 +603,12 @@ To generate a canonical checkpoint command taxonomy (JSON + markdown):
 npm run checkpoint:taxonomy
 ```
 
+To synchronize the README auto-generated checkpoint command reference:
+
+```bash
+npm run checkpoint:sync-docs
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
@@ -636,3 +642,85 @@ This repo includes a local pre-commit helper that is intentionally non-blocking:
 - Install hook: `npm run setup:hooks`
 - Hook check command: `npm run precommit:check`
 - Current behavior: runs import-boundary guard and prints a reminder to run `npm run verify`
+
+## Checkpoint Command Matrix
+
+<!-- checkpoint-commands:start -->
+### Auto-generated Checkpoint Command Reference
+
+_Generated from `package.json` scripts. Total: 61_
+
+#### Status
+- `checkpoint:brief` -> `node ./scripts/checkpoint-brief.mjs`
+- `checkpoint:pulse` -> `node ./scripts/checkpoint-pulse.mjs`
+- `checkpoint:status` -> `node ./scripts/checkpoint-status.mjs`
+
+#### Diagnostics
+- `checkpoint:doctor` -> `node ./scripts/checkpoint-doctor.mjs`
+- `checkpoint:doctor:extended` -> `node ./scripts/checkpoint-doctor-extended.mjs`
+
+#### Operations
+- `checkpoint:all` -> `node ./scripts/checkpoint-all.mjs`
+- `checkpoint:bootstrap` -> `node ./scripts/checkpoint-bootstrap.mjs`
+- `checkpoint:morning` -> `node ./scripts/checkpoint-morning.mjs`
+- `checkpoint:nightly` -> `node ./scripts/checkpoint-nightly.mjs`
+- `checkpoint:onboarding` -> `node ./scripts/checkpoint-onboarding.mjs`
+- `checkpoint:ops` -> `node ./scripts/checkpoint-ops.mjs`
+- `checkpoint:release-ready` -> `node ./scripts/checkpoint-release-ready.mjs`
+- `checkpoint:ship` -> `node ./scripts/checkpoint-ship.mjs`
+- `checkpoint:suite` -> `node ./scripts/checkpoint-suite.mjs`
+
+#### Reporting
+- `checkpoint:catalog:md` -> `node ./scripts/checkpoint-catalog-md.mjs`
+- `checkpoint:digest` -> `node ./scripts/checkpoint-digest.mjs`
+- `checkpoint:handoff` -> `node ./scripts/checkpoint-handoff.mjs`
+- `checkpoint:index` -> `node ./scripts/checkpoint-index.mjs`
+- `checkpoint:report` -> `node ./scripts/checkpoint-report.mjs`
+- `checkpoint:retro` -> `node ./scripts/checkpoint-retro.mjs`
+- `checkpoint:roadmap` -> `node ./scripts/checkpoint-roadmap.mjs`
+- `checkpoint:timeline:md` -> `node ./scripts/checkpoint-timeline-md.mjs`
+- `checkpoint:weekend` -> `node ./scripts/checkpoint-weekend.mjs`
+- `checkpoint:weekly` -> `node ./scripts/checkpoint-weekly.mjs`
+
+#### Maintenance
+- `checkpoint:cleanup` -> `node ./scripts/checkpoint-cleanup.mjs`
+- `checkpoint:prune-suggestions` -> `node ./scripts/checkpoint-prune-suggestions.mjs`
+- `checkpoint:reports:prune` -> `node ./scripts/checkpoint-reports-prune.mjs`
+
+#### Analytics
+- `checkpoint:anomalies` -> `node ./scripts/checkpoint-anomalies.mjs`
+- `checkpoint:authors` -> `node ./scripts/checkpoint-authors.mjs`
+- `checkpoint:backlog` -> `node ./scripts/checkpoint-backlog.mjs`
+- `checkpoint:burst` -> `node ./scripts/checkpoint-burst.mjs`
+- `checkpoint:catalog` -> `node ./scripts/checkpoint-catalog.mjs`
+- `checkpoint:clusters` -> `node ./scripts/checkpoint-clusters.mjs`
+- `checkpoint:cochange` -> `node ./scripts/checkpoint-cochange.mjs`
+- `checkpoint:command-map` -> `node ./scripts/checkpoint-command-map.mjs`
+- `checkpoint:diff` -> `node ./scripts/checkpoint-diff.mjs`
+- `checkpoint:drift` -> `node ./scripts/checkpoint-drift.mjs`
+- `checkpoint:entropy` -> `node ./scripts/checkpoint-entropy.mjs`
+- `checkpoint:first-last` -> `node ./scripts/checkpoint-first-last.mjs`
+- `checkpoint:focus` -> `node ./scripts/checkpoint-focus.mjs`
+- `checkpoint:gaps` -> `node ./scripts/checkpoint-gaps.mjs`
+- `checkpoint:hotspots` -> `node ./scripts/checkpoint-hotspots.mjs`
+- `checkpoint:latest` -> `node ./scripts/checkpoint-latest.mjs`
+- `checkpoint:list` -> `node ./scripts/checkpoint-list.mjs`
+- `checkpoint:menu` -> `node ./scripts/checkpoint-menu.mjs`
+- `checkpoint:momentum` -> `node ./scripts/checkpoint-momentum.mjs`
+- `checkpoint:open` -> `node ./scripts/checkpoint-open.mjs`
+- `checkpoint:radar` -> `node ./scripts/checkpoint-radar.mjs`
+- `checkpoint:range` -> `node ./scripts/checkpoint-range.mjs`
+- `checkpoint:scope` -> `node ./scripts/checkpoint-scope.mjs`
+- `checkpoint:search` -> `node ./scripts/checkpoint-search.mjs`
+- `checkpoint:since` -> `node ./scripts/checkpoint-since.mjs`
+- `checkpoint:stability` -> `node ./scripts/checkpoint-stability.mjs`
+- `checkpoint:stats` -> `node ./scripts/checkpoint-stats.mjs`
+- `checkpoint:streaks` -> `node ./scripts/checkpoint-streaks.mjs`
+- `checkpoint:sync-docs` -> `node ./scripts/checkpoint-sync-docs.mjs`
+- `checkpoint:taxonomy` -> `node ./scripts/checkpoint-taxonomy.mjs`
+- `checkpoint:timeline` -> `node ./scripts/checkpoint-timeline.mjs`
+- `checkpoint:touchmap` -> `node ./scripts/checkpoint-touchmap.mjs`
+- `checkpoint:velocity` -> `node ./scripts/checkpoint-velocity.mjs`
+- `checkpoint:weekday` -> `node ./scripts/checkpoint-weekday.mjs`
+
+<!-- checkpoint-commands:end -->
