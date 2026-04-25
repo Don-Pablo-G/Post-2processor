@@ -780,6 +780,12 @@ Optional example:
 node scripts/checkpoint-handoff-ship.mjs 5
 ```
 
+To run non-invasive diagnostics for handoff tooling:
+
+```bash
+npm run checkpoint:handoff-doctor
+```
+
 To view a compact handoff status snapshot:
 
 ```bash
