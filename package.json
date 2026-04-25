@@ -27,6 +27,7 @@
     "checkpoint:report": "node ./scripts/checkpoint-report.mjs",
     "checkpoint:range": "node ./scripts/checkpoint-range.mjs",
     "checkpoint:reports:prune": "node ./scripts/checkpoint-reports-prune.mjs",
+    "checkpoint:scope": "node ./scripts/checkpoint-scope.mjs",
     "checkpoint:search": "node ./scripts/checkpoint-search.mjs",
     "checkpoint:since": "node ./scripts/checkpoint-since.mjs",
     "checkpoint:streaks": "node ./scripts/checkpoint-streaks.mjs",

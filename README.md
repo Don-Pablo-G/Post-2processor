@@ -297,6 +297,18 @@ Optional tuning (`commitLimit topN`):
 node scripts/checkpoint-cochange.mjs 300 25
 ```
 
+To summarize directory-level hotspot concentration and cross-scope coupling:
+
+```bash
+npm run checkpoint:scope
+```
+
+Optional tuning (`commitLimit depth topN`):
+
+```bash
+node scripts/checkpoint-scope.mjs 300 2 25
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
