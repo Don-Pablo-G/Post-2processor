@@ -680,11 +680,15 @@ To generate JSON schema contracts for machine-readable checkpoint outputs:
 npm run checkpoint:contracts
 ```
 
+This now includes the handoff metadata schema (`checkpoint-handoff-meta.schema.json`).
+
 To validate current machine-readable artifacts against those contracts:
 
 ```bash
 npm run checkpoint:validate
 ```
+
+This now validates checkpoint meta, webhook payload, and generated handoff metadata payload.
 
 To generate a handoff/archive release bundle with key artifacts:
 
