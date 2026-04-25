@@ -273,6 +273,18 @@ Optional custom day window:
 node scripts/checkpoint-timeline.mjs 21
 ```
 
+To see recurring focus keywords in checkpoint commit subjects:
+
+```bash
+npm run checkpoint:focus
+```
+
+Optional tuning (`days topN`):
+
+```bash
+node scripts/checkpoint-focus.mjs 14 20
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
