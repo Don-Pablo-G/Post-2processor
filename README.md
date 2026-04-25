@@ -555,6 +555,12 @@ To export a timeline snapshot as markdown artifact:
 npm run checkpoint:timeline:md
 ```
 
+To print an ultra-short standup-style checkpoint summary:
+
+```bash
+npm run checkpoint:brief
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

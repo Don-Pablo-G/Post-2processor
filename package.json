@@ -19,6 +19,7 @@
     "checkpoint:all": "node ./scripts/checkpoint-all.mjs",
     "checkpoint:backlog": "node ./scripts/checkpoint-backlog.mjs",
     "checkpoint:bootstrap": "node ./scripts/checkpoint-bootstrap.mjs",
+    "checkpoint:brief": "node ./scripts/checkpoint-brief.mjs",
     "checkpoint:anomalies": "node ./scripts/checkpoint-anomalies.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:doctor:extended": "node ./scripts/checkpoint-doctor-extended.mjs",
