@@ -549,6 +549,12 @@ To run morning quick-start (status + handoff + backlog + digest recap):
 npm run checkpoint:morning
 ```
 
+To export a timeline snapshot as markdown artifact:
+
+```bash
+npm run checkpoint:timeline:md
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
