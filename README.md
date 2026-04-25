@@ -726,6 +726,18 @@ node scripts/checkpoint-handoff-list.mjs 5
 node scripts/checkpoint-handoff-list.mjs 10 --full-path
 ```
 
+To open the latest handoff package (Windows):
+
+```bash
+npm run checkpoint:handoff-open
+```
+
+Open the handoff package folder instead:
+
+```bash
+node scripts/checkpoint-handoff-open.mjs --folder
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
