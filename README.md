@@ -591,6 +591,12 @@ To auto-generate a categorized checkpoint command reference:
 npm run checkpoint:command-map
 ```
 
+To generate a newcomer quick-start checkpoint guide:
+
+```bash
+npm run checkpoint:onboarding
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

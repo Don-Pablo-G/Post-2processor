@@ -41,6 +41,7 @@
     "checkpoint:momentum": "node ./scripts/checkpoint-momentum.mjs",
     "checkpoint:nightly": "node ./scripts/checkpoint-nightly.mjs",
     "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
+    "checkpoint:onboarding": "node ./scripts/checkpoint-onboarding.mjs",
     "checkpoint:ops": "node ./scripts/checkpoint-ops.mjs",
     "checkpoint:pulse": "node ./scripts/checkpoint-pulse.mjs",
     "checkpoint:prune-suggestions": "node ./scripts/checkpoint-prune-suggestions.mjs",
