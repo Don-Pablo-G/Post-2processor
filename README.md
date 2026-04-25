@@ -686,6 +686,12 @@ To validate current machine-readable artifacts against those contracts:
 npm run checkpoint:validate
 ```
 
+To generate a handoff/archive release bundle with key artifacts:
+
+```bash
+npm run checkpoint:release-bundle
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

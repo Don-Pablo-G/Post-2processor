@@ -54,6 +54,7 @@
     "checkpoint:radar": "node ./scripts/checkpoint-radar.mjs",
     "checkpoint:roadmap": "node ./scripts/checkpoint-roadmap.mjs",
     "checkpoint:release-ready": "node ./scripts/checkpoint-release-ready.mjs",
+    "checkpoint:release-bundle": "node ./scripts/checkpoint-release-bundle.mjs",
     "checkpoint:retro": "node ./scripts/checkpoint-retro.mjs",
     "checkpoint:report": "node ./scripts/checkpoint-report.mjs",
     "checkpoint:range": "node ./scripts/checkpoint-range.mjs",
