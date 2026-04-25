@@ -811,6 +811,18 @@ Optional apply mode:
 node scripts/checkpoint-handoff-nightly.mjs 5 --apply
 ```
 
+To export machine-readable handoff package metadata (JSON):
+
+```bash
+npm run checkpoint:handoff:meta
+```
+
+Optional tuning (`keepTarget recentLimit`):
+
+```bash
+node scripts/checkpoint-handoff-meta.mjs 10 5
+```
+
 To view a compact handoff status snapshot:
 
 ```bash

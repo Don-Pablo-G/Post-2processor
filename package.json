@@ -40,6 +40,7 @@
     "checkpoint:handoff-cleanup": "node ./scripts/checkpoint-handoff-cleanup.mjs",
     "checkpoint:handoff-doctor": "node ./scripts/checkpoint-handoff-doctor.mjs",
     "checkpoint:handoff:daily": "node ./scripts/checkpoint-handoff-daily.mjs",
+    "checkpoint:handoff:meta": "node ./scripts/checkpoint-handoff-meta.mjs",
     "checkpoint:handoff:nightly": "node ./scripts/checkpoint-handoff-nightly.mjs",
     "checkpoint:handoff-list": "node ./scripts/checkpoint-handoff-list.mjs",
     "checkpoint:handoff-open": "node ./scripts/checkpoint-handoff-open.mjs",
