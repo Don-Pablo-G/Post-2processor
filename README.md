@@ -668,6 +668,12 @@ To render a human-friendly notification preview from checkpoint payload:
 npm run checkpoint:notify-preview
 ```
 
+To write that notification preview to a reusable text artifact:
+
+```bash
+npm run checkpoint:notify-file
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
