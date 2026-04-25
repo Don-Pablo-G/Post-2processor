@@ -381,6 +381,18 @@ Optional tuning (`commitLimit windowSize`):
 node scripts/checkpoint-radar.mjs 220 16
 ```
 
+To detect unusually large/small checkpoint commits vs baseline:
+
+```bash
+npm run checkpoint:anomalies
+```
+
+Optional tuning (`commitLimit baselineSize zThreshold`):
+
+```bash
+node scripts/checkpoint-anomalies.mjs 220 50 1.8
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
