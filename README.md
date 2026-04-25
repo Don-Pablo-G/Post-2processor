@@ -158,6 +158,18 @@ To generate a markdown checkpoint status report:
 npm run checkpoint:report
 ```
 
+To prune old generated checkpoint reports (default keep 20):
+
+```bash
+npm run checkpoint:reports:prune
+```
+
+Optional custom keep count:
+
+```bash
+node scripts/checkpoint-reports-prune.mjs 10
+```
+
 To get non-destructive suggestions for dense checkpoint streaks:
 
 ```bash
