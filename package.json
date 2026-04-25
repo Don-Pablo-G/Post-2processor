@@ -45,6 +45,7 @@
     "checkpoint:timeline": "node ./scripts/checkpoint-timeline.mjs",
     "checkpoint:touchmap": "node ./scripts/checkpoint-touchmap.mjs",
     "checkpoint:velocity": "node ./scripts/checkpoint-velocity.mjs",
+    "checkpoint:weekly": "node ./scripts/checkpoint-weekly.mjs",
     "checkpoint:weekday": "node ./scripts/checkpoint-weekday.mjs",
     "dev": "npm run --workspace @cnc/desktop dev",
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",

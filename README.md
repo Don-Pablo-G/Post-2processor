@@ -441,6 +441,18 @@ Optional tuning (`commitLimit recentN`):
 node scripts/checkpoint-digest.mjs 140 24
 ```
 
+To export a weekly checkpoint rollup markdown briefing:
+
+```bash
+npm run checkpoint:weekly
+```
+
+Optional tuning (`days topN`):
+
+```bash
+node scripts/checkpoint-weekly.mjs 7 15
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
