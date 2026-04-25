@@ -120,6 +120,13 @@ For checkpoint cadence metrics (total/today/average interval):
 npm run checkpoint:stats
 ```
 
+To list checkpoints since a date or checkpoint hash:
+
+```bash
+npm run checkpoint:since -- 2026-04-25
+npm run checkpoint:since -- cd44137
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
