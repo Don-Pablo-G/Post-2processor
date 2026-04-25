@@ -84,6 +84,12 @@ For a one-command local readiness summary (branch state, recent checkpoints, and
 npm run repo:health
 ```
 
+To print the latest checkpoint hash and safe recovery commands:
+
+```bash
+npm run checkpoint:latest
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
