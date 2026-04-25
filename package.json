@@ -32,6 +32,7 @@
     "checkpoint:scope": "node ./scripts/checkpoint-scope.mjs",
     "checkpoint:search": "node ./scripts/checkpoint-search.mjs",
     "checkpoint:since": "node ./scripts/checkpoint-since.mjs",
+    "checkpoint:stability": "node ./scripts/checkpoint-stability.mjs",
     "checkpoint:streaks": "node ./scripts/checkpoint-streaks.mjs",
     "checkpoint:stats": "node ./scripts/checkpoint-stats.mjs",
     "checkpoint:timeline": "node ./scripts/checkpoint-timeline.mjs",

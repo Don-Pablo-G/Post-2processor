@@ -345,6 +345,18 @@ Optional tuning (`commitLimit recentWindow topN`):
 node scripts/checkpoint-drift.mjs 240 40 20
 ```
 
+To rank files by checkpoint stability vs volatility across windows:
+
+```bash
+npm run checkpoint:stability
+```
+
+Optional tuning (`commitLimit windowSize minTouches topN`):
+
+```bash
+node scripts/checkpoint-stability.mjs 300 12 3 20
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
