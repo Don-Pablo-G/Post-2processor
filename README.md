@@ -531,6 +531,12 @@ To run an operator dashboard (status + release-ready + cleanup):
 npm run checkpoint:ops
 ```
 
+To run an all-in-one operations cycle (ops + ship + index refresh):
+
+```bash
+npm run checkpoint:all
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
