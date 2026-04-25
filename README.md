@@ -704,6 +704,12 @@ Optional custom bundle path:
 node scripts/checkpoint-bundle-verify.mjs .checkpoints/release-bundles/<bundle-folder>
 ```
 
+To create a compressed handoff package from a verified release bundle:
+
+```bash
+npm run checkpoint:handoff-package
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
