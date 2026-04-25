@@ -41,7 +41,7 @@ function main() {
   const steps = [
     ["checkpoint:bootstrap", "npm run checkpoint:bootstrap"],
     ["checkpoint:weekly", "npm run checkpoint:weekly"],
-    ["checkpoint:handoff:daily", "npm run checkpoint:handoff:daily"],
+    ["checkpoint:handoff:nightly", "npm run checkpoint:handoff:nightly"],
     [
       "checkpoint:cleanup",
       `node ./scripts/checkpoint-cleanup.mjs ${keepDigests} ${keepWeekly} ${keepReports}`

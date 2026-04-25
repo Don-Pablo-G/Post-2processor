@@ -798,6 +798,19 @@ Optional keep target for cleanup preview:
 node scripts/checkpoint-handoff-daily.mjs 5
 ```
 
+To run a nightly handoff profile (preview cleanup by default):
+
+```bash
+npm run checkpoint:handoff:nightly
+```
+
+Optional apply mode:
+
+```bash
+# keep newest 5 and delete older handoff artifacts
+node scripts/checkpoint-handoff-nightly.mjs 5 --apply
+```
+
 To view a compact handoff status snapshot:
 
 ```bash
