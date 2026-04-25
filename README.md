@@ -158,6 +158,12 @@ To generate a markdown checkpoint status report:
 npm run checkpoint:report
 ```
 
+To export checkpoint history as machine-readable JSON:
+
+```bash
+npm run checkpoint:catalog
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
