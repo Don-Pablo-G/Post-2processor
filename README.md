@@ -183,6 +183,18 @@ Optional custom limit:
 node scripts/checkpoint-hotspots.mjs 25
 ```
 
+To summarize checkpoint activity by author over the recent window:
+
+```bash
+npm run checkpoint:authors
+```
+
+Optional custom day window:
+
+```bash
+node scripts/checkpoint-authors.mjs 14
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
