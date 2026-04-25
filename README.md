@@ -738,6 +738,22 @@ Open the handoff package folder instead:
 node scripts/checkpoint-handoff-open.mjs --folder
 ```
 
+To preview pruning older handoff packages (default keep: 10):
+
+```bash
+npm run checkpoint:handoff-cleanup
+```
+
+Examples:
+
+```bash
+# preview while keeping only newest 5
+node scripts/checkpoint-handoff-cleanup.mjs 5
+
+# apply deletion (zip + paired txt note)
+node scripts/checkpoint-handoff-cleanup.mjs 5 --apply
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
