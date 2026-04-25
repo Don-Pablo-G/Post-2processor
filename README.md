@@ -477,6 +477,18 @@ Optional tuning (`keepDigests keepWeekly keepReports`):
 node scripts/checkpoint-cleanup.mjs 14 12 20
 ```
 
+To export a human-readable markdown checkpoint catalog:
+
+```bash
+npm run checkpoint:catalog:md
+```
+
+Optional tuning (`commitLimit topN`):
+
+```bash
+node scripts/checkpoint-catalog-md.mjs 220 25
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
