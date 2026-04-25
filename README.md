@@ -573,6 +573,12 @@ To generate a retrospective template (wins, risks, actions):
 npm run checkpoint:retro
 ```
 
+To print a single-line checkpoint health pulse (statusline-friendly):
+
+```bash
+npm run checkpoint:pulse
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
