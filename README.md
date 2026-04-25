@@ -357,6 +357,18 @@ Optional tuning (`commitLimit windowSize minTouches topN`):
 node scripts/checkpoint-stability.mjs 300 12 3 20
 ```
 
+To measure short-term checkpoint momentum (acceleration/deceleration):
+
+```bash
+npm run checkpoint:momentum
+```
+
+Optional tuning (`commitLimit windowSize`):
+
+```bash
+node scripts/checkpoint-momentum.mjs 160 20
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

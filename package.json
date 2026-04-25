@@ -24,6 +24,7 @@
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
     "checkpoint:menu": "node ./scripts/checkpoint-menu.mjs",
+    "checkpoint:momentum": "node ./scripts/checkpoint-momentum.mjs",
     "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
     "checkpoint:prune-suggestions": "node ./scripts/checkpoint-prune-suggestions.mjs",
     "checkpoint:report": "node ./scripts/checkpoint-report.mjs",
