@@ -823,6 +823,18 @@ Optional tuning (`keepTarget recentLimit`):
 node scripts/checkpoint-handoff-meta.mjs 10 5
 ```
 
+To generate JSON schema contract for handoff metadata:
+
+```bash
+npm run checkpoint:handoff:contracts
+```
+
+To validate handoff metadata against contract expectations:
+
+```bash
+npm run checkpoint:handoff:validate
+```
+
 To view a compact handoff status snapshot:
 
 ```bash
