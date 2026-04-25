@@ -195,6 +195,18 @@ Optional custom day window:
 node scripts/checkpoint-authors.mjs 14
 ```
 
+To view daily checkpoint velocity and trend bars:
+
+```bash
+npm run checkpoint:velocity
+```
+
+Optional custom window (days):
+
+```bash
+node scripts/checkpoint-velocity.mjs 21
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
