@@ -1,10 +1,11 @@
-import { exportWorkshopArtifacts } from "./export.js";
 import { buildTimelineFindingsExportBundle } from "./exportBundle.js";
 import { buildProveoutProgram } from "./proveout.js";
 import { generateSetupSheet } from "./setupSheet.js";
 import { analyzeProgram } from "./advisor.js";
 import { simpleSimulate } from "../simulator/simpleSimulator.js";
 import type { RunJobCheckInput, RunJobCheckResult, SafetyFinding } from "../types.js";
+
+const dynamicImport = new Function("path", "return import(path);") as (path: string) => Promise<unknown>;
 
 export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJobCheckResult> {
   const initialState = input.initialState ?? {};
@@ -47,6 +48,19 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
     if (shouldBlock) {
       messages.push("Export skipped due to blockers (override not enabled).");
     } else {
+      const exportMod = (await dynamicImport("./export.js")) as {
+        exportWorkshopArtifacts: (input: {
+          baseDirectory: string;
+          baseName?: string;
+          setupSheetTxt: string;
+          setupSheetMarkdown: string;
+          proveoutCode: string;
+          timelineTxt?: string;
+          timelineMarkdown?: string;
+          findingsTxt?: string;
+          findingsMarkdown?: string;
+        }) => Promise<NonNullable<RunJobCheckResult["exportResult"]>>;
+      };
       const bundle = buildTimelineFindingsExportBundle({
         timestampIso: new Date().toISOString(),
         controller: input.simulationLimits?.controllerMode ?? "haas-ngc",
@@ -62,7 +76,7 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
           })),
         findings: allFindings
       });
-      exportResult = await exportWorkshopArtifacts({
+      exportResult = await exportMod.exportWorkshopArtifacts({
         baseDirectory: input.exportOptions.baseDirectory,
         baseName: input.exportOptions.baseName ?? "program",
         setupSheetTxt: setupSheet.exportTxt,

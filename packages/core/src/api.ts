@@ -5,7 +5,6 @@ import { simpleParse } from "./parser/simpleParser.js";
 import { simpleSimulate } from "./simulator/simpleSimulator.js";
 import { buildToolingReport } from "./tooling/report.js";
 import { analyzeProgram as analyzeProgramInternal } from "./workshop/advisor.js";
-import { exportWorkshopArtifacts } from "./workshop/export.js";
 import { buildTimelineFindingsExportBundle as buildTimelineFindingsExportBundleInternal } from "./workshop/exportBundle.js";
 import { getParameterReserveProfiles } from "./workshop/parameterProfiles.js";
 import { applyProveoutMarkers, buildProveoutProgram, removeProveoutMarkers } from "./workshop/proveout.js";
@@ -58,6 +57,8 @@ export type ControllerProfile = {
   defaultFormatStyle: FormatStyle;
   validateAst?: (ast: ProgramAst) => LintIssue[];
 };
+
+const dynamicImport = new Function("path", "return import(path);") as (path: string) => Promise<unknown>;
 
 export function parse(code: string, profile: ControllerProfile): ProgramAst {
   return simpleParse(code, profile.id);
@@ -134,7 +135,10 @@ export function removeProveout(code: string): ProveoutPatchResult {
 }
 
 export async function exportWorkshopFiles(input: ExportArtifactsInput): Promise<ExportArtifactsResult> {
-  return exportWorkshopArtifacts(input);
+  const mod = (await dynamicImport("./workshop/export.js")) as {
+    exportWorkshopArtifacts: (input: ExportArtifactsInput) => Promise<ExportArtifactsResult>;
+  };
+  return mod.exportWorkshopArtifacts(input);
 }
 
 export function buildTimelineFindingsExportBundle(
@@ -148,48 +152,64 @@ export async function runJobCheck(input: RunJobCheckInput): Promise<RunJobCheckR
 }
 
 export async function importShopFixture(input: ImportShopFixtureInput): Promise<ImportShopFixtureResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    importShopFixture: (input: ImportShopFixtureInput) => Promise<ImportShopFixtureResult>;
+  };
   return mod.importShopFixture(input);
 }
 
 export async function validateShopFixturesManifest(
   input: ValidateShopFixturesInput
 ): Promise<ValidateShopFixturesResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    validateShopFixturesManifest: (input: ValidateShopFixturesInput) => Promise<ValidateShopFixturesResult>;
+  };
   return mod.validateShopFixturesManifest(input);
 }
 
 export async function runShopRegressionTests(
   input: RunShopRegressionTestsInput
 ): Promise<RunShopRegressionTestsResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    runShopRegressionTests: (input: RunShopRegressionTestsInput) => Promise<RunShopRegressionTestsResult>;
+  };
   return mod.runShopRegressionTests(input);
 }
 
 export async function analyzeShopFixtureHealth(
   input: AnalyzeShopFixturesInput
 ): Promise<AnalyzeShopFixturesResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    analyzeShopFixtures: (input: AnalyzeShopFixturesInput) => Promise<AnalyzeShopFixturesResult>;
+  };
   return mod.analyzeShopFixtures(input);
 }
 
 export async function previewShopFixtureAutoFixes(
   input: PreviewShopFixtureAutoFixesInput
 ): Promise<PreviewShopFixtureAutoFixesResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    previewShopFixtureAutoFixes: (input: PreviewShopFixtureAutoFixesInput) => Promise<PreviewShopFixtureAutoFixesResult>;
+  };
   return mod.previewShopFixtureAutoFixes(input);
 }
 
 export async function applyShopFixtureAutoFixes(
   input: ApplyShopFixtureAutoFixesInput
 ): Promise<ApplyShopFixtureAutoFixesResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    applyShopFixtureAutoFixes: (input: ApplyShopFixtureAutoFixesInput) => Promise<ApplyShopFixtureAutoFixesResult>;
+  };
   return mod.applyShopFixtureAutoFixes(input);
 }
 
 export async function restoreShopFixtureManifestBackup(
   input: RestoreShopFixtureManifestBackupInput
 ): Promise<RestoreShopFixtureManifestBackupResult> {
-  const mod = await import("./workshop/shopFixtures.js");
+  const mod = (await dynamicImport("./workshop/shopFixtures.js")) as {
+    restoreShopFixtureManifestBackup: (
+      input: RestoreShopFixtureManifestBackupInput
+    ) => Promise<RestoreShopFixtureManifestBackupResult>;
+  };
   return mod.restoreShopFixtureManifestBackup(input);
 }

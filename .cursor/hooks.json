@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterShellExecution": [
+      {
+        "command": "node .cursor/hooks/auto-checkpoint.mjs",
+        "matcher": "npm run( --workspace [^\\s]+)? (test|typecheck|build)"
+      }
+    ]
+  }
+}
