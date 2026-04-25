@@ -21,8 +21,16 @@ import {
   toolingReport
 } from "../src/index.node.js";
 import {
+  analyzeShopFixtureHealth as analyzeShopFixtureHealthBrowser,
+  applyShopFixtureAutoFixes as applyShopFixtureAutoFixesBrowser,
   exportWorkshopFiles as exportWorkshopFilesBrowser,
+  importShopFixture as importShopFixtureBrowser,
   isNodeCapable as isNodeCapableBrowser
+  ,
+  previewShopFixtureAutoFixes as previewShopFixtureAutoFixesBrowser,
+  restoreShopFixtureManifestBackup as restoreShopFixtureManifestBackupBrowser,
+  runShopRegressionTests as runShopRegressionTestsBrowser,
+  validateShopFixturesManifest as validateShopFixturesManifestBrowser
 } from "../src/index.browser.js";
 import { isNodeCapable as isNodeCapableNode } from "../src/index.node.js";
 import { readFile } from "node:fs/promises";
@@ -866,6 +874,52 @@ describe("core pipeline", () => {
         setupSheetTxt: "SETUP",
         setupSheetMarkdown: "# Setup",
         proveoutCode: "M30"
+      })
+    ).rejects.toThrow("not available from @cnc/core/browser");
+  });
+
+  it("rejects all node-only workflows from browser entry", async () => {
+    await expect(
+      importShopFixtureBrowser({
+        fixturesRootDirectory: ".",
+        id: "fixture",
+        controller: "haas-ngc",
+        code: "M30",
+        expectations: {
+          expectsMainM99: false,
+          expectsSimulationWarnings: false,
+          expectsSimulationFindings: false
+        }
+      })
+    ).rejects.toThrow("not available from @cnc/core/browser");
+
+    await expect(validateShopFixturesManifestBrowser({ fixturesRootDirectory: "." })).rejects.toThrow(
+      "not available from @cnc/core/browser"
+    );
+    await expect(runShopRegressionTestsBrowser({ workspaceRootDirectory: "." })).rejects.toThrow(
+      "not available from @cnc/core/browser"
+    );
+    await expect(analyzeShopFixtureHealthBrowser({ fixturesRootDirectory: "." })).rejects.toThrow(
+      "not available from @cnc/core/browser"
+    );
+    await expect(
+      previewShopFixtureAutoFixesBrowser({
+        fixturesRootDirectory: ".",
+        includeControllerMismatchFixes: true,
+        includeStrictFromSimulationFixes: true
+      })
+    ).rejects.toThrow("not available from @cnc/core/browser");
+    await expect(
+      applyShopFixtureAutoFixesBrowser({
+        fixturesRootDirectory: ".",
+        includeControllerMismatchFixes: true,
+        includeStrictFromSimulationFixes: true
+      })
+    ).rejects.toThrow("not available from @cnc/core/browser");
+    await expect(
+      restoreShopFixtureManifestBackupBrowser({
+        manifestPath: "./manifest.json",
+        backupPath: "./manifest.json.bak"
       })
     ).rejects.toThrow("not available from @cnc/core/browser");
   });
