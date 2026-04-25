@@ -40,7 +40,8 @@ function main() {
   const steps = [
     { name: "checkpoint:status", command: "npm run checkpoint:status" },
     { name: "checkpoint:handoff", command: "npm run checkpoint:handoff" },
-    { name: "checkpoint:backlog", command: "npm run checkpoint:backlog" }
+    { name: "checkpoint:backlog", command: "npm run checkpoint:backlog" },
+    { name: "checkpoint:handoff:daily", command: "npm run checkpoint:handoff:daily" }
   ];
 
   process.stdout.write("Checkpoint morning quick-start...\n");

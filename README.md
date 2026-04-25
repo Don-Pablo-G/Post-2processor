@@ -786,6 +786,18 @@ To run non-invasive diagnostics for handoff tooling:
 npm run checkpoint:handoff-doctor
 ```
 
+To run a lightweight daily handoff profile:
+
+```bash
+npm run checkpoint:handoff:daily
+```
+
+Optional keep target for cleanup preview:
+
+```bash
+node scripts/checkpoint-handoff-daily.mjs 5
+```
+
 To view a compact handoff status snapshot:
 
 ```bash
