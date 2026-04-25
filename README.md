@@ -78,6 +78,12 @@ Use `npm run verify` as the standard gate before shipping changes. It runs:
 3. monorepo typecheck
 4. monorepo build
 
+For a one-command local readiness summary (branch state, recent checkpoints, and verify result), run:
+
+```bash
+npm run repo:health
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:

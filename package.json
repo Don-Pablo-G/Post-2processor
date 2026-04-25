@@ -12,6 +12,7 @@
     "dev": "npm run --workspace @cnc/desktop dev",
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",
     "precommit:check": "node ./scripts/pre-commit-check.mjs",
+    "repo:health": "node ./scripts/repo-health.mjs",
     "setup:hooks": "node ./scripts/setup-git-hooks.mjs",
     "test": "npm run --workspace @cnc/core test",
     "typecheck": "npm run guard:imports && npm run --workspaces typecheck",
