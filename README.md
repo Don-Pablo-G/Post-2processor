@@ -674,6 +674,12 @@ To write that notification preview to a reusable text artifact:
 npm run checkpoint:notify-file
 ```
 
+To generate JSON schema contracts for machine-readable checkpoint outputs:
+
+```bash
+npm run checkpoint:contracts
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

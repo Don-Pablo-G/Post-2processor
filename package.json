@@ -16,6 +16,7 @@
     "checkpoint:clusters": "node ./scripts/checkpoint-clusters.mjs",
     "checkpoint:command-map": "node ./scripts/checkpoint-command-map.mjs",
     "checkpoint:cochange": "node ./scripts/checkpoint-cochange.mjs",
+    "checkpoint:contracts": "node ./scripts/checkpoint-contracts.mjs",
     "checkpoint:authors": "node ./scripts/checkpoint-authors.mjs",
     "checkpoint:agent-feed": "node ./scripts/checkpoint-agent-feed.mjs",
     "checkpoint:api": "node ./scripts/checkpoint-api.mjs",
