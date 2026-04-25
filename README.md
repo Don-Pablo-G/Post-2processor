@@ -249,6 +249,18 @@ Optional custom day window:
 node scripts/checkpoint-first-last.mjs 21
 ```
 
+To detect short high-frequency checkpoint bursts:
+
+```bash
+npm run checkpoint:burst
+```
+
+Optional tuning (`days windowMinutes minCount`):
+
+```bash
+node scripts/checkpoint-burst.mjs 7 20 3
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
