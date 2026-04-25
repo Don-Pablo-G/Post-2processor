@@ -537,6 +537,12 @@ To run an all-in-one operations cycle (ops + ship + index refresh):
 npm run checkpoint:all
 ```
 
+To run nightly checkpoint maintenance and write a report:
+
+```bash
+npm run checkpoint:nightly
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
