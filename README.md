@@ -839,6 +839,8 @@ To validate handoff metadata against contract expectations:
 npm run checkpoint:handoff:validate
 ```
 
+`checkpoint:handoff:contracts` and `checkpoint:handoff:validate` are thin wrappers around `checkpoint:contracts` and `checkpoint:validate` (same schemas and checks as the main pipeline).
+
 To view a compact handoff status snapshot:
 
 ```bash
