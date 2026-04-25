@@ -680,6 +680,12 @@ To generate JSON schema contracts for machine-readable checkpoint outputs:
 npm run checkpoint:contracts
 ```
 
+To validate current machine-readable artifacts against those contracts:
+
+```bash
+npm run checkpoint:validate
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

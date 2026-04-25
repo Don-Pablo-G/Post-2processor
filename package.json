@@ -73,6 +73,7 @@
     "checkpoint:timeline:md": "node ./scripts/checkpoint-timeline-md.mjs",
     "checkpoint:touchmap": "node ./scripts/checkpoint-touchmap.mjs",
     "checkpoint:taxonomy": "node ./scripts/checkpoint-taxonomy.mjs",
+    "checkpoint:validate": "node ./scripts/checkpoint-validate.mjs",
     "checkpoint:velocity": "node ./scripts/checkpoint-velocity.mjs",
     "checkpoint:weekly": "node ./scripts/checkpoint-weekly.mjs",
     "checkpoint:weekend": "node ./scripts/checkpoint-weekend.mjs",
