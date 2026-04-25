@@ -19,7 +19,7 @@ import {
   runJobCheck,
   simulate,
   toolingReport
-} from "../src/index.js";
+} from "../src/index.node.js";
 import {
   exportWorkshopFiles as exportWorkshopFilesBrowser,
   isNodeCapable as isNodeCapableBrowser
