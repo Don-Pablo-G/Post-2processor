@@ -107,7 +107,17 @@ function processPayload(payload) {
   ].join("\n");
 
   writeFileSync(filePath, body, "utf8");
-  allow(`Checkpoint snapshot saved: ${path.relative(repoRoot, filePath)}`);
+
+  // Automatic checkpoint commit mode.
+  safeExec("git add -A");
+  const message = `checkpoint: auto ${timestamp} (${commandText.replace(/\s+/g, " ").trim()})`;
+  const commitOut = safeExec(`git commit -m "${message.replace(/"/g, '\\"')}"`);
+  const commitHash = safeExec("git rev-parse --short HEAD");
+
+  const context = commitOut
+    ? `Checkpoint snapshot saved: ${path.relative(repoRoot, filePath)} | Auto-commit: ${commitHash}`
+    : `Checkpoint snapshot saved: ${path.relative(repoRoot, filePath)} | Auto-commit skipped`;
+  allow(context);
 }
 
 function allow(extraMessage = "") {
