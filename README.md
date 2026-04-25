@@ -495,6 +495,12 @@ To print a concise checkpoint status snapshot in terminal:
 npm run checkpoint:status
 ```
 
+To generate index + digest + weekly + status in one pass:
+
+```bash
+npm run checkpoint:bootstrap
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

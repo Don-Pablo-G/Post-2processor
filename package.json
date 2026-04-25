@@ -17,6 +17,7 @@
     "checkpoint:cochange": "node ./scripts/checkpoint-cochange.mjs",
     "checkpoint:authors": "node ./scripts/checkpoint-authors.mjs",
     "checkpoint:backlog": "node ./scripts/checkpoint-backlog.mjs",
+    "checkpoint:bootstrap": "node ./scripts/checkpoint-bootstrap.mjs",
     "checkpoint:anomalies": "node ./scripts/checkpoint-anomalies.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
     "checkpoint:digest": "node ./scripts/checkpoint-digest.mjs",
