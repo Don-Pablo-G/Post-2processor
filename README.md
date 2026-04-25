@@ -567,6 +567,12 @@ To generate a longer-form weekly recap with next-week priorities:
 npm run checkpoint:weekend
 ```
 
+To generate a retrospective template (wins, risks, actions):
+
+```bash
+npm run checkpoint:retro
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
