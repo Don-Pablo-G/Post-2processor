@@ -48,6 +48,14 @@ This repository is configured for local checkpoint snapshots and automatic check
 
 Successful verification commands (`npm run test`, `npm run typecheck`, `npm run build`) trigger checkpoint behavior.
 
+## Import Boundary Guard
+
+Browser app code is guarded against accidental `@cnc/core` default imports.
+
+- Command: `npm run guard:imports`
+- Script: `scripts/verify-import-boundaries.mjs`
+- Current rule: files in `apps/desktop/src` must use `@cnc/core/browser` (not `@cnc/core`)
+
 ## Current Status
 
 This is a foundation scaffold. Core logic is intentionally simple and ready for incremental replacement with full Haas NGC semantics.
