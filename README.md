@@ -102,6 +102,18 @@ Optional custom limit:
 node scripts/checkpoint-list.mjs 20
 ```
 
+To open a checkpoint commit with patch/stat details:
+
+```bash
+npm run checkpoint:open
+```
+
+Optional hash:
+
+```bash
+node scripts/checkpoint-open.mjs <checkpoint-hash>
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
