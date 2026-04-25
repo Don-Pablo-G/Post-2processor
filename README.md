@@ -146,6 +146,20 @@ For a quick daily checkpoint command dashboard:
 npm run checkpoint:menu
 ```
 
+To get non-destructive suggestions for dense checkpoint streaks:
+
+```bash
+npm run checkpoint:prune-suggestions
+```
+
+Optional tuning:
+
+```bash
+node scripts/checkpoint-prune-suggestions.mjs 8 5
+```
+
+Where `8` = max minutes between adjacent checkpoints, `5` = minimum cluster size.
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
