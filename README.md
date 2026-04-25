@@ -90,6 +90,18 @@ To print the latest checkpoint hash and safe recovery commands:
 npm run checkpoint:latest
 ```
 
+To list recent checkpoints (default 10):
+
+```bash
+npm run checkpoint:list
+```
+
+Optional custom limit:
+
+```bash
+node scripts/checkpoint-list.mjs 20
+```
+
 ## Local Git Hooks
 
 This repo includes a local pre-commit helper that is intentionally non-blocking:
