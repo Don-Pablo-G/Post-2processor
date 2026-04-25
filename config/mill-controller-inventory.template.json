@@ -1,0 +1,32 @@
+{
+  "readme": "Gitignored copy: mill-controller-inventory.local.json — fill captured_at and versions Monday from controller diagnostic or nameplate.",
+  "captured_at": null,
+  "haas_ngc_mill": {
+    "machine_or_cell_id": "",
+    "control_model": "",
+    "software_version": "",
+    "serial_or_asset_tag": "",
+    "cam_post_name_and_revision": "",
+    "notes": ""
+  },
+  "haas_legacy_mill": {
+    "definition": "Haas mill without full NGC-added function set (subset vs NGC).",
+    "machine_or_cell_id": "",
+    "control_model": "",
+    "software_version": "",
+    "serial_or_asset_tag": "",
+    "cam_post_name_and_revision": "",
+    "known_limitations_vs_ngc": "",
+    "notes": ""
+  },
+  "fanuc_mill": {
+    "machine_or_cell_id": "",
+    "series_example_0i_31i": "",
+    "control_full_name_or_suffix": "",
+    "macro_b_present": null,
+    "software_version_or_release": "",
+    "serial_or_asset_tag": "",
+    "cam_post_name_and_revision": "",
+    "notes": ""
+  }
+}
