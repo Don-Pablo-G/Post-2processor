@@ -360,6 +360,7 @@ const UI_TEXT: Record<
 export function App() {
   const nodeCapable = isNodeCapable();
   const nodeOnlyDisabled = !nodeCapable;
+  const nodeOnlyDisabledReason = "Requires Node-capable runtime (@cnc/core/node).";
   const [code, setCode] = useState(SAMPLE);
   const [language, setLanguage] = useState<UiLanguage>("pl");
   const [operatorReviewMode, setOperatorReviewMode] = useState(false);
@@ -1558,7 +1559,11 @@ export function App() {
           />{" "}
           {t.includeTimelineFindingsExport}
         </label>
-        <button onClick={() => void handleExport()} disabled={nodeOnlyDisabled}>
+        <button
+          onClick={() => void handleExport()}
+          disabled={nodeOnlyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
+        >
           {t.exportNow}
         </button>
         <label style={{ display: "block", marginTop: 8 }}>
@@ -1671,7 +1676,11 @@ export function App() {
           />{" "}
           {t.autoRunTestsAfterImport}
         </label>
-        <button onClick={() => void handleImportShopFixture()} disabled={nodeOnlyWithBusyDisabled}>
+        <button
+          onClick={() => void handleImportShopFixture()}
+          disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
+        >
           {fixtureOpsBusy ? t.fixtureOpsInProgress : t.fixtureImportNow}
         </button>
         <button onClick={handleResetFixturePrefsForController} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
@@ -1681,6 +1690,7 @@ export function App() {
           onClick={() => void handleValidateFixturesManifest()}
           style={{ marginLeft: 8 }}
           disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
         >
           {t.validateFixtures}
         </button>
@@ -1688,16 +1698,26 @@ export function App() {
           {t.testsWorkspaceRoot}:{" "}
           <input value={testsWorkspaceRoot} onChange={(event) => setTestsWorkspaceRoot(event.target.value)} />
         </label>
-        <button onClick={() => void handleRunFixtureTests()} disabled={nodeOnlyWithBusyDisabled}>
+        <button
+          onClick={() => void handleRunFixtureTests()}
+          disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
+        >
           {t.runFixtureTests}
         </button>
-        <button onClick={() => void handleRefreshFixtureHealth()} style={{ marginLeft: 8 }} disabled={nodeOnlyWithBusyDisabled}>
+        <button
+          onClick={() => void handleRefreshFixtureHealth()}
+          style={{ marginLeft: 8 }}
+          disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
+        >
           {t.refreshFixtureHealth}
         </button>
         <button
           onClick={() => void handleUpgradeFixtureToStrictMode()}
           style={{ marginLeft: 8 }}
           disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
         >
           {t.upgradeToStrict}
         </button>
@@ -1736,17 +1756,27 @@ export function App() {
           />{" "}
           {t.autoRunTestsAfterApply}
         </label>
-        <button onClick={() => void handlePreviewAutoFixes()} disabled={nodeOnlyWithBusyDisabled}>
+        <button
+          onClick={() => void handlePreviewAutoFixes()}
+          disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
+        >
           {t.previewAutoFixes}
         </button>
         <button
           onClick={() => void handleApplyAutoFixes()}
           style={{ marginLeft: 8 }}
           disabled={nodeOnlyWithBusyDisabled || !autoFixPreviewMatchesCurrentSettings}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
         >
           {t.applyAutoFixes}
         </button>
-        <button onClick={() => void handleRollbackAutoFixBackup()} style={{ marginLeft: 8 }} disabled={nodeOnlyWithBusyDisabled}>
+        <button
+          onClick={() => void handleRollbackAutoFixBackup()}
+          style={{ marginLeft: 8 }}
+          disabled={nodeOnlyWithBusyDisabled}
+          title={nodeOnlyDisabled ? nodeOnlyDisabledReason : undefined}
+        >
           {t.rollbackFromBackup}
         </button>
         {nodeOnlyDisabled && (
