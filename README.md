@@ -501,6 +501,12 @@ To generate index + digest + weekly + status in one pass:
 npm run checkpoint:bootstrap
 ```
 
+To run deeper consistency diagnostics across reporting/export utilities:
+
+```bash
+npm run checkpoint:doctor:extended
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash

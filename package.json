@@ -20,6 +20,7 @@
     "checkpoint:bootstrap": "node ./scripts/checkpoint-bootstrap.mjs",
     "checkpoint:anomalies": "node ./scripts/checkpoint-anomalies.mjs",
     "checkpoint:doctor": "node ./scripts/checkpoint-doctor.mjs",
+    "checkpoint:doctor:extended": "node ./scripts/checkpoint-doctor-extended.mjs",
     "checkpoint:digest": "node ./scripts/checkpoint-digest.mjs",
     "checkpoint:diff": "node ./scripts/checkpoint-diff.mjs",
     "checkpoint:drift": "node ./scripts/checkpoint-drift.mjs",
