@@ -525,6 +525,12 @@ To run final pre-release gate with go/no-go summary:
 npm run checkpoint:ship
 ```
 
+To run an operator dashboard (status + release-ready + cleanup):
+
+```bash
+npm run checkpoint:ops
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
