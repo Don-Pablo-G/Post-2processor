@@ -12,6 +12,7 @@
     "checkpoint:diff": "node ./scripts/checkpoint-diff.mjs",
     "checkpoint:list": "node ./scripts/checkpoint-list.mjs",
     "checkpoint:latest": "node ./scripts/checkpoint-latest.mjs",
+    "checkpoint:menu": "node ./scripts/checkpoint-menu.mjs",
     "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
     "checkpoint:range": "node ./scripts/checkpoint-range.mjs",
     "checkpoint:since": "node ./scripts/checkpoint-since.mjs",
