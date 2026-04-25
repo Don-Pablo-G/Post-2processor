@@ -754,6 +754,12 @@ node scripts/checkpoint-handoff-cleanup.mjs 5
 node scripts/checkpoint-handoff-cleanup.mjs 5 --apply
 ```
 
+To view a compact handoff status snapshot:
+
+```bash
+npm run checkpoint:handoff-status
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
