@@ -25,6 +25,11 @@ export {
   toolingReport,
   validateShopFixturesManifest
 } from "./api.node.js";
+
+export function isNodeCapable(): boolean {
+  return true;
+}
+
 export type {
   Block,
   CriticalEvent,

@@ -21,6 +21,7 @@ import {
   runShopRegressionTests,
   runJobCheck,
   simulate,
+  isNodeCapable,
   toolingReport,
   validateShopFixturesManifest
 } from "@cnc/core/browser";
@@ -357,6 +358,7 @@ const UI_TEXT: Record<
 };
 
 export function App() {
+  const nodeCapable = isNodeCapable();
   const [code, setCode] = useState(SAMPLE);
   const [language, setLanguage] = useState<UiLanguage>("pl");
   const [operatorReviewMode, setOperatorReviewMode] = useState(false);
@@ -1551,7 +1553,9 @@ export function App() {
           />{" "}
           {t.includeTimelineFindingsExport}
         </label>
-        <button onClick={() => void handleExport()}>{t.exportNow}</button>
+        <button onClick={() => void handleExport()} disabled={!nodeCapable}>
+          {t.exportNow}
+        </button>
         <label style={{ display: "block", marginTop: 8 }}>
           <input
             type="checkbox"
@@ -1662,26 +1666,34 @@ export function App() {
           />{" "}
           {t.autoRunTestsAfterImport}
         </label>
-        <button onClick={() => void handleImportShopFixture()} disabled={fixtureOpsBusy}>
+        <button onClick={() => void handleImportShopFixture()} disabled={!nodeCapable || fixtureOpsBusy}>
           {fixtureOpsBusy ? t.fixtureOpsInProgress : t.fixtureImportNow}
         </button>
         <button onClick={handleResetFixturePrefsForController} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
           {t.resetFixturePrefs}
         </button>
-        <button onClick={() => void handleValidateFixturesManifest()} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
+        <button
+          onClick={() => void handleValidateFixturesManifest()}
+          style={{ marginLeft: 8 }}
+          disabled={!nodeCapable || fixtureOpsBusy}
+        >
           {t.validateFixtures}
         </button>
         <label style={{ display: "block", marginTop: 8, marginBottom: 8 }}>
           {t.testsWorkspaceRoot}:{" "}
           <input value={testsWorkspaceRoot} onChange={(event) => setTestsWorkspaceRoot(event.target.value)} />
         </label>
-        <button onClick={() => void handleRunFixtureTests()} disabled={fixtureOpsBusy}>
+        <button onClick={() => void handleRunFixtureTests()} disabled={!nodeCapable || fixtureOpsBusy}>
           {t.runFixtureTests}
         </button>
-        <button onClick={() => void handleRefreshFixtureHealth()} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
+        <button onClick={() => void handleRefreshFixtureHealth()} style={{ marginLeft: 8 }} disabled={!nodeCapable || fixtureOpsBusy}>
           {t.refreshFixtureHealth}
         </button>
-        <button onClick={() => void handleUpgradeFixtureToStrictMode()} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
+        <button
+          onClick={() => void handleUpgradeFixtureToStrictMode()}
+          style={{ marginLeft: 8 }}
+          disabled={!nodeCapable || fixtureOpsBusy}
+        >
           {t.upgradeToStrict}
         </button>
         <label style={{ display: "block", marginTop: 8, marginBottom: 8 }}>
@@ -1719,19 +1731,24 @@ export function App() {
           />{" "}
           {t.autoRunTestsAfterApply}
         </label>
-        <button onClick={() => void handlePreviewAutoFixes()} disabled={fixtureOpsBusy}>
+        <button onClick={() => void handlePreviewAutoFixes()} disabled={!nodeCapable || fixtureOpsBusy}>
           {t.previewAutoFixes}
         </button>
         <button
           onClick={() => void handleApplyAutoFixes()}
           style={{ marginLeft: 8 }}
-          disabled={fixtureOpsBusy || !autoFixPreviewMatchesCurrentSettings}
+          disabled={!nodeCapable || fixtureOpsBusy || !autoFixPreviewMatchesCurrentSettings}
         >
           {t.applyAutoFixes}
         </button>
-        <button onClick={() => void handleRollbackAutoFixBackup()} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
+        <button onClick={() => void handleRollbackAutoFixBackup()} style={{ marginLeft: 8 }} disabled={!nodeCapable || fixtureOpsBusy}>
           {t.rollbackFromBackup}
         </button>
+        {!nodeCapable && (
+          <pre style={{ marginTop: 8 }}>
+            Node-only QA/fixture operations are disabled in browser runtime. Use @cnc/core/node in a Node environment.
+          </pre>
+        )}
         {!autoFixPreviewMatchesCurrentSettings && <pre>{t.previewRequired}</pre>}
         {autoFixPreview && (
           <pre>
