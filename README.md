@@ -77,3 +77,11 @@ Use `npm run verify` as the standard gate before shipping changes. It runs:
 2. core test suite
 3. monorepo typecheck
 4. monorepo build
+
+## Local Git Hooks
+
+This repo includes a local pre-commit helper that is intentionally non-blocking:
+
+- Install hook: `npm run setup:hooks`
+- Hook check command: `npm run precommit:check`
+- Current behavior: runs import-boundary guard and prints a reminder to run `npm run verify`
