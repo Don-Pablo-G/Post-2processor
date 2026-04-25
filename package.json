@@ -16,6 +16,7 @@
     "checkpoint:menu": "node ./scripts/checkpoint-menu.mjs",
     "checkpoint:open": "node ./scripts/checkpoint-open.mjs",
     "checkpoint:prune-suggestions": "node ./scripts/checkpoint-prune-suggestions.mjs",
+    "checkpoint:report": "node ./scripts/checkpoint-report.mjs",
     "checkpoint:range": "node ./scripts/checkpoint-range.mjs",
     "checkpoint:since": "node ./scripts/checkpoint-since.mjs",
     "checkpoint:stats": "node ./scripts/checkpoint-stats.mjs",

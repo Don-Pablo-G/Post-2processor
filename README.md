@@ -152,6 +152,12 @@ To run diagnostics across all checkpoint utilities:
 npm run checkpoint:doctor
 ```
 
+To generate a markdown checkpoint status report:
+
+```bash
+npm run checkpoint:report
+```
+
 To get non-destructive suggestions for dense checkpoint streaks:
 
 ```bash
