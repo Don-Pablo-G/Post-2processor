@@ -41,6 +41,7 @@
     "checkpoint:handoff-list": "node ./scripts/checkpoint-handoff-list.mjs",
     "checkpoint:handoff-open": "node ./scripts/checkpoint-handoff-open.mjs",
     "checkpoint:handoff-package": "node ./scripts/checkpoint-handoff-package.mjs",
+    "checkpoint:handoff-ship": "node ./scripts/checkpoint-handoff-ship.mjs",
     "checkpoint:handoff-status": "node ./scripts/checkpoint-handoff-status.mjs",
     "checkpoint:hotspots": "node ./scripts/checkpoint-hotspots.mjs",
     "checkpoint:index": "node ./scripts/checkpoint-index.mjs",

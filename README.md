@@ -767,6 +767,19 @@ Optional example:
 node scripts/checkpoint-handoff-cycle.mjs 5
 ```
 
+To run a stricter handoff ship flow (includes cleanup apply):
+
+```bash
+npm run checkpoint:handoff-ship
+```
+
+Optional example:
+
+```bash
+# keep newest 5 and delete older handoff artifacts
+node scripts/checkpoint-handoff-ship.mjs 5
+```
+
 To view a compact handoff status snapshot:
 
 ```bash
