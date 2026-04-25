@@ -417,6 +417,18 @@ Optional tuning (`commitLimit recentN`):
 node scripts/checkpoint-handoff.mjs 80 12
 ```
 
+To derive likely next tasks from recent checkpoint patterns:
+
+```bash
+npm run checkpoint:backlog
+```
+
+Optional tuning (`commitLimit recentN topN`):
+
+```bash
+node scripts/checkpoint-backlog.mjs 100 16 10
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
