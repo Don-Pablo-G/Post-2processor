@@ -489,6 +489,12 @@ Optional tuning (`commitLimit topN`):
 node scripts/checkpoint-catalog-md.mjs 220 25
 ```
 
+To print a concise checkpoint status snapshot in terminal:
+
+```bash
+npm run checkpoint:status
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
