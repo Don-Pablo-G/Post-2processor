@@ -7,6 +7,7 @@ import {
   buildSetupSheet,
   exportWorkshopFiles,
   format,
+  lint,
   getTemplateLibrary,
   parameterReserveProfiles,
   parameterize,
@@ -35,6 +36,7 @@ import {
 import { isNodeCapable as isNodeCapableNode } from "../src/index.node.js";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { haasNgcProfile as haasNgcProfilePackaged } from "@cnc/profile-haas-ngc";
 
 const haasNgcProfile = {
   id: "haas-ngc",
@@ -922,5 +924,46 @@ describe("core pipeline", () => {
         backupPath: "./manifest.json.bak"
       })
     ).rejects.toThrow("not available from @cnc/core/browser");
+  });
+});
+
+describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
+  it("warns G43 without H on the same block", () => {
+    const ast = parse("G0 G90 G54\nG43 Z0.1\nG43 H2 Z0.2\nM30", haasNgcProfilePackaged);
+    const issues = lint(ast, haasNgcProfilePackaged);
+    expect(issues.some((i) => i.message.includes("G43 without H"))).toBe(true);
+    expect(issues.filter((i) => i.message.includes("G43 without H"))).toHaveLength(1);
+  });
+
+  it("does not warn G43 H on the same block", () => {
+    const ast = parse("G0 G90 G54\nG43 H1 Z0.1\nM30", haasNgcProfilePackaged);
+    const issues = lint(ast, haasNgcProfilePackaged);
+    expect(issues.some((i) => i.message.includes("G43 without H"))).toBe(false);
+  });
+
+  it("warns M6 without T on the same block", () => {
+    const ast = parse("G0 G90\nM6\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 without T"))).toBe(true);
+  });
+
+  it("allows T before M6 on the same block", () => {
+    const ast = parse("G0 G90\nT1 M6\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 without T"))).toBe(false);
+  });
+
+  it("errors on duplicate M30", () => {
+    const ast = parse("M30\nG0 X0\nM30", haasNgcProfilePackaged);
+    const issues = lint(ast, haasNgcProfilePackaged);
+    expect(issues.some((i) => i.severity === "error" && i.message.includes("Duplicate M30"))).toBe(true);
+  });
+
+  it("warns when both M02 and M30 appear", () => {
+    const ast = parse("G0 X0\nM02\nG0 Y0\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("both M02 and M30"))).toBe(true);
+  });
+
+  it("warns when last block is not M02, M30, or M99", () => {
+    const ast = parse("G0 G90 G54\nG0 Z1.", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("Last block has no M02"))).toBe(true);
   });
 });

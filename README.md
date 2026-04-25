@@ -10,7 +10,7 @@ Haas NGC-first starter project for:
 
 - `apps/desktop` - React + Vite desktop UI scaffold
 - `packages/core` - parser/formatter/parameterizer/simulator/lint contracts
-- `packages/profiles/haas-ngc` - Haas NGC profile starter
+- `packages/profiles/haas-ngc` - Haas NGC profile (`haasNgcProfile`) with mill-oriented `lint()` rules (e.g. `G43`/`H`, `M6`/`T`, program end)
 - `packages/test-fixtures` - fixture inputs for regression tests
 
 ## Quick Start
