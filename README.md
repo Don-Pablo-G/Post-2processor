@@ -429,6 +429,18 @@ Optional tuning (`commitLimit recentN topN`):
 node scripts/checkpoint-backlog.mjs 100 16 10
 ```
 
+To export a compact end-of-day checkpoint markdown digest:
+
+```bash
+npm run checkpoint:digest
+```
+
+Optional tuning (`commitLimit recentN`):
+
+```bash
+node scripts/checkpoint-digest.mjs 140 24
+```
+
 To prune old generated checkpoint reports (default keep 20):
 
 ```bash
