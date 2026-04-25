@@ -17,7 +17,7 @@ Haas NGC-first starter project for:
 
 ```bash
 npm install
-npm run test
+npm run verify
 npm run dev
 ```
 
@@ -46,7 +46,7 @@ This repository is configured for local checkpoint snapshots and automatic check
 - Hook script: `.cursor/hooks/auto-checkpoint.mjs`
 - Snapshot folder: `.checkpoints/` (gitignored)
 
-Successful verification commands (`npm run test`, `npm run typecheck`, `npm run build`) trigger checkpoint behavior.
+Successful verification commands (`npm run test`, `npm run typecheck`, `npm run build`, `npm run verify`) trigger checkpoint behavior.
 
 ## Import Boundary Guard
 
@@ -68,3 +68,12 @@ Current backend includes:
 - canned cycle timing handlers (`G73`, `G81` to `G89`)
 - feed/rapid based cycle-time estimate
 - tooling report generation with lowest-Z extraction and 80mm thermal printable output
+
+## Verification Command
+
+Use `npm run verify` as the standard gate before shipping changes. It runs:
+
+1. import boundary checks
+2. core test suite
+3. monorepo typecheck
+4. monorepo build

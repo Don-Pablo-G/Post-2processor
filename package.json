@@ -13,6 +13,7 @@
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",
     "test": "npm run --workspace @cnc/core test",
     "typecheck": "npm run guard:imports && npm run --workspaces typecheck",
+    "verify": "npm run guard:imports && npm run test && npm run typecheck && npm run build",
     "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs"
   },
   "devDependencies": {
