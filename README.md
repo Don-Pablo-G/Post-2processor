@@ -176,6 +176,17 @@ Desktop UI note:
 - Successful export status now echoes policy context (`preset`, `source`, `controller`) for quick confirmation.
 - Exported timeline/findings headers include both `policyPreset` and `policyPresetSource` for audit traceability.
 
+Policy UX docs:
+- Smoke checklist: `POLICY_UX_SMOKE_TEST.md`
+- Local UI event schema: `POLICY_UI_EVENT_SCHEMA.md`
+
+### Policy UX Release Notes
+
+- Added named policy presets with persisted per-controller defaults and source states (`saved|bootstrap|manual`).
+- Added one-click actions for save, save+run, revert-to-default, and copy policy/export context.
+- Added keyboard shortcuts (`Ctrl+Shift+R`, `Ctrl+Shift+J`) and manual-preset drift warning on controller changes.
+- Added export/setup-sheet policy context traceability (`policyPreset`, `policyPresetSource`, controller).
+
 For a one-command local readiness summary (branch state, recent checkpoints, and verify result), run:
 
 ```bash
