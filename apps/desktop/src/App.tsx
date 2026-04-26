@@ -105,6 +105,7 @@ const UI_TEXT: Record<
     policyPresetBalanced: string;
     policyPresetPermissive: string;
     policyPresetPersistedHint: string;
+    policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
     runJobCheckStatus: string;
     jobCheckCard: string;
@@ -213,6 +214,7 @@ const UI_TEXT: Record<
     policyPresetBalanced: "Zrównoważony",
     policyPresetPermissive: "Permisywny",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
+    policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
     runJobCheckStatus: "Status Job Check",
     jobCheckCard: "Wynik Job Check",
@@ -320,6 +322,7 @@ const UI_TEXT: Record<
     policyPresetBalanced: "Balanced",
     policyPresetPermissive: "Permissive",
     policyPresetPersistedHint: "Saved controller default preset is active",
+    policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
     runJobCheckStatus: "Job Check status",
     jobCheckCard: "Job Check result",
@@ -539,6 +542,14 @@ export function App() {
   );
   const isPersistedPolicyPresetActive =
     persistedPolicyPreset !== undefined && persistedPolicyPreset === jobCheckPolicyPreset;
+  const hasUnsavedPolicyPresetOverride =
+    persistedPolicyPreset !== undefined && persistedPolicyPreset !== jobCheckPolicyPreset;
+  const currentPolicyPresetLabel =
+    jobCheckPolicyPreset === "strict"
+      ? t.policyPresetStrict
+      : jobCheckPolicyPreset === "permissive"
+        ? t.policyPresetPermissive
+        : t.policyPresetBalanced;
   const persistedPolicyPresetLabel =
     persistedPolicyPreset === "strict"
       ? t.policyPresetStrict
@@ -1625,6 +1636,11 @@ export function App() {
         {isPersistedPolicyPresetActive ? (
           <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
             {`${t.policyPresetPersistedHint}: ${persistedPolicyPresetLabel}`}
+          </p>
+        ) : null}
+        {hasUnsavedPolicyPresetOverride ? (
+          <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
+            {`${t.policyPresetUnsavedOverrideHint}: ${currentPolicyPresetLabel}`}
           </p>
         ) : null}
         <button onClick={() => void handleRunJobCheck()}>{t.runJobCheck}</button>
