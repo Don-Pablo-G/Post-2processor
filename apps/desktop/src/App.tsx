@@ -112,6 +112,7 @@ const UI_TEXT: Record<
     policyPresetSourceSaved: string;
     policyPresetSourceBootstrap: string;
     policyPresetSourceManual: string;
+    policyPresetSourceHelpTooltip: string;
     policyPresetPersistedHint: string;
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
@@ -229,6 +230,8 @@ const UI_TEXT: Record<
     policyPresetSourceSaved: "zapisany",
     policyPresetSourceBootstrap: "bootstrap",
     policyPresetSourceManual: "ręczny",
+    policyPresetSourceHelpTooltip:
+      "zapisany = z template.json, bootstrap = domyślny wg sterowania, ręczny = zmieniony w bieżącej sesji",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
@@ -345,6 +348,8 @@ const UI_TEXT: Record<
     policyPresetSourceSaved: "saved",
     policyPresetSourceBootstrap: "bootstrap",
     policyPresetSourceManual: "manual",
+    policyPresetSourceHelpTooltip:
+      "saved = loaded from template.json, bootstrap = controller default, manual = changed in current session",
     policyPresetPersistedHint: "Saved controller default preset is active",
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
@@ -1692,6 +1697,13 @@ export function App() {
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>{t.policyPresetHelp}</p>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
           {`${t.policyPresetSourceLabel}: ${policyPresetSourceLabel}`}
+          <span
+            title={t.policyPresetSourceHelpTooltip}
+            style={{ marginLeft: 6, cursor: "help", opacity: 0.9 }}
+            aria-label={t.policyPresetSourceHelpTooltip}
+          >
+            ⓘ
+          </span>
         </p>
         {policyPresetHintState.isPersistedActive ? (
           <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
