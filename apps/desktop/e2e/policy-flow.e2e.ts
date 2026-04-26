@@ -97,3 +97,28 @@ test("policy audit trail records transitions with timestamp and source", async (
   await expect(historyItems.first()).toBeVisible();
   await expect(page.getByText(/saved_to_template/i)).toBeVisible();
 });
+
+test("copy context actions write expected policy and export payloads", async ({ page }) => {
+  await page.addInitScript(() => {
+    let copied = "";
+    const nav = navigator as Navigator & { clipboard: { writeText: (value: string) => Promise<void> } };
+    Object.defineProperty(nav, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          copied = value;
+          (window as Window & { __CNC_E2E_LAST_COPIED__?: string }).__CNC_E2E_LAST_COPIED__ = value;
+        }
+      }
+    });
+    (window as Window & { __CNC_E2E_LAST_COPIED__?: string }).__CNC_E2E_LAST_COPIED__ = copied;
+  });
+  await openPolicyPanel(page);
+
+  await page.getByRole("button", { name: "Copy policy context" }).click();
+  const copiedPolicy = page.locator("body");
+  await expect(copiedPolicy).toContainText(/Copied policy context:\s*POLICY PRESET:/i);
+
+  await page.getByRole("button", { name: "Copy full export context" }).click();
+  await expect(copiedPolicy).toContainText(/Copied full export context:\s*EXPORT CONTEXT/i);
+});
