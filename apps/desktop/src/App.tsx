@@ -634,6 +634,9 @@ export function App() {
     if (uiDefaults.advancedQaExpanded !== undefined) {
       setAdvancedQaExpanded(Boolean(uiDefaults.advancedQaExpanded));
     }
+    if (uiDefaults.jobCheckPolicyPreset) {
+      setJobCheckPolicyPreset(uiDefaults.jobCheckPolicyPreset);
+    }
   }, [templateJson, detectedControllerProfile]);
 
   useEffect(() => {
@@ -1058,6 +1061,7 @@ export function App() {
               autoRunTestsAfterImport?: boolean;
               operatorReviewMode?: boolean;
               advancedQaExpanded?: boolean;
+              jobCheckPolicyPreset?: JobCheckPolicyPreset;
             }
           >;
         };
@@ -1087,7 +1091,8 @@ export function App() {
               autoValidateAfterImport,
               autoRunTestsAfterImport,
               operatorReviewMode,
-              advancedQaExpanded
+              advancedQaExpanded,
+              jobCheckPolicyPreset
             }
           }
         }
@@ -1143,6 +1148,7 @@ export function App() {
       setAutoRunTestsAfterImport(false);
       setOperatorReviewMode(false);
       setAdvancedQaExpanded(true);
+      setJobCheckPolicyPreset("balanced");
       setShowOnlyBlockers(false);
       setTimelineFilters({ alarms: true, flow: true, control: true });
       setExportStatus("UI defaults reset for current controller profile.");
@@ -1919,6 +1925,7 @@ function readUiDefaultsFromTemplateJson(
       autoRunTestsAfterImport?: boolean;
       operatorReviewMode?: boolean;
       advancedQaExpanded?: boolean;
+      jobCheckPolicyPreset?: JobCheckPolicyPreset;
     }
   | undefined {
   try {
@@ -1938,6 +1945,7 @@ function readUiDefaultsFromTemplateJson(
             autoRunTestsAfterImport?: boolean;
             operatorReviewMode?: boolean;
             advancedQaExpanded?: boolean;
+            jobCheckPolicyPreset?: JobCheckPolicyPreset;
           }
         >;
       };
