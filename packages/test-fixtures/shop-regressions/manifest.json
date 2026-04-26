@@ -502,6 +502,16 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "haas_s0_spindle_warning_comment_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_s0_spindle_warning_comment_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
