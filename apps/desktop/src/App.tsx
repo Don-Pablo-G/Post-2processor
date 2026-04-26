@@ -2316,6 +2316,7 @@ function emitPolicyPresetUiEvent(
 ): void {
   if (!derivePolicyUiEventEmissionDecision(enabled).emit) return;
   const payload = {
+    schemaVersion: 1,
     event: eventName,
     ...detail,
     timestampIso: new Date().toISOString()
