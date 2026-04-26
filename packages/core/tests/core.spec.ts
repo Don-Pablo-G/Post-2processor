@@ -686,6 +686,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(true);
   });
 
+  it("adds simulation finding for macro function domain errors", async () => {
+    const input = "#120=LOG[-1]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "domain_error_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("domain error"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(true);
+  });
+
   it("adds simulation finding for fanuc subprogram target miss", async () => {
     const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
     const ast = parse(input, haasNgcProfile);

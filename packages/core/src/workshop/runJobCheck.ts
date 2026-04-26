@@ -18,6 +18,7 @@ const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
   mainM99: { enabled: true, severity: "blocker" },
   callDepthLimit: { enabled: true, severity: "warning" },
   unfinishedReturnPath: { enabled: true, severity: "blocker" },
+  functionDomainError: { enabled: true, severity: "warning" },
   unsupportedM97: { enabled: true, severity: "warning" },
   unsupportedFunction: { enabled: true, severity: "warning" },
   subprogramTargetMiss: { enabled: true, severity: "warning" },
@@ -32,6 +33,7 @@ const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
     "SIM_RAPID_Z_PLUNGE",
     "SIM_GOTO_TARGET_MISS",
     "SIM_MAX_STEPS_LIMIT",
+    "SIM_FUNCTION_DOMAIN_ERROR",
     "SIM_SUBPROGRAM_TARGET_MISS",
     "SIM_UNSUPPORTED_M97",
     "SIM_UNSUPPORTED_FUNCTION"
@@ -205,6 +207,15 @@ function buildSimulationFindings(
       "unfinishedReturnPath",
       "SIM_UNFINISHED_RETURN_PATH",
       "Simulation ended with unfinished subprogram return path.",
+      simulation.trace.at(-1)?.blockIndex
+    );
+  }
+  const functionDomainErrorWarning = simulation.warnings.find((w) => w.includes("domain error"));
+  if (functionDomainErrorWarning) {
+    pushPolicyFinding(
+      "functionDomainError",
+      "SIM_FUNCTION_DOMAIN_ERROR",
+      functionDomainErrorWarning,
       simulation.trace.at(-1)?.blockIndex
     );
   }

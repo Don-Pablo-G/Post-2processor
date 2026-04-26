@@ -524,6 +524,17 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_GOTO_TARGET_MISS"]
       }
+    },
+    {
+      "id": "haas_function_domain_error_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_function_domain_error_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": true,
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_FUNCTION_DOMAIN_ERROR"]
+      }
     }
   ]
 }
