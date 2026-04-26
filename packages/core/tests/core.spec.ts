@@ -631,6 +631,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_M97")).toBe(true);
   });
 
+  it("adds simulation finding for unsupported fanuc macro function", async () => {
+    const input = "#100=EXP[1]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_fn_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("Function EXP is not supported in fanuc mode"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(true);
+  });
+
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
     const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json"))) as {
       fixtures: Array<{
