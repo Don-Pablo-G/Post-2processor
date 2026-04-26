@@ -941,6 +941,27 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(issues.some((i) => i.message.includes("G43 without H"))).toBe(false);
   });
 
+  it("warns first G43 activation with no Z on same block", () => {
+    const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
+    ).toBe(true);
+  });
+
+  it("warns first G43 activation with Z0 literal", () => {
+    const ast = parse("T1 M6\nG43 H1 Z0.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
+    ).toBe(true);
+  });
+
+  it("does not warn first G43 activation with non-zero Z move", () => {
+    const ast = parse("T1 M6\nG43 H1 Z20.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
+    ).toBe(false);
+  });
+
   it("warns M6 without T on the same block", () => {
     const ast = parse("G0 G90\nM6\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 without T"))).toBe(true);
@@ -1007,6 +1028,27 @@ describe("Haas NGC simulation extras", () => {
     const r = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "haas-ngc" });
     expect(r.state.variables["#100"]).toBe(1);
     expect(r.state.variables["#101"]).toBe(1);
+  });
+
+  it("handles IF…THEN formatting variants in haas-ngc mode", () => {
+    const ast = parse(
+      "#100=0\nif[#100 eq 0]then#100=1\nIF [#100 EQ 1] THEN #101=[#100+2]\nM30",
+      haasNgcProfile
+    );
+    const r = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    expect(r.state.variables["#100"]).toBe(1);
+    expect(r.state.variables["#101"]).toBe(3);
+  });
+
+  it("applies IF…THEN and still runs trailing words on the same block", () => {
+    const ast = parse(
+      "#100=0\nIF [#100 EQ 0] THEN #100=[#100+1] G0 Z-10.\n#101=#100\nM30",
+      haasNgcProfile
+    );
+    const r = simulate(ast, {}, { maxSteps: 50, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    expect(r.state.variables["#100"]).toBe(1);
+    expect(r.state.variables["#101"]).toBe(1);
+    expect(r.warnings.some((w) => w.includes("rapid (G0) Z move down"))).toBe(true);
   });
 
   it("warns on rapid G0 Z plunge in haas-ngc mode", () => {

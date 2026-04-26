@@ -2,6 +2,27 @@ import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
 const root = process.cwd();
+const shadowPolicy = {
+  allowedShadowedJsRelPaths: new Set([
+    "packages/core/src/api.js",
+    "packages/core/src/formatter/simpleFormatter.js",
+    "packages/core/src/index.js",
+    "packages/core/src/lints/simpleLint.js",
+    "packages/core/src/parameterizer/suggest.js",
+    "packages/core/src/parser/simpleParser.js",
+    "packages/core/src/tooling/report.js",
+    "packages/core/src/workshop/advisor.js",
+    "packages/core/src/workshop/export.js",
+    "packages/core/src/workshop/exportBundle.js",
+    "packages/core/src/workshop/parameterProfiles.js",
+    "packages/core/src/workshop/proveout.js",
+    "packages/core/src/workshop/runJobCheck.js",
+    "packages/core/src/workshop/setupSheet.js",
+    "packages/core/src/workshop/shopFixtures.js",
+    "packages/core/src/workshop/templates.js"
+  ]),
+  deniedShadowedJsRelPaths: new Set(["packages/core/src/simulator/simpleSimulator.js"])
+};
 const boundaryRules = [
   {
     label: "browser app imports",
@@ -62,11 +83,11 @@ async function main() {
     }
   }
 
-  const shadowedJsFiles = await findShadowedSourceJsFiles();
-  if (shadowedJsFiles.length > 0) {
+  const shadowingViolations = await findShadowingPolicyViolations();
+  if (shadowingViolations.length > 0) {
     process.stderr.write("Source JS shadowing violations found:\n");
-    for (const file of shadowedJsFiles) {
-      process.stderr.write(`- ${file} (remove checked-in .js sibling of a .ts source)\n`);
+    for (const violation of shadowingViolations) {
+      process.stderr.write(`- ${violation}\n`);
     }
     process.exit(1);
   }
@@ -89,11 +110,13 @@ async function main() {
   process.stdout.write("Import boundaries verified.\n");
 }
 
-async function findShadowedSourceJsFiles() {
+function toPosixPath(filePath) {
+  return filePath.replaceAll(path.sep, "/");
+}
+
+async function findShadowingPolicyViolations() {
+  const violations = [];
   const shadowed = [];
-  const forbiddenShadowedJsRelPaths = new Set([
-    path.join("packages", "core", "src", "simulator", "simpleSimulator.js")
-  ]);
   const candidateRoots = [path.join(root, "packages"), path.join(root, "apps")];
 
   for (const candidateRoot of candidateRoots) {
@@ -113,20 +136,35 @@ async function findShadowedSourceJsFiles() {
       } catch {
         continue;
       }
+      const allFiles = new Set(srcFiles);
       for (const file of srcFiles) {
         if (!file.endsWith(".js")) continue;
         const siblingTs = `${file.slice(0, -3)}.ts`;
         const siblingTsx = `${file.slice(0, -3)}.tsx`;
-        const allFiles = new Set(srcFiles);
         if (allFiles.has(siblingTs) || allFiles.has(siblingTsx)) {
-          const rel = path.relative(root, file);
-          if (forbiddenShadowedJsRelPaths.has(rel)) shadowed.push(rel);
+          shadowed.push(toPosixPath(path.relative(root, file)));
         }
       }
     }
   }
 
-  return shadowed.sort();
+  for (const relPath of shadowed) {
+    if (shadowPolicy.deniedShadowedJsRelPaths.has(relPath)) {
+      violations.push(`${relPath} (denied: remove this checked-in JS sibling)`);
+      continue;
+    }
+    if (!shadowPolicy.allowedShadowedJsRelPaths.has(relPath)) {
+      violations.push(`${relPath} (unlisted: add to allowlist intentionally or remove it)`);
+    }
+  }
+
+  for (const relPath of shadowPolicy.allowedShadowedJsRelPaths) {
+    if (!shadowed.includes(relPath)) {
+      violations.push(`${relPath} (allowlist drift: file missing; update shadow policy set)`);
+    }
+  }
+
+  return [...new Set(violations)].sort();
 }
 
 main().catch((error) => {

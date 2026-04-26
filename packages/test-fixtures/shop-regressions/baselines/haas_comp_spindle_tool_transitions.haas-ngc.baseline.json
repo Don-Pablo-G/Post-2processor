@@ -1,0 +1,15 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_comp_spindle_tool_transitions.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 22,
+    "estimatedCycleTimeSeconds": 33.374629,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
