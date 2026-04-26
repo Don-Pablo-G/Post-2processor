@@ -8,7 +8,8 @@ import type {
   RunJobCheckResult,
   SafetyFinding,
   SimulationFindingPolicy,
-  ExportBlockingPolicy
+  ExportBlockingPolicy,
+  JobCheckPolicyPreset
 } from "../types.js";
 
 const dynamicImport = new Function("path", "return import(path);") as (path: string) => Promise<unknown>;
@@ -44,11 +45,56 @@ const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
   ]
 };
 
+const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPolicy> = {
+  strict: {
+    ...conservativeShopSafetyPolicy,
+    rapidZPlunge: { enabled: true, severity: "blocker" },
+    functionDomainError: { enabled: true, severity: "blocker" },
+    cycleParameterIssue: { enabled: true, severity: "blocker" },
+    gotoTargetMiss: { enabled: true, severity: "blocker" },
+    controlFlowOrphanEnd: { enabled: true, severity: "blocker" }
+  },
+  balanced: conservativeShopSafetyPolicy,
+  permissive: {
+    ...conservativeShopSafetyPolicy,
+    rapidZPlunge: { enabled: true, severity: "warning" },
+    functionDomainError: { enabled: true, severity: "warning" },
+    cycleParameterIssue: { enabled: true, severity: "warning" },
+    gotoTargetMiss: { enabled: true, severity: "warning" },
+    controlFlowOrphanEnd: { enabled: false, severity: "warning" },
+    maxStepsLimit: { enabled: false, severity: "warning" }
+  }
+};
+
+const exportBlockingPolicyByPreset: Record<JobCheckPolicyPreset, ExportBlockingPolicy> = {
+  strict: {
+    includeAllBlockers: true,
+    blockedFindingCodes: [
+      "SIM_RAPID_Z_PLUNGE",
+      "SIM_FUNCTION_DOMAIN_ERROR",
+      "SIM_CYCLE_PARAMETER_ISSUE",
+      "SIM_GOTO_TARGET_MISS",
+      "SIM_CONTROL_FLOW_ORPHAN_END",
+      "SIM_SUBPROGRAM_TARGET_MISS",
+      "SIM_UNSUPPORTED_M97",
+      "SIM_UNSUPPORTED_FUNCTION",
+      "SIM_MAX_STEPS_LIMIT"
+    ]
+  },
+  balanced: conservativeExportBlockingPolicy,
+  permissive: {
+    includeAllBlockers: false,
+    blockedFindingCodes: []
+  }
+};
+
 function resolveSimulationFindingPolicy(input: RunJobCheckInput): SimulationFindingPolicy {
+  const preset = input.policyPreset ?? "balanced";
+  const basePolicy = simulationPolicyByPreset[preset];
   const override = input.simulationFindingPolicy;
-  if (!override) return conservativeShopSafetyPolicy;
-  const merged = { ...conservativeShopSafetyPolicy };
-  for (const key of Object.keys(conservativeShopSafetyPolicy) as Array<keyof SimulationFindingPolicy>) {
+  if (!override) return basePolicy;
+  const merged = { ...basePolicy };
+  for (const key of Object.keys(basePolicy) as Array<keyof SimulationFindingPolicy>) {
     const overrideRule = override[key];
     if (overrideRule) {
       merged[key] = { ...merged[key], ...overrideRule };
@@ -58,11 +104,13 @@ function resolveSimulationFindingPolicy(input: RunJobCheckInput): SimulationFind
 }
 
 function resolveExportBlockingPolicy(input: RunJobCheckInput): ExportBlockingPolicy {
+  const preset = input.policyPreset ?? "balanced";
+  const basePolicy = exportBlockingPolicyByPreset[preset];
   const override = input.exportBlockingPolicy;
-  if (!override) return conservativeExportBlockingPolicy;
+  if (!override) return basePolicy;
   return {
-    includeAllBlockers: override.includeAllBlockers ?? conservativeExportBlockingPolicy.includeAllBlockers,
-    blockedFindingCodes: override.blockedFindingCodes ?? conservativeExportBlockingPolicy.blockedFindingCodes
+    includeAllBlockers: override.includeAllBlockers ?? basePolicy.includeAllBlockers,
+    blockedFindingCodes: override.blockedFindingCodes ?? basePolicy.blockedFindingCodes
   };
 }
 

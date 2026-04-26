@@ -193,6 +193,8 @@ export type ExportBlockingPolicyOverride = Partial<{
   blockedFindingCodes: string[];
 }>;
 
+export type JobCheckPolicyPreset = "strict" | "balanced" | "permissive";
+
 export type CriticalEvent = {
   kind:
     | "first_motion"
@@ -460,6 +462,7 @@ export type RunJobCheckInput = {
   initialState?: Record<string, number>;
   advisorOptions?: ProgramAdvisorOptions;
   simulationLimits?: Partial<SimulatorLimits>;
+  policyPreset?: JobCheckPolicyPreset;
   simulationFindingPolicy?: SimulationFindingPolicyOverride;
   exportBlockingPolicy?: ExportBlockingPolicyOverride;
   exportOptions?: {
