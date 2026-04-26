@@ -608,6 +608,16 @@ export function App() {
       : policyPresetHintState.persistedPreset === "permissive"
         ? t.policyPresetPermissive
         : t.policyPresetBalanced;
+  const setupSheetWithPolicyContext = useMemo(
+    () =>
+      addPolicyPresetContextToSetupSheet(
+        setupSheet,
+        policyPresetHintState.currentPreset,
+        policyPresetHintState.source,
+        detectedControllerProfile
+      ),
+    [setupSheet, policyPresetHintState.currentPreset, policyPresetHintState.source, detectedControllerProfile]
+  );
   const fixtureTargetPaths = useMemo(() => {
     const base = fixturesRoot.trim();
     const fileStem = sanitizeFixtureName(fixtureFilename.trim() || fixtureId.trim() || "fixture");
@@ -773,8 +783,8 @@ export function App() {
       const exported = await exportWorkshopFiles({
         baseDirectory: exportFolder,
         baseName: exportBaseName,
-        setupSheetTxt: setupSheet.exportTxt,
-        setupSheetMarkdown: setupSheet.exportMarkdown,
+        setupSheetTxt: setupSheetWithPolicyContext.exportTxt,
+        setupSheetMarkdown: setupSheetWithPolicyContext.exportMarkdown,
         proveoutCode: proveout.code,
         fixtureSummaryTxt: fixtureHealth?.summaryTxt,
         fixtureSummaryMarkdown: fixtureHealth?.summaryMarkdown,
@@ -1673,9 +1683,9 @@ export function App() {
           </>
         )}
         <h3>{t.setupSheet}</h3>
-        <pre>{setupSheet.printable80mm}</pre>
-        <pre>{setupSheet.exportTxt}</pre>
-        <pre>{setupSheet.exportMarkdown}</pre>
+        <pre>{setupSheetWithPolicyContext.printable80mm}</pre>
+        <pre>{setupSheetWithPolicyContext.exportTxt}</pre>
+        <pre>{setupSheetWithPolicyContext.exportMarkdown}</pre>
         <h3>{t.proveout}</h3>
         <pre>{proveout.code}</pre>
         <pre>{proveoutApplied.code}</pre>
@@ -2067,6 +2077,21 @@ export function App() {
       </section>
     </main>
   );
+}
+
+function addPolicyPresetContextToSetupSheet(
+  sheet: { printable80mm: string; exportTxt: string; exportMarkdown: string },
+  preset: JobCheckPolicyPreset,
+  source: "saved" | "bootstrap" | "manual",
+  controller: ControllerProfileKey
+): { printable80mm: string; exportTxt: string; exportMarkdown: string } {
+  const contextLineTxt = `POLICY PRESET: ${preset} (${source}) | CONTROLLER: ${controller}`;
+  const contextLineMd = `- Policy preset: \`${preset}\` (\`${source}\`)`;
+  return {
+    printable80mm: `${sheet.printable80mm}\n${contextLineTxt}`,
+    exportTxt: `${sheet.exportTxt}\n${contextLineTxt}`,
+    exportMarkdown: `${sheet.exportMarkdown}\n${contextLineMd}`
+  };
 }
 
 function computeLineStarts(source: string): number[] {
