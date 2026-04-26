@@ -46,6 +46,9 @@ Validate stored snapshots against current runtime behavior:
 npm run check:shop-baselines
 ```
 
+Drift failures print a field-level diff preview (expected vs actual) to make
+snapshot changes quickly reviewable.
+
 If drift is intentional, refresh snapshots in place:
 
 ```bash
