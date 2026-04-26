@@ -53,3 +53,11 @@ Use this quick checklist after policy-preset UI changes in `apps/desktop`.
 
 - All checks complete without runtime errors.
 - No regressions in `npm run verify`.
+- `desktop-e2e` GitHub Actions job passes (required gate on PRs/main).
+
+## Current E2E Coverage Snapshot
+
+- `Ctrl+Shift+J` save+run path updates source and Job Check status.
+- Policy history panel contains timestamped transition entries with event/source tuple.
+- Copy actions (`Copy policy context`, `Copy full export context`) emit expected status payload lines.
+- Lock mode prevents keyboard shortcut mutations (`Ctrl+Shift+R/J`) while active.

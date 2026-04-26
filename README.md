@@ -179,6 +179,14 @@ Desktop UI note:
 Policy UX docs:
 - Smoke checklist: `POLICY_UX_SMOKE_TEST.md`
 - Local UI event schema: `POLICY_UI_EVENT_SCHEMA.md`
+- CI gate: desktop Playwright policy suite now runs as a required `desktop-e2e` workflow job.
+
+Policy E2E coverage includes:
+- manual preset selection -> `source=manual`
+- save+run flows via button and `Ctrl+Shift+J`
+- revert via button/shortcut and lock-mode shortcut blocking
+- export confirmation card context and copy-context actions
+- session policy history entry shape (timestamp + event + preset/source/controller)
 
 ### Policy UX Release Notes
 
