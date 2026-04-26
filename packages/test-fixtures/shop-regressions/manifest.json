@@ -400,6 +400,16 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_MAIN_M99"]
       }
+    },
+    {
+      "id": "haas_rapid_z_safe_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_rapid_z_safe_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
