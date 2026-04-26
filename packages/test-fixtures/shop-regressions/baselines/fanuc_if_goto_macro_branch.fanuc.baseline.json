@@ -1,0 +1,15 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_if_goto_macro_branch.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 12,
+    "estimatedCycleTimeSeconds": 5.808282,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
