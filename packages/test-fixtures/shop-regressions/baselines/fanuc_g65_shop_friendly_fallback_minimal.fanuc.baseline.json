@@ -1,0 +1,20 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_g65_shop_friendly_fallback_minimal.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "M30 appears before the last block."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 5,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
