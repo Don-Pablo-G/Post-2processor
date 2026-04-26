@@ -693,6 +693,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_GOTO_TARGET_MISS")).toBe(true);
   });
 
+  it("adds simulation finding when simulation hits maxSteps limit", async () => {
+    const input = "G0 X0\nG1 X1\nG1 X2\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc", maxSteps: 2 },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "max_steps_limit_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("maxSteps limit before program end"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_MAX_STEPS_LIMIT")).toBe(true);
+  });
+
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
     const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json"))) as {
       fixtures: Array<{

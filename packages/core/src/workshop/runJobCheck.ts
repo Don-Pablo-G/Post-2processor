@@ -190,6 +190,14 @@ function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): S
       blockIndex: simulation.trace.at(-1)?.blockIndex
     });
   }
+  if (simulation.warnings.some((w) => w.includes("maxSteps limit before program end"))) {
+    findings.push({
+      severity: "warning",
+      code: "SIM_MAX_STEPS_LIMIT",
+      message: "Simulation reached maxSteps limit before program end.",
+      blockIndex: simulation.trace.at(-1)?.blockIndex
+    });
+  }
   return findings;
 }
 
