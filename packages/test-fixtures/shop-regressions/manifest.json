@@ -47,7 +47,8 @@
       "expectations": {
         "expectsMainM99": false,
         "expectsSimulationWarnings": true,
-        "expectsSimulationFindings": false
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_RAPID_Z_PLUNGE"]
       }
     },
     {

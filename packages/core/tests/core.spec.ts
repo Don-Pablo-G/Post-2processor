@@ -669,6 +669,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(true);
   });
 
+  it("adds simulation finding for haas rapid Z plunge warning", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "rapid_z_plunge_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("rapid (G0) Z move down"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
+  });
+
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
     const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json"))) as {
       fixtures: Array<{
