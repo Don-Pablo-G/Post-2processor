@@ -1,20 +1,24 @@
 import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+async function openPolicyPanel(page: Page): Promise<void> {
+  await page.goto("/");
+  await expect(page.getByText(/safety policy preset/i)).toBeVisible();
+}
 
 test("manual preset change marks source as manual", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByText("Safety policy preset")).toBeVisible();
+  await openPolicyPanel(page);
 
-  const presetSelect = page.locator("label:has-text('Safety policy preset') select");
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
   await presetSelect.selectOption("permissive");
 
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 });
 
 test("save-and-run and shortcut revert update source state", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByText("Safety policy preset")).toBeVisible();
+  await openPolicyPanel(page);
 
-  const presetSelect = page.locator("label:has-text('Safety policy preset') select");
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 
@@ -36,7 +40,7 @@ test("export shows policy context confirmation card", async ({ page }) => {
         artifactCount: 4
       };
   });
-  await page.goto("/");
+  await openPolicyPanel(page);
 
   await page.getByRole("button", { name: "Export now" }).click();
   await expect(page.getByText("Export policy context")).toBeVisible();
@@ -48,9 +52,9 @@ test("export shows policy context confirmation card", async ({ page }) => {
 });
 
 test("operator lock mode disables manual preset and revert controls", async ({ page }) => {
-  await page.goto("/");
+  await openPolicyPanel(page);
 
-  const presetSelect = page.locator("label:has-text('Safety policy preset') select");
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
   const revertButton = page.getByRole("button", { name: "Revert to controller default preset" });
   const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
 
