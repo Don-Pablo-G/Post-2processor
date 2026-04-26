@@ -1,0 +1,17 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_m97_not_supported_comment_minimal.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 1,
+    "warnings": [
+      "M97 local subprogram call is not supported in fanuc mode (block 1)."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
