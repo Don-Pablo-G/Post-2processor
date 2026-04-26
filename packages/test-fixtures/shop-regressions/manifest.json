@@ -440,6 +440,16 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "haas_g42_with_d_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_g42_with_d_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
