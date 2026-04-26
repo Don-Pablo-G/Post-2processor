@@ -1,0 +1,20 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_duplicate_o_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Duplicate program label O9412 — subprogram/call targets may be ambiguous."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
