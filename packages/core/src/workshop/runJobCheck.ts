@@ -182,6 +182,7 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
         timestampIso: new Date().toISOString(),
         controller: input.simulationLimits?.controllerMode ?? "haas-ngc",
         policyPreset: input.policyPreset ?? "balanced",
+        policyPresetSource: "unknown",
         subprogramTargetPolicy: input.simulationLimits?.subprogramTargetPolicy,
         logSemantics: input.simulationLimits?.logSemantics,
         score: advisor.readyToRunScore,
