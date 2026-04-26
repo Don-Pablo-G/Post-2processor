@@ -45,3 +45,9 @@ Validate stored snapshots against current runtime behavior:
 ```bash
 npm run check:shop-baselines
 ```
+
+If drift is intentional, refresh snapshots in place:
+
+```bash
+npm run check:shop-baselines:update
+```

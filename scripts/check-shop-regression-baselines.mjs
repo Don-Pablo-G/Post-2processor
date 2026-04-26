@@ -1,4 +1,4 @@
-import { access, readdir, readFile } from "node:fs/promises";
+import { access, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
@@ -8,6 +8,7 @@ const fixturesRoot = path.join(root, "packages", "test-fixtures");
 const baselinesDir = path.join(fixturesRoot, "shop-regressions", "baselines");
 const coreDistPath = path.join(root, "packages", "core", "dist", "src", "index.node.js");
 const haasProfileDistPath = path.join(root, "packages", "profiles", "haas-ngc", "dist", "index.js");
+const updateMode = process.argv.includes("--update");
 
 function fail(message) {
   throw new Error(message);
@@ -82,6 +83,7 @@ async function main() {
   if (baselineFiles.length === 0) fail("No baseline files found.");
 
   const driftMessages = [];
+  const updatedBaselines = [];
   for (const baselineFile of baselineFiles) {
     const baselineRaw = await readFile(baselineFile, "utf8");
     const baseline = JSON.parse(baselineRaw);
@@ -95,10 +97,22 @@ async function main() {
     const actual = computeSummary(core, profile, source, baseline.fixture, controllerMode);
     const expected = normalizeSummary(baseline);
     if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      if (updateMode) {
+        await writeFile(`${baselineFile}`, `${JSON.stringify(actual, null, 2)}\n`, "utf8");
+        updatedBaselines.push(path.relative(root, baselineFile));
+        continue;
+      }
       driftMessages.push(
         `${path.relative(root, baselineFile)} drifted (rerun smoke and refresh baseline JSON if change is intentional).`
       );
     }
+  }
+
+  if (updateMode) {
+    process.stdout.write(
+      `Shop regression baselines refreshed (${updatedBaselines.length}/${baselineFiles.length} snapshots updated).\n`
+    );
+    return;
   }
 
   if (driftMessages.length > 0) {

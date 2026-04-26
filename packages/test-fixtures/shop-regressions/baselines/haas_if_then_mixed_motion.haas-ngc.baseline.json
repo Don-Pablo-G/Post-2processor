@@ -1,0 +1,24 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_if_then_mixed_motion.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Duplicate sequence number N#100 — GOTO/M97 targets may be ambiguous."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 16,
+    "estimatedCycleTimeSeconds": 59956.01,
+    "warningCount": 3,
+    "warnings": [
+      "Invalid assignment #100=1 G1 Z-2.0 F150. at block 9.",
+      "Invalid assignment #101=[#101 + 2.] G1 X20. Y0. F300. at block 10.",
+      "Invalid assignment #100=9 G1 X999. at block 11."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
