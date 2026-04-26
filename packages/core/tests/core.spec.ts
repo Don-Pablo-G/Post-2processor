@@ -710,6 +710,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END")).toBe(true);
   });
 
+  it("adds simulation finding for cycle parameter issues", async () => {
+    const input = "G83 X0 Y0 Z-10. R2. F200.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "cycle_param_issue_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("Cycle G83 missing Q peck value"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CYCLE_PARAMETER_ISSUE")).toBe(true);
+  });
+
   it("adds simulation finding for fanuc subprogram target miss", async () => {
     const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
     const ast = parse(input, haasNgcProfile);

@@ -1,0 +1,18 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 3.72,
+    "warningCount": 2,
+    "warnings": [
+      "Cycle G83 missing Q peck value at block 1.",
+      "Cycle G83 has invalid Q value at block 1."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
