@@ -57,6 +57,15 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 - Current rules:
   - files in `apps/desktop/src` must use `@cnc/core/browser` (not `@cnc/core`)
   - files in `packages/core/tests` must use `../src/index.node.js` (not `../src/index.js`)
+  - fail if `packages/core/src/simulator/simpleSimulator.js` exists beside the TypeScript source, to prevent stale simulator behavior from shadowing `simpleSimulator.ts` in test/runtime resolution
+  - enforce a curated allowlist for existing `src/*.js` shadow siblings so accidental new shadowed JS files fail CI until intentionally reviewed
+
+## Recent Updates
+
+- Expanded Haas NGC mill lint coverage with warnings for spindle start without same-block `S`, `S0` spindle starts, plain `G41/G42` without same-block `D`, `T0`, and duplicate `N`/`O` labels.
+- Added Haas NGC simulator behavior for single-line `IF [cond] THEN #n = expr` execution and tested true/false paths.
+- Added Haas NGC rapid safety warning for significant `G0` Z-down moves to catch potential clearance/retract issues during simulation review.
+- Added regression tests in `packages/core/tests/core.spec.ts` for the new NGC lint and simulation behaviors.
 
 ## Current Status
 

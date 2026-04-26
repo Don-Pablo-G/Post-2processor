@@ -582,18 +582,60 @@ function applyHaasNgcIfThenLine(
   profile: MacroRuntimeProfile
 ): string {
   if (profile.mode !== "haas-ngc") return codeUpper;
-  const re = /\bIF\s*(\[[^\]]+\])\s*THEN\s*#(\d+)\s*=\s*(.+)$/;
-  const m = codeUpper.match(re);
+  const re = /\bIF\s*(\[[^\]]+\])\s*THEN\s*#(\d+)\s*=\s*/;
+  const m = re.exec(codeUpper);
   if (!m) return codeUpper;
-  const [, cond, idStr, rhsRaw] = m;
+  const [, cond, idStr] = m;
+  const assignmentStart = m.index;
+  const rhsStart = assignmentStart + m[0].length;
+  const rhsParsed = parseIfThenRhs(codeUpper, rhsStart);
+  if (!rhsParsed) {
+    warnings.push(`IF…THEN assignment RHS invalid at block ${blockIndex}.`);
+    return codeUpper.slice(0, assignmentStart).trim();
+  }
+  const { rhsExpression, rhsEnd } = rhsParsed;
   const passes = evaluateCondition(cond, variables, warnings, blockIndex, profile);
   if (passes) {
-    const rhs = rhsRaw.trim();
-    const value = evalNumeric(rhs, variables, warnings, blockIndex, profile);
+    const value = evalNumeric(rhsExpression, variables, warnings, blockIndex, profile);
     if (Number.isFinite(value)) variables[`#${idStr}`] = value;
     else warnings.push(`IF…THEN assignment RHS invalid at block ${blockIndex}.`);
   }
-  return codeUpper.replace(re, "").trim();
+  const before = codeUpper.slice(0, assignmentStart).trimEnd();
+  const after = codeUpper.slice(rhsEnd).trimStart();
+  return [before, after].filter(Boolean).join(" ").trim();
+}
+
+function parseIfThenRhs(
+  codeUpper: string,
+  rhsStart: number
+): { rhsExpression: string; rhsEnd: number } | null {
+  const rhsChunk = codeUpper.slice(rhsStart).trimStart();
+  const leadingWhitespace = codeUpper.slice(rhsStart).length - rhsChunk.length;
+  const absoluteStart = rhsStart + leadingWhitespace;
+  if (!rhsChunk) return null;
+
+  if (rhsChunk.startsWith("[")) {
+    let depth = 0;
+    for (let i = 0; i < rhsChunk.length; i += 1) {
+      const c = rhsChunk[i];
+      if (c === "[") depth += 1;
+      if (c === "]") depth -= 1;
+      if (depth === 0) {
+        return {
+          rhsExpression: rhsChunk.slice(0, i + 1).trim(),
+          rhsEnd: absoluteStart + i + 1
+        };
+      }
+    }
+    return null;
+  }
+
+  const tokenMatch = rhsChunk.match(/^[+\-]?(?:\d+(?:\.\d*)?|\.\d+|#\d+)/);
+  if (!tokenMatch) return null;
+  return {
+    rhsExpression: tokenMatch[0].trim(),
+    rhsEnd: absoluteStart + tokenMatch[0].length
+  };
 }
 
 function parseWhile(code: string): { condition: string; doLabel: number } | null {

@@ -103,7 +103,8 @@
     "test": "npm run --workspace @cnc/core test",
     "typecheck": "npm run guard:imports && npm run --workspaces typecheck",
     "verify": "npm run guard:imports && npm run test && npm run typecheck && npm run build",
-    "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs"
+    "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs",
+    "check:shop-baselines": "node ./scripts/check-shop-regression-baselines.mjs"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

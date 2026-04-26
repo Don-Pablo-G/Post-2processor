@@ -32,3 +32,16 @@ or is safety-critical in production proveout.
 
 This suite starts as smoke+baseline coverage and can be expanded to strict
 golden assertions over time.
+
+## Baselines
+
+Simulation/lint smoke baselines can be stored under `shop-regressions/baselines/`
+as JSON snapshots keyed by fixture and controller mode. These files capture
+expected high-level outcomes (issue counts, warning/alarm counts, cycle-time estimate)
+to make behavior drift visible during future simulator/lint changes.
+
+Validate stored snapshots against current runtime behavior:
+
+```bash
+npm run check:shop-baselines
+```

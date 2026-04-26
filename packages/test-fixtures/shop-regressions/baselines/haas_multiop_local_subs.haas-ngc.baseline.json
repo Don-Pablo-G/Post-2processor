@@ -1,0 +1,20 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_multiop_local_subs.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "M30 appears before the last block."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 19,
+    "estimatedCycleTimeSeconds": 17.339044,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}

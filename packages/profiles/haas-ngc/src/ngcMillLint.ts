@@ -44,6 +44,7 @@ function lastWordValue(block: { words: Word[] }, letter: string): string | undef
  */
 export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
+  let sawFirstG43Activation = false;
 
   ast.blocks.forEach((block, index) => {
     if (block.raw.includes("M30") && index !== ast.blocks.length - 1) {
@@ -60,6 +61,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         message: "G43 without H on the same block — Haas NGC expects tool length H (e.g. G43 H1 Z…).",
         blockIndex: index
       });
+    }
+    if (hasG43Classic(block) && !sawFirstG43Activation) {
+      sawFirstG43Activation = true;
+      const zVal = lastWordValue(block, "Z");
+      const parsedZ = zVal === undefined ? Number.NaN : Number.parseFloat(zVal);
+      const hasZeroLiteralZ = zVal !== undefined && Number.isFinite(parsedZ) && parsedZ === 0;
+      if (zVal === undefined || hasZeroLiteralZ) {
+        issues.push({
+          severity: "warning",
+          message:
+            "First G43 activation has no meaningful Z move — include a safe clearance/retract Z on the same block.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasWordM(block, 6) && !hasLetter(block, "T")) {
