@@ -35,6 +35,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
+  derivePolicyUiEventEmissionDecision,
   derivePolicyPresetVisualState,
   resolvePolicyPresetHintState,
   resolvePolicyPresetShortcutAction
@@ -2287,7 +2288,7 @@ function emitPolicyPresetUiEvent(
   eventName: string,
   detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
 ): void {
-  if (!enabled) return;
+  if (!derivePolicyUiEventEmissionDecision(enabled).emit) return;
   const payload = {
     event: eventName,
     ...detail,
