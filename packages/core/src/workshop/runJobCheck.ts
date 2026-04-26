@@ -280,7 +280,9 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const gotoTargetMissWarning = simulation.warnings.find((w) => w.includes("GOTO target N") && w.includes("not found"));
+  const gotoTargetMissWarning =
+    simulation.warnings.find((w) => w.startsWith("IF GOTO target N") && w.includes("not found")) ??
+    simulation.warnings.find((w) => w.startsWith("GOTO target N") && w.includes("not found"));
   if (gotoTargetMissWarning) {
     pushPolicyFinding(
       "gotoTargetMiss",

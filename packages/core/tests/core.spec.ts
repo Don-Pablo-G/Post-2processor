@@ -772,6 +772,19 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_GOTO_TARGET_MISS")).toBe(true);
   });
 
+  it("uses canonical IF GOTO warning text when both GOTO variants are present", async () => {
+    const input = "IF [1 EQ 1] GOTO1234\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "goto_canonical_job" }
+    });
+    const gotoFindings = result.simulationFindings.filter((f) => f.code === "SIM_GOTO_TARGET_MISS");
+    expect(gotoFindings).toHaveLength(1);
+    expect(gotoFindings[0]?.message.startsWith("IF GOTO target N")).toBe(true);
+  });
+
   it("adds simulation finding when simulation hits maxSteps limit", async () => {
     const input = "G0 X0\nG1 X1\nG1 X2\nM30";
     const ast = parse(input, haasNgcProfile);
