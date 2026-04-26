@@ -1,0 +1,20 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_duplicate_n_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Duplicate sequence number N10 — GOTO/M97 targets may be ambiguous."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
