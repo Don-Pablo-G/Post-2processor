@@ -106,6 +106,7 @@ const UI_TEXT: Record<
     policyPresetStrict: string;
     policyPresetBalanced: string;
     policyPresetPermissive: string;
+    policyPresetHelp: string;
     policyPresetPersistedHint: string;
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
@@ -216,6 +217,8 @@ const UI_TEXT: Record<
     policyPresetStrict: "Ścisły",
     policyPresetBalanced: "Zrównoważony",
     policyPresetPermissive: "Permisywny",
+    policyPresetHelp:
+      "Ścisły: więcej blokerów i ostrzejsze bramkowanie eksportu. Zrównoważony: domyślna konserwatywna polityka shop. Permisywny: mniej blokad, do kontrolowanego debugowania.",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
@@ -325,6 +328,8 @@ const UI_TEXT: Record<
     policyPresetStrict: "Strict",
     policyPresetBalanced: "Balanced",
     policyPresetPermissive: "Permissive",
+    policyPresetHelp:
+      "Strict: more blockers and tighter export gates. Balanced: conservative default shop policy. Permissive: fewer blocks, for controlled debugging only.",
     policyPresetPersistedHint: "Saved controller default preset is active",
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
@@ -1639,6 +1644,7 @@ export function App() {
             <option value="permissive">{t.policyPresetPermissive}</option>
           </select>
         </label>
+        <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>{t.policyPresetHelp}</p>
         {policyPresetHintState.isPersistedActive ? (
           <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
             {`${t.policyPresetPersistedHint}: ${persistedPolicyPresetLabel}`}
