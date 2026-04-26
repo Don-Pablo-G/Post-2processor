@@ -862,7 +862,8 @@ export function App() {
         findingsTxt: includeTimelineFindingsExport ? timelineFindingsExportBundle.findingsTxt : undefined,
         findingsMarkdown: includeTimelineFindingsExport ? timelineFindingsExportBundle.findingsMarkdown : undefined
       });
-      setExportStatus(`${exported.exportDirectory} (${exported.artifacts.length} files)`);
+      const policyContext = `preset=${policyPresetHintState.currentPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`;
+      setExportStatus(`${exported.exportDirectory} (${exported.artifacts.length} files) | ${policyContext}`);
     } catch (error) {
       setExportStatus(
         error instanceof Error
