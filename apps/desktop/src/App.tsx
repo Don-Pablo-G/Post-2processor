@@ -581,6 +581,18 @@ export function App() {
       : policyPresetHintState.source === "manual"
         ? t.policyPresetSourceManual
         : t.policyPresetSourceBootstrap;
+  const policyPresetSourceBadgeStyle =
+    policyPresetHintState.source === "manual"
+      ? {
+          marginLeft: 6,
+          padding: "1px 6px",
+          borderRadius: 10,
+          border: "1px solid #8a6f00",
+          background: "#fff4cc",
+          color: "#5f4b00",
+          fontWeight: 600
+        }
+      : undefined;
   const currentPolicyPresetLabel =
     policyPresetHintState.currentPreset === "strict"
       ? t.policyPresetStrict
@@ -1696,7 +1708,8 @@ export function App() {
         </label>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>{t.policyPresetHelp}</p>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
-          {`${t.policyPresetSourceLabel}: ${policyPresetSourceLabel}`}
+          {`${t.policyPresetSourceLabel}: `}
+          <span style={policyPresetSourceBadgeStyle}>{policyPresetSourceLabel}</span>
           <span
             title={t.policyPresetSourceHelpTooltip}
             style={{ marginLeft: 6, cursor: "help", opacity: 0.9 }}
