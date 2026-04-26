@@ -4,6 +4,7 @@ import {
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
   derivePolicyPresetActionState,
+  derivePolicyPresetVisualState,
   resolvePolicyPresetHintState,
   resolvePolicyPresetShortcutAction
 } from "./policyPresetHint";
@@ -230,5 +231,28 @@ describe("derivePolicyDriftWarning", () => {
         warningPrefix: "Warning"
       })
     ).toBe("");
+  });
+});
+
+describe("derivePolicyPresetVisualState", () => {
+  it("always keeps tooltip icon visible", () => {
+    const saved = resolvePolicyPresetHintState({ persistedPreset: "balanced", currentPreset: "balanced" });
+    const bootstrap = resolvePolicyPresetHintState({ currentPreset: "balanced" });
+    expect(derivePolicyPresetVisualState(saved).showHelpTooltipIcon).toBe(true);
+    expect(derivePolicyPresetVisualState(bootstrap).showHelpTooltipIcon).toBe(true);
+  });
+
+  it("highlights source badge only for manual source", () => {
+    const manual = resolvePolicyPresetHintState({
+      persistedPreset: "balanced",
+      currentPreset: "strict",
+      manuallySet: true
+    });
+    const saved = resolvePolicyPresetHintState({
+      persistedPreset: "balanced",
+      currentPreset: "balanced"
+    });
+    expect(derivePolicyPresetVisualState(manual).highlightManualSource).toBe(true);
+    expect(derivePolicyPresetVisualState(saved).highlightManualSource).toBe(false);
   });
 });

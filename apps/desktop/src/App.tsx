@@ -35,6 +35,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
+  derivePolicyPresetVisualState,
   resolvePolicyPresetHintState,
   resolvePolicyPresetShortcutAction
 } from "./policyPresetHint";
@@ -601,8 +602,9 @@ export function App() {
       : policyPresetHintState.source === "manual"
         ? t.policyPresetSourceManual
         : t.policyPresetSourceBootstrap;
+  const policyPresetVisualState = derivePolicyPresetVisualState(policyPresetHintState);
   const policyPresetSourceBadgeStyle =
-    policyPresetHintState.source === "manual"
+    policyPresetVisualState.highlightManualSource
       ? {
           marginLeft: 6,
           padding: "1px 6px",
@@ -1847,13 +1849,15 @@ export function App() {
           <button onClick={() => void handleCopyPolicyContext()} style={{ marginLeft: 8 }}>
             {t.copyPolicyContext}
           </button>
-          <span
-            title={t.policyPresetSourceHelpTooltip}
-            style={{ marginLeft: 6, cursor: "help", opacity: 0.9 }}
-            aria-label={t.policyPresetSourceHelpTooltip}
-          >
-            ⓘ
-          </span>
+          {policyPresetVisualState.showHelpTooltipIcon ? (
+            <span
+              title={t.policyPresetSourceHelpTooltip}
+              style={{ marginLeft: 6, cursor: "help", opacity: 0.9 }}
+              aria-label={t.policyPresetSourceHelpTooltip}
+            >
+              ⓘ
+            </span>
+          ) : null}
         </p>
         <label style={{ display: "block", marginTop: 4, marginBottom: 8 }}>
           <input
