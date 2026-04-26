@@ -1,0 +1,17 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_main_m99_comment_minimal.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 2,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 1,
+    "warnings": [
+      "Fanuc mode: M99 in main program at block 1 is invalid; halting."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
