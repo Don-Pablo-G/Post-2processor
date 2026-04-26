@@ -150,6 +150,17 @@ function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): S
       blockIndex: simulation.trace.at(-1)?.blockIndex
     });
   }
+  const unsupportedFunctionWarning = simulation.warnings.find(
+    (w) => w.startsWith("Function ") && w.includes("is not supported in fanuc mode")
+  );
+  if (unsupportedFunctionWarning) {
+    findings.push({
+      severity: "warning",
+      code: "SIM_UNSUPPORTED_FUNCTION",
+      message: unsupportedFunctionWarning,
+      blockIndex: simulation.trace.at(-1)?.blockIndex
+    });
+  }
   return findings;
 }
 

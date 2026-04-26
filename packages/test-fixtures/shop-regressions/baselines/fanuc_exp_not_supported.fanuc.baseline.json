@@ -1,0 +1,18 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_exp_not_supported.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 2,
+    "warnings": [
+      "Function EXP is not supported in fanuc mode (block 2).",
+      "Invalid assignment #100=EXP[1] at block 2."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}

@@ -91,6 +91,17 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_UNSUPPORTED_M97"]
       }
+    },
+    {
+      "id": "fanuc_exp_not_supported",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_exp_not_supported.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": true,
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION"]
+      }
     }
   ]
 }
