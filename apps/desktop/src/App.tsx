@@ -890,6 +890,7 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
+      if (policyLockManualChanges) return;
       const action = resolvePolicyPresetShortcutAction({
         key: event.key,
         ctrlKey: event.ctrlKey,
@@ -916,7 +917,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [detectedControllerProfile, policyPresetHintState.hasUnsavedOverride, policyUiEventsEnabled]);
+  }, [detectedControllerProfile, policyLockManualChanges, policyPresetHintState.hasUnsavedOverride, policyUiEventsEnabled]);
 
   async function handleExport(): Promise<void> {
     try {

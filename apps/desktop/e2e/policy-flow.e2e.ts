@@ -122,3 +122,20 @@ test("copy context actions write expected policy and export payloads", async ({ 
   await page.getByRole("button", { name: "Copy full export context" }).click();
   await expect(copiedPolicy).toContainText(/Copied full export context:\s*EXPORT CONTEXT/i);
 });
+
+test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
+  await openPolicyPanel(page);
+
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
+  await presetSelect.selectOption("strict");
+  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+
+  await lockToggle.check();
+  await page.keyboard.press("Control+Shift+R");
+  await page.keyboard.press("Control+Shift+J");
+
+  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+  await expect(page.getByText(/Preset source:\s*bootstrap/i)).toHaveCount(0);
+  await expect(page.getByText(/Preset source:\s*saved/i)).toHaveCount(0);
+});
