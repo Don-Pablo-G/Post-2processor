@@ -27,3 +27,22 @@ test("save-and-run and shortcut revert update source state", async ({ page }) =>
   await expect(page.getByText(/Preset source:\s*bootstrap/i)).toBeVisible();
   await expect(page.getByText(/reverted to controller default/i)).toBeVisible();
 });
+
+test("export shows policy context confirmation card", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as Window & { __CNC_E2E_EXPORT_MOCK__?: { exportDirectory: string; artifactCount: number } }).__CNC_E2E_EXPORT_MOCK__ =
+      {
+        exportDirectory: "C:/mock-export",
+        artifactCount: 4
+      };
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Export now" }).click();
+  await expect(page.getByText("Export policy context")).toBeVisible();
+  await expect(page.getByText("dir=C:/mock-export")).toBeVisible();
+  await expect(page.getByText("artifacts=4")).toBeVisible();
+  await expect(page.getByText(/preset=(strict|balanced|permissive)/i)).toBeVisible();
+  await expect(page.getByText(/source=(saved|bootstrap|manual)/i)).toBeVisible();
+  await expect(page.getByText(/controller=(haas-ngc|haas-legacy|fanuc)/i)).toBeVisible();
+});
