@@ -46,3 +46,22 @@ test("export shows policy context confirmation card", async ({ page }) => {
   await expect(page.getByText(/source=(saved|bootstrap|manual)/i)).toBeVisible();
   await expect(page.getByText(/controller=(haas-ngc|haas-legacy|fanuc)/i)).toBeVisible();
 });
+
+test("operator lock mode disables manual preset and revert controls", async ({ page }) => {
+  await page.goto("/");
+
+  const presetSelect = page.locator("label:has-text('Safety policy preset') select");
+  const revertButton = page.getByRole("button", { name: "Revert to controller default preset" });
+  const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
+
+  await expect(presetSelect).toBeEnabled();
+  await expect(revertButton).toBeEnabled();
+
+  await lockToggle.check();
+  await expect(presetSelect).toBeDisabled();
+  await expect(revertButton).toBeDisabled();
+
+  await lockToggle.uncheck();
+  await expect(presetSelect).toBeEnabled();
+  await expect(revertButton).toBeEnabled();
+});
