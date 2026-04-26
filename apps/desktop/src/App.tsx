@@ -408,6 +408,7 @@ export function App() {
   const [exportStatus, setExportStatus] = useState("");
   const [allowExportWithBlockers, setAllowExportWithBlockers] = useState(false);
   const [jobCheckPolicyPreset, setJobCheckPolicyPreset] = useState<JobCheckPolicyPreset>("balanced");
+  const [policyPresetManuallySet, setPolicyPresetManuallySet] = useState(false);
   const [subprogramTargetPolicy, setSubprogramTargetPolicy] = useState<SubprogramTargetPolicy>("shop_friendly");
   const [subprogramPolicyManuallySet, setSubprogramPolicyManuallySet] = useState(false);
   const [logSemantics, setLogSemantics] = useState<LogSemantics>("controller_default");
@@ -673,8 +674,15 @@ export function App() {
     }
     if (uiDefaults.jobCheckPolicyPreset) {
       setJobCheckPolicyPreset(uiDefaults.jobCheckPolicyPreset);
+      setPolicyPresetManuallySet(false);
     }
   }, [templateJson, detectedControllerProfile]);
+
+  useEffect(() => {
+    const uiDefaults = readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile);
+    if (uiDefaults?.jobCheckPolicyPreset || policyPresetManuallySet) return;
+    setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
+  }, [templateJson, detectedControllerProfile, policyPresetManuallySet]);
 
   useEffect(() => {
     if (subprogramPolicyManuallySet) return;
@@ -1185,7 +1193,8 @@ export function App() {
       setAutoRunTestsAfterImport(false);
       setOperatorReviewMode(false);
       setAdvancedQaExpanded(true);
-      setJobCheckPolicyPreset("balanced");
+      setPolicyPresetManuallySet(false);
+      setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
       setShowOnlyBlockers(false);
       setTimelineFilters({ alarms: true, flow: true, control: true });
       setExportStatus("UI defaults reset for current controller profile.");
@@ -1637,7 +1646,10 @@ export function App() {
           {t.policyPreset}:{" "}
           <select
             value={jobCheckPolicyPreset}
-            onChange={(event) => setJobCheckPolicyPreset(event.target.value as JobCheckPolicyPreset)}
+            onChange={(event) => {
+              setJobCheckPolicyPreset(event.target.value as JobCheckPolicyPreset);
+              setPolicyPresetManuallySet(true);
+            }}
           >
             <option value="strict">{t.policyPresetStrict}</option>
             <option value="balanced">{t.policyPresetBalanced}</option>
@@ -2005,6 +2017,11 @@ function readUiDefaultsFromTemplateJson(
   } catch {
     return undefined;
   }
+}
+
+function defaultPolicyPresetForController(profile: ControllerProfileKey): JobCheckPolicyPreset {
+  // Fanuc defaults to strict on first use; Haas modes stay balanced.
+  return profile === "fanuc" ? "strict" : "balanced";
 }
 
 function isAlarmEvent(kind: string): boolean {
