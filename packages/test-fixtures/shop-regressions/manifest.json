@@ -379,6 +379,16 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "fanuc_m98_shop_friendly_fallback_minimal",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_m98_shop_friendly_fallback_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
