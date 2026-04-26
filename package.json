@@ -104,7 +104,8 @@
     "typecheck": "npm run guard:imports && npm run --workspaces typecheck",
     "verify": "npm run guard:imports && npm run test && npm run typecheck && npm run build",
     "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs",
-    "check:shop-baselines": "node ./scripts/check-shop-regression-baselines.mjs"
+    "check:shop-baselines": "node ./scripts/check-shop-regression-baselines.mjs",
+    "check:shop-baselines:update": "node ./scripts/check-shop-regression-baselines.mjs --update"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
