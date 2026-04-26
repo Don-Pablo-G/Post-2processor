@@ -2175,12 +2175,24 @@ function addPolicyPresetContextToSetupSheet(
   source: "saved" | "bootstrap" | "manual",
   controller: ControllerProfileKey
 ): { printable80mm: string; exportTxt: string; exportMarkdown: string } {
-  const contextLineTxt = `POLICY PRESET: ${preset} (${source}) | CONTROLLER: ${controller}`;
-  const contextLineMd = `- Policy preset: \`${preset}\` (\`${source}\`)`;
+  const contextBlockTxt = [
+    "",
+    "=== POLICY CONTEXT ===",
+    `policyPreset: ${preset}`,
+    `policyPresetSource: ${source}`,
+    `controller: ${controller}`
+  ].join("\n");
+  const contextBlockMd = [
+    "",
+    "### Policy Context",
+    `- Policy preset: \`${preset}\``,
+    `- Policy preset source: \`${source}\``,
+    `- Controller: \`${controller}\``
+  ].join("\n");
   return {
-    printable80mm: `${sheet.printable80mm}\n${contextLineTxt}`,
-    exportTxt: `${sheet.exportTxt}\n${contextLineTxt}`,
-    exportMarkdown: `${sheet.exportMarkdown}\n${contextLineMd}`
+    printable80mm: `${sheet.printable80mm}${contextBlockTxt}`,
+    exportTxt: `${sheet.exportTxt}${contextBlockTxt}`,
+    exportMarkdown: `${sheet.exportMarkdown}${contextBlockMd}`
   };
 }
 
