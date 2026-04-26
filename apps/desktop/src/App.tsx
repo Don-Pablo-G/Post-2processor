@@ -110,6 +110,7 @@ const UI_TEXT: Record<
     savePolicyPresetNow: string;
     savePolicyPresetAndRunCheck: string;
     copyPolicyContext: string;
+    copyFullExportContext: string;
     policyUiEventsEnabled: string;
     revertPolicyPresetToControllerDefault: string;
     resetUiPrefs: string;
@@ -236,6 +237,7 @@ const UI_TEXT: Record<
     savePolicyPresetNow: "Zapisz ten preset jako domyślny",
     savePolicyPresetAndRunCheck: "Zapisz preset i uruchom Job Check",
     copyPolicyContext: "Kopiuj kontekst polityki",
+    copyFullExportContext: "Kopiuj pełny kontekst eksportu",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
@@ -364,6 +366,7 @@ const UI_TEXT: Record<
     savePolicyPresetNow: "Save this preset as default",
     savePolicyPresetAndRunCheck: "Save preset and run Job Check",
     copyPolicyContext: "Copy policy context",
+    copyFullExportContext: "Copy full export context",
     policyUiEventsEnabled: "Enable local policy UI events",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
     resetUiPrefs: "Reset UI defaults for this controller",
@@ -1333,6 +1336,18 @@ export function App() {
     }
   }
 
+  async function handleCopyFullExportContext(): Promise<void> {
+    const exportDir = jobCheckResult?.exportResult?.exportDirectory ?? "n/a";
+    const artifactCount = jobCheckResult?.exportResult?.artifacts.length ?? 0;
+    const line = `EXPORT CONTEXT | dir=${exportDir} artifacts=${artifactCount} | preset=${policyPresetHintState.currentPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`;
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied full export context: ${line}`);
+    } catch {
+      setExportStatus(`Copy full export context manually: ${line}`);
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -1876,6 +1891,9 @@ export function App() {
           <span style={policyPresetSourceBadgeStyle}>{policyPresetSourceLabel}</span>
           <button onClick={() => void handleCopyPolicyContext()} style={{ marginLeft: 8 }}>
             {t.copyPolicyContext}
+          </button>
+          <button onClick={() => void handleCopyFullExportContext()} style={{ marginLeft: 8 }}>
+            {t.copyFullExportContext}
           </button>
           {policyPresetVisualState.showHelpTooltipIcon ? (
             <span
