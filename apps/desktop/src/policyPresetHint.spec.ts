@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildTimelineFindingsExportBundle } from "@cnc/core/browser";
 import {
+  addPolicyPresetContextToSetupSheetBundle,
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
   derivePolicyPresetActionState,
@@ -265,5 +266,35 @@ describe("derivePolicyUiEventEmissionDecision", () => {
 
   it("does not emit when toggle is disabled", () => {
     expect(derivePolicyUiEventEmissionDecision(false).emit).toBe(false);
+  });
+});
+
+describe("addPolicyPresetContextToSetupSheetBundle", () => {
+  it("adds policy context header block to txt/printable outputs", () => {
+    const result = addPolicyPresetContextToSetupSheetBundle(
+      { printable80mm: "BASE_PRINT", exportTxt: "BASE_TXT", exportMarkdown: "BASE_MD" },
+      "strict",
+      "manual",
+      "fanuc"
+    );
+    expect(result.printable80mm).toContain("=== POLICY CONTEXT ===");
+    expect(result.printable80mm).toContain("policyPreset: strict");
+    expect(result.printable80mm).toContain("policyPresetSource: manual");
+    expect(result.printable80mm).toContain("controller: fanuc");
+    expect(result.exportTxt).toContain("=== POLICY CONTEXT ===");
+    expect(result.exportTxt).toContain("policyPreset: strict");
+  });
+
+  it("adds markdown policy context section with expected fields", () => {
+    const result = addPolicyPresetContextToSetupSheetBundle(
+      { printable80mm: "P", exportTxt: "T", exportMarkdown: "BASE_MD" },
+      "balanced",
+      "bootstrap",
+      "haas-ngc"
+    );
+    expect(result.exportMarkdown).toContain("### Policy Context");
+    expect(result.exportMarkdown).toContain("- Policy preset: `balanced`");
+    expect(result.exportMarkdown).toContain("- Policy preset source: `bootstrap`");
+    expect(result.exportMarkdown).toContain("- Controller: `haas-ngc`");
   });
 });

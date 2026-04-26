@@ -23,6 +23,11 @@ export type PolicyPresetVisualState = {
 export type PolicyUiEventEmissionDecision = {
   emit: boolean;
 };
+export type SetupSheetPolicyContextBundle = {
+  printable80mm: string;
+  exportTxt: string;
+  exportMarkdown: string;
+};
 
 export function resolvePolicyPresetHintState(input: {
   persistedPreset?: JobCheckPolicyPreset;
@@ -88,4 +93,31 @@ export function derivePolicyPresetVisualState(state: PolicyPresetHintState): Pol
 
 export function derivePolicyUiEventEmissionDecision(enabled: boolean): PolicyUiEventEmissionDecision {
   return { emit: enabled };
+}
+
+export function addPolicyPresetContextToSetupSheetBundle(
+  sheet: SetupSheetPolicyContextBundle,
+  preset: JobCheckPolicyPreset,
+  source: "saved" | "bootstrap" | "manual",
+  controller: ControllerProfileKey
+): SetupSheetPolicyContextBundle {
+  const contextBlockTxt = [
+    "",
+    "=== POLICY CONTEXT ===",
+    `policyPreset: ${preset}`,
+    `policyPresetSource: ${source}`,
+    `controller: ${controller}`
+  ].join("\n");
+  const contextBlockMd = [
+    "",
+    "### Policy Context",
+    `- Policy preset: \`${preset}\``,
+    `- Policy preset source: \`${source}\``,
+    `- Controller: \`${controller}\``
+  ].join("\n");
+  return {
+    printable80mm: `${sheet.printable80mm}${contextBlockTxt}`,
+    exportTxt: `${sheet.exportTxt}${contextBlockTxt}`,
+    exportMarkdown: `${sheet.exportMarkdown}${contextBlockMd}`
+  };
 }
