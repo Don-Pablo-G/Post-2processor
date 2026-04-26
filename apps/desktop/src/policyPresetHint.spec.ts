@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildTimelineFindingsExportBundle } from "@cnc/core/browser";
-import { defaultPolicyPresetForController, resolvePolicyPresetHintState } from "./policyPresetHint";
+import { defaultPolicyPresetForController, derivePolicyPresetActionState, resolvePolicyPresetHintState } from "./policyPresetHint";
 
 describe("resolvePolicyPresetHintState", () => {
   it("marks persisted preset as active when current matches saved", () => {
@@ -101,5 +101,40 @@ describe("export metadata uses resolved preset source", () => {
       findings: []
     });
     expect(bundle.timelineTxt).toContain("policyPresetSource: manual");
+  });
+});
+
+describe("derivePolicyPresetActionState", () => {
+  it("shows save actions and allows save+run for manual unsaved override", () => {
+    const hintState = resolvePolicyPresetHintState({
+      persistedPreset: "balanced",
+      currentPreset: "strict",
+      manuallySet: true
+    });
+    const actionState = derivePolicyPresetActionState(hintState);
+    expect(actionState.showSaveActions).toBe(true);
+    expect(actionState.canSaveAndRun).toBe(true);
+    expect(actionState.canRevertToControllerDefault).toBe(true);
+  });
+
+  it("hides save actions when persisted default is already active", () => {
+    const hintState = resolvePolicyPresetHintState({
+      persistedPreset: "balanced",
+      currentPreset: "balanced"
+    });
+    const actionState = derivePolicyPresetActionState(hintState);
+    expect(actionState.showSaveActions).toBe(false);
+    expect(actionState.canSaveAndRun).toBe(false);
+    expect(actionState.canRevertToControllerDefault).toBe(true);
+  });
+
+  it("disables revert when source is controller bootstrap", () => {
+    const hintState = resolvePolicyPresetHintState({
+      currentPreset: "balanced"
+    });
+    const actionState = derivePolicyPresetActionState(hintState);
+    expect(actionState.showSaveActions).toBe(false);
+    expect(actionState.canSaveAndRun).toBe(false);
+    expect(actionState.canRevertToControllerDefault).toBe(false);
   });
 });
