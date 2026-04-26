@@ -11,13 +11,9 @@
   "simulation": {
     "halted": true,
     "steps": 16,
-    "estimatedCycleTimeSeconds": 59956.01,
-    "warningCount": 3,
-    "warnings": [
-      "Invalid assignment #100=1 G1 Z-2.0 F150. at block 9.",
-      "Invalid assignment #101=[#101 + 2.] G1 X20. Y0. F300. at block 10.",
-      "Invalid assignment #100=9 G1 X999. at block 11."
-    ],
+    "estimatedCycleTimeSeconds": 215.81,
+    "warningCount": 0,
+    "warnings": [],
     "alarmCount": 0,
     "alarms": []
   }

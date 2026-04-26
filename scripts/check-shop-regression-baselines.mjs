@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 const root = process.cwd();
 const fixturesRoot = path.join(root, "packages", "test-fixtures");
 const baselinesDir = path.join(fixturesRoot, "shop-regressions", "baselines");
-const coreDistPath = path.join(root, "packages", "core", "dist", "src", "index.node.js");
+const coreDistPath = path.join(root, "packages", "core", "dist", "index.node.js");
 const haasProfileDistPath = path.join(root, "packages", "profiles", "haas-ngc", "dist", "index.js");
 const updateMode = process.argv.includes("--update");
 
