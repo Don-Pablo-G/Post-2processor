@@ -1,0 +1,17 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_g65_target_miss_minimal.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 1,
+    "warnings": [
+      "G65 target O1234 not found (block 2)."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
