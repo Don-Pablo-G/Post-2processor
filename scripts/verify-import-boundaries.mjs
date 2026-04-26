@@ -6,6 +6,7 @@ const shadowPolicy = {
   allowedShadowedJsRelPaths: new Set([]),
   deniedShadowedJsRelPaths: new Set(["packages/core/src/simulator/simpleSimulator.js"])
 };
+const requireEmptyShadowAllowlist = true;
 const boundaryRules = [
   {
     label: "browser app imports",
@@ -101,6 +102,10 @@ async function findShadowingPolicyViolations() {
   const violations = [];
   const shadowed = [];
   const candidateRoots = [path.join(root, "packages"), path.join(root, "apps")];
+
+  if (requireEmptyShadowAllowlist && shadowPolicy.allowedShadowedJsRelPaths.size > 0) {
+    violations.push("shadow allowlist must stay empty; remove entries from allowedShadowedJsRelPaths");
+  }
 
   for (const candidateRoot of candidateRoots) {
     let packageEntries = [];
