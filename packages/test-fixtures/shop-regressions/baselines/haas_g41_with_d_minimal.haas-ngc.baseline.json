@@ -1,0 +1,15 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_g41_with_d_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 0.005,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
