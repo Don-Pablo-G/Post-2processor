@@ -9,6 +9,12 @@ export type PolicyPresetHintState = {
   source: "saved" | "bootstrap" | "manual";
 };
 
+export type PolicyPresetActionState = {
+  showSaveActions: boolean;
+  canSaveAndRun: boolean;
+  canRevertToControllerDefault: boolean;
+};
+
 export function resolvePolicyPresetHintState(input: {
   persistedPreset?: JobCheckPolicyPreset;
   currentPreset: JobCheckPolicyPreset;
@@ -30,4 +36,12 @@ export function resolvePolicyPresetHintState(input: {
 export function defaultPolicyPresetForController(profile: ControllerProfileKey): JobCheckPolicyPreset {
   // Fanuc defaults to strict on first use; Haas modes stay balanced.
   return profile === "fanuc" ? "strict" : "balanced";
+}
+
+export function derivePolicyPresetActionState(state: PolicyPresetHintState): PolicyPresetActionState {
+  return {
+    showSaveActions: state.hasUnsavedOverride,
+    canSaveAndRun: state.hasUnsavedOverride,
+    canRevertToControllerDefault: state.source !== "bootstrap"
+  };
 }
