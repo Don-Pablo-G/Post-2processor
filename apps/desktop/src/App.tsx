@@ -124,6 +124,11 @@ const UI_TEXT: Record<
     policyPresetSourceManual: string;
     policyPresetSourceHelpTooltip: string;
     policyDriftWarning: string;
+    policyQuickReference: string;
+    policyQuickReferencePresets: string;
+    policyQuickReferenceSources: string;
+    policyQuickReferenceShortcuts: string;
+    policyQuickReferenceActions: string;
     policyPresetPersistedHint: string;
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
@@ -247,6 +252,12 @@ const UI_TEXT: Record<
     policyPresetSourceHelpTooltip:
       "zapisany = z template.json, bootstrap = domyślny wg sterowania, ręczny = zmieniony w bieżącej sesji",
     policyDriftWarning: "Uwaga: ręczny preset może być nieaktualny po zmianie wykrytego sterowania",
+    policyQuickReference: "Szybkie odniesienie polityki",
+    policyQuickReferencePresets:
+      "Presety: Ścisły = najmocniejsze bramkowanie, Zrównoważony = domyślny warsztatowy, Permisywny = debug.",
+    policyQuickReferenceSources: "Źródła: zapisany (template.json), bootstrap (domyślny wg sterowania), ręczny (sesja).",
+    policyQuickReferenceShortcuts: "Skróty: Ctrl+Shift+R = przywróć domyślny, Ctrl+Shift+J = zapisz + Job Check.",
+    policyQuickReferenceActions: "Akcje: kopiuj kontekst polityki, eksport zawiera preset/source/controller.",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
@@ -369,6 +380,12 @@ const UI_TEXT: Record<
     policyPresetSourceHelpTooltip:
       "saved = loaded from template.json, bootstrap = controller default, manual = changed in current session",
     policyDriftWarning: "Warning: manual preset may be stale after detected controller change",
+    policyQuickReference: "Policy quick reference",
+    policyQuickReferencePresets:
+      "Presets: Strict = strongest gating, Balanced = default shop posture, Permissive = debugging posture.",
+    policyQuickReferenceSources: "Sources: saved (template.json), bootstrap (controller default), manual (session override).",
+    policyQuickReferenceShortcuts: "Shortcuts: Ctrl+Shift+R = revert default, Ctrl+Shift+J = save + Job Check.",
+    policyQuickReferenceActions: "Actions: copy policy context, exports include preset/source/controller context.",
     policyPresetPersistedHint: "Saved controller default preset is active",
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
@@ -1844,6 +1861,15 @@ export function App() {
           </button>
         </label>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>{t.policyPresetHelp}</p>
+        <details style={{ marginTop: 4, marginBottom: 8 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>{t.policyQuickReference}</summary>
+          <ul style={{ marginTop: 6 }}>
+            <li>{t.policyQuickReferencePresets}</li>
+            <li>{t.policyQuickReferenceSources}</li>
+            <li>{t.policyQuickReferenceShortcuts}</li>
+            <li>{t.policyQuickReferenceActions}</li>
+          </ul>
+        </details>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
           {`${t.policyPresetSourceLabel}: `}
           <span style={policyPresetSourceBadgeStyle}>{policyPresetSourceLabel}</span>
