@@ -778,6 +778,32 @@ export function App() {
     }
   }, [operatorReviewMode, advancedQaExpanded]);
 
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (!(event.ctrlKey && event.shiftKey)) return;
+      if (isTypingElement(event.target)) return;
+      const key = event.key.toLowerCase();
+      if (key === "r") {
+        event.preventDefault();
+        const preset = defaultPolicyPresetForController(detectedControllerProfile);
+        setJobCheckPolicyPreset(preset);
+        setPolicyPresetManuallySet(false);
+        emitPolicyPresetUiEvent("reverted_to_controller_default_shortcut", {
+          controller: detectedControllerProfile,
+          preset,
+          source: "bootstrap"
+        });
+        setExportStatus("Policy preset reverted to controller default (Ctrl+Shift+R).");
+      }
+      if (key === "j" && policyPresetHintState.hasUnsavedOverride) {
+        event.preventDefault();
+        void handleSavePolicyPresetAndRunCheck();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [detectedControllerProfile, policyPresetHintState.hasUnsavedOverride]);
+
   async function handleExport(): Promise<void> {
     try {
       const exported = await exportWorkshopFiles({
@@ -2092,6 +2118,12 @@ function addPolicyPresetContextToSetupSheet(
     exportTxt: `${sheet.exportTxt}\n${contextLineTxt}`,
     exportMarkdown: `${sheet.exportMarkdown}\n${contextLineMd}`
   };
+}
+
+function isTypingElement(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName.toLowerCase();
+  return tag === "input" || tag === "textarea" || tag === "select" || target.isContentEditable;
 }
 
 function computeLineStarts(source: string): number[] {
