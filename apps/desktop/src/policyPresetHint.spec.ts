@@ -4,6 +4,7 @@ import {
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
   derivePolicyPresetActionState,
+  derivePolicyUiEventEmissionDecision,
   derivePolicyPresetVisualState,
   resolvePolicyPresetHintState,
   resolvePolicyPresetShortcutAction
@@ -254,5 +255,15 @@ describe("derivePolicyPresetVisualState", () => {
     });
     expect(derivePolicyPresetVisualState(manual).highlightManualSource).toBe(true);
     expect(derivePolicyPresetVisualState(saved).highlightManualSource).toBe(false);
+  });
+});
+
+describe("derivePolicyUiEventEmissionDecision", () => {
+  it("emits when toggle is enabled", () => {
+    expect(derivePolicyUiEventEmissionDecision(true).emit).toBe(true);
+  });
+
+  it("does not emit when toggle is disabled", () => {
+    expect(derivePolicyUiEventEmissionDecision(false).emit).toBe(false);
   });
 });

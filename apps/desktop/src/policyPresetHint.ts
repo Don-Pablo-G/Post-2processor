@@ -20,6 +20,9 @@ export type PolicyPresetVisualState = {
   showHelpTooltipIcon: boolean;
   highlightManualSource: boolean;
 };
+export type PolicyUiEventEmissionDecision = {
+  emit: boolean;
+};
 
 export function resolvePolicyPresetHintState(input: {
   persistedPreset?: JobCheckPolicyPreset;
@@ -81,4 +84,8 @@ export function derivePolicyPresetVisualState(state: PolicyPresetHintState): Pol
     showHelpTooltipIcon: true,
     highlightManualSource: state.source === "manual"
   };
+}
+
+export function derivePolicyUiEventEmissionDecision(enabled: boolean): PolicyUiEventEmissionDecision {
+  return { emit: enabled };
 }
