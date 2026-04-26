@@ -32,6 +32,7 @@ import type {
 } from "@cnc/core/browser";
 import { haasNgcProfile } from "@cnc/profile-haas-ngc";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { resolvePolicyPresetHintState } from "./policyPresetHint";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -543,20 +544,20 @@ export function App() {
     () => readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile)?.jobCheckPolicyPreset,
     [templateJson, detectedControllerProfile]
   );
-  const isPersistedPolicyPresetActive =
-    persistedPolicyPreset !== undefined && persistedPolicyPreset === jobCheckPolicyPreset;
-  const hasUnsavedPolicyPresetOverride =
-    persistedPolicyPreset !== undefined && persistedPolicyPreset !== jobCheckPolicyPreset;
+  const policyPresetHintState = resolvePolicyPresetHintState({
+    persistedPreset: persistedPolicyPreset,
+    currentPreset: jobCheckPolicyPreset
+  });
   const currentPolicyPresetLabel =
-    jobCheckPolicyPreset === "strict"
+    policyPresetHintState.currentPreset === "strict"
       ? t.policyPresetStrict
-      : jobCheckPolicyPreset === "permissive"
+      : policyPresetHintState.currentPreset === "permissive"
         ? t.policyPresetPermissive
         : t.policyPresetBalanced;
   const persistedPolicyPresetLabel =
-    persistedPolicyPreset === "strict"
+    policyPresetHintState.persistedPreset === "strict"
       ? t.policyPresetStrict
-      : persistedPolicyPreset === "permissive"
+      : policyPresetHintState.persistedPreset === "permissive"
         ? t.policyPresetPermissive
         : t.policyPresetBalanced;
   const fixtureTargetPaths = useMemo(() => {
@@ -1636,12 +1637,12 @@ export function App() {
             <option value="permissive">{t.policyPresetPermissive}</option>
           </select>
         </label>
-        {isPersistedPolicyPresetActive ? (
+        {policyPresetHintState.isPersistedActive ? (
           <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
             {`${t.policyPresetPersistedHint}: ${persistedPolicyPresetLabel}`}
           </p>
         ) : null}
-        {hasUnsavedPolicyPresetOverride ? (
+        {policyPresetHintState.hasUnsavedOverride ? (
           <div style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
             <span>{`${t.policyPresetUnsavedOverrideHint}: ${currentPolicyPresetLabel}`}</span>
             <button onClick={handleSaveParameterPrefsToTemplateJson} style={{ marginLeft: 8, opacity: 1 }}>

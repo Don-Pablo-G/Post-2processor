@@ -100,7 +100,7 @@
     "precommit:check": "node ./scripts/pre-commit-check.mjs",
     "repo:health": "node ./scripts/repo-health.mjs",
     "setup:hooks": "node ./scripts/setup-git-hooks.mjs",
-    "test": "npm run --workspace @cnc/core test",
+    "test": "npm run --workspace @cnc/core test && npm run --workspace @cnc/desktop test",
     "typecheck": "npm run guard:imports && npm run --workspaces typecheck",
     "verify": "npm run guard:imports && npm run test && npm run check:shop-baselines && npm run typecheck && npm run build",
     "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs",
