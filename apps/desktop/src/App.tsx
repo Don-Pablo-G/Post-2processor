@@ -100,6 +100,7 @@ const UI_TEXT: Record<
     includeTimelineFindingsExport: string;
     saveParamPrefs: string;
     savePolicyPresetNow: string;
+    revertPolicyPresetToControllerDefault: string;
     resetUiPrefs: string;
     runJobCheck: string;
     policyPreset: string;
@@ -215,6 +216,7 @@ const UI_TEXT: Record<
     includeTimelineFindingsExport: "Dołącz timeline i findingi do eksportu",
     saveParamPrefs: "Zapisz ustawienia parametrów do JSON",
     savePolicyPresetNow: "Zapisz ten preset jako domyślny",
+    revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
     policyPreset: "Preset polityki bezpieczeństwa",
@@ -330,6 +332,7 @@ const UI_TEXT: Record<
     includeTimelineFindingsExport: "Include timeline and findings in export",
     saveParamPrefs: "Save parameter preferences to JSON",
     savePolicyPresetNow: "Save this preset as default",
+    revertPolicyPresetToControllerDefault: "Revert to controller default preset",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
     policyPreset: "Safety policy preset",
@@ -1674,6 +1677,15 @@ export function App() {
             <option value="balanced">{t.policyPresetBalanced}</option>
             <option value="permissive">{t.policyPresetPermissive}</option>
           </select>
+          <button
+            onClick={() => {
+              setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
+              setPolicyPresetManuallySet(false);
+            }}
+            style={{ marginLeft: 8 }}
+          >
+            {t.revertPolicyPresetToControllerDefault}
+          </button>
         </label>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>{t.policyPresetHelp}</p>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
