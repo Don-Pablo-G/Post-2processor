@@ -66,6 +66,36 @@ function modeFromController(value) {
   fail(`Unsupported controller mode in baseline: ${String(value)}`);
 }
 
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function collectDiffLines(expected, actual, prefix = "") {
+  if (Object.is(expected, actual)) return [];
+
+  if (Array.isArray(expected) && Array.isArray(actual)) {
+    const lines = [];
+    const maxLength = Math.max(expected.length, actual.length);
+    for (let i = 0; i < maxLength; i += 1) {
+      lines.push(...collectDiffLines(expected[i], actual[i], `${prefix}[${i}]`));
+    }
+    return lines;
+  }
+
+  if (isPlainObject(expected) && isPlainObject(actual)) {
+    const lines = [];
+    const keys = [...new Set([...Object.keys(expected), ...Object.keys(actual)])].sort();
+    for (const key of keys) {
+      const nextPrefix = prefix ? `${prefix}.${key}` : key;
+      lines.push(...collectDiffLines(expected[key], actual[key], nextPrefix));
+    }
+    return lines;
+  }
+
+  const keyPath = prefix || "(root)";
+  return [`${keyPath}: expected=${JSON.stringify(expected)} actual=${JSON.stringify(actual)}`];
+}
+
 async function main() {
   await ensureFileExists(coreDistPath, "Missing built core entry. Run npm run build first");
   await ensureFileExists(haasProfileDistPath, "Missing built Haas profile entry. Run npm run build first");
@@ -102,8 +132,11 @@ async function main() {
         updatedBaselines.push(path.relative(root, baselineFile));
         continue;
       }
+      const diffLines = collectDiffLines(expected, actual);
+      const preview = diffLines.slice(0, 10);
+      const truncated = diffLines.length > preview.length ? `\n    ... ${diffLines.length - preview.length} more` : "";
       driftMessages.push(
-        `${path.relative(root, baselineFile)} drifted (rerun smoke and refresh baseline JSON if change is intentional).`
+        `${path.relative(root, baselineFile)} drifted (rerun smoke and refresh baseline JSON if change is intentional).\n    ${preview.join("\n    ")}${truncated}`
       );
     }
   }
