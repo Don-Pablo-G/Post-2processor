@@ -29,8 +29,10 @@ jobs:
       - name: Guard imports
         run: npm run guard:imports
 
-      - name: Build Haas profile package
-        run: npm run --workspace @cnc/profile-haas-ngc build
+      - name: Build core + Haas profile packages
+        run: |
+          npm run --workspace @cnc/core build
+          npm run --workspace @cnc/profile-haas-ngc build
 
       - name: Core tests
         run: npm run test
