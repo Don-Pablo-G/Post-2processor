@@ -56,6 +56,15 @@ type LogSemantics = "controller_default" | "natural" | "base10";
 type JobCheckPolicyPreset = "strict" | "balanced" | "permissive";
 type TimelineFilterKey = "alarms" | "flow" | "control";
 
+declare global {
+  interface Window {
+    __CNC_E2E_EXPORT_MOCK__?: {
+      exportDirectory: string;
+      artifactCount: number;
+    };
+  }
+}
+
 const UI_TEXT: Record<
   UiLanguage,
   {
@@ -456,7 +465,8 @@ const UI_TEXT: Record<
 
 export function App() {
   const nodeCapable = isNodeCapable();
-  const nodeOnlyDisabled = !nodeCapable;
+  const e2eExportMockAvailable = typeof window !== "undefined" && Boolean(window.__CNC_E2E_EXPORT_MOCK__);
+  const nodeOnlyDisabled = !nodeCapable && !e2eExportMockAvailable;
   const nodeOnlyDisabledReason = "Requires Node-capable runtime (@cnc/core/node).";
   const [code, setCode] = useState(SAMPLE);
   const [language, setLanguage] = useState<UiLanguage>("pl");
@@ -910,19 +920,27 @@ export function App() {
 
   async function handleExport(): Promise<void> {
     try {
-      const exported = await exportWorkshopFiles({
-        baseDirectory: exportFolder,
-        baseName: exportBaseName,
-        setupSheetTxt: setupSheetWithPolicyContext.exportTxt,
-        setupSheetMarkdown: setupSheetWithPolicyContext.exportMarkdown,
-        proveoutCode: proveout.code,
-        fixtureSummaryTxt: fixtureHealth?.summaryTxt,
-        fixtureSummaryMarkdown: fixtureHealth?.summaryMarkdown,
-        timelineTxt: includeTimelineFindingsExport ? timelineFindingsExportBundle.timelineTxt : undefined,
-        timelineMarkdown: includeTimelineFindingsExport ? timelineFindingsExportBundle.timelineMarkdown : undefined,
-        findingsTxt: includeTimelineFindingsExport ? timelineFindingsExportBundle.findingsTxt : undefined,
-        findingsMarkdown: includeTimelineFindingsExport ? timelineFindingsExportBundle.findingsMarkdown : undefined
-      });
+      const exported = window.__CNC_E2E_EXPORT_MOCK__
+        ? {
+            exportDirectory: window.__CNC_E2E_EXPORT_MOCK__.exportDirectory,
+            artifacts: Array.from({ length: window.__CNC_E2E_EXPORT_MOCK__.artifactCount }, (_, idx) => ({
+              kind: `mock-${idx}`,
+              path: `mock-${idx}.txt`
+            }))
+          }
+        : await exportWorkshopFiles({
+            baseDirectory: exportFolder,
+            baseName: exportBaseName,
+            setupSheetTxt: setupSheetWithPolicyContext.exportTxt,
+            setupSheetMarkdown: setupSheetWithPolicyContext.exportMarkdown,
+            proveoutCode: proveout.code,
+            fixtureSummaryTxt: fixtureHealth?.summaryTxt,
+            fixtureSummaryMarkdown: fixtureHealth?.summaryMarkdown,
+            timelineTxt: includeTimelineFindingsExport ? timelineFindingsExportBundle.timelineTxt : undefined,
+            timelineMarkdown: includeTimelineFindingsExport ? timelineFindingsExportBundle.timelineMarkdown : undefined,
+            findingsTxt: includeTimelineFindingsExport ? timelineFindingsExportBundle.findingsTxt : undefined,
+            findingsMarkdown: includeTimelineFindingsExport ? timelineFindingsExportBundle.findingsMarkdown : undefined
+          });
       const policyContext = `preset=${policyPresetHintState.currentPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`;
       setExportStatus(`${exported.exportDirectory} (${exported.artifacts.length} files) | ${policyContext}`);
       setLastExportContext({
