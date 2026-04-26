@@ -142,6 +142,14 @@ function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): S
       blockIndex: simulation.trace.at(-1)?.blockIndex
     });
   }
+  if (simulation.warnings.some((w) => w.includes("M97 local subprogram call is not supported in fanuc mode"))) {
+    findings.push({
+      severity: "warning",
+      code: "SIM_UNSUPPORTED_M97",
+      message: "Fanuc simulation encountered unsupported M97 local subprogram call.",
+      blockIndex: simulation.trace.at(-1)?.blockIndex
+    });
+  }
   return findings;
 }
 

@@ -1,0 +1,22 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_m97_not_supported.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "M30 appears before the last block."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 1,
+    "warnings": [
+      "M97 local subprogram call is not supported in fanuc mode (block 2)."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
