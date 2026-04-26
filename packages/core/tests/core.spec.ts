@@ -941,7 +941,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(issues.some((i) => i.message.includes("G43 without H"))).toBe(false);
   });
 
-  it("warns first G43 activation with no Z on same block", () => {
+  it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
@@ -953,6 +953,20 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
     ).toBe(true);
+  });
+
+  it("does not warn first G43 activation with variable Z#...", () => {
+    const ast = parse("#100=25.\nT1 M6\nG43 H1 Z#100\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
+    ).toBe(false);
+  });
+
+  it("does not warn first G43 activation with bracket expression Z[#...]", () => {
+    const ast = parse("#100=20.\nT1 M6\nG43 H1 Z[#100+5.]\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("First G43 activation has no meaningful Z"))
+    ).toBe(false);
   });
 
   it("does not warn first G43 activation with non-zero Z move", () => {
