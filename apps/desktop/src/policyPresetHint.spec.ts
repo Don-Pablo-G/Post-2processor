@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { buildTimelineFindingsExportBundle } from "@cnc/core/browser";
-import { defaultPolicyPresetForController, derivePolicyPresetActionState, resolvePolicyPresetHintState } from "./policyPresetHint";
+import {
+  defaultPolicyPresetForController,
+  derivePolicyDriftWarning,
+  derivePolicyPresetActionState,
+  resolvePolicyPresetHintState,
+  resolvePolicyPresetShortcutAction
+} from "./policyPresetHint";
 
 describe("resolvePolicyPresetHintState", () => {
   it("marks persisted preset as active when current matches saved", () => {
@@ -136,5 +142,93 @@ describe("derivePolicyPresetActionState", () => {
     expect(actionState.showSaveActions).toBe(false);
     expect(actionState.canSaveAndRun).toBe(false);
     expect(actionState.canRevertToControllerDefault).toBe(false);
+  });
+});
+
+describe("resolvePolicyPresetShortcutAction", () => {
+  it("returns revert action for Ctrl+Shift+R outside typing context", () => {
+    expect(
+      resolvePolicyPresetShortcutAction({
+        key: "R",
+        ctrlKey: true,
+        shiftKey: true,
+        isTypingContext: false,
+        hasUnsavedOverride: false
+      })
+    ).toBe("revert_to_default");
+  });
+
+  it("returns save-and-run for Ctrl+Shift+J only when override exists", () => {
+    expect(
+      resolvePolicyPresetShortcutAction({
+        key: "j",
+        ctrlKey: true,
+        shiftKey: true,
+        isTypingContext: false,
+        hasUnsavedOverride: true
+      })
+    ).toBe("save_and_run");
+    expect(
+      resolvePolicyPresetShortcutAction({
+        key: "j",
+        ctrlKey: true,
+        shiftKey: true,
+        isTypingContext: false,
+        hasUnsavedOverride: false
+      })
+    ).toBe("none");
+  });
+
+  it("returns none while typing or without modifier combo", () => {
+    expect(
+      resolvePolicyPresetShortcutAction({
+        key: "r",
+        ctrlKey: true,
+        shiftKey: true,
+        isTypingContext: true,
+        hasUnsavedOverride: true
+      })
+    ).toBe("none");
+    expect(
+      resolvePolicyPresetShortcutAction({
+        key: "r",
+        ctrlKey: true,
+        shiftKey: false,
+        isTypingContext: false,
+        hasUnsavedOverride: true
+      })
+    ).toBe("none");
+  });
+});
+
+describe("derivePolicyDriftWarning", () => {
+  it("builds warning when controller changes during manual mode", () => {
+    expect(
+      derivePolicyDriftWarning({
+        previousController: "haas-ngc",
+        nextController: "fanuc",
+        manuallySet: true,
+        warningPrefix: "Warning"
+      })
+    ).toBe("Warning: haas-ngc -> fanuc");
+  });
+
+  it("returns empty when controller unchanged or manual mode off", () => {
+    expect(
+      derivePolicyDriftWarning({
+        previousController: "fanuc",
+        nextController: "fanuc",
+        manuallySet: true,
+        warningPrefix: "Warning"
+      })
+    ).toBe("");
+    expect(
+      derivePolicyDriftWarning({
+        previousController: "haas-ngc",
+        nextController: "fanuc",
+        manuallySet: false,
+        warningPrefix: "Warning"
+      })
+    ).toBe("");
   });
 });

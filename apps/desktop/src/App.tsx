@@ -32,7 +32,12 @@ import type {
 } from "@cnc/core/browser";
 import { haasNgcProfile } from "@cnc/profile-haas-ngc";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { defaultPolicyPresetForController, resolvePolicyPresetHintState } from "./policyPresetHint";
+import {
+  defaultPolicyPresetForController,
+  derivePolicyDriftWarning,
+  resolvePolicyPresetHintState,
+  resolvePolicyPresetShortcutAction
+} from "./policyPresetHint";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -779,12 +784,14 @@ export function App() {
   useEffect(() => {
     const previous = previousDetectedControllerRef.current;
     previousDetectedControllerRef.current = detectedControllerProfile;
-    if (!previous || previous === detectedControllerProfile) return;
-    if (policyPresetManuallySet) {
-      setPolicyDriftWarning(`${t.policyDriftWarning}: ${previous} -> ${detectedControllerProfile}`);
-    } else {
-      setPolicyDriftWarning("");
-    }
+    setPolicyDriftWarning(
+      derivePolicyDriftWarning({
+        previousController: previous,
+        nextController: detectedControllerProfile,
+        manuallySet: policyPresetManuallySet,
+        warningPrefix: t.policyDriftWarning
+      })
+    );
   }, [detectedControllerProfile, policyPresetManuallySet, t.policyDriftWarning]);
 
   useEffect(() => {
@@ -802,10 +809,14 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (!(event.ctrlKey && event.shiftKey)) return;
-      if (isTypingElement(event.target)) return;
-      const key = event.key.toLowerCase();
-      if (key === "r") {
+      const action = resolvePolicyPresetShortcutAction({
+        key: event.key,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        isTypingContext: isTypingElement(event.target),
+        hasUnsavedOverride: policyPresetHintState.hasUnsavedOverride
+      });
+      if (action === "revert_to_default") {
         event.preventDefault();
         const preset = defaultPolicyPresetForController(detectedControllerProfile);
         setJobCheckPolicyPreset(preset);
@@ -817,7 +828,7 @@ export function App() {
         });
         setExportStatus("Policy preset reverted to controller default (Ctrl+Shift+R).");
       }
-      if (key === "j" && policyPresetHintState.hasUnsavedOverride) {
+      if (action === "save_and_run") {
         event.preventDefault();
         void handleSavePolicyPresetAndRunCheck();
       }
