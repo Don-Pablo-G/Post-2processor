@@ -172,6 +172,15 @@ function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): S
       blockIndex: simulation.trace.at(-1)?.blockIndex
     });
   }
+  const rapidZPlungeWarning = simulation.warnings.find((w) => w.includes("rapid (G0) Z move down"));
+  if (rapidZPlungeWarning) {
+    findings.push({
+      severity: "warning",
+      code: "SIM_RAPID_Z_PLUNGE",
+      message: rapidZPlungeWarning,
+      blockIndex: simulation.trace.at(-1)?.blockIndex
+    });
+  }
   return findings;
 }
 
