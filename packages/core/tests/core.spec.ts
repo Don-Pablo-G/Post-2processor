@@ -698,6 +698,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(true);
   });
 
+  it("adds simulation finding for orphan END without matching WHILE", async () => {
+    const input = "END2\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_orphan_end_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("END2 has no matching WHILE"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END")).toBe(true);
+  });
+
   it("adds simulation finding for fanuc subprogram target miss", async () => {
     const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
     const ast = parse(input, haasNgcProfile);
