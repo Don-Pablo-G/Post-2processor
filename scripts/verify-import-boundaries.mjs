@@ -5,7 +5,6 @@ const root = process.cwd();
 const shadowPolicy = {
   allowedShadowedJsRelPaths: new Set([
     "packages/core/src/api.js",
-    "packages/core/src/index.js",
     "packages/core/src/workshop/advisor.js",
     "packages/core/src/workshop/export.js",
     "packages/core/src/workshop/exportBundle.js",
