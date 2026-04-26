@@ -7,7 +7,8 @@ import type {
   RunJobCheckInput,
   RunJobCheckResult,
   SafetyFinding,
-  SimulationFindingPolicy
+  SimulationFindingPolicy,
+  ExportBlockingPolicy
 } from "../types.js";
 
 const dynamicImport = new Function("path", "return import(path);") as (path: string) => Promise<unknown>;
@@ -25,6 +26,18 @@ const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
   maxStepsLimit: { enabled: true, severity: "warning" }
 };
 
+const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
+  includeAllBlockers: true,
+  blockedFindingCodes: [
+    "SIM_RAPID_Z_PLUNGE",
+    "SIM_GOTO_TARGET_MISS",
+    "SIM_MAX_STEPS_LIMIT",
+    "SIM_SUBPROGRAM_TARGET_MISS",
+    "SIM_UNSUPPORTED_M97",
+    "SIM_UNSUPPORTED_FUNCTION"
+  ]
+};
+
 function resolveSimulationFindingPolicy(input: RunJobCheckInput): SimulationFindingPolicy {
   const override = input.simulationFindingPolicy;
   if (!override) return conservativeShopSafetyPolicy;
@@ -36,6 +49,15 @@ function resolveSimulationFindingPolicy(input: RunJobCheckInput): SimulationFind
     }
   }
   return merged;
+}
+
+function resolveExportBlockingPolicy(input: RunJobCheckInput): ExportBlockingPolicy {
+  const override = input.exportBlockingPolicy;
+  if (!override) return conservativeExportBlockingPolicy;
+  return {
+    includeAllBlockers: override.includeAllBlockers ?? conservativeExportBlockingPolicy.includeAllBlockers,
+    blockedFindingCodes: override.blockedFindingCodes ?? conservativeExportBlockingPolicy.blockedFindingCodes
+  };
 }
 
 export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJobCheckResult> {
@@ -53,12 +75,18 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
   const setupSheet = generateSetupSheet(input.ast, initialState);
   const proveout = buildProveoutProgram(input.ast, initialState);
   const simulationFindings = buildSimulationFindings(simulation, resolveSimulationFindingPolicy(input));
+  const exportBlockingPolicy = resolveExportBlockingPolicy(input);
 
   const allFindings = [...advisor.safetyFindings, ...simulationFindings];
   const blockerCount = allFindings.filter((f) => f.severity === "blocker").length;
   const warningCount = allFindings.filter((f) => f.severity === "warning").length;
   const allowExportWithBlockers = input.exportOptions?.allowExportWithBlockers ?? false;
-  const shouldBlock = blockerCount > 0 && !allowExportWithBlockers;
+  const blockedCodes = new Set(exportBlockingPolicy.blockedFindingCodes);
+  const policyBlockedFindings = allFindings.filter(
+    (f) =>
+      blockedCodes.has(f.code) || (exportBlockingPolicy.includeAllBlockers && f.severity === "blocker")
+  );
+  const shouldBlock = policyBlockedFindings.length > 0 && !allowExportWithBlockers;
   const messages: string[] = [];
   let exportResult: RunJobCheckResult["exportResult"];
 
@@ -73,6 +101,10 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
   }
   if (warningCount > 0) {
     messages.push(`Detected ${warningCount} warning(s); review before release.`);
+  }
+  if (policyBlockedFindings.length > 0) {
+    const codes = [...new Set(policyBlockedFindings.map((f) => f.code))].sort().join(", ");
+    messages.push(`Export safety gate active due to findings: ${codes}.`);
   }
 
   if (input.exportOptions?.enabled) {

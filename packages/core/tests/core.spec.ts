@@ -588,6 +588,49 @@ describe("core pipeline", () => {
     expect(result.exportResult).toBeUndefined();
   });
 
+  it("blocks export on policy-blocked warning finding codes by default", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportBlockingPolicy: {
+        includeAllBlockers: false,
+        blockedFindingCodes: ["SIM_RAPID_Z_PLUNGE"]
+      },
+      exportOptions: {
+        enabled: true,
+        allowExportWithBlockers: false,
+        baseDirectory: ".",
+        baseName: "policy_blocked_warning"
+      }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
+    expect(result.blocked).toBe(true);
+    expect(result.exportResult).toBeUndefined();
+  });
+
+  it("allows overriding export-blocking policy for specific finding codes", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportBlockingPolicy: {
+        includeAllBlockers: false,
+        blockedFindingCodes: []
+      },
+      exportOptions: {
+        enabled: false,
+        allowExportWithBlockers: false,
+        baseDirectory: ".",
+        baseName: "policy_override_warning"
+      }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
+    expect(result.blocked).toBe(false);
+  });
+
   it("surfaces macro alarms in job check output as blockers", async () => {
     const input = "G90 G17\n#3006=3 (CHECK CHIP LOAD)\nM30";
     const ast = parse(input, haasNgcProfile);
