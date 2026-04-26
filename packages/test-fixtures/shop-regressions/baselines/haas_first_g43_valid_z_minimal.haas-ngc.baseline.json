@@ -1,0 +1,15 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_first_g43_valid_z_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 3.1,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
