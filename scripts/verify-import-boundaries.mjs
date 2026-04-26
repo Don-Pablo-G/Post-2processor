@@ -3,13 +3,7 @@ import path from "node:path";
 
 const root = process.cwd();
 const shadowPolicy = {
-  allowedShadowedJsRelPaths: new Set([
-    "packages/core/src/workshop/export.js",
-    "packages/core/src/workshop/parameterProfiles.js",
-    "packages/core/src/workshop/runJobCheck.js",
-    "packages/core/src/workshop/shopFixtures.js",
-    
-  ]),
+  allowedShadowedJsRelPaths: new Set([]),
   deniedShadowedJsRelPaths: new Set(["packages/core/src/simulator/simpleSimulator.js"])
 };
 const boundaryRules = [
