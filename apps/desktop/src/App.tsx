@@ -98,6 +98,7 @@ const UI_TEXT: Record<
     exportNow: string;
     includeTimelineFindingsExport: string;
     saveParamPrefs: string;
+    savePolicyPresetNow: string;
     resetUiPrefs: string;
     runJobCheck: string;
     policyPreset: string;
@@ -207,6 +208,7 @@ const UI_TEXT: Record<
     exportNow: "Eksportuj pliki",
     includeTimelineFindingsExport: "Dołącz timeline i findingi do eksportu",
     saveParamPrefs: "Zapisz ustawienia parametrów do JSON",
+    savePolicyPresetNow: "Zapisz ten preset jako domyślny",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
     policyPreset: "Preset polityki bezpieczeństwa",
@@ -315,6 +317,7 @@ const UI_TEXT: Record<
     exportNow: "Export files",
     includeTimelineFindingsExport: "Include timeline and findings in export",
     saveParamPrefs: "Save parameter preferences to JSON",
+    savePolicyPresetNow: "Save this preset as default",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
     policyPreset: "Safety policy preset",
@@ -1639,9 +1642,12 @@ export function App() {
           </p>
         ) : null}
         {hasUnsavedPolicyPresetOverride ? (
-          <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
-            {`${t.policyPresetUnsavedOverrideHint}: ${currentPolicyPresetLabel}`}
-          </p>
+          <div style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
+            <span>{`${t.policyPresetUnsavedOverrideHint}: ${currentPolicyPresetLabel}`}</span>
+            <button onClick={handleSaveParameterPrefsToTemplateJson} style={{ marginLeft: 8, opacity: 1 }}>
+              {t.savePolicyPresetNow}
+            </button>
+          </div>
         ) : null}
         <button onClick={() => void handleRunJobCheck()}>{t.runJobCheck}</button>
         <details
