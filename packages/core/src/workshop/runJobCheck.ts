@@ -181,6 +181,15 @@ function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): S
       blockIndex: simulation.trace.at(-1)?.blockIndex
     });
   }
+  const gotoTargetMissWarning = simulation.warnings.find((w) => w.includes("GOTO target N") && w.includes("not found"));
+  if (gotoTargetMissWarning) {
+    findings.push({
+      severity: "warning",
+      code: "SIM_GOTO_TARGET_MISS",
+      message: gotoTargetMissWarning,
+      blockIndex: simulation.trace.at(-1)?.blockIndex
+    });
+  }
   return findings;
 }
 

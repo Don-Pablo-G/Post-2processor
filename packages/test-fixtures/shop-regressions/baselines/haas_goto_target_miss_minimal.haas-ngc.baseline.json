@@ -1,0 +1,18 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_goto_target_miss_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 2,
+    "warnings": [
+      "GOTO target N1234 not found.",
+      "IF GOTO target N1234 not found."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
