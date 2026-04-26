@@ -180,6 +180,16 @@ export type SimulationFindingPolicyOverride = Partial<{
   [K in keyof SimulationFindingPolicy]: Partial<SimulationFindingPolicy[K]>;
 }>;
 
+export type ExportBlockingPolicy = {
+  includeAllBlockers: boolean;
+  blockedFindingCodes: string[];
+};
+
+export type ExportBlockingPolicyOverride = Partial<{
+  includeAllBlockers: boolean;
+  blockedFindingCodes: string[];
+}>;
+
 export type CriticalEvent = {
   kind:
     | "first_motion"
@@ -448,6 +458,7 @@ export type RunJobCheckInput = {
   advisorOptions?: ProgramAdvisorOptions;
   simulationLimits?: Partial<SimulatorLimits>;
   simulationFindingPolicy?: SimulationFindingPolicyOverride;
+  exportBlockingPolicy?: ExportBlockingPolicyOverride;
   exportOptions?: {
     enabled: boolean;
     allowExportWithBlockers?: boolean;
