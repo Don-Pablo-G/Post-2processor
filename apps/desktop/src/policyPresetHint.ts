@@ -6,19 +6,24 @@ export type PolicyPresetHintState = {
   currentPreset: JobCheckPolicyPreset;
   isPersistedActive: boolean;
   hasUnsavedOverride: boolean;
+  source: "saved" | "bootstrap" | "manual";
 };
 
 export function resolvePolicyPresetHintState(input: {
   persistedPreset?: JobCheckPolicyPreset;
   currentPreset: JobCheckPolicyPreset;
+  manuallySet?: boolean;
 }): PolicyPresetHintState {
   const isPersistedActive = input.persistedPreset !== undefined && input.persistedPreset === input.currentPreset;
   const hasUnsavedOverride = input.persistedPreset !== undefined && input.persistedPreset !== input.currentPreset;
+  const source: PolicyPresetHintState["source"] =
+    input.manuallySet ? "manual" : input.persistedPreset !== undefined ? "saved" : "bootstrap";
   return {
     persistedPreset: input.persistedPreset,
     currentPreset: input.currentPreset,
     isPersistedActive,
-    hasUnsavedOverride
+    hasUnsavedOverride,
+    source
   };
 }
 

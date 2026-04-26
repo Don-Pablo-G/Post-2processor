@@ -107,6 +107,10 @@ const UI_TEXT: Record<
     policyPresetBalanced: string;
     policyPresetPermissive: string;
     policyPresetHelp: string;
+    policyPresetSourceLabel: string;
+    policyPresetSourceSaved: string;
+    policyPresetSourceBootstrap: string;
+    policyPresetSourceManual: string;
     policyPresetPersistedHint: string;
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
@@ -219,6 +223,10 @@ const UI_TEXT: Record<
     policyPresetPermissive: "Permisywny",
     policyPresetHelp:
       "Ścisły: więcej blokerów i ostrzejsze bramkowanie eksportu. Zrównoważony: domyślna konserwatywna polityka shop. Permisywny: mniej blokad, do kontrolowanego debugowania.",
+    policyPresetSourceLabel: "Źródło presetu",
+    policyPresetSourceSaved: "zapisany",
+    policyPresetSourceBootstrap: "bootstrap",
+    policyPresetSourceManual: "ręczny",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
@@ -330,6 +338,10 @@ const UI_TEXT: Record<
     policyPresetPermissive: "Permissive",
     policyPresetHelp:
       "Strict: more blockers and tighter export gates. Balanced: conservative default shop policy. Permissive: fewer blocks, for controlled debugging only.",
+    policyPresetSourceLabel: "Preset source",
+    policyPresetSourceSaved: "saved",
+    policyPresetSourceBootstrap: "bootstrap",
+    policyPresetSourceManual: "manual",
     policyPresetPersistedHint: "Saved controller default preset is active",
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
@@ -552,8 +564,15 @@ export function App() {
   );
   const policyPresetHintState = resolvePolicyPresetHintState({
     persistedPreset: persistedPolicyPreset,
-    currentPreset: jobCheckPolicyPreset
+    currentPreset: jobCheckPolicyPreset,
+    manuallySet: policyPresetManuallySet
   });
+  const policyPresetSourceLabel =
+    policyPresetHintState.source === "saved"
+      ? t.policyPresetSourceSaved
+      : policyPresetHintState.source === "manual"
+        ? t.policyPresetSourceManual
+        : t.policyPresetSourceBootstrap;
   const currentPolicyPresetLabel =
     policyPresetHintState.currentPreset === "strict"
       ? t.policyPresetStrict
@@ -1657,6 +1676,9 @@ export function App() {
           </select>
         </label>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>{t.policyPresetHelp}</p>
+        <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
+          {`${t.policyPresetSourceLabel}: ${policyPresetSourceLabel}`}
+        </p>
         {policyPresetHintState.isPersistedActive ? (
           <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
             {`${t.policyPresetPersistedHint}: ${persistedPolicyPresetLabel}`}
