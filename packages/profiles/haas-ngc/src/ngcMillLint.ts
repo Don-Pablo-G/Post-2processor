@@ -38,6 +38,15 @@ function lastWordValue(block: { words: Word[] }, letter: string): string | undef
   return w?.value;
 }
 
+function isMeaningfulFirstG43Z(zWordRaw: string | undefined): boolean {
+  if (zWordRaw === undefined) return false;
+  const z = zWordRaw.trim().toUpperCase();
+  if (z.includes("#") || z.includes("[")) return true;
+  const parsed = Number.parseFloat(z);
+  if (!Number.isFinite(parsed)) return false;
+  return parsed !== 0;
+}
+
 /**
  * Haas NGC mill-oriented checks that do not depend on a specific control software revision.
  * Conservative: favor warnings over errors except clear structural mistakes.
@@ -64,10 +73,8 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
     if (hasG43Classic(block) && !sawFirstG43Activation) {
       sawFirstG43Activation = true;
-      const zVal = lastWordValue(block, "Z");
-      const parsedZ = zVal === undefined ? Number.NaN : Number.parseFloat(zVal);
-      const hasZeroLiteralZ = zVal !== undefined && Number.isFinite(parsedZ) && parsedZ === 0;
-      if (zVal === undefined || hasZeroLiteralZ) {
+      const zWordRaw = lastWordValue(block, "Z");
+      if (!isMeaningfulFirstG43Z(zWordRaw)) {
         issues.push({
           severity: "warning",
           message:
