@@ -43,3 +43,9 @@ Local desktop UI emits policy-preset interaction events via:
 - Event emission can be toggled in desktop UI with **Enable local policy UI events**.
 - If the toggle is off, no custom events are emitted.
 - Consumers should treat unknown `event` values as forward-compatible additions.
+
+## Migration Note
+
+- Current payloads include `schemaVersion: 1`.
+- If you consumed older payloads, treat missing `schemaVersion` as version `0` and continue parsing shared fields (`event`, `controller`, `preset`, `source`, `timestampIso`).
+- Consumers should ignore unknown fields to remain forward-compatible with future schema updates.
