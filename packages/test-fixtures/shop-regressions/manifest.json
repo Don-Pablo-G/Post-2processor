@@ -410,6 +410,16 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "haas_if_then_false_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_if_then_false_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
