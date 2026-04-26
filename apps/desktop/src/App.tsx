@@ -482,6 +482,13 @@ export function App() {
   });
   const [jobCheckStatus, setJobCheckStatus] = useState("");
   const [jobCheckResult, setJobCheckResult] = useState<RunJobCheckResult | null>(null);
+  const [lastExportContext, setLastExportContext] = useState<{
+    directory: string;
+    artifactCount: number;
+    preset: JobCheckPolicyPreset;
+    source: "saved" | "bootstrap" | "manual";
+    controller: ControllerProfileKey;
+  } | null>(null);
   const [testsWorkspaceRoot, setTestsWorkspaceRoot] = useState(".");
   const [fixturesRoot, setFixturesRoot] = useState("./packages/test-fixtures");
   const [fixtureId, setFixtureId] = useState("my_shop_fixture");
@@ -888,6 +895,13 @@ export function App() {
       });
       const policyContext = `preset=${policyPresetHintState.currentPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`;
       setExportStatus(`${exported.exportDirectory} (${exported.artifacts.length} files) | ${policyContext}`);
+      setLastExportContext({
+        directory: exported.exportDirectory,
+        artifactCount: exported.artifacts.length,
+        preset: policyPresetHintState.currentPreset,
+        source: policyPresetHintState.source,
+        controller: detectedControllerProfile
+      });
     } catch (error) {
       setExportStatus(
         error instanceof Error
@@ -1833,6 +1847,26 @@ export function App() {
         >
           {t.exportNow}
         </button>
+        {lastExportContext ? (
+          <div
+            style={{
+              marginTop: 8,
+              marginBottom: 8,
+              padding: 8,
+              borderRadius: 6,
+              border: "1px solid #2e5b8a",
+              background: "#eaf4ff",
+              color: "#10395c"
+            }}
+          >
+            <strong>Export policy context</strong>
+            <div>{`dir=${lastExportContext.directory}`}</div>
+            <div>{`artifacts=${lastExportContext.artifactCount}`}</div>
+            <div>{`preset=${lastExportContext.preset}`}</div>
+            <div>{`source=${lastExportContext.source}`}</div>
+            <div>{`controller=${lastExportContext.controller}`}</div>
+          </div>
+        ) : null}
         <label style={{ display: "block", marginTop: 8 }}>
           <input
             type="checkbox"
