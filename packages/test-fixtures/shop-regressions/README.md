@@ -54,3 +54,13 @@ If drift is intentional, refresh snapshots in place:
 ```bash
 npm run check:shop-baselines:update
 ```
+
+## Safe baseline update workflow
+
+Use this sequence when intentionally changing simulator/lint behavior:
+
+1. Run `npm run check:shop-baselines` and review drift output.
+2. Confirm the behavior change is expected (tests/docs/code review context).
+3. Refresh snapshots with `npm run check:shop-baselines:update`.
+4. Re-run `npm run check:shop-baselines` to ensure zero drift remains.
+5. Commit updated baseline files with a short rationale in the commit/PR description.

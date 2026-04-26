@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Guard imports
+        run: npm run guard:imports
+
+      - name: Core tests
+        run: npm run test
+
+      - name: Shop baseline drift check (capture log)
+        run: |
+          mkdir -p artifacts
+          npm run check:shop-baselines 2>&1 | tee artifacts/shop-baseline-check.log
+
+      - name: Upload shop baseline check log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: shop-baseline-check-log
+          path: artifacts/shop-baseline-check.log
+          if-no-files-found: error
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build

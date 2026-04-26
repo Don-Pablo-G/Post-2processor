@@ -50,6 +50,16 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_MAIN_M99"]
       }
+    },
+    {
+      "id": "fanuc_subprogram_repeat_safe",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_subprogram_repeat_safe.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
