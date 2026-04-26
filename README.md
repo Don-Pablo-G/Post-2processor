@@ -66,6 +66,8 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 - Added Haas NGC simulator behavior for single-line `IF [cond] THEN #n = expr` execution and tested true/false paths.
 - Added Haas NGC rapid safety warning for significant `G0` Z-down moves to catch potential clearance/retract issues during simulation review.
 - Added regression tests in `packages/core/tests/core.spec.ts` for the new NGC lint and simulation behaviors.
+- Policy preset UX now includes named presets (`strict|balanced|permissive`), persisted per-controller defaults, source visibility (`saved|bootstrap|manual`), and one-click actions to save/revert/run checks.
+- Exported timeline/findings artifacts now include `policyPreset` and `policyPresetSource` metadata headers for audit traceability.
 
 ## Current Status
 
