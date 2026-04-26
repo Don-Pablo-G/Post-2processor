@@ -131,6 +131,8 @@ const UI_TEXT: Record<
     policyQuickReferenceSources: string;
     policyQuickReferenceShortcuts: string;
     policyQuickReferenceActions: string;
+    policyAuditTrail: string;
+    policyAuditTrailEmpty: string;
     policyPresetPersistedHint: string;
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
@@ -261,6 +263,8 @@ const UI_TEXT: Record<
     policyQuickReferenceSources: "Źródła: zapisany (template.json), bootstrap (domyślny wg sterowania), ręczny (sesja).",
     policyQuickReferenceShortcuts: "Skróty: Ctrl+Shift+R = przywróć domyślny, Ctrl+Shift+J = zapisz + Job Check.",
     policyQuickReferenceActions: "Akcje: kopiuj kontekst polityki, eksport zawiera preset/source/controller.",
+    policyAuditTrail: "Historia polityki (sesja)",
+    policyAuditTrailEmpty: "Brak wpisów w tej sesji.",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
@@ -390,6 +394,8 @@ const UI_TEXT: Record<
     policyQuickReferenceSources: "Sources: saved (template.json), bootstrap (controller default), manual (session override).",
     policyQuickReferenceShortcuts: "Shortcuts: Ctrl+Shift+R = revert default, Ctrl+Shift+J = save + Job Check.",
     policyQuickReferenceActions: "Actions: copy policy context, exports include preset/source/controller context.",
+    policyAuditTrail: "Policy history (session)",
+    policyAuditTrailEmpty: "No entries in this session.",
     policyPresetPersistedHint: "Saved controller default preset is active",
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
@@ -489,6 +495,15 @@ export function App() {
     source: "saved" | "bootstrap" | "manual";
     controller: ControllerProfileKey;
   } | null>(null);
+  const [policyAuditTrail, setPolicyAuditTrail] = useState<
+    Array<{
+      timestampIso: string;
+      event: string;
+      preset: JobCheckPolicyPreset;
+      source: "saved" | "bootstrap" | "manual";
+      controller: ControllerProfileKey;
+    }>
+  >([]);
   const [testsWorkspaceRoot, setTestsWorkspaceRoot] = useState(".");
   const [fixturesRoot, setFixturesRoot] = useState("./packages/test-fixtures");
   const [fixtureId, setFixtureId] = useState("my_shop_fixture");
@@ -705,6 +720,14 @@ export function App() {
     jobCheckResult,
     advisor
   ]);
+  const recordPolicyPresetTransition = (
+    eventName: string,
+    detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
+  ): void => {
+    const timestampIso = new Date().toISOString();
+    setPolicyAuditTrail((prev) => [{ event: eventName, timestampIso, ...detail }, ...prev].slice(0, 30));
+    emitPolicyPresetUiEvent(policyUiEventsEnabled, eventName, detail);
+  };
   const autoFixPreviewMatchesCurrentSettings = useMemo(() => {
     if (!autoFixPreview || !autoFixPreviewInputSnapshot) return false;
     return (
@@ -780,7 +803,7 @@ export function App() {
     if (uiDefaults.jobCheckPolicyPreset) {
       setJobCheckPolicyPreset(uiDefaults.jobCheckPolicyPreset);
       setPolicyPresetManuallySet(false);
-      emitPolicyPresetUiEvent(policyUiEventsEnabled, "saved_default_loaded", {
+      recordPolicyPresetTransition("saved_default_loaded", {
         controller: detectedControllerProfile,
         preset: uiDefaults.jobCheckPolicyPreset,
         source: "saved"
@@ -793,7 +816,7 @@ export function App() {
     if (uiDefaults?.jobCheckPolicyPreset || policyPresetManuallySet) return;
     const preset = defaultPolicyPresetForController(detectedControllerProfile);
     setJobCheckPolicyPreset(preset);
-    emitPolicyPresetUiEvent(policyUiEventsEnabled, "bootstrap_default_applied", {
+    recordPolicyPresetTransition("bootstrap_default_applied", {
       controller: detectedControllerProfile,
       preset,
       source: "bootstrap"
@@ -862,7 +885,7 @@ export function App() {
         const preset = defaultPolicyPresetForController(detectedControllerProfile);
         setJobCheckPolicyPreset(preset);
         setPolicyPresetManuallySet(false);
-        emitPolicyPresetUiEvent(policyUiEventsEnabled, "reverted_to_controller_default_shortcut", {
+        recordPolicyPresetTransition("reverted_to_controller_default_shortcut", {
           controller: detectedControllerProfile,
           preset,
           source: "bootstrap"
@@ -1319,7 +1342,7 @@ export function App() {
       };
 
       setTemplateJson(JSON.stringify(next, null, 2));
-      emitPolicyPresetUiEvent(policyUiEventsEnabled, "saved_to_template", {
+      recordPolicyPresetTransition("saved_to_template", {
         controller: detectedControllerProfile,
         preset: jobCheckPolicyPreset,
         source: policyPresetHintState.source
@@ -1331,7 +1354,7 @@ export function App() {
   }
 
   async function handleSavePolicyPresetAndRunCheck(): Promise<void> {
-    emitPolicyPresetUiEvent(policyUiEventsEnabled, "save_and_run_invoked", {
+    recordPolicyPresetTransition("save_and_run_invoked", {
       controller: detectedControllerProfile,
       preset: jobCheckPolicyPreset,
       source: policyPresetHintState.source
@@ -1883,7 +1906,7 @@ export function App() {
               const preset = event.target.value as JobCheckPolicyPreset;
               setJobCheckPolicyPreset(preset);
               setPolicyPresetManuallySet(true);
-              emitPolicyPresetUiEvent(policyUiEventsEnabled, "manual_selection_changed", {
+              recordPolicyPresetTransition("manual_selection_changed", {
                 controller: detectedControllerProfile,
                 preset,
                 source: "manual"
@@ -1899,7 +1922,7 @@ export function App() {
               const preset = defaultPolicyPresetForController(detectedControllerProfile);
               setJobCheckPolicyPreset(preset);
               setPolicyPresetManuallySet(false);
-              emitPolicyPresetUiEvent(policyUiEventsEnabled, "reverted_to_controller_default", {
+              recordPolicyPresetTransition("reverted_to_controller_default", {
                 controller: detectedControllerProfile,
                 preset,
                 source: "bootstrap"
@@ -1919,6 +1942,20 @@ export function App() {
             <li>{t.policyQuickReferenceShortcuts}</li>
             <li>{t.policyQuickReferenceActions}</li>
           </ul>
+        </details>
+        <details style={{ marginTop: 4, marginBottom: 8 }}>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>{t.policyAuditTrail}</summary>
+          {policyAuditTrail.length === 0 ? (
+            <p style={{ marginTop: 6, opacity: 0.8 }}>{t.policyAuditTrailEmpty}</p>
+          ) : (
+            <ul style={{ marginTop: 6 }}>
+              {policyAuditTrail.map((entry, idx) => (
+                <li key={`${entry.timestampIso}-${idx}`}>
+                  {`${entry.timestampIso} | ${entry.event} | ${entry.preset}/${entry.source} | ${entry.controller}`}
+                </li>
+              ))}
+            </ul>
+          )}
         </details>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
           {`${t.policyPresetSourceLabel}: `}
@@ -2339,8 +2376,8 @@ function emitPolicyPresetUiEvent(
   enabled: boolean,
   eventName: string,
   detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
-): void {
-  if (!derivePolicyUiEventEmissionDecision(enabled).emit) return;
+): { event: string; controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual"; timestampIso: string } | null {
+  if (!derivePolicyUiEventEmissionDecision(enabled).emit) return null;
   const payload = {
     schemaVersion: 1,
     event: eventName,
@@ -2354,8 +2391,10 @@ function emitPolicyPresetUiEvent(
     if (typeof console !== "undefined") {
       console.debug("[policy-preset-ui-event]", payload);
     }
+    return payload;
   } catch {
     // Telemetry-ready hook should never block UI interactions.
+    return null;
   }
 }
 
