@@ -1,4 +1,5 @@
 export type JobCheckPolicyPreset = "strict" | "balanced" | "permissive";
+export type ControllerProfileKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
 export type PolicyPresetHintState = {
   persistedPreset?: JobCheckPolicyPreset;
@@ -19,4 +20,9 @@ export function resolvePolicyPresetHintState(input: {
     isPersistedActive,
     hasUnsavedOverride
   };
+}
+
+export function defaultPolicyPresetForController(profile: ControllerProfileKey): JobCheckPolicyPreset {
+  // Fanuc defaults to strict on first use; Haas modes stay balanced.
+  return profile === "fanuc" ? "strict" : "balanced";
 }

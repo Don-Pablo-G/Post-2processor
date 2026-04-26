@@ -32,7 +32,7 @@ import type {
 } from "@cnc/core/browser";
 import { haasNgcProfile } from "@cnc/profile-haas-ngc";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { resolvePolicyPresetHintState } from "./policyPresetHint";
+import { defaultPolicyPresetForController, resolvePolicyPresetHintState } from "./policyPresetHint";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -2017,11 +2017,6 @@ function readUiDefaultsFromTemplateJson(
   } catch {
     return undefined;
   }
-}
-
-function defaultPolicyPresetForController(profile: ControllerProfileKey): JobCheckPolicyPreset {
-  // Fanuc defaults to strict on first use; Haas modes stay balanced.
-  return profile === "fanuc" ? "strict" : "balanced";
 }
 
 function isAlarmEvent(kind: string): boolean {
