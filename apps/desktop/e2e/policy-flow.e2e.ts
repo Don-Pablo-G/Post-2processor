@@ -81,3 +81,19 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   await expect(page.getByText(/Preset source:\s*saved/i)).toBeVisible();
   await expect(page.getByText(/score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)/i)).toBeVisible();
 });
+
+test("policy audit trail records transitions with timestamp and source", async ({ page }) => {
+  await openPolicyPanel(page);
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+
+  await presetSelect.selectOption("strict");
+  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+  await page.getByRole("button", { name: "Save this preset as default" }).click();
+
+  await page.getByRole("button", { name: "Policy history (session)" }).click();
+  const historyItems = page.locator("li", {
+    hasText: /\d{4}-\d{2}-\d{2}T.*\|.*\|\s*(strict|balanced|permissive)\/(saved|bootstrap|manual)\s*\|\s*(haas-ngc|haas-legacy|fanuc)/i
+  });
+  await expect(historyItems.first()).toBeVisible();
+  await expect(page.getByText(/saved_to_template/i)).toBeVisible();
+});
