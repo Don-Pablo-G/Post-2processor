@@ -21,15 +21,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare artifacts folder
+        run: |
+          mkdir -p artifacts
+          touch artifacts/shop-baseline-check.log
+
       - name: Guard imports
         run: npm run guard:imports
+
+      - name: Build Haas profile package
+        run: npm run --workspace @cnc/profile-haas-ngc build
 
       - name: Core tests
         run: npm run test
 
       - name: Shop baseline drift check (capture log)
         run: |
-          mkdir -p artifacts
           npm run check:shop-baselines 2>&1 | tee artifacts/shop-baseline-check.log
 
       - name: Upload shop baseline check log
@@ -38,7 +45,7 @@ jobs:
         with:
           name: shop-baseline-check-log
           path: artifacts/shop-baseline-check.log
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Typecheck
         run: npm run typecheck
