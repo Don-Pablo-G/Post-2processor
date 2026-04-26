@@ -643,6 +643,20 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(true);
   });
 
+  it("adds simulation finding for fanuc subprogram target miss", async () => {
+    const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "strict_controller" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "strict_target_miss_job" }
+    });
+    expect(
+      result.simulation.warnings.some((w) => w.includes("G65 target O9010 not found in strict fanuc mode"))
+    ).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(true);
+  });
+
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
     const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json"))) as {
       fixtures: Array<{

@@ -161,6 +161,17 @@ function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): S
       blockIndex: simulation.trace.at(-1)?.blockIndex
     });
   }
+  const subprogramTargetMissWarning = simulation.warnings.find(
+    (w) => w.includes("target O") && w.includes("not found")
+  );
+  if (subprogramTargetMissWarning) {
+    findings.push({
+      severity: "warning",
+      code: "SIM_SUBPROGRAM_TARGET_MISS",
+      message: subprogramTargetMissWarning,
+      blockIndex: simulation.trace.at(-1)?.blockIndex
+    });
+  }
   return findings;
 }
 
