@@ -439,6 +439,7 @@ export type RestoreShopFixtureManifestBackupResult = {
 export type TimelineFindingsExportBundleInput = {
   timestampIso: string;
   controller: "haas-ngc" | "haas-legacy" | "fanuc";
+  policyPreset?: JobCheckPolicyPreset;
   subprogramTargetPolicy?: "shop_friendly" | "strict_controller";
   logSemantics?: "controller_default" | "natural" | "base10";
   score?: number;

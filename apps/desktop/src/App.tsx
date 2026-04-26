@@ -571,6 +571,7 @@ export function App() {
     return buildTimelineFindingsExportBundle({
       timestampIso: new Date().toISOString(),
       controller: detectedControllerProfile,
+      policyPreset: jobCheckPolicyPreset,
       subprogramTargetPolicy,
       logSemantics,
       score: jobCheckResult?.readyToRunScore ?? advisor.readyToRunScore,
@@ -590,6 +591,7 @@ export function App() {
     combinedWarningFindings,
     language,
     detectedControllerProfile,
+    jobCheckPolicyPreset,
     subprogramTargetPolicy,
     logSemantics,
     jobCheckResult,
