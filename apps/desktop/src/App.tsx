@@ -106,6 +106,7 @@ const UI_TEXT: Record<
     saveParamPrefs: string;
     savePolicyPresetNow: string;
     savePolicyPresetAndRunCheck: string;
+    copyPolicyContext: string;
     revertPolicyPresetToControllerDefault: string;
     resetUiPrefs: string;
     runJobCheck: string;
@@ -225,6 +226,7 @@ const UI_TEXT: Record<
     saveParamPrefs: "Zapisz ustawienia parametrów do JSON",
     savePolicyPresetNow: "Zapisz ten preset jako domyślny",
     savePolicyPresetAndRunCheck: "Zapisz preset i uruchom Job Check",
+    copyPolicyContext: "Kopiuj kontekst polityki",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
@@ -345,6 +347,7 @@ const UI_TEXT: Record<
     saveParamPrefs: "Save parameter preferences to JSON",
     savePolicyPresetNow: "Save this preset as default",
     savePolicyPresetAndRunCheck: "Save preset and run Job Check",
+    copyPolicyContext: "Copy policy context",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
@@ -1289,6 +1292,16 @@ export function App() {
     await handleRunJobCheck();
   }
 
+  async function handleCopyPolicyContext(): Promise<void> {
+    const line = `POLICY PRESET: ${policyPresetHintState.currentPreset} (${policyPresetHintState.source}) | CONTROLLER: ${detectedControllerProfile}`;
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied policy context: ${line}`);
+    } catch {
+      setExportStatus(`Copy policy context manually: ${line}`);
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -1820,6 +1833,9 @@ export function App() {
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
           {`${t.policyPresetSourceLabel}: `}
           <span style={policyPresetSourceBadgeStyle}>{policyPresetSourceLabel}</span>
+          <button onClick={() => void handleCopyPolicyContext()} style={{ marginLeft: 8 }}>
+            {t.copyPolicyContext}
+          </button>
           <span
             title={t.policyPresetSourceHelpTooltip}
             style={{ marginLeft: 6, cursor: "help", opacity: 0.9 }}
