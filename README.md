@@ -167,6 +167,7 @@ Desktop UI note:
 - The policy selector shows `Preset source: saved | bootstrap | manual`.
 - First-time bootstrap defaults by detected controller are `fanuc -> strict` and `haas-ngc/haas-legacy -> balanced`.
 - Use **Revert to controller default preset** to return to controller bootstrap behavior without editing JSON.
+- Exported timeline/findings headers include both `policyPreset` and `policyPresetSource` for audit traceability.
 
 For a one-command local readiness summary (branch state, recent checkpoints, and verify result), run:
 
