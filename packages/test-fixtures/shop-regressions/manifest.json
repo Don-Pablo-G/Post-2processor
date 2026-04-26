@@ -513,6 +513,17 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "haas_goto_target_miss_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_goto_target_miss_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": true,
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_GOTO_TARGET_MISS"]
+      }
     }
   ]
 }

@@ -681,6 +681,18 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
   });
 
+  it("adds simulation finding for missing GOTO target label", async () => {
+    const input = "IF [1 EQ 1] GOTO1234\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "goto_target_miss_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("GOTO target N1234 not found"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_GOTO_TARGET_MISS")).toBe(true);
+  });
+
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
     const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json"))) as {
       fixtures: Array<{
