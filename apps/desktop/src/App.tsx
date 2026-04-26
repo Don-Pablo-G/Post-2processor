@@ -114,6 +114,7 @@ const UI_TEXT: Record<
     policyPresetSourceBootstrap: string;
     policyPresetSourceManual: string;
     policyPresetSourceHelpTooltip: string;
+    policyDriftWarning: string;
     policyPresetPersistedHint: string;
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
@@ -234,6 +235,7 @@ const UI_TEXT: Record<
     policyPresetSourceManual: "ręczny",
     policyPresetSourceHelpTooltip:
       "zapisany = z template.json, bootstrap = domyślny wg sterowania, ręczny = zmieniony w bieżącej sesji",
+    policyDriftWarning: "Uwaga: ręczny preset może być nieaktualny po zmianie wykrytego sterowania",
     policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
@@ -353,6 +355,7 @@ const UI_TEXT: Record<
     policyPresetSourceManual: "manual",
     policyPresetSourceHelpTooltip:
       "saved = loaded from template.json, bootstrap = controller default, manual = changed in current session",
+    policyDriftWarning: "Warning: manual preset may be stale after detected controller change",
     policyPresetPersistedHint: "Saved controller default preset is active",
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
@@ -485,6 +488,7 @@ export function App() {
   } | null>(null);
   const [lastAutoFixBackupPath, setLastAutoFixBackupPath] = useState<string | undefined>();
   const [advancedQaExpanded, setAdvancedQaExpanded] = useState(true);
+  const [policyDriftWarning, setPolicyDriftWarning] = useState("");
   const [templateJson, setTemplateJson] = useState(() => getTemplateLibrary().sourceJson);
   const codeTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const t = UI_TEXT[language];
@@ -493,6 +497,7 @@ export function App() {
   const selectedPreset = parameterPresets.find((p) => p.id === parameterPresetId);
   const templateLibrary = useMemo(() => parseTemplateLibrary(templateJson), [templateJson]);
   const detectedControllerProfile = useMemo<ControllerProfileKey>(() => detectControllerProfile(code), [code]);
+  const previousDetectedControllerRef = useRef<ControllerProfileKey | undefined>(undefined);
 
   const blacklistedParameters = useMemo(() => parseBlacklistedParameters(parameterBlacklistInput), [parameterBlacklistInput]);
 
@@ -770,6 +775,23 @@ export function App() {
     if (fixtureControllerManuallySet) return;
     setFixtureController(detectedControllerProfile);
   }, [detectedControllerProfile, fixtureControllerManuallySet]);
+
+  useEffect(() => {
+    const previous = previousDetectedControllerRef.current;
+    previousDetectedControllerRef.current = detectedControllerProfile;
+    if (!previous || previous === detectedControllerProfile) return;
+    if (policyPresetManuallySet) {
+      setPolicyDriftWarning(`${t.policyDriftWarning}: ${previous} -> ${detectedControllerProfile}`);
+    } else {
+      setPolicyDriftWarning("");
+    }
+  }, [detectedControllerProfile, policyPresetManuallySet, t.policyDriftWarning]);
+
+  useEffect(() => {
+    if (!policyPresetManuallySet) {
+      setPolicyDriftWarning("");
+    }
+  }, [policyPresetManuallySet]);
 
   useEffect(() => {
     // Default to collapsed Advanced QA in operator mode unless user explicitly opens it.
@@ -1795,6 +1817,21 @@ export function App() {
             ⓘ
           </span>
         </p>
+        {policyDriftWarning ? (
+          <p
+            style={{
+              marginTop: 4,
+              marginBottom: 8,
+              padding: "4px 8px",
+              borderRadius: 6,
+              background: "#fff4cc",
+              border: "1px solid #d9b76a",
+              color: "#5f4b00"
+            }}
+          >
+            {policyDriftWarning}
+          </p>
+        ) : null}
         {policyPresetHintState.isPersistedActive ? (
           <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
             {`${t.policyPresetPersistedHint}: ${persistedPolicyPresetLabel}`}
