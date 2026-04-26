@@ -472,6 +472,16 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION"]
       }
+    },
+    {
+      "id": "haas_t0_comment_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_t0_comment_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
