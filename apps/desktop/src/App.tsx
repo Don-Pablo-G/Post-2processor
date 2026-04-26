@@ -719,13 +719,24 @@ export function App() {
     if (uiDefaults.jobCheckPolicyPreset) {
       setJobCheckPolicyPreset(uiDefaults.jobCheckPolicyPreset);
       setPolicyPresetManuallySet(false);
+      emitPolicyPresetUiEvent("saved_default_loaded", {
+        controller: detectedControllerProfile,
+        preset: uiDefaults.jobCheckPolicyPreset,
+        source: "saved"
+      });
     }
   }, [templateJson, detectedControllerProfile]);
 
   useEffect(() => {
     const uiDefaults = readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile);
     if (uiDefaults?.jobCheckPolicyPreset || policyPresetManuallySet) return;
-    setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
+    const preset = defaultPolicyPresetForController(detectedControllerProfile);
+    setJobCheckPolicyPreset(preset);
+    emitPolicyPresetUiEvent("bootstrap_default_applied", {
+      controller: detectedControllerProfile,
+      preset,
+      source: "bootstrap"
+    });
   }, [templateJson, detectedControllerProfile, policyPresetManuallySet]);
 
   useEffect(() => {
@@ -1188,6 +1199,11 @@ export function App() {
       };
 
       setTemplateJson(JSON.stringify(next, null, 2));
+      emitPolicyPresetUiEvent("saved_to_template", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
       setExportStatus("Parameter preferences saved into template JSON.");
     } catch {
       setExportStatus("Cannot save preferences: invalid template JSON.");
@@ -1195,6 +1211,11 @@ export function App() {
   }
 
   async function handleSavePolicyPresetAndRunCheck(): Promise<void> {
+    emitPolicyPresetUiEvent("save_and_run_invoked", {
+      controller: detectedControllerProfile,
+      preset: jobCheckPolicyPreset,
+      source: policyPresetHintState.source
+    });
     handleSaveParameterPrefsToTemplateJson();
     await handleRunJobCheck();
   }
@@ -1696,8 +1717,14 @@ export function App() {
           <select
             value={jobCheckPolicyPreset}
             onChange={(event) => {
-              setJobCheckPolicyPreset(event.target.value as JobCheckPolicyPreset);
+              const preset = event.target.value as JobCheckPolicyPreset;
+              setJobCheckPolicyPreset(preset);
               setPolicyPresetManuallySet(true);
+              emitPolicyPresetUiEvent("manual_selection_changed", {
+                controller: detectedControllerProfile,
+                preset,
+                source: "manual"
+              });
             }}
           >
             <option value="strict">{t.policyPresetStrict}</option>
@@ -1706,8 +1733,14 @@ export function App() {
           </select>
           <button
             onClick={() => {
-              setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
+              const preset = defaultPolicyPresetForController(detectedControllerProfile);
+              setJobCheckPolicyPreset(preset);
               setPolicyPresetManuallySet(false);
+              emitPolicyPresetUiEvent("reverted_to_controller_default", {
+                controller: detectedControllerProfile,
+                preset,
+                source: "bootstrap"
+              });
             }}
             style={{ marginLeft: 8 }}
           >
@@ -2088,6 +2121,27 @@ function readUiDefaultsFromTemplateJson(
     return parsed.settings?.uiDefaults?.[profile];
   } catch {
     return undefined;
+  }
+}
+
+function emitPolicyPresetUiEvent(
+  eventName: string,
+  detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
+): void {
+  const payload = {
+    event: eventName,
+    ...detail,
+    timestampIso: new Date().toISOString()
+  };
+  try {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cnc:policy-preset-ui", { detail: payload }));
+    }
+    if (typeof console !== "undefined") {
+      console.debug("[policy-preset-ui-event]", payload);
+    }
+  } catch {
+    // Telemetry-ready hook should never block UI interactions.
   }
 }
 
