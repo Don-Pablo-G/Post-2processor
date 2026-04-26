@@ -58,7 +58,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
   - files in `apps/desktop/src` must use `@cnc/core/browser` (not `@cnc/core`)
   - files in `packages/core/tests` must use `../src/index.node.js` (not `../src/index.js`)
   - fail if `packages/core/src/simulator/simpleSimulator.js` exists beside the TypeScript source, to prevent stale simulator behavior from shadowing `simpleSimulator.ts` in test/runtime resolution
-  - enforce a curated allowlist for existing `src/*.js` shadow siblings so accidental new shadowed JS files fail CI until intentionally reviewed
+  - enforce an intentionally empty shadow allowlist (`allowedShadowedJsRelPaths`) so any new `src/*.js` sibling is a hard CI failure by default
 
 ## Recent Updates
 
