@@ -171,6 +171,16 @@
       }
     },
     {
+      "id": "haas_first_g43_z0_warning_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_first_g43_z0_warning_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
+    },
+    {
       "id": "fanuc_main_m99_and_comp",
       "controller": "fanuc",
       "path": "shop-regressions/fanuc/fanuc_main_m99_and_comp.nc",
