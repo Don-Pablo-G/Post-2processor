@@ -1,0 +1,17 @@
+{
+  "fixture": "shop-regressions/fanuc/fanuc_m98_target_miss_minimal.nc",
+  "controllerMode": "fanuc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 1,
+    "warnings": [
+      "M98 target O9999 not found (block 1)."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}

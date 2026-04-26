@@ -347,6 +347,17 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "fanuc_m98_target_miss_minimal",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_m98_target_miss_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": true,
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_SUBPROGRAM_TARGET_MISS"]
+      }
     }
   ]
 }
