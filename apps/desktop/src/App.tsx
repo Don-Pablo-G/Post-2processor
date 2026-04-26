@@ -100,6 +100,7 @@ const UI_TEXT: Record<
     includeTimelineFindingsExport: string;
     saveParamPrefs: string;
     savePolicyPresetNow: string;
+    savePolicyPresetAndRunCheck: string;
     revertPolicyPresetToControllerDefault: string;
     resetUiPrefs: string;
     runJobCheck: string;
@@ -217,6 +218,7 @@ const UI_TEXT: Record<
     includeTimelineFindingsExport: "Dołącz timeline i findingi do eksportu",
     saveParamPrefs: "Zapisz ustawienia parametrów do JSON",
     savePolicyPresetNow: "Zapisz ten preset jako domyślny",
+    savePolicyPresetAndRunCheck: "Zapisz preset i uruchom Job Check",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
@@ -335,6 +337,7 @@ const UI_TEXT: Record<
     includeTimelineFindingsExport: "Include timeline and findings in export",
     saveParamPrefs: "Save parameter preferences to JSON",
     savePolicyPresetNow: "Save this preset as default",
+    savePolicyPresetAndRunCheck: "Save preset and run Job Check",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
@@ -1191,6 +1194,11 @@ export function App() {
     }
   }
 
+  async function handleSavePolicyPresetAndRunCheck(): Promise<void> {
+    handleSaveParameterPrefsToTemplateJson();
+    await handleRunJobCheck();
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -1728,6 +1736,9 @@ export function App() {
             <span>{`${t.policyPresetUnsavedOverrideHint}: ${currentPolicyPresetLabel}`}</span>
             <button onClick={handleSaveParameterPrefsToTemplateJson} style={{ marginLeft: 8, opacity: 1 }}>
               {t.savePolicyPresetNow}
+            </button>
+            <button onClick={() => void handleSavePolicyPresetAndRunCheck()} style={{ marginLeft: 8, opacity: 1 }}>
+              {t.savePolicyPresetAndRunCheck}
             </button>
           </div>
         ) : null}
