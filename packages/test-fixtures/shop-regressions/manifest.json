@@ -60,6 +60,16 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "fanuc_if_goto_macro_branch",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_if_goto_macro_branch.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
