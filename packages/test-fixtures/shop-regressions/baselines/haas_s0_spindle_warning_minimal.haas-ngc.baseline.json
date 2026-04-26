@@ -1,0 +1,20 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_s0_spindle_warning_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Spindle start with S0 — verify intentional stop or missing speed."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 3,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
