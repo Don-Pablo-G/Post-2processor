@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { buildTimelineFindingsExportBundle } from "@cnc/core/browser";
 import { defaultPolicyPresetForController, resolvePolicyPresetHintState } from "./policyPresetHint";
 
 describe("resolvePolicyPresetHintState", () => {
@@ -50,5 +51,55 @@ describe("defaultPolicyPresetForController", () => {
 
   it("defaults haas-legacy to balanced", () => {
     expect(defaultPolicyPresetForController("haas-legacy")).toBe("balanced");
+  });
+});
+
+describe("export metadata uses resolved preset source", () => {
+  it("writes saved source to bundle headers", () => {
+    const state = resolvePolicyPresetHintState({
+      persistedPreset: "strict",
+      currentPreset: "strict"
+    });
+    const bundle = buildTimelineFindingsExportBundle({
+      timestampIso: "2026-04-26T00:00:00.000Z",
+      controller: "fanuc",
+      policyPreset: state.currentPreset,
+      policyPresetSource: state.source,
+      timelineEntries: [],
+      findings: []
+    });
+    expect(bundle.timelineTxt).toContain("policyPresetSource: saved");
+  });
+
+  it("writes bootstrap source to bundle headers", () => {
+    const state = resolvePolicyPresetHintState({
+      currentPreset: "balanced"
+    });
+    const bundle = buildTimelineFindingsExportBundle({
+      timestampIso: "2026-04-26T00:00:00.000Z",
+      controller: "haas-ngc",
+      policyPreset: state.currentPreset,
+      policyPresetSource: state.source,
+      timelineEntries: [],
+      findings: []
+    });
+    expect(bundle.timelineTxt).toContain("policyPresetSource: bootstrap");
+  });
+
+  it("writes manual source to bundle headers", () => {
+    const state = resolvePolicyPresetHintState({
+      persistedPreset: "balanced",
+      currentPreset: "permissive",
+      manuallySet: true
+    });
+    const bundle = buildTimelineFindingsExportBundle({
+      timestampIso: "2026-04-26T00:00:00.000Z",
+      controller: "haas-ngc",
+      policyPreset: state.currentPreset,
+      policyPresetSource: state.source,
+      timelineEntries: [],
+      findings: []
+    });
+    expect(bundle.timelineTxt).toContain("policyPresetSource: manual");
   });
 });
