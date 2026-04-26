@@ -10,6 +10,7 @@ Local desktop UI emits policy-preset interaction events via:
 
 ```json
 {
+  "schemaVersion": 1,
   "event": "manual_selection_changed",
   "controller": "haas-ngc",
   "preset": "strict",
@@ -21,6 +22,7 @@ Local desktop UI emits policy-preset interaction events via:
 ### Fields
 
 - `event`: string event id (see list below)
+- `schemaVersion`: numeric payload schema version (`1` currently)
 - `controller`: `"haas-ngc" | "haas-legacy" | "fanuc"`
 - `preset`: `"strict" | "balanced" | "permissive"`
 - `source`: `"saved" | "bootstrap" | "manual"`
