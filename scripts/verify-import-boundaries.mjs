@@ -11,7 +11,6 @@ const shadowPolicy = {
     "packages/core/src/parameterizer/suggest.js",
     "packages/core/src/parser/simpleParser.js",
     "packages/core/src/tooling/report.js",
-    "packages/core/src/types.js",
     "packages/core/src/workshop/advisor.js",
     "packages/core/src/workshop/export.js",
     "packages/core/src/workshop/exportBundle.js",

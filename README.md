@@ -84,8 +84,9 @@ Use `npm run verify` as the standard gate before shipping changes. It runs:
 
 1. import boundary checks
 2. core test suite
-3. monorepo typecheck
-4. monorepo build
+3. shop regression baseline drift check
+4. monorepo typecheck
+5. monorepo build
 
 For a one-command local readiness summary (branch state, recent checkpoints, and verify result), run:
 
