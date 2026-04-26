@@ -3,9 +3,40 @@ import { buildProveoutProgram } from "./proveout.js";
 import { generateSetupSheet } from "./setupSheet.js";
 import { analyzeProgram } from "./advisor.js";
 import { simpleSimulate } from "../simulator/simpleSimulator.js";
-import type { RunJobCheckInput, RunJobCheckResult, SafetyFinding } from "../types.js";
+import type {
+  RunJobCheckInput,
+  RunJobCheckResult,
+  SafetyFinding,
+  SimulationFindingPolicy
+} from "../types.js";
 
 const dynamicImport = new Function("path", "return import(path);") as (path: string) => Promise<unknown>;
+
+const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
+  macroAlarm: { enabled: true, severity: "blocker" },
+  mainM99: { enabled: true, severity: "blocker" },
+  callDepthLimit: { enabled: true, severity: "warning" },
+  unfinishedReturnPath: { enabled: true, severity: "blocker" },
+  unsupportedM97: { enabled: true, severity: "warning" },
+  unsupportedFunction: { enabled: true, severity: "warning" },
+  subprogramTargetMiss: { enabled: true, severity: "warning" },
+  rapidZPlunge: { enabled: true, severity: "warning" },
+  gotoTargetMiss: { enabled: true, severity: "warning" },
+  maxStepsLimit: { enabled: true, severity: "warning" }
+};
+
+function resolveSimulationFindingPolicy(input: RunJobCheckInput): SimulationFindingPolicy {
+  const override = input.simulationFindingPolicy;
+  if (!override) return conservativeShopSafetyPolicy;
+  const merged = { ...conservativeShopSafetyPolicy };
+  for (const key of Object.keys(conservativeShopSafetyPolicy) as Array<keyof SimulationFindingPolicy>) {
+    const overrideRule = override[key];
+    if (overrideRule) {
+      merged[key] = { ...merged[key], ...overrideRule };
+    }
+  }
+  return merged;
+}
 
 export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJobCheckResult> {
   const initialState = input.initialState ?? {};
@@ -21,7 +52,7 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
   const advisor = analyzeProgram(input.ast, initialState, input.advisorOptions);
   const setupSheet = generateSetupSheet(input.ast, initialState);
   const proveout = buildProveoutProgram(input.ast, initialState);
-  const simulationFindings = buildSimulationFindings(simulation);
+  const simulationFindings = buildSimulationFindings(simulation, resolveSimulationFindingPolicy(input));
 
   const allFindings = [...advisor.safetyFindings, ...simulationFindings];
   const blockerCount = allFindings.filter((f) => f.severity === "blocker").length;
@@ -106,97 +137,100 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
   };
 }
 
-function buildSimulationFindings(simulation: RunJobCheckResult["simulation"]): SafetyFinding[] {
+function buildSimulationFindings(
+  simulation: RunJobCheckResult["simulation"],
+  policy: SimulationFindingPolicy
+): SafetyFinding[] {
   const findings: SafetyFinding[] = [];
+  const pushPolicyFinding = (
+    key: keyof SimulationFindingPolicy,
+    code: string,
+    message: string,
+    blockIndex?: number
+  ): void => {
+    const rule = policy[key];
+    if (!rule.enabled) return;
+    findings.push({ severity: rule.severity, code, message, blockIndex });
+  };
   for (const alarm of simulation.alarms) {
-    findings.push({
-      severity: "blocker",
-      code: "SIM_MACRO_ALARM",
-      message: `Macro alarm #${alarm.parameter} code ${alarm.code}: ${alarm.message}`,
-      blockIndex: alarm.blockIndex
-    });
+    pushPolicyFinding(
+      "macroAlarm",
+      "SIM_MACRO_ALARM",
+      `Macro alarm #${alarm.parameter} code ${alarm.code}: ${alarm.message}`,
+      alarm.blockIndex
+    );
   }
   for (const entry of simulation.trace) {
     if (!entry.event) continue;
     if (entry.event.kind === "main_m99") {
-      findings.push({
-        severity: "blocker",
-        code: "SIM_MAIN_M99",
-        message: entry.event.message,
-        blockIndex: entry.blockIndex
-      });
+      pushPolicyFinding("mainM99", "SIM_MAIN_M99", entry.event.message, entry.blockIndex);
     } else if (entry.event.kind === "call_depth_limit") {
-      findings.push({
-        severity: "warning",
-        code: "SIM_CALL_DEPTH_LIMIT",
-        message: entry.event.message,
-        blockIndex: entry.blockIndex
-      });
+      pushPolicyFinding("callDepthLimit", "SIM_CALL_DEPTH_LIMIT", entry.event.message, entry.blockIndex);
     }
   }
   if (simulation.warnings.some((w) => w.includes("unfinished subprogram return path"))) {
-    findings.push({
-      severity: "blocker",
-      code: "SIM_UNFINISHED_RETURN_PATH",
-      message: "Simulation ended with unfinished subprogram return path.",
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "unfinishedReturnPath",
+      "SIM_UNFINISHED_RETURN_PATH",
+      "Simulation ended with unfinished subprogram return path.",
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   if (simulation.warnings.some((w) => w.includes("M97 local subprogram call is not supported in fanuc mode"))) {
-    findings.push({
-      severity: "warning",
-      code: "SIM_UNSUPPORTED_M97",
-      message: "Fanuc simulation encountered unsupported M97 local subprogram call.",
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "unsupportedM97",
+      "SIM_UNSUPPORTED_M97",
+      "Fanuc simulation encountered unsupported M97 local subprogram call.",
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   const unsupportedFunctionWarning = simulation.warnings.find(
     (w) => w.startsWith("Function ") && w.includes("is not supported in fanuc mode")
   );
   if (unsupportedFunctionWarning) {
-    findings.push({
-      severity: "warning",
-      code: "SIM_UNSUPPORTED_FUNCTION",
-      message: unsupportedFunctionWarning,
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "unsupportedFunction",
+      "SIM_UNSUPPORTED_FUNCTION",
+      unsupportedFunctionWarning,
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   const subprogramTargetMissWarning = simulation.warnings.find(
     (w) => w.includes("target O") && w.includes("not found")
   );
   if (subprogramTargetMissWarning) {
-    findings.push({
-      severity: "warning",
-      code: "SIM_SUBPROGRAM_TARGET_MISS",
-      message: subprogramTargetMissWarning,
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "subprogramTargetMiss",
+      "SIM_SUBPROGRAM_TARGET_MISS",
+      subprogramTargetMissWarning,
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   const rapidZPlungeWarning = simulation.warnings.find((w) => w.includes("rapid (G0) Z move down"));
   if (rapidZPlungeWarning) {
-    findings.push({
-      severity: "warning",
-      code: "SIM_RAPID_Z_PLUNGE",
-      message: rapidZPlungeWarning,
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "rapidZPlunge",
+      "SIM_RAPID_Z_PLUNGE",
+      rapidZPlungeWarning,
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   const gotoTargetMissWarning = simulation.warnings.find((w) => w.includes("GOTO target N") && w.includes("not found"));
   if (gotoTargetMissWarning) {
-    findings.push({
-      severity: "warning",
-      code: "SIM_GOTO_TARGET_MISS",
-      message: gotoTargetMissWarning,
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "gotoTargetMiss",
+      "SIM_GOTO_TARGET_MISS",
+      gotoTargetMissWarning,
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   if (simulation.warnings.some((w) => w.includes("maxSteps limit before program end"))) {
-    findings.push({
-      severity: "warning",
-      code: "SIM_MAX_STEPS_LIMIT",
-      message: "Simulation reached maxSteps limit before program end.",
-      blockIndex: simulation.trace.at(-1)?.blockIndex
-    });
+    pushPolicyFinding(
+      "maxStepsLimit",
+      "SIM_MAX_STEPS_LIMIT",
+      "Simulation reached maxSteps limit before program end.",
+      simulation.trace.at(-1)?.blockIndex
+    );
   }
   return findings;
 }

@@ -158,6 +158,28 @@ export type SafetyFinding = {
   blockIndex?: number;
 };
 
+export type SimulationFindingRulePolicy = {
+  enabled: boolean;
+  severity: "blocker" | "warning";
+};
+
+export type SimulationFindingPolicy = {
+  macroAlarm: SimulationFindingRulePolicy;
+  mainM99: SimulationFindingRulePolicy;
+  callDepthLimit: SimulationFindingRulePolicy;
+  unfinishedReturnPath: SimulationFindingRulePolicy;
+  unsupportedM97: SimulationFindingRulePolicy;
+  unsupportedFunction: SimulationFindingRulePolicy;
+  subprogramTargetMiss: SimulationFindingRulePolicy;
+  rapidZPlunge: SimulationFindingRulePolicy;
+  gotoTargetMiss: SimulationFindingRulePolicy;
+  maxStepsLimit: SimulationFindingRulePolicy;
+};
+
+export type SimulationFindingPolicyOverride = Partial<{
+  [K in keyof SimulationFindingPolicy]: Partial<SimulationFindingPolicy[K]>;
+}>;
+
 export type CriticalEvent = {
   kind:
     | "first_motion"
@@ -425,6 +447,7 @@ export type RunJobCheckInput = {
   initialState?: Record<string, number>;
   advisorOptions?: ProgramAdvisorOptions;
   simulationLimits?: Partial<SimulatorLimits>;
+  simulationFindingPolicy?: SimulationFindingPolicyOverride;
   exportOptions?: {
     enabled: boolean;
     allowExportWithBlockers?: boolean;
