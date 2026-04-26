@@ -15,6 +15,8 @@ export type PolicyPresetActionState = {
   canRevertToControllerDefault: boolean;
 };
 
+export type PolicyPresetShortcutAction = "none" | "revert_to_default" | "save_and_run";
+
 export function resolvePolicyPresetHintState(input: {
   persistedPreset?: JobCheckPolicyPreset;
   currentPreset: JobCheckPolicyPreset;
@@ -44,4 +46,28 @@ export function derivePolicyPresetActionState(state: PolicyPresetHintState): Pol
     canSaveAndRun: state.hasUnsavedOverride,
     canRevertToControllerDefault: state.source !== "bootstrap"
   };
+}
+
+export function resolvePolicyPresetShortcutAction(input: {
+  key: string;
+  ctrlKey: boolean;
+  shiftKey: boolean;
+  isTypingContext: boolean;
+  hasUnsavedOverride: boolean;
+}): PolicyPresetShortcutAction {
+  if (!(input.ctrlKey && input.shiftKey) || input.isTypingContext) return "none";
+  const key = input.key.toLowerCase();
+  if (key === "r") return "revert_to_default";
+  if (key === "j" && input.hasUnsavedOverride) return "save_and_run";
+  return "none";
+}
+
+export function derivePolicyDriftWarning(input: {
+  previousController?: ControllerProfileKey;
+  nextController: ControllerProfileKey;
+  manuallySet: boolean;
+  warningPrefix: string;
+}): string {
+  if (!input.previousController || input.previousController === input.nextController || !input.manuallySet) return "";
+  return `${input.warningPrefix}: ${input.previousController} -> ${input.nextController}`;
 }
