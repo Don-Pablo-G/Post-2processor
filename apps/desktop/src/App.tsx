@@ -104,6 +104,7 @@ const UI_TEXT: Record<
     policyPresetStrict: string;
     policyPresetBalanced: string;
     policyPresetPermissive: string;
+    policyPresetPersistedHint: string;
     allowExportWithBlockers: string;
     runJobCheckStatus: string;
     jobCheckCard: string;
@@ -211,6 +212,7 @@ const UI_TEXT: Record<
     policyPresetStrict: "Ścisły",
     policyPresetBalanced: "Zrównoważony",
     policyPresetPermissive: "Permisywny",
+    policyPresetPersistedHint: "Aktywny zapisany domyślny preset dla sterowania",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
     runJobCheckStatus: "Status Job Check",
     jobCheckCard: "Wynik Job Check",
@@ -317,6 +319,7 @@ const UI_TEXT: Record<
     policyPresetStrict: "Strict",
     policyPresetBalanced: "Balanced",
     policyPresetPermissive: "Permissive",
+    policyPresetPersistedHint: "Saved controller default preset is active",
     allowExportWithBlockers: "Allow export with blockers",
     runJobCheckStatus: "Job Check status",
     jobCheckCard: "Job Check result",
@@ -530,6 +533,18 @@ export function App() {
     () => [...advisor.safetyFindings, ...(jobCheckResult?.simulationFindings ?? [])].filter((f) => f.severity === "warning"),
     [advisor, jobCheckResult]
   );
+  const persistedPolicyPreset = useMemo(
+    () => readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile)?.jobCheckPolicyPreset,
+    [templateJson, detectedControllerProfile]
+  );
+  const isPersistedPolicyPresetActive =
+    persistedPolicyPreset !== undefined && persistedPolicyPreset === jobCheckPolicyPreset;
+  const persistedPolicyPresetLabel =
+    persistedPolicyPreset === "strict"
+      ? t.policyPresetStrict
+      : persistedPolicyPreset === "permissive"
+        ? t.policyPresetPermissive
+        : t.policyPresetBalanced;
   const fixtureTargetPaths = useMemo(() => {
     const base = fixturesRoot.trim();
     const fileStem = sanitizeFixtureName(fixtureFilename.trim() || fixtureId.trim() || "fixture");
@@ -1607,6 +1622,11 @@ export function App() {
             <option value="permissive">{t.policyPresetPermissive}</option>
           </select>
         </label>
+        {isPersistedPolicyPresetActive ? (
+          <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.85 }}>
+            {`${t.policyPresetPersistedHint}: ${persistedPolicyPresetLabel}`}
+          </p>
+        ) : null}
         <button onClick={() => void handleRunJobCheck()}>{t.runJobCheck}</button>
         <details
           open={advancedQaExpanded}
