@@ -1064,6 +1064,7 @@ describe("core pipeline", () => {
     const bundle = buildTimelineFindingsExportBundle({
       timestampIso: "2026-04-25T12:00:00.000Z",
       controller: "fanuc",
+      policyPreset: "strict",
       subprogramTargetPolicy: "strict_controller",
       logSemantics: "base10",
       score: 84,
@@ -1079,6 +1080,7 @@ describe("core pipeline", () => {
     });
     expect(bundle.timelineTxt).toContain("WORKSHOP TIMELINE + FINDINGS");
     expect(bundle.timelineTxt).toContain("controller: fanuc");
+    expect(bundle.timelineTxt).toContain("policyPreset: strict");
     expect(bundle.timelineTxt).toContain("[CONTROL] B12: [main_m99] Main program contains M99.");
     expect(bundle.findingsMarkdown).toContain("## Findings");
     expect(bundle.findingsMarkdown).toContain("[BLOCKER] SIM_MAIN_M99 @ B12");
