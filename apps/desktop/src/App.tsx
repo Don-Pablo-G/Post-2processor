@@ -112,6 +112,7 @@ const UI_TEXT: Record<
     copyPolicyContext: string;
     copyFullExportContext: string;
     policyUiEventsEnabled: string;
+    policyLockManualChanges: string;
     revertPolicyPresetToControllerDefault: string;
     resetUiPrefs: string;
     runJobCheck: string;
@@ -241,6 +242,7 @@ const UI_TEXT: Record<
     copyPolicyContext: "Kopiuj kontekst polityki",
     copyFullExportContext: "Kopiuj pełny kontekst eksportu",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
+    policyLockManualChanges: "Zablokuj ręczne zmiany presetu",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
@@ -372,6 +374,7 @@ const UI_TEXT: Record<
     copyPolicyContext: "Copy policy context",
     copyFullExportContext: "Copy full export context",
     policyUiEventsEnabled: "Enable local policy UI events",
+    policyLockManualChanges: "Lock manual preset changes",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
@@ -476,6 +479,7 @@ export function App() {
   const [jobCheckPolicyPreset, setJobCheckPolicyPreset] = useState<JobCheckPolicyPreset>("balanced");
   const [policyPresetManuallySet, setPolicyPresetManuallySet] = useState(false);
   const [policyUiEventsEnabled, setPolicyUiEventsEnabled] = useState(true);
+  const [policyLockManualChanges, setPolicyLockManualChanges] = useState(false);
   const [subprogramTargetPolicy, setSubprogramTargetPolicy] = useState<SubprogramTargetPolicy>("shop_friendly");
   const [subprogramPolicyManuallySet, setSubprogramPolicyManuallySet] = useState(false);
   const [logSemantics, setLogSemantics] = useState<LogSemantics>("controller_default");
@@ -799,6 +803,9 @@ export function App() {
     }
     if (uiDefaults.policyUiEventsEnabled !== undefined) {
       setPolicyUiEventsEnabled(Boolean(uiDefaults.policyUiEventsEnabled));
+    }
+    if (uiDefaults.policyLockManualChanges !== undefined) {
+      setPolicyLockManualChanges(Boolean(uiDefaults.policyLockManualChanges));
     }
     if (uiDefaults.jobCheckPolicyPreset) {
       setJobCheckPolicyPreset(uiDefaults.jobCheckPolicyPreset);
@@ -1304,6 +1311,7 @@ export function App() {
               advancedQaExpanded?: boolean;
               jobCheckPolicyPreset?: JobCheckPolicyPreset;
               policyUiEventsEnabled?: boolean;
+              policyLockManualChanges?: boolean;
             }
           >;
         };
@@ -1335,7 +1343,8 @@ export function App() {
               operatorReviewMode,
               advancedQaExpanded,
               jobCheckPolicyPreset,
-              policyUiEventsEnabled
+              policyUiEventsEnabled,
+              policyLockManualChanges
             }
           }
         }
@@ -1431,6 +1440,7 @@ export function App() {
       setPolicyPresetManuallySet(false);
       setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
       setPolicyUiEventsEnabled(true);
+      setPolicyLockManualChanges(false);
       setShowOnlyBlockers(false);
       setTimelineFilters({ alarms: true, flow: true, control: true });
       setExportStatus("UI defaults reset for current controller profile.");
@@ -1902,6 +1912,7 @@ export function App() {
           {t.policyPreset}:{" "}
           <select
             value={jobCheckPolicyPreset}
+            disabled={policyLockManualChanges}
             onChange={(event) => {
               const preset = event.target.value as JobCheckPolicyPreset;
               setJobCheckPolicyPreset(preset);
@@ -1928,6 +1939,7 @@ export function App() {
                 source: "bootstrap"
               });
             }}
+            disabled={policyLockManualChanges}
             style={{ marginLeft: 8 }}
           >
             {t.revertPolicyPresetToControllerDefault}
@@ -1983,6 +1995,14 @@ export function App() {
             onChange={(event) => setPolicyUiEventsEnabled(event.target.checked)}
           />{" "}
           {t.policyUiEventsEnabled}
+        </label>
+        <label style={{ display: "block", marginTop: 4, marginBottom: 8 }}>
+          <input
+            type="checkbox"
+            checked={policyLockManualChanges}
+            onChange={(event) => setPolicyLockManualChanges(event.target.checked)}
+          />{" "}
+          {t.policyLockManualChanges}
         </label>
         {policyDriftWarning ? (
           <p
@@ -2341,6 +2361,7 @@ function readUiDefaultsFromTemplateJson(
       advancedQaExpanded?: boolean;
       jobCheckPolicyPreset?: JobCheckPolicyPreset;
       policyUiEventsEnabled?: boolean;
+      policyLockManualChanges?: boolean;
     }
   | undefined {
   try {
@@ -2362,6 +2383,7 @@ function readUiDefaultsFromTemplateJson(
             advancedQaExpanded?: boolean;
             jobCheckPolicyPreset?: JobCheckPolicyPreset;
             policyUiEventsEnabled?: boolean;
+            policyLockManualChanges?: boolean;
           }
         >;
       };
