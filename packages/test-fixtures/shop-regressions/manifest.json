@@ -307,6 +307,16 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_UNSUPPORTED_M97"]
       }
+    },
+    {
+      "id": "fanuc_g65_strict_valid_target_minimal",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_g65_strict_valid_target_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
