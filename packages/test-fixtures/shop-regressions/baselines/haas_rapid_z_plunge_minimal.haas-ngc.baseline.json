@@ -1,0 +1,17 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_rapid_z_plunge_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 0,
+  "lintIssues": [],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 0.05,
+    "warningCount": 1,
+    "warnings": [
+      "Haas NGC: rapid (G0) Z move down ~10.000 mm at block 2 — confirm clearance / retract plane."
+    ],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
