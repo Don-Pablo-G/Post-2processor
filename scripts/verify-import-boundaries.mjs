@@ -6,7 +6,6 @@ const shadowPolicy = {
   allowedShadowedJsRelPaths: new Set([
     "packages/core/src/api.js",
     "packages/core/src/index.js",
-    "packages/core/src/lints/simpleLint.js",
     "packages/core/src/tooling/report.js",
     "packages/core/src/workshop/advisor.js",
     "packages/core/src/workshop/export.js",
