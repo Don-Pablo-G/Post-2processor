@@ -70,6 +70,16 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "fanuc_local_label_subprogram_mix",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_local_label_subprogram_mix.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
