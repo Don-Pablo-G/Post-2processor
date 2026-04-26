@@ -369,6 +369,16 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION"]
       }
+    },
+    {
+      "id": "fanuc_g65_shop_friendly_fallback_minimal",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_g65_shop_friendly_fallback_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
