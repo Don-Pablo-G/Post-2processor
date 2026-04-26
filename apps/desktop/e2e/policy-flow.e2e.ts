@@ -69,3 +69,15 @@ test("operator lock mode disables manual preset and revert controls", async ({ p
   await expect(presetSelect).toBeEnabled();
   await expect(revertButton).toBeEnabled();
 });
+
+test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
+  await openPolicyPanel(page);
+
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  await presetSelect.selectOption("strict");
+  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+
+  await page.keyboard.press("Control+Shift+J");
+  await expect(page.getByText(/Preset source:\s*saved/i)).toBeVisible();
+  await expect(page.getByText(/score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)/i)).toBeVisible();
+});
