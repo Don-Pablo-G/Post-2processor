@@ -535,6 +535,17 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_FUNCTION_DOMAIN_ERROR"]
       }
+    },
+    {
+      "id": "haas_cycle_parameter_issue_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": true,
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_CYCLE_PARAMETER_ISSUE"]
+      }
     }
   ]
 }

@@ -20,6 +20,7 @@ const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
   unfinishedReturnPath: { enabled: true, severity: "blocker" },
   functionDomainError: { enabled: true, severity: "warning" },
   controlFlowOrphanEnd: { enabled: true, severity: "warning" },
+  cycleParameterIssue: { enabled: true, severity: "warning" },
   unsupportedM97: { enabled: true, severity: "warning" },
   unsupportedFunction: { enabled: true, severity: "warning" },
   subprogramTargetMiss: { enabled: true, severity: "warning" },
@@ -36,6 +37,7 @@ const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
     "SIM_MAX_STEPS_LIMIT",
     "SIM_FUNCTION_DOMAIN_ERROR",
     "SIM_CONTROL_FLOW_ORPHAN_END",
+    "SIM_CYCLE_PARAMETER_ISSUE",
     "SIM_SUBPROGRAM_TARGET_MISS",
     "SIM_UNSUPPORTED_M97",
     "SIM_UNSUPPORTED_FUNCTION"
@@ -227,6 +229,15 @@ function buildSimulationFindings(
       "controlFlowOrphanEnd",
       "SIM_CONTROL_FLOW_ORPHAN_END",
       orphanEndWarning,
+      simulation.trace.at(-1)?.blockIndex
+    );
+  }
+  const cycleParameterWarning = simulation.warnings.find((w) => w.startsWith("Cycle G"));
+  if (cycleParameterWarning) {
+    pushPolicyFinding(
+      "cycleParameterIssue",
+      "SIM_CYCLE_PARAMETER_ISSUE",
+      cycleParameterWarning,
       simulation.trace.at(-1)?.blockIndex
     );
   }
