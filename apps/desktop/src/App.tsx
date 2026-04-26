@@ -107,6 +107,7 @@ const UI_TEXT: Record<
     savePolicyPresetNow: string;
     savePolicyPresetAndRunCheck: string;
     copyPolicyContext: string;
+    policyUiEventsEnabled: string;
     revertPolicyPresetToControllerDefault: string;
     resetUiPrefs: string;
     runJobCheck: string;
@@ -227,6 +228,7 @@ const UI_TEXT: Record<
     savePolicyPresetNow: "Zapisz ten preset jako domyślny",
     savePolicyPresetAndRunCheck: "Zapisz preset i uruchom Job Check",
     copyPolicyContext: "Kopiuj kontekst polityki",
+    policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
@@ -348,6 +350,7 @@ const UI_TEXT: Record<
     savePolicyPresetNow: "Save this preset as default",
     savePolicyPresetAndRunCheck: "Save preset and run Job Check",
     copyPolicyContext: "Copy policy context",
+    policyUiEventsEnabled: "Enable local policy UI events",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
@@ -443,6 +446,7 @@ export function App() {
   const [allowExportWithBlockers, setAllowExportWithBlockers] = useState(false);
   const [jobCheckPolicyPreset, setJobCheckPolicyPreset] = useState<JobCheckPolicyPreset>("balanced");
   const [policyPresetManuallySet, setPolicyPresetManuallySet] = useState(false);
+  const [policyUiEventsEnabled, setPolicyUiEventsEnabled] = useState(true);
   const [subprogramTargetPolicy, setSubprogramTargetPolicy] = useState<SubprogramTargetPolicy>("shop_friendly");
   const [subprogramPolicyManuallySet, setSubprogramPolicyManuallySet] = useState(false);
   const [logSemantics, setLogSemantics] = useState<LogSemantics>("controller_default");
@@ -739,28 +743,31 @@ export function App() {
     if (uiDefaults.advancedQaExpanded !== undefined) {
       setAdvancedQaExpanded(Boolean(uiDefaults.advancedQaExpanded));
     }
+    if (uiDefaults.policyUiEventsEnabled !== undefined) {
+      setPolicyUiEventsEnabled(Boolean(uiDefaults.policyUiEventsEnabled));
+    }
     if (uiDefaults.jobCheckPolicyPreset) {
       setJobCheckPolicyPreset(uiDefaults.jobCheckPolicyPreset);
       setPolicyPresetManuallySet(false);
-      emitPolicyPresetUiEvent("saved_default_loaded", {
+      emitPolicyPresetUiEvent(policyUiEventsEnabled, "saved_default_loaded", {
         controller: detectedControllerProfile,
         preset: uiDefaults.jobCheckPolicyPreset,
         source: "saved"
       });
     }
-  }, [templateJson, detectedControllerProfile]);
+  }, [templateJson, detectedControllerProfile, policyUiEventsEnabled]);
 
   useEffect(() => {
     const uiDefaults = readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile);
     if (uiDefaults?.jobCheckPolicyPreset || policyPresetManuallySet) return;
     const preset = defaultPolicyPresetForController(detectedControllerProfile);
     setJobCheckPolicyPreset(preset);
-    emitPolicyPresetUiEvent("bootstrap_default_applied", {
+    emitPolicyPresetUiEvent(policyUiEventsEnabled, "bootstrap_default_applied", {
       controller: detectedControllerProfile,
       preset,
       source: "bootstrap"
     });
-  }, [templateJson, detectedControllerProfile, policyPresetManuallySet]);
+  }, [templateJson, detectedControllerProfile, policyPresetManuallySet, policyUiEventsEnabled]);
 
   useEffect(() => {
     if (subprogramPolicyManuallySet) return;
@@ -824,7 +831,7 @@ export function App() {
         const preset = defaultPolicyPresetForController(detectedControllerProfile);
         setJobCheckPolicyPreset(preset);
         setPolicyPresetManuallySet(false);
-        emitPolicyPresetUiEvent("reverted_to_controller_default_shortcut", {
+        emitPolicyPresetUiEvent(policyUiEventsEnabled, "reverted_to_controller_default_shortcut", {
           controller: detectedControllerProfile,
           preset,
           source: "bootstrap"
@@ -838,7 +845,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [detectedControllerProfile, policyPresetHintState.hasUnsavedOverride]);
+  }, [detectedControllerProfile, policyPresetHintState.hasUnsavedOverride, policyUiEventsEnabled]);
 
   async function handleExport(): Promise<void> {
     try {
@@ -1234,6 +1241,7 @@ export function App() {
               operatorReviewMode?: boolean;
               advancedQaExpanded?: boolean;
               jobCheckPolicyPreset?: JobCheckPolicyPreset;
+              policyUiEventsEnabled?: boolean;
             }
           >;
         };
@@ -1264,14 +1272,15 @@ export function App() {
               autoRunTestsAfterImport,
               operatorReviewMode,
               advancedQaExpanded,
-              jobCheckPolicyPreset
+              jobCheckPolicyPreset,
+              policyUiEventsEnabled
             }
           }
         }
       };
 
       setTemplateJson(JSON.stringify(next, null, 2));
-      emitPolicyPresetUiEvent("saved_to_template", {
+      emitPolicyPresetUiEvent(policyUiEventsEnabled, "saved_to_template", {
         controller: detectedControllerProfile,
         preset: jobCheckPolicyPreset,
         source: policyPresetHintState.source
@@ -1283,7 +1292,7 @@ export function App() {
   }
 
   async function handleSavePolicyPresetAndRunCheck(): Promise<void> {
-    emitPolicyPresetUiEvent("save_and_run_invoked", {
+    emitPolicyPresetUiEvent(policyUiEventsEnabled, "save_and_run_invoked", {
       controller: detectedControllerProfile,
       preset: jobCheckPolicyPreset,
       source: policyPresetHintState.source
@@ -1347,6 +1356,7 @@ export function App() {
       setAdvancedQaExpanded(true);
       setPolicyPresetManuallySet(false);
       setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
+      setPolicyUiEventsEnabled(true);
       setShowOnlyBlockers(false);
       setTimelineFilters({ alarms: true, flow: true, control: true });
       setExportStatus("UI defaults reset for current controller profile.");
@@ -1802,7 +1812,7 @@ export function App() {
               const preset = event.target.value as JobCheckPolicyPreset;
               setJobCheckPolicyPreset(preset);
               setPolicyPresetManuallySet(true);
-              emitPolicyPresetUiEvent("manual_selection_changed", {
+              emitPolicyPresetUiEvent(policyUiEventsEnabled, "manual_selection_changed", {
                 controller: detectedControllerProfile,
                 preset,
                 source: "manual"
@@ -1818,7 +1828,7 @@ export function App() {
               const preset = defaultPolicyPresetForController(detectedControllerProfile);
               setJobCheckPolicyPreset(preset);
               setPolicyPresetManuallySet(false);
-              emitPolicyPresetUiEvent("reverted_to_controller_default", {
+              emitPolicyPresetUiEvent(policyUiEventsEnabled, "reverted_to_controller_default", {
                 controller: detectedControllerProfile,
                 preset,
                 source: "bootstrap"
@@ -1844,6 +1854,14 @@ export function App() {
             ⓘ
           </span>
         </p>
+        <label style={{ display: "block", marginTop: 4, marginBottom: 8 }}>
+          <input
+            type="checkbox"
+            checked={policyUiEventsEnabled}
+            onChange={(event) => setPolicyUiEventsEnabled(event.target.checked)}
+          />{" "}
+          {t.policyUiEventsEnabled}
+        </label>
         {policyDriftWarning ? (
           <p
             style={{
@@ -2227,6 +2245,7 @@ function readUiDefaultsFromTemplateJson(
       operatorReviewMode?: boolean;
       advancedQaExpanded?: boolean;
       jobCheckPolicyPreset?: JobCheckPolicyPreset;
+      policyUiEventsEnabled?: boolean;
     }
   | undefined {
   try {
@@ -2247,6 +2266,7 @@ function readUiDefaultsFromTemplateJson(
             operatorReviewMode?: boolean;
             advancedQaExpanded?: boolean;
             jobCheckPolicyPreset?: JobCheckPolicyPreset;
+            policyUiEventsEnabled?: boolean;
           }
         >;
       };
@@ -2258,9 +2278,11 @@ function readUiDefaultsFromTemplateJson(
 }
 
 function emitPolicyPresetUiEvent(
+  enabled: boolean,
   eventName: string,
   detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
 ): void {
+  if (!enabled) return;
   const payload = {
     event: eventName,
     ...detail,
