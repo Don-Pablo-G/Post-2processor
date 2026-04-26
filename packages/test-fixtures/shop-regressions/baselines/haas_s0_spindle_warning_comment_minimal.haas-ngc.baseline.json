@@ -1,0 +1,20 @@
+{
+  "fixture": "shop-regressions/haas-ngc/haas_s0_spindle_warning_comment_minimal.nc",
+  "controllerMode": "haas-ngc",
+  "lintIssueCount": 1,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Spindle start (M3/M4/M13/M14) without S on the same block — set RPM explicitly."
+    }
+  ],
+  "simulation": {
+    "halted": true,
+    "steps": 4,
+    "estimatedCycleTimeSeconds": 0,
+    "warningCount": 0,
+    "warnings": [],
+    "alarmCount": 0,
+    "alarms": []
+  }
+}
