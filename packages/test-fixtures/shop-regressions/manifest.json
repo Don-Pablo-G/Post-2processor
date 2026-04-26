@@ -144,6 +144,17 @@
         "expectsSimulationWarnings": false,
         "expectsSimulationFindings": false
       }
+    },
+    {
+      "id": "fanuc_main_m99_minimal",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_main_m99_minimal.nc",
+      "expectations": {
+        "expectsMainM99": true,
+        "expectsSimulationWarnings": true,
+        "expectsSimulationFindings": true,
+        "expectedFindingCodes": ["SIM_MAIN_M99"]
+      }
     }
   ]
 }
