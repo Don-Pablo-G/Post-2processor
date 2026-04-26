@@ -33,6 +33,7 @@ import type {
 import { haasNgcProfile } from "@cnc/profile-haas-ngc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  addPolicyPresetContextToSetupSheetBundle,
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
   derivePolicyUiEventEmissionDecision,
@@ -647,7 +648,7 @@ export function App() {
         : t.policyPresetBalanced;
   const setupSheetWithPolicyContext = useMemo(
     () =>
-      addPolicyPresetContextToSetupSheet(
+      addPolicyPresetContextToSetupSheetBundle(
         setupSheet,
         policyPresetHintState.currentPreset,
         policyPresetHintState.source,
@@ -2217,33 +2218,6 @@ export function App() {
       </section>
     </main>
   );
-}
-
-function addPolicyPresetContextToSetupSheet(
-  sheet: { printable80mm: string; exportTxt: string; exportMarkdown: string },
-  preset: JobCheckPolicyPreset,
-  source: "saved" | "bootstrap" | "manual",
-  controller: ControllerProfileKey
-): { printable80mm: string; exportTxt: string; exportMarkdown: string } {
-  const contextBlockTxt = [
-    "",
-    "=== POLICY CONTEXT ===",
-    `policyPreset: ${preset}`,
-    `policyPresetSource: ${source}`,
-    `controller: ${controller}`
-  ].join("\n");
-  const contextBlockMd = [
-    "",
-    "### Policy Context",
-    `- Policy preset: \`${preset}\``,
-    `- Policy preset source: \`${source}\``,
-    `- Controller: \`${controller}\``
-  ].join("\n");
-  return {
-    printable80mm: `${sheet.printable80mm}${contextBlockTxt}`,
-    exportTxt: `${sheet.exportTxt}${contextBlockTxt}`,
-    exportMarkdown: `${sheet.exportMarkdown}${contextBlockMd}`
-  };
 }
 
 function isTypingElement(target: EventTarget | null): boolean {
