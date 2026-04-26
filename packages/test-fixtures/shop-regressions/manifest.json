@@ -124,6 +124,16 @@
         "expectsSimulationFindings": true,
         "expectedFindingCodes": ["SIM_SUBPROGRAM_TARGET_MISS"]
       }
+    },
+    {
+      "id": "fanuc_g65_shop_friendly_fallback",
+      "controller": "fanuc",
+      "path": "shop-regressions/fanuc/fanuc_g65_shop_friendly_fallback.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
     }
   ]
 }
