@@ -172,6 +172,8 @@ Desktop UI note:
 - Keyboard shortcuts:
   - `Ctrl+Shift+R` -> Revert to controller default preset
   - `Ctrl+Shift+J` -> Save preset and run Job Check (when unsaved override is active)
+- Use **Copy policy context** to copy `preset/source/controller` for operator notes and handoff comments.
+- Successful export status now echoes policy context (`preset`, `source`, `controller`) for quick confirmation.
 - Exported timeline/findings headers include both `policyPreset` and `policyPresetSource` for audit traceability.
 
 For a one-command local readiness summary (branch state, recent checkpoints, and verify result), run:
