@@ -44,6 +44,7 @@ type UiLanguage = "pl" | "en";
 type ControllerProfileKey = "haas-ngc" | "haas-legacy" | "fanuc";
 type SubprogramTargetPolicy = "shop_friendly" | "strict_controller";
 type LogSemantics = "controller_default" | "natural" | "base10";
+type JobCheckPolicyPreset = "strict" | "balanced" | "permissive";
 type TimelineFilterKey = "alarms" | "flow" | "control";
 
 const UI_TEXT: Record<
@@ -99,6 +100,10 @@ const UI_TEXT: Record<
     saveParamPrefs: string;
     resetUiPrefs: string;
     runJobCheck: string;
+    policyPreset: string;
+    policyPresetStrict: string;
+    policyPresetBalanced: string;
+    policyPresetPermissive: string;
     allowExportWithBlockers: string;
     runJobCheckStatus: string;
     jobCheckCard: string;
@@ -202,6 +207,10 @@ const UI_TEXT: Record<
     saveParamPrefs: "Zapisz ustawienia parametrów do JSON",
     resetUiPrefs: "Resetuj ustawienia UI dla tego sterowania",
     runJobCheck: "Uruchom pełny Job Check",
+    policyPreset: "Preset polityki bezpieczeństwa",
+    policyPresetStrict: "Ścisły",
+    policyPresetBalanced: "Zrównoważony",
+    policyPresetPermissive: "Permisywny",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
     runJobCheckStatus: "Status Job Check",
     jobCheckCard: "Wynik Job Check",
@@ -304,6 +313,10 @@ const UI_TEXT: Record<
     saveParamPrefs: "Save parameter preferences to JSON",
     resetUiPrefs: "Reset UI defaults for this controller",
     runJobCheck: "Run full Job Check",
+    policyPreset: "Safety policy preset",
+    policyPresetStrict: "Strict",
+    policyPresetBalanced: "Balanced",
+    policyPresetPermissive: "Permissive",
     allowExportWithBlockers: "Allow export with blockers",
     runJobCheckStatus: "Job Check status",
     jobCheckCard: "Job Check result",
@@ -379,6 +392,7 @@ export function App() {
   const [includeTimelineFindingsExport, setIncludeTimelineFindingsExport] = useState(true);
   const [exportStatus, setExportStatus] = useState("");
   const [allowExportWithBlockers, setAllowExportWithBlockers] = useState(false);
+  const [jobCheckPolicyPreset, setJobCheckPolicyPreset] = useState<JobCheckPolicyPreset>("balanced");
   const [subprogramTargetPolicy, setSubprogramTargetPolicy] = useState<SubprogramTargetPolicy>("shop_friendly");
   const [subprogramPolicyManuallySet, setSubprogramPolicyManuallySet] = useState(false);
   const [logSemantics, setLogSemantics] = useState<LogSemantics>("controller_default");
@@ -680,6 +694,7 @@ export function App() {
     try {
       const result = await runJobCheck({
         ast,
+        policyPreset: jobCheckPolicyPreset,
         initialState: {},
         advisorOptions: {
           stock: {
@@ -937,6 +952,7 @@ export function App() {
     try {
       const result = await runJobCheck({
         ast,
+        policyPreset: jobCheckPolicyPreset,
         simulationLimits: { controllerMode: fixtureController },
         exportOptions: { enabled: false, baseDirectory: ".", baseName: "strict_upgrade_preview" }
       });
@@ -1573,6 +1589,17 @@ export function App() {
             onChange={(event) => setAllowExportWithBlockers(event.target.checked)}
           />{" "}
           {t.allowExportWithBlockers}
+        </label>
+        <label style={{ display: "block", marginTop: 8 }}>
+          {t.policyPreset}:{" "}
+          <select
+            value={jobCheckPolicyPreset}
+            onChange={(event) => setJobCheckPolicyPreset(event.target.value as JobCheckPolicyPreset)}
+          >
+            <option value="strict">{t.policyPresetStrict}</option>
+            <option value="balanced">{t.policyPresetBalanced}</option>
+            <option value="permissive">{t.policyPresetPermissive}</option>
+          </select>
         </label>
         <button onClick={() => void handleRunJobCheck()}>{t.runJobCheck}</button>
         <details

@@ -813,6 +813,31 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_MAX_STEPS_LIMIT")).toBe(false);
   });
 
+  it("supports strict policy preset escalation", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      policyPreset: "strict",
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "strict_preset_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE" && f.severity === "blocker")).toBe(true);
+  });
+
+  it("supports permissive policy preset export unblocking", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      policyPreset: "permissive",
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, allowExportWithBlockers: false, baseDirectory: ".", baseName: "permissive_preset_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
+    expect(result.blocked).toBe(false);
+  });
+
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
     const manifest = JSON.parse(await readFixture(path.join("shop-regressions", "manifest.json"))) as {
       fixtures: Array<{

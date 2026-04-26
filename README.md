@@ -88,6 +88,81 @@ Use `npm run verify` as the standard gate before shipping changes. It runs:
 4. monorepo typecheck
 5. monorepo build
 
+## Shop Safety Policy Presets
+
+`runJobCheck` supports policy overrides so you can tune safety posture without changing engine code:
+
+- `simulationFindingPolicy` controls finding enablement + severity
+- `exportBlockingPolicy` controls which finding codes block export
+
+### Strict (maximum preflight safety)
+
+```ts
+await runJobCheck({
+  ast,
+  simulationLimits: { controllerMode: "haas-ngc" },
+  simulationFindingPolicy: {
+    rapidZPlunge: { severity: "blocker" },
+    functionDomainError: { severity: "blocker" },
+    cycleParameterIssue: { severity: "blocker" },
+    gotoTargetMiss: { severity: "blocker" },
+    controlFlowOrphanEnd: { severity: "blocker" }
+  },
+  exportBlockingPolicy: {
+    includeAllBlockers: true,
+    blockedFindingCodes: [
+      "SIM_RAPID_Z_PLUNGE",
+      "SIM_FUNCTION_DOMAIN_ERROR",
+      "SIM_CYCLE_PARAMETER_ISSUE",
+      "SIM_GOTO_TARGET_MISS",
+      "SIM_CONTROL_FLOW_ORPHAN_END",
+      "SIM_SUBPROGRAM_TARGET_MISS",
+      "SIM_UNSUPPORTED_M97",
+      "SIM_UNSUPPORTED_FUNCTION",
+      "SIM_MAX_STEPS_LIMIT"
+    ]
+  },
+  exportOptions: { enabled: true, allowExportWithBlockers: false, baseDirectory: "." }
+});
+```
+
+### Balanced (recommended default for most shops)
+
+```ts
+await runJobCheck({
+  ast,
+  simulationLimits: { controllerMode: "haas-ngc" },
+  // Uses built-in conservative defaults when omitted:
+  // - blocker findings always block export
+  // - selected warning findings also block export by code
+  exportOptions: { enabled: true, allowExportWithBlockers: false, baseDirectory: "." }
+});
+```
+
+### Permissive (engineering/debug workflows)
+
+```ts
+await runJobCheck({
+  ast,
+  simulationLimits: { controllerMode: "haas-ngc" },
+  simulationFindingPolicy: {
+    rapidZPlunge: { severity: "warning" },
+    functionDomainError: { severity: "warning" },
+    cycleParameterIssue: { severity: "warning" },
+    gotoTargetMiss: { severity: "warning" },
+    controlFlowOrphanEnd: { enabled: false },
+    maxStepsLimit: { enabled: false }
+  },
+  exportBlockingPolicy: {
+    includeAllBlockers: false,
+    blockedFindingCodes: []
+  },
+  exportOptions: { enabled: true, allowExportWithBlockers: false, baseDirectory: "." }
+});
+```
+
+Tip: start with `balanced`, switch to `strict` for first article proveout/new posts, and use `permissive` only for controlled internal debugging.
+
 For a one-command local readiness summary (branch state, recent checkpoints, and verify result), run:
 
 ```bash
