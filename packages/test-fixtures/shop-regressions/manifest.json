@@ -131,6 +131,16 @@
       }
     },
     {
+      "id": "haas_spindle_with_s_minimal",
+      "controller": "haas-ngc",
+      "path": "shop-regressions/haas-ngc/haas_spindle_with_s_minimal.nc",
+      "expectations": {
+        "expectsMainM99": false,
+        "expectsSimulationWarnings": false,
+        "expectsSimulationFindings": false
+      }
+    },
+    {
       "id": "fanuc_main_m99_and_comp",
       "controller": "fanuc",
       "path": "shop-regressions/fanuc/fanuc_main_m99_and_comp.nc",
