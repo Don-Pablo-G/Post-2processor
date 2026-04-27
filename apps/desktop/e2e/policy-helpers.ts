@@ -10,3 +10,11 @@ export async function openPolicyPanel(page: Page): Promise<void> {
 export function policyPresetSelect(page: Page) {
   return page.locator("select:has(option[value='strict']):has(option[value='balanced']):has(option[value='permissive'])").first();
 }
+
+export function policyRevertButton(page: Page) {
+  return page.locator("xpath=(//label[.//select[.//option[@value='strict']]][1]//button)[1]");
+}
+
+export function policyLockToggle(page: Page) {
+  return page.locator("xpath=(//label[.//select[.//option[@value='strict']]][1]/following::input[@type='checkbox'])[2]");
+}

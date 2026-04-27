@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openPolicyPanel, policyPresetSelect } from "./policy-helpers";
+import { openPolicyPanel, policyLockToggle, policyPresetSelect, policyRevertButton } from "./policy-helpers";
 
 test("manual preset change marks source as manual", async ({ page }) => {
   await openPolicyPanel(page);
@@ -27,8 +27,8 @@ test("save-and-run and shortcut revert update source state", async ({ page }) =>
 test("operator lock mode disables manual preset and revert controls", async ({ page }) => {
   await openPolicyPanel(page);
   const presetSelect = policyPresetSelect(page);
-  const revertButton = page.getByRole("button", { name: "Revert to controller default preset" });
-  const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
+  const revertButton = policyRevertButton(page);
+  const lockToggle = policyLockToggle(page);
 
   await expect(presetSelect).toBeEnabled();
   await expect(revertButton).toBeEnabled();
@@ -56,7 +56,7 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
   await openPolicyPanel(page);
   const presetSelect = policyPresetSelect(page);
-  const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
+  const lockToggle = policyLockToggle(page);
   await presetSelect.selectOption("strict");
   await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
 
@@ -65,8 +65,8 @@ test("lock mode prevents keyboard shortcuts from mutating preset state", async (
   await page.keyboard.press("Control+Shift+J");
 
   await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
-  await expect(page.getByText(/Preset source:\s*bootstrap/i)).toHaveCount(0);
-  await expect(page.getByText(/Preset source:\s*saved/i)).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(/reverted_to_controller_default_shortcut/i);
+  await expect(page.locator("body")).not.toContainText(/save_and_run_invoked/i);
 });
 
 test("manual preset shows drift warning after detected controller changes", async ({ page }) => {
