@@ -17,6 +17,14 @@ Track required `desktop-e2e` gate behavior and triage outcomes.
 - Add one weekly summary row in the entries table with dominant failure class (if any).
 - Confirm nightly workflow still uploads artifacts on failure.
 
+## Feature-Work Handoff Trigger
+
+Resume primary product work (NGC/Fanuc feature slices) when all are true:
+
+- Two consecutive daily snapshots show no failed required `desktop-e2e` runs.
+- No unresolved critical E2E triage item remains open in the latest log rows.
+- Weekly maintenance cadence and owner rotation are active.
+
 ## How to update
 
 - Run: `npm run e2e:gate:report -- --limit=10`
