@@ -184,6 +184,7 @@ Policy UX docs:
 - Nightly early warning: `.github/workflows/nightly-desktop-e2e.yml` runs desktop E2E on `main` daily.
 - Stability tracking log: `E2E_STABILITY_LOG.md`
 - Operational ownership/SLA for gate response is documented in `E2E_STABILITY_LOG.md`.
+- Weekly maintenance guidance (owner rotation + last 20-run review) is documented in `E2E_STABILITY_LOG.md`.
 
 Policy E2E coverage includes:
 - manual preset selection -> `source=manual`

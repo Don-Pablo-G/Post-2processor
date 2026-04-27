@@ -10,6 +10,13 @@ Track required `desktop-e2e` gate behavior and triage outcomes.
 - **SLA (mitigation/fix PR):** within 48h for reproducible regressions.
 - **Escalation:** if gate is red for >48h, pause non-critical merges until root cause and mitigation are documented.
 
+## Weekly Maintenance
+
+- Rotate CI watch owner once per week.
+- Run: `npm run e2e:gate:report -- --limit=20`
+- Add one weekly summary row in the entries table with dominant failure class (if any).
+- Confirm nightly workflow still uploads artifacts on failure.
+
 ## How to update
 
 - Run: `npm run e2e:gate:report -- --limit=10`
