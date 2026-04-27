@@ -1235,6 +1235,15 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns when a block mixes G0 and G3", () => {
+    const ast = parse("G0 G3 X1. Y0 I-0.5 J0.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.severity === "warning" && i.message.includes("mixes G0 and G3")
+      )
+    ).toBe(true);
+  });
+
   it("warns when a block mixes G2 and G3", () => {
     const ast = parse("G2 G3 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(
