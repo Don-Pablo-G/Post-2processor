@@ -74,13 +74,22 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   await expect(page.locator("body")).toContainText(
     /Copied Job Check \+ findings summary:.*\|\s*blockers=\d+\s*\|\s*warnings=\d+\s*\|\s*topFindingCodes=/i
   );
+  await expect(page.locator("body")).toContainText(
+    /(Last copied Job Check \+ findings|Ostatnio: Job Check \+ findingi):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
   await page.getByRole("button", { name: /Copy full operator handoff bundle|Kopiuj pełny pakiet przekazania operatora/i }).click();
   await expect(page.locator("body")).toContainText(
     /Copied operator handoff bundle:.*\|\s*findings:blockers=\d+,warnings=\d+,top=.*\|\s*export:dir=.*,artifacts=\d+\s*\|\s*drift=/i
   );
+  await expect(page.locator("body")).toContainText(
+    /(Last copied operator handoff|Ostatnio: pakiet przekazania operatora):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
   await page.getByRole("button", { name: /Copy machine-safe startup brief|Kopiuj bezpieczny brief startowy/i }).click();
   await expect(page.locator("body")).toContainText(
     /Copied machine-safe startup brief:\s*ready=\d+\/100 blocked=(true|false)\s*\|\s*blockers=\d+\s+warnings=\d+\s*\|\s*topFindings=/i
+  );
+  await expect(page.locator("body")).toContainText(
+    /(Last copied startup brief|Ostatnio: brief startowy maszyny):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
   );
   await page.getByRole("button", { name: /Copy first-cut risk brief|Kopiuj brief ryzyka pierwszego cięcia/i }).click();
   await expect(page.locator("body")).toContainText(/Copied first-cut risk brief:/i);

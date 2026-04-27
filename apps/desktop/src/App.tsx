@@ -156,6 +156,11 @@ const UI_TEXT: Record<
     allowExportWithBlockers: string;
     runJobCheckStatus: string;
     jobCheckCopyStatus: string;
+    lastCopiedJobCheckFindingsSummary: string;
+    lastCopiedOperatorHandoffBundle: string;
+    lastCopiedMachineSafeStartupBrief: string;
+    lastCopiedPolicyContext: string;
+    lastCopiedFullExportContext: string;
     firstCutRiskBriefCopyStatusPlain: string;
     firstCutRiskBriefCopyStatusPolicy: string;
     firstCutRiskBriefCopyStatusJobCheck: string;
@@ -301,6 +306,11 @@ const UI_TEXT: Record<
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
     runJobCheckStatus: "Status Job Check",
     jobCheckCopyStatus: "Ostatnio skopiowany status Job Check",
+    lastCopiedJobCheckFindingsSummary: "Ostatnio: Job Check + findingi",
+    lastCopiedOperatorHandoffBundle: "Ostatnio: pakiet przekazania operatora",
+    lastCopiedMachineSafeStartupBrief: "Ostatnio: brief startowy maszyny",
+    lastCopiedPolicyContext: "Ostatnio: kontekst polityki",
+    lastCopiedFullExportContext: "Ostatnio: pełny kontekst eksportu",
     firstCutRiskBriefCopyStatusPlain: "Ostatnio: brief ryzyka (podstawowy)",
     firstCutRiskBriefCopyStatusPolicy: "Ostatnio: brief ryzyka (polityka)",
     firstCutRiskBriefCopyStatusJobCheck: "Ostatnio: brief ryzyka (Job Check)",
@@ -445,6 +455,11 @@ const UI_TEXT: Record<
     allowExportWithBlockers: "Allow export with blockers",
     runJobCheckStatus: "Job Check status",
     jobCheckCopyStatus: "Last copied Job Check status",
+    lastCopiedJobCheckFindingsSummary: "Last copied Job Check + findings",
+    lastCopiedOperatorHandoffBundle: "Last copied operator handoff",
+    lastCopiedMachineSafeStartupBrief: "Last copied startup brief",
+    lastCopiedPolicyContext: "Last copied policy context",
+    lastCopiedFullExportContext: "Last copied export context",
     firstCutRiskBriefCopyStatusPlain: "Last copied risk brief (plain)",
     firstCutRiskBriefCopyStatusPolicy: "Last copied risk brief (policy)",
     firstCutRiskBriefCopyStatusJobCheck: "Last copied risk brief (Job Check)",
@@ -541,6 +556,11 @@ export function App() {
   const [firstCutRiskBriefCopyStatusPlain, setFirstCutRiskBriefCopyStatusPlain] = useState("");
   const [firstCutRiskBriefCopyStatusPolicy, setFirstCutRiskBriefCopyStatusPolicy] = useState("");
   const [firstCutRiskBriefCopyStatusJobCheck, setFirstCutRiskBriefCopyStatusJobCheck] = useState("");
+  const [jobCheckFindingsSummaryCopyStatus, setJobCheckFindingsSummaryCopyStatus] = useState("");
+  const [operatorHandoffBundleCopyStatus, setOperatorHandoffBundleCopyStatus] = useState("");
+  const [machineSafeStartupBriefCopyStatus, setMachineSafeStartupBriefCopyStatus] = useState("");
+  const [policyContextCopyStatus, setPolicyContextCopyStatus] = useState("");
+  const [fullExportContextCopyStatus, setFullExportContextCopyStatus] = useState("");
   const [jobCheckResult, setJobCheckResult] = useState<RunJobCheckResult | null>(null);
   const [lastExportContext, setLastExportContext] = useState<{
     directory: string;
@@ -1444,8 +1464,11 @@ export function App() {
     const line = `POLICY PRESET: ${policyPresetHintState.currentPreset} (${policyPresetHintState.source}) | CONTROLLER: ${detectedControllerProfile}`;
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      setPolicyContextCopyStatus(`${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`);
       setExportStatus(`Copied policy context: ${line}`);
     } catch {
+      setPolicyContextCopyStatus("");
       setExportStatus(`Copy policy context manually: ${line}`);
     }
   }
@@ -1456,8 +1479,11 @@ export function App() {
     const line = `EXPORT CONTEXT | dir=${exportDir} artifacts=${artifactCount} | preset=${policyPresetHintState.currentPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`;
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      setFullExportContextCopyStatus(`${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`);
       setExportStatus(`Copied full export context: ${line}`);
     } catch {
+      setFullExportContextCopyStatus("");
       setExportStatus(`Copy full export context manually: ${line}`);
     }
   }
@@ -1495,6 +1521,8 @@ export function App() {
     ].join(" | ");
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      setJobCheckFindingsSummaryCopyStatus(`${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`);
       setExportStatus(`Copied Job Check + findings summary: ${line}`);
       recordPolicyPresetTransition("job_check_findings_summary_copied", {
         controller: detectedControllerProfile,
@@ -1502,6 +1530,7 @@ export function App() {
         source: policyPresetHintState.source
       });
     } catch {
+      setJobCheckFindingsSummaryCopyStatus("");
       setExportStatus(`Copy Job Check + findings summary manually: ${line}`);
     }
   }
@@ -1522,6 +1551,8 @@ export function App() {
     ].join(" | ");
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      setOperatorHandoffBundleCopyStatus(`${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`);
       setExportStatus(`Copied operator handoff bundle: ${line}`);
       recordPolicyPresetTransition("operator_handoff_bundle_copied", {
         controller: detectedControllerProfile,
@@ -1529,6 +1560,7 @@ export function App() {
         source: policyPresetHintState.source
       });
     } catch {
+      setOperatorHandoffBundleCopyStatus("");
       setExportStatus(`Copy operator handoff bundle manually: ${line}`);
     }
   }
@@ -1549,6 +1581,8 @@ export function App() {
     const line = briefLines.join("\n");
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      setMachineSafeStartupBriefCopyStatus(`${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`);
       setExportStatus(`Copied machine-safe startup brief: ${briefLines[1]} | ${briefLines[2]} | ${briefLines[3]}`);
       recordPolicyPresetTransition("machine_safe_startup_brief_copied", {
         controller: detectedControllerProfile,
@@ -1556,6 +1590,7 @@ export function App() {
         source: policyPresetHintState.source
       });
     } catch {
+      setMachineSafeStartupBriefCopyStatus("");
       setExportStatus("Copy machine-safe startup brief manually: see current Job Check and checklist panels.");
     }
   }
@@ -2606,6 +2641,11 @@ export function App() {
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
         <pre>{`${t.jobCheckCopyStatus}: ${jobCheckCopyStatus}`}</pre>
+        <pre>{`${t.lastCopiedJobCheckFindingsSummary}: ${jobCheckFindingsSummaryCopyStatus}`}</pre>
+        <pre>{`${t.lastCopiedOperatorHandoffBundle}: ${operatorHandoffBundleCopyStatus}`}</pre>
+        <pre>{`${t.lastCopiedMachineSafeStartupBrief}: ${machineSafeStartupBriefCopyStatus}`}</pre>
+        <pre>{`${t.lastCopiedPolicyContext}: ${policyContextCopyStatus}`}</pre>
+        <pre>{`${t.lastCopiedFullExportContext}: ${fullExportContextCopyStatus}`}</pre>
         <pre>{`${t.firstCutRiskBriefCopyStatusPlain}: ${firstCutRiskBriefCopyStatusPlain}`}</pre>
         <pre>{`${t.firstCutRiskBriefCopyStatusPolicy}: ${firstCutRiskBriefCopyStatusPolicy}`}</pre>
         <pre>{`${t.firstCutRiskBriefCopyStatusJobCheck}: ${firstCutRiskBriefCopyStatusJobCheck}`}</pre>

@@ -40,9 +40,15 @@ test("copy context actions write expected policy and export payloads", async ({ 
   await page.getByRole("button", { name: /Copy policy context|Kopiuj kontekst polityki/i }).click();
   const copiedPolicy = page.locator("body");
   await expect(copiedPolicy).toContainText(/Copied policy context:\s*POLICY PRESET:/i);
+  await expect(copiedPolicy).toContainText(
+    /(Last copied policy context|Ostatnio: kontekst polityki):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
 
   await page.getByRole("button", { name: /Copy full export context|Kopiuj pełny kontekst eksportu/i }).click();
   await expect(copiedPolicy).toContainText(/Copied full export context:\s*EXPORT CONTEXT/i);
+  await expect(copiedPolicy).toContainText(
+    /(Last copied export context|Ostatnio: pełny kontekst eksportu):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
 });
 
 test("setup sheet preview includes policy context block", async ({ page }) => {
