@@ -50,7 +50,9 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
 
   await page.keyboard.press("Control+Shift+J");
   await expect(page.locator("body")).toContainText(/save_and_run_invoked/i);
-  await expect(page.locator("p", { hasText: /^score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)$/i })).toBeVisible();
+  await expect(page.locator("body")).toContainText(
+    /score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)\s*\|\s*policy=(strict|balanced|permissive),\s*source=(saved|bootstrap|manual),\s*controller=(haas-ngc|haas-legacy|fanuc)/i
+  );
 });
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
