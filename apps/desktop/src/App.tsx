@@ -121,6 +121,7 @@ const UI_TEXT: Record<
     copyPolicyContext: string;
     copyFullExportContext: string;
     copyJobCheckStatus: string;
+    copyJobCheckWithFindings: string;
     policyUiEventsEnabled: string;
     policyLockManualChanges: string;
     revertPolicyPresetToControllerDefault: string;
@@ -253,6 +254,7 @@ const UI_TEXT: Record<
     copyPolicyContext: "Kopiuj kontekst polityki",
     copyFullExportContext: "Kopiuj pełny kontekst eksportu",
     copyJobCheckStatus: "Kopiuj status Job Check",
+    copyJobCheckWithFindings: "Kopiuj status Job Check + findingi",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     policyLockManualChanges: "Zablokuj ręczne zmiany presetu",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
@@ -387,6 +389,7 @@ const UI_TEXT: Record<
     copyPolicyContext: "Copy policy context",
     copyFullExportContext: "Copy full export context",
     copyJobCheckStatus: "Copy Job Check status",
+    copyJobCheckWithFindings: "Copy Job Check + findings summary",
     policyUiEventsEnabled: "Enable local policy UI events",
     policyLockManualChanges: "Lock manual preset changes",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
@@ -1439,6 +1442,30 @@ export function App() {
     }
   }
 
+  async function handleCopyJobCheckWithFindingsSummary(): Promise<void> {
+    const findingCodes = [...combinedBlockerFindings, ...combinedWarningFindings]
+      .map((f) => f.code)
+      .filter((code, idx, arr) => arr.indexOf(code) === idx)
+      .slice(0, 3);
+    const line = [
+      `${t.runJobCheckStatus}: ${jobCheckStatus || "n/a"}`,
+      `blockers=${combinedBlockerFindings.length}`,
+      `warnings=${combinedWarningFindings.length}`,
+      `topFindingCodes=${findingCodes.length > 0 ? findingCodes.join(",") : "none"}`
+    ].join(" | ");
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied Job Check + findings summary: ${line}`);
+      recordPolicyPresetTransition("job_check_findings_summary_copied", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
+    } catch {
+      setExportStatus(`Copy Job Check + findings summary manually: ${line}`);
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -2369,6 +2396,9 @@ export function App() {
         </details>
         <p style={{ marginTop: 8, marginBottom: 4 }}>
           <button onClick={() => void handleCopyJobCheckStatus()}>{t.copyJobCheckStatus}</button>
+          <button onClick={() => void handleCopyJobCheckWithFindingsSummary()} style={{ marginLeft: 8 }}>
+            {t.copyJobCheckWithFindings}
+          </button>
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
         <pre>{`${t.jobCheckCopyStatus}: ${jobCheckCopyStatus}`}</pre>

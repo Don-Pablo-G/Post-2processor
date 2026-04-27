@@ -65,10 +65,14 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   await expect(page.locator("body")).toContainText(
     /score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)\s*\|\s*policy=(strict|balanced|permissive),\s*source=(saved|bootstrap|manual),\s*controller=(haas-ngc|haas-legacy|fanuc)/i
   );
-  await page.getByRole("button", { name: /Copy Job Check status|Kopiuj status Job Check/i }).click();
+  await page.getByRole("button", { name: /^Copy Job Check status$|^Kopiuj status Job Check$/i }).click();
   await expect(page.locator("body")).toContainText(/Copied Job Check status:/i);
   await expect(page.locator("body")).toContainText(
     /(Last copied Job Check status|Ostatnio skopiowany status Job Check):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
+  await page.getByRole("button", { name: /Copy Job Check \+ findings summary|Kopiuj status Job Check \+ findingi/i }).click();
+  await expect(page.locator("body")).toContainText(
+    /Copied Job Check \+ findings summary:.*\|\s*blockers=\d+\s*\|\s*warnings=\d+\s*\|\s*topFindingCodes=/i
   );
 });
 
