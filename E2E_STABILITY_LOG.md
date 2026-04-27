@@ -42,3 +42,4 @@ Track required `desktop-e2e` gate behavior and triage outcomes.
 | 2026-04-27 | triage follow-up 3 | - | - | - | timing_flake | Hardened startup waits (`networkidle`, visible+enabled checks) and raised Playwright action/navigation/expect timeouts to reduce transient render timing failures. |
 | 2026-04-27 | last 10 CI runs (post-#158 closure snapshot) | 0 | 10 | 0 | behavior_regression | All recent runs completed and failed; next step is isolate a single dominant failing assertion path from latest run artifacts/logs and patch one focused fix. |
 | 2026-04-27 | stabilization checkpoint | 0 | 12 | 8 | other | Gate stabilization criteria not met yet (need two consecutive green days). Keep daily monitoring and continue single-cause fixes until success trend appears. |
+| 2026-04-27 | post-#160 single-path fix deployed | - | - | - | behavior_regression | Language-bound source assertions replaced with event-marker checks; await next completed CI window to measure effect. |
