@@ -95,3 +95,7 @@ jobs:
             apps/desktop/test-results
             apps/desktop/playwright-report
           if-no-files-found: warn
+
+      - name: Add desktop E2E gate snapshot to job summary
+        if: always()
+        run: npm run e2e:gate:report -- --limit=10 --github-summary >> "$GITHUB_STEP_SUMMARY"

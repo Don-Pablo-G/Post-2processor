@@ -9,6 +9,8 @@ function parseArg(name, fallback) {
 }
 
 const limit = Number.parseInt(parseArg("--limit", "10"), 10);
+const summaryOnly = process.argv.includes("--summary-only");
+const githubSummary = process.argv.includes("--github-summary");
 if (!Number.isFinite(limit) || limit <= 0) {
   console.error("Invalid --limit value. Example: node scripts/e2e-gate-report.mjs --limit=10");
   process.exit(1);
@@ -67,9 +69,20 @@ const total = runs.length;
 const failures = runs.filter((run) => run.conclusion === "failure").length;
 const success = runs.filter((run) => run.conclusion === "success").length;
 const inProgress = runs.filter((run) => run.status !== "completed").length;
+const summaryLine = `success=${success} failure=${failures} in_progress=${inProgress}`;
+
+if (githubSummary && process.env.GITHUB_STEP_SUMMARY) {
+  console.log(`### Desktop E2E Gate Snapshot (last ${total} CI runs)`);
+  console.log(`- ${summaryLine}`);
+}
+
+if (summaryOnly) {
+  console.log(summaryLine);
+  process.exit(0);
+}
 
 console.log(`E2E gate monitor (last ${total} CI runs)`);
-console.log(`success=${success} failure=${failures} in_progress=${inProgress}`);
+console.log(summaryLine);
 console.log("");
 for (const run of runs) {
   const conclusion = run.conclusion ?? run.status;
