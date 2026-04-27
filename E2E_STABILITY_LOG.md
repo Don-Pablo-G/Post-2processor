@@ -54,3 +54,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-27 | green-streak evaluation | 0 | 11 | 9 | other | Two-consecutive-green-days criterion not met; stabilization remains pending. |
 | 2026-04-27 | post-#167 focused locale-control fix | 0 | 12 | 8 | selector_drift | Added structure-based lock/revert selectors; awaiting next fully completed run window to measure impact. |
 | 2026-04-27 | last 20 CI runs | 0 | 20 | 0 | selector_drift | dominant failure is locale-bound save/run button selector; switched policy-core flow to Ctrl+Shift+J shortcut to remove label dependency |
+| 2026-04-27 | local desktop e2e full suite | 14 | 0 | 0 | timing_flake | desktop e2e now green locally after locale-safe selectors, strict-mode locator disambiguation, telemetry baseline-aware assertion, and policy history summary-toggle selector |

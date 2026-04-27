@@ -895,8 +895,7 @@ export function App() {
         key: event.key,
         ctrlKey: event.ctrlKey,
         shiftKey: event.shiftKey,
-        isTypingContext: isTypingElement(event.target),
-        hasUnsavedOverride: policyPresetHintState.hasUnsavedOverride
+        isTypingContext: isTypingElement(event.target)
       });
       if (action === "revert_to_default") {
         event.preventDefault();
@@ -917,7 +916,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [detectedControllerProfile, policyLockManualChanges, policyPresetHintState.hasUnsavedOverride, policyUiEventsEnabled]);
+  }, [detectedControllerProfile, policyLockManualChanges, policyUiEventsEnabled]);
 
   async function handleExport(): Promise<void> {
     try {
