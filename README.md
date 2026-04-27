@@ -181,6 +181,7 @@ Policy UX docs:
 - Local UI event schema: `POLICY_UI_EVENT_SCHEMA.md`
 - CI gate: desktop Playwright policy suite now runs as a required `desktop-e2e` workflow job.
 - Failure triage playbook: `PLAYWRIGHT_TROUBLESHOOTING.md`
+- Nightly early warning: `.github/workflows/nightly-desktop-e2e.yml` runs desktop E2E on `main` daily.
 
 Policy E2E coverage includes:
 - manual preset selection -> `source=manual`
