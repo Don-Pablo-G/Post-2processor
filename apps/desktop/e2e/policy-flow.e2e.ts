@@ -139,3 +139,16 @@ test("lock mode prevents keyboard shortcuts from mutating preset state", async (
   await expect(page.getByText(/Preset source:\s*bootstrap/i)).toHaveCount(0);
   await expect(page.getByText(/Preset source:\s*saved/i)).toHaveCount(0);
 });
+
+test("manual preset shows drift warning after detected controller changes", async ({ page }) => {
+  await openPolicyPanel(page);
+
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  await presetSelect.selectOption("strict");
+  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+
+  const programInput = page.locator("textarea").first();
+  await programInput.fill("O9001 (FANUC TEST)\nG90\nM30");
+
+  await expect(page.getByText(/manual preset may be stale after detected controller change/i)).toBeVisible();
+});
