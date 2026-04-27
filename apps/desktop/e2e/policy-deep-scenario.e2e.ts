@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { openPolicyPanel } from "./policy-helpers";
+import { openPolicyPanel, policyPresetSelect } from "./policy-helpers";
 
 test("deep operator policy flow from edit to export confirmation", async ({ page }) => {
   await page.addInitScript(() => {
@@ -16,7 +16,7 @@ test("deep operator policy flow from edit to export confirmation", async ({ page
   const programInput = page.locator("textarea").first();
   await programInput.fill("O9010 (FANUC OP FLOW)\nG90\nG0 X0 Y0\nM30");
 
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 
@@ -44,7 +44,7 @@ test("high-risk branch: manual override, drift, revert, and export", async ({ pa
 
   await openPolicyPanel(page);
   const programInput = page.locator("textarea").first();
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
 
   // Start in Haas style, force manual override.
   await programInput.fill("O9100 (HAAS BRANCH)\nG90\nG0 X0. Y0.\nM30");

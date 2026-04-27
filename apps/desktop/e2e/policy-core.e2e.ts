@@ -1,16 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { openPolicyPanel } from "./policy-helpers";
+import { openPolicyPanel, policyPresetSelect } from "./policy-helpers";
 
 test("manual preset change marks source as manual", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("permissive");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 });
 
 test("save-and-run and shortcut revert update source state", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 
@@ -26,7 +26,7 @@ test("save-and-run and shortcut revert update source state", async ({ page }) =>
 
 test("operator lock mode disables manual preset and revert controls", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   const revertButton = page.getByRole("button", { name: "Revert to controller default preset" });
   const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
 
@@ -44,7 +44,7 @@ test("operator lock mode disables manual preset and revert controls", async ({ p
 
 test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 
@@ -55,7 +55,7 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   const lockToggle = page.getByRole("checkbox", { name: "Lock manual preset changes" });
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
@@ -71,7 +71,7 @@ test("lock mode prevents keyboard shortcuts from mutating preset state", async (
 
 test("manual preset shows drift warning after detected controller changes", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
 
