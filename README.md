@@ -204,6 +204,12 @@ Quick summary only:
 npm run e2e:gate:report -- --limit=10 --summary-only
 ```
 
+Desktop E2E status + triage quick links:
+- Required gate workflow: [CI / desktop-e2e](https://github.com/Don-Pablo-G/Post-2processor/actions/workflows/ci.yml)
+- Nightly early-warning workflow: [Nightly Desktop E2E](https://github.com/Don-Pablo-G/Post-2processor/actions/workflows/nightly-desktop-e2e.yml)
+- Failure triage guide: `PLAYWRIGHT_TROUBLESHOOTING.md`
+- Ongoing gate health log: `E2E_STABILITY_LOG.md`
+
 ### Policy UX Release Notes
 
 - Added named policy presets with persisted per-controller defaults and source states (`saved|bootstrap|manual`).
