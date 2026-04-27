@@ -59,3 +59,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-27 | post-merge #169 checkpoint (last 20 runs) | 2 | 18 | 0 | other | latest main and PR runs are green after GH_TOKEN workflow fix; continue monitoring for consecutive green windows before full feature-work handoff |
 | 2026-04-27 | post-#170 main completion checkpoint (last 20 runs) | 4 | 16 | 0 | other | latest in-progress main run completed green; recent sequence remains green and stabilization can transition to feature work with monitoring |
 | 2026-04-27 | post-feature-PR-172 merge checkpoint (last 20 runs) | 7 | 12 | 1 | other | feature slice A1 merged with verify+desktop-e2e green on PR; continue monitoring while feature development proceeds |
+| 2026-04-27 | post-A2-main-push checkpoint (last 20 runs) | 11 | 9 | 0 | other | A2 copy-job-check-status slice passed verify and desktop-e2e on main push run; continue feature cadence with monitoring |
