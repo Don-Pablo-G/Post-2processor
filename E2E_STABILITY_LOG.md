@@ -70,3 +70,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-28 | post-A10-main-push checkpoint (last 20 runs) | 20 | 0 | - | other | A10 risk brief plus Job Check status copy slice passed verify, full desktop E2E (14), and CI desktop-e2e on main; gate report 20/20 green; no dominant failure class |
 | 2026-04-28 | post-A11-main-push checkpoint (last 20 runs) | 20 | 0 | - | other | A11 last-copied lines for risk-brief copy actions; verify + full desktop E2E green locally; CI main run green; gate 20/20 |
 | 2026-04-28 | post-A12-main-push checkpoint (last 20 runs) | 20 | 0 | - | other | A12 last-copied lines for findings/handoff/startup/policy/export copy actions; CI green; gate 20/20 |
+| 2026-04-28 | post-B-main-push checkpoint (last 20 runs) | 20 | 0 | - | other | simpleLint warns on G0+G1 same block (c0ef3e2); local verify + desktop E2E green; CI https://github.com/Don-Pablo-G/Post-2processor/actions/runs/25025452601 green; gate 20/20 |
