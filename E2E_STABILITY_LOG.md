@@ -2,6 +2,14 @@
 
 Track required `desktop-e2e` gate behavior and triage outcomes.
 
+## Ownership and SLA
+
+- **Owner:** Core maintainers rotating on CI watch duty.
+- **Check cadence:** once daily (weekday) + after notable CI workflow changes.
+- **SLA (first response):** within 24h for new required-gate failures.
+- **SLA (mitigation/fix PR):** within 48h for reproducible regressions.
+- **Escalation:** if gate is red for >48h, pause non-critical merges until root cause and mitigation are documented.
+
 ## How to update
 
 - Run: `npm run e2e:gate:report -- --limit=10`
