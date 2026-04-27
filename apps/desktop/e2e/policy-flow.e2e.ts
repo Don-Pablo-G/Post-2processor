@@ -152,3 +152,23 @@ test("manual preset shows drift warning after detected controller changes", asyn
 
   await expect(page.getByText(/manual preset may be stale after detected controller change/i)).toBeVisible();
 });
+
+test("policy events toggle off prevents local ui event emission", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as Window & { __CNC_E2E_POLICY_EVENTS__?: unknown[] }).__CNC_E2E_POLICY_EVENTS__ = [];
+    window.addEventListener("cnc:policy-preset-ui", (evt) => {
+      const customEvt = evt as CustomEvent;
+      (window as Window & { __CNC_E2E_POLICY_EVENTS__?: unknown[] }).__CNC_E2E_POLICY_EVENTS__?.push(customEvt.detail);
+    });
+  });
+  await openPolicyPanel(page);
+
+  await page.getByRole("checkbox", { name: "Enable local policy UI events" }).uncheck();
+  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  await presetSelect.selectOption("permissive");
+
+  const eventCount = await page.evaluate(() => {
+    return ((window as Window & { __CNC_E2E_POLICY_EVENTS__?: unknown[] }).__CNC_E2E_POLICY_EVENTS__ ?? []).length;
+  });
+  expect(eventCount).toBe(0);
+});
