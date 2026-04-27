@@ -18,10 +18,10 @@ test("deep operator policy flow from edit to export confirmation", async ({ page
 
   const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("strict");
-  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
 
   await page.keyboard.press("Control+Shift+J");
-  await expect(page.getByText(/Preset source:\s*saved/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/save_and_run_invoked/i);
   await expect(page.getByText(/score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)/i)).toBeVisible();
 
   await page.getByRole("button", { name: "Export now" }).click();
@@ -49,7 +49,7 @@ test("high-risk branch: manual override, drift, revert, and export", async ({ pa
   // Start in Haas style, force manual override.
   await programInput.fill("O9100 (HAAS BRANCH)\nG90\nG0 X0. Y0.\nM30");
   await presetSelect.selectOption("permissive");
-  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
 
   // Drift to Fanuc controller signature while manual preset remains active.
   await programInput.fill("O9101 (FANUC BRANCH)\nG90\nG0 X0 Y0\nM30");
@@ -57,7 +57,7 @@ test("high-risk branch: manual override, drift, revert, and export", async ({ pa
 
   // Revert to controller default and validate source shift before export.
   await page.keyboard.press("Control+Shift+R");
-  await expect(page.getByText(/Preset source:\s*bootstrap/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/reverted_to_controller_default_shortcut/i);
 
   await page.getByRole("button", { name: "Export now" }).click();
   await expect(page.getByText("Export policy context")).toBeVisible();
@@ -83,11 +83,11 @@ test("controller-specific Haas branch: balanced default restore and export", asy
   // Keep Haas controller context and apply manual strict override.
   await programInput.fill("O9200 (HAAS ONLY BRANCH)\nG90 G54 G17\nG0 X0. Y0.\nM30");
   await presetSelect.selectOption("strict");
-  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
 
   // Revert should restore Haas controller bootstrap default (balanced).
   await page.keyboard.press("Control+Shift+R");
-  await expect(page.getByText(/Preset source:\s*bootstrap/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/reverted_to_controller_default_shortcut/i);
 
   await page.getByRole("button", { name: "Export now" }).click();
   await expect(page.getByText("Export policy context")).toBeVisible();
