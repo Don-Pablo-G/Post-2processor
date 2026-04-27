@@ -156,6 +156,9 @@ const UI_TEXT: Record<
     allowExportWithBlockers: string;
     runJobCheckStatus: string;
     jobCheckCopyStatus: string;
+    firstCutRiskBriefCopyStatusPlain: string;
+    firstCutRiskBriefCopyStatusPolicy: string;
+    firstCutRiskBriefCopyStatusJobCheck: string;
     jobCheckCard: string;
     openExportFolder: string;
     jumpToBlockers: string;
@@ -298,6 +301,9 @@ const UI_TEXT: Record<
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
     runJobCheckStatus: "Status Job Check",
     jobCheckCopyStatus: "Ostatnio skopiowany status Job Check",
+    firstCutRiskBriefCopyStatusPlain: "Ostatnio: brief ryzyka (podstawowy)",
+    firstCutRiskBriefCopyStatusPolicy: "Ostatnio: brief ryzyka (polityka)",
+    firstCutRiskBriefCopyStatusJobCheck: "Ostatnio: brief ryzyka (Job Check)",
     jobCheckCard: "Wynik Job Check",
     openExportFolder: "Otwórz folder eksportu",
     jumpToBlockers: "Przejdź do blockerów",
@@ -439,6 +445,9 @@ const UI_TEXT: Record<
     allowExportWithBlockers: "Allow export with blockers",
     runJobCheckStatus: "Job Check status",
     jobCheckCopyStatus: "Last copied Job Check status",
+    firstCutRiskBriefCopyStatusPlain: "Last copied risk brief (plain)",
+    firstCutRiskBriefCopyStatusPolicy: "Last copied risk brief (policy)",
+    firstCutRiskBriefCopyStatusJobCheck: "Last copied risk brief (Job Check)",
     jobCheckCard: "Job Check result",
     openExportFolder: "Open export folder",
     jumpToBlockers: "Jump to blockers",
@@ -529,6 +538,9 @@ export function App() {
   });
   const [jobCheckStatus, setJobCheckStatus] = useState("");
   const [jobCheckCopyStatus, setJobCheckCopyStatus] = useState("");
+  const [firstCutRiskBriefCopyStatusPlain, setFirstCutRiskBriefCopyStatusPlain] = useState("");
+  const [firstCutRiskBriefCopyStatusPolicy, setFirstCutRiskBriefCopyStatusPolicy] = useState("");
+  const [firstCutRiskBriefCopyStatusJobCheck, setFirstCutRiskBriefCopyStatusJobCheck] = useState("");
   const [jobCheckResult, setJobCheckResult] = useState<RunJobCheckResult | null>(null);
   const [lastExportContext, setLastExportContext] = useState<{
     directory: string;
@@ -1559,6 +1571,9 @@ export function App() {
     const line = briefLines.join("\n");
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      const copySummary = `${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`;
+      setFirstCutRiskBriefCopyStatusPlain(copySummary);
       setExportStatus(
         `Copied first-cut risk brief: ${firstCutRiskBriefItems.length > 0 ? firstCutRiskBriefItems.map((item) => item.code).join(",") : "none"}`
       );
@@ -1568,6 +1583,7 @@ export function App() {
         source: policyPresetHintState.source
       });
     } catch {
+      setFirstCutRiskBriefCopyStatusPlain("");
       setExportStatus("Copy first-cut risk brief manually: see Workshop Advisor first-cut risk brief section.");
     }
   }
@@ -1584,6 +1600,9 @@ export function App() {
     const line = briefLines.join("\n");
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      const copySummary = `${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`;
+      setFirstCutRiskBriefCopyStatusPolicy(copySummary);
       setExportStatus(
         `Copied first-cut risk brief + policy context: preset=${jobCheckPolicyPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`
       );
@@ -1593,6 +1612,7 @@ export function App() {
         source: policyPresetHintState.source
       });
     } catch {
+      setFirstCutRiskBriefCopyStatusPolicy("");
       setExportStatus("Copy first-cut risk brief + policy context manually: see Workshop Advisor and policy panel.");
     }
   }
@@ -1609,6 +1629,9 @@ export function App() {
     const line = [statusLine, "", ...briefLines].join("\n");
     try {
       await navigator.clipboard.writeText(line);
+      const timestampIso = new Date().toISOString();
+      const copySummary = `${timestampIso} | len=${line.length} | checksum=${checksumText(line)}`;
+      setFirstCutRiskBriefCopyStatusJobCheck(copySummary);
       setExportStatus(`Copied first-cut risk brief + Job Check: ${jobCheckStatus || "n/a"}`);
       recordPolicyPresetTransition("first_cut_risk_brief_with_job_check_copied", {
         controller: detectedControllerProfile,
@@ -1616,6 +1639,7 @@ export function App() {
         source: policyPresetHintState.source
       });
     } catch {
+      setFirstCutRiskBriefCopyStatusJobCheck("");
       setExportStatus("Copy first-cut risk brief + Job Check manually: see Job Check status and Workshop Advisor.");
     }
   }
@@ -2582,6 +2606,9 @@ export function App() {
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
         <pre>{`${t.jobCheckCopyStatus}: ${jobCheckCopyStatus}`}</pre>
+        <pre>{`${t.firstCutRiskBriefCopyStatusPlain}: ${firstCutRiskBriefCopyStatusPlain}`}</pre>
+        <pre>{`${t.firstCutRiskBriefCopyStatusPolicy}: ${firstCutRiskBriefCopyStatusPolicy}`}</pre>
+        <pre>{`${t.firstCutRiskBriefCopyStatusJobCheck}: ${firstCutRiskBriefCopyStatusJobCheck}`}</pre>
         <pre>{`${t.exportStatus}: ${exportStatus}`}</pre>
       </section>
     </main>

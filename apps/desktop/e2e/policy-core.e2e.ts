@@ -84,14 +84,23 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   );
   await page.getByRole("button", { name: /Copy first-cut risk brief|Kopiuj brief ryzyka pierwszego cięcia/i }).click();
   await expect(page.locator("body")).toContainText(/Copied first-cut risk brief:/i);
+  await expect(page.locator("body")).toContainText(
+    /(Last copied risk brief \(plain\)|Ostatnio: brief ryzyka \(podstawowy\)):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
   await page.getByRole("button", { name: /Copy first-cut risk brief \+ policy context|Kopiuj brief ryzyka \+ kontekst polityki/i }).click();
   await expect(page.locator("body")).toContainText(
     /Copied first-cut risk brief \+ policy context:\s*preset=(strict|balanced|permissive)\s+source=(saved|bootstrap|manual)\s+controller=(haas-ngc|haas-legacy|fanuc)/i
+  );
+  await expect(page.locator("body")).toContainText(
+    /(Last copied risk brief \(policy\)|Ostatnio: brief ryzyka \(polityka\)):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
   );
   await page.getByRole("button", { name: /Copy first-cut risk brief \+ Job Check status|Kopiuj brief ryzyka \+ status Job Check/i }).click();
   await expect(page.locator("body")).toContainText(/Copied first-cut risk brief \+ Job Check:/i);
   await expect(page.locator("body")).toContainText(
     /Copied first-cut risk brief \+ Job Check:.*score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)\s*\|\s*policy=(strict|balanced|permissive)/i
+  );
+  await expect(page.locator("body")).toContainText(
+    /(Last copied risk brief \(Job Check\)|Ostatnio: brief ryzyka \(Job Check\)):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
   );
 });
 
