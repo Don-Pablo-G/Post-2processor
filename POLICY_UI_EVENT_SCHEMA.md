@@ -30,13 +30,27 @@ Local desktop UI emits policy-preset interaction events via:
 
 ## Emitted Event IDs
 
-- `saved_default_loaded`
-- `bootstrap_default_applied`
-- `manual_selection_changed`
-- `saved_to_template`
-- `save_and_run_invoked`
-- `reverted_to_controller_default`
-- `reverted_to_controller_default_shortcut`
+Events are emitted from `apps/desktop/src/App.tsx` via `recordPolicyPresetTransition` (same payload shape as above). Grouped by intent; treat any unknown `event` string as forward-compatible.
+
+### Preset lifecycle
+
+- `saved_default_loaded` — persisted UI defaults included a saved policy preset for the controller.
+- `bootstrap_default_applied` — controller bootstrap default preset applied (e.g. fresh session / template path).
+- `manual_selection_changed` — operator changed the preset dropdown.
+- `saved_to_template` — preset (and related prefs) written into template JSON.
+- `save_and_run_invoked` — save-and-run Job Check shortcut or button path invoked.
+- `reverted_to_controller_default` — revert to controller default via UI control.
+- `reverted_to_controller_default_shortcut` — same as revert, via Ctrl+Shift+R when not blocked by lock/typing context.
+
+### Clipboard / operator handoff (Job Check panel)
+
+- `job_check_status_copied` — copied Job Check status line (includes telemetry line in UI; this event marks the action).
+- `job_check_findings_summary_copied` — copied status plus findings counts / top codes.
+- `operator_handoff_bundle_copied` — copied broader handoff bundle (status, findings, export, drift).
+- `machine_safe_startup_brief_copied` — copied machine-safe startup brief.
+- `first_cut_risk_brief_copied` — copied first-cut risk brief only.
+- `first_cut_risk_brief_with_policy_copied` — copied risk brief plus policy context line.
+- `first_cut_risk_brief_with_job_check_copied` — copied Job Check status line plus risk brief block.
 
 ## Integration Notes
 
