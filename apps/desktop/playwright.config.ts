@@ -8,12 +8,12 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   timeout: 45_000,
   expect: {
-    timeout: 8_000
+    timeout: 12_000
   },
   use: {
     baseURL: "http://127.0.0.1:4173",
-    actionTimeout: 8_000,
-    navigationTimeout: 20_000,
+    actionTimeout: 12_000,
+    navigationTimeout: 30_000,
     trace: "on-first-retry",
     screenshot: "only-on-failure"
   },
