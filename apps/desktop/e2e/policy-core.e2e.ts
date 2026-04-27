@@ -109,4 +109,7 @@ test("manual preset shows drift warning after detected controller changes", asyn
   const programInput = page.locator("textarea").first();
   await programInput.fill("O9001 (FANUC TEST)\nG90\nM30");
   await expect(page.locator("body")).toContainText(/haas-ngc\s*->\s*fanuc/i);
+  await expect(page.locator("body")).toContainText(/First-cut risk brief|Brief ryzyka pierwszego cięcia/i);
+  await expect(page.locator("body")).toContainText(/reason:/i);
+  await expect(page.locator("body")).toContainText(/action:/i);
 });

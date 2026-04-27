@@ -102,6 +102,7 @@ const UI_TEXT: Record<
     showOnlyBlockers: string;
     suggestedFix: string;
     criticalEvents: string;
+    firstCutRiskBrief: string;
     setupOptimization: string;
     optionalStops: string;
     frontMatter: string;
@@ -237,6 +238,7 @@ const UI_TEXT: Record<
     showOnlyBlockers: "Pokaż tylko blockery",
     suggestedFix: "Sugerowana poprawka",
     criticalEvents: "Krytyczne punkty programu",
+    firstCutRiskBrief: "Brief ryzyka pierwszego cięcia",
     setupOptimization: "Sugestie skrócenia przezbrojenia",
     optionalStops: "Sugerowane punkty M01",
     frontMatter: "Proponowany nagłówek parametrów",
@@ -374,6 +376,7 @@ const UI_TEXT: Record<
     showOnlyBlockers: "Show only blockers",
     suggestedFix: "Suggested fix",
     criticalEvents: "Critical events",
+    firstCutRiskBrief: "First-cut risk brief",
     setupOptimization: "Setup-time optimization hints",
     optionalStops: "Suggested M01 points",
     frontMatter: "Suggested parameter front-matter",
@@ -660,6 +663,16 @@ export function App() {
   const combinedWarningFindings = useMemo(
     () => [...advisor.safetyFindings, ...(jobCheckResult?.simulationFindings ?? [])].filter((f) => f.severity === "warning"),
     [advisor, jobCheckResult]
+  );
+  const firstCutRiskBriefItems = useMemo(
+    () =>
+      [...combinedBlockerFindings, ...combinedWarningFindings].slice(0, 3).map((f) => ({
+        code: f.code,
+        blockIndex: f.blockIndex,
+        reason: f.message,
+        operatorAction: suggestedFixForFinding(f.code, language)
+      })),
+    [combinedBlockerFindings, combinedWarningFindings, language]
   );
   const persistedPolicyPreset = useMemo(
     () => readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile)?.jobCheckPolicyPreset,
@@ -1942,6 +1955,17 @@ export function App() {
           </>
         )}
         {!operatorReviewMode && <pre>{JSON.stringify(advisor.safetyFindings, null, 2)}</pre>}
+        <h3>{t.firstCutRiskBrief}</h3>
+        <pre>
+          {firstCutRiskBriefItems.length > 0
+            ? firstCutRiskBriefItems
+                .map(
+                  (item, idx) =>
+                    `- #${idx + 1} ${item.code}${item.blockIndex !== undefined ? ` @B${item.blockIndex}` : ""}\n  reason: ${item.reason}\n  action: ${item.operatorAction}`
+                )
+                .join("\n")
+            : "- none"}
+        </pre>
         <h3>{t.criticalEvents}</h3>
         <pre>
           {operatorReviewMode
