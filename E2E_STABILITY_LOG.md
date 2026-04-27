@@ -6,6 +6,8 @@ Track required `desktop-e2e` gate behavior and triage outcomes.
 
 - Run: `npm run e2e:gate:report -- --limit=10`
 - Record one line per observation window.
+- Optional helper for appending rows:
+  - `npm run e2e:stability:log-entry -- --window=\"last 10 CI runs\" --success=2 --failure=1 --in_progress=0 --class=timing_flake --notes=\"retry tuned\"`
 - Classify each failure as one of:
   - `selector_drift`
   - `timing_flake`
