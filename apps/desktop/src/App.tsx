@@ -990,7 +990,7 @@ export function App() {
         }
       });
       setJobCheckStatus(
-        `score=${result.readyToRunScore}, blockers=${result.blockerCount}, warnings=${result.warningCount}, blocked=${result.blocked}`
+        `score=${result.readyToRunScore}, blockers=${result.blockerCount}, warnings=${result.warningCount}, blocked=${result.blocked} | policy=${jobCheckPolicyPreset}, source=${policyPresetHintState.source}, controller=${detectedControllerProfile}`
       );
       setJobCheckResult(result);
       if (result.exportResult) {
