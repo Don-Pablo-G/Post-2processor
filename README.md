@@ -180,6 +180,7 @@ Policy UX docs:
 - Smoke checklist: `POLICY_UX_SMOKE_TEST.md`
 - Local UI event schema: `POLICY_UI_EVENT_SCHEMA.md`
 - CI gate: desktop Playwright policy suite now runs as a required `desktop-e2e` workflow job.
+- Failure triage playbook: `PLAYWRIGHT_TROUBLESHOOTING.md`
 
 Policy E2E coverage includes:
 - manual preset selection -> `source=manual`
