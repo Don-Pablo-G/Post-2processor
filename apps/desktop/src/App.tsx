@@ -122,6 +122,7 @@ const UI_TEXT: Record<
     copyFullExportContext: string;
     copyJobCheckStatus: string;
     copyJobCheckWithFindings: string;
+    copyOperatorHandoffBundle: string;
     policyUiEventsEnabled: string;
     policyLockManualChanges: string;
     revertPolicyPresetToControllerDefault: string;
@@ -255,6 +256,7 @@ const UI_TEXT: Record<
     copyFullExportContext: "Kopiuj pełny kontekst eksportu",
     copyJobCheckStatus: "Kopiuj status Job Check",
     copyJobCheckWithFindings: "Kopiuj status Job Check + findingi",
+    copyOperatorHandoffBundle: "Kopiuj pełny pakiet przekazania operatora",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     policyLockManualChanges: "Zablokuj ręczne zmiany presetu",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
@@ -390,6 +392,7 @@ const UI_TEXT: Record<
     copyFullExportContext: "Copy full export context",
     copyJobCheckStatus: "Copy Job Check status",
     copyJobCheckWithFindings: "Copy Job Check + findings summary",
+    copyOperatorHandoffBundle: "Copy full operator handoff bundle",
     policyUiEventsEnabled: "Enable local policy UI events",
     policyLockManualChanges: "Lock manual preset changes",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
@@ -1466,6 +1469,33 @@ export function App() {
     }
   }
 
+  async function handleCopyOperatorHandoffBundle(): Promise<void> {
+    const findingCodes = [...combinedBlockerFindings, ...combinedWarningFindings]
+      .map((f) => f.code)
+      .filter((code, idx, arr) => arr.indexOf(code) === idx)
+      .slice(0, 3);
+    const exportDir = jobCheckResult?.exportResult?.exportDirectory ?? "n/a";
+    const artifactCount = jobCheckResult?.exportResult?.artifacts.length ?? 0;
+    const driftStatus = policyDriftWarning ? `active:${policyDriftWarning}` : "none";
+    const line = [
+      `${t.runJobCheckStatus}: ${jobCheckStatus || "n/a"}`,
+      `findings:blockers=${combinedBlockerFindings.length},warnings=${combinedWarningFindings.length},top=${findingCodes.length > 0 ? findingCodes.join(",") : "none"}`,
+      `export:dir=${exportDir},artifacts=${artifactCount}`,
+      `drift=${driftStatus}`
+    ].join(" | ");
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied operator handoff bundle: ${line}`);
+      recordPolicyPresetTransition("operator_handoff_bundle_copied", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
+    } catch {
+      setExportStatus(`Copy operator handoff bundle manually: ${line}`);
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -2398,6 +2428,9 @@ export function App() {
           <button onClick={() => void handleCopyJobCheckStatus()}>{t.copyJobCheckStatus}</button>
           <button onClick={() => void handleCopyJobCheckWithFindingsSummary()} style={{ marginLeft: 8 }}>
             {t.copyJobCheckWithFindings}
+          </button>
+          <button onClick={() => void handleCopyOperatorHandoffBundle()} style={{ marginLeft: 8 }}>
+            {t.copyOperatorHandoffBundle}
           </button>
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
