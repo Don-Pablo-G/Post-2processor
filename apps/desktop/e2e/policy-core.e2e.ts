@@ -67,6 +67,9 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   );
   await page.getByRole("button", { name: /Copy Job Check status|Kopiuj status Job Check/i }).click();
   await expect(page.locator("body")).toContainText(/Copied Job Check status:/i);
+  await expect(page.locator("body")).toContainText(
+    /(Last copied Job Check status|Ostatnio skopiowany status Job Check):\s*\d{4}-\d{2}-\d{2}T.*\|\s*len=\d+\s*\|\s*checksum=[0-9a-f]{4}/i
+  );
 });
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {

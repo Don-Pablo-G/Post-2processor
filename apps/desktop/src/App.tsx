@@ -148,6 +148,7 @@ const UI_TEXT: Record<
     policyPresetUnsavedOverrideHint: string;
     allowExportWithBlockers: string;
     runJobCheckStatus: string;
+    jobCheckCopyStatus: string;
     jobCheckCard: string;
     openExportFolder: string;
     jumpToBlockers: string;
@@ -282,6 +283,7 @@ const UI_TEXT: Record<
     policyPresetUnsavedOverrideHint: "Aktywny tymczasowy preset (inny niż zapisany domyślny)",
     allowExportWithBlockers: "Pozwól na eksport mimo blockerów",
     runJobCheckStatus: "Status Job Check",
+    jobCheckCopyStatus: "Ostatnio skopiowany status Job Check",
     jobCheckCard: "Wynik Job Check",
     openExportFolder: "Otwórz folder eksportu",
     jumpToBlockers: "Przejdź do blockerów",
@@ -415,6 +417,7 @@ const UI_TEXT: Record<
     policyPresetUnsavedOverrideHint: "Unsaved preset override is active",
     allowExportWithBlockers: "Allow export with blockers",
     runJobCheckStatus: "Job Check status",
+    jobCheckCopyStatus: "Last copied Job Check status",
     jobCheckCard: "Job Check result",
     openExportFolder: "Open export folder",
     jumpToBlockers: "Jump to blockers",
@@ -504,6 +507,7 @@ export function App() {
     control: true
   });
   const [jobCheckStatus, setJobCheckStatus] = useState("");
+  const [jobCheckCopyStatus, setJobCheckCopyStatus] = useState("");
   const [jobCheckResult, setJobCheckResult] = useState<RunJobCheckResult | null>(null);
   const [lastExportContext, setLastExportContext] = useState<{
     directory: string;
@@ -1417,11 +1421,21 @@ export function App() {
 
   async function handleCopyJobCheckStatus(): Promise<void> {
     const line = `${t.runJobCheckStatus}: ${jobCheckStatus || "n/a"}`;
+    const timestampIso = new Date().toISOString();
+    const payloadChecksum = checksumText(line);
+    const copySummary = `${timestampIso} | len=${line.length} | checksum=${payloadChecksum}`;
     try {
       await navigator.clipboard.writeText(line);
       setExportStatus(`Copied Job Check status: ${line}`);
+      setJobCheckCopyStatus(copySummary);
+      recordPolicyPresetTransition("job_check_status_copied", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
     } catch {
       setExportStatus(`Copy Job Check status manually: ${line}`);
+      setJobCheckCopyStatus("");
     }
   }
 
@@ -2357,6 +2371,7 @@ export function App() {
           <button onClick={() => void handleCopyJobCheckStatus()}>{t.copyJobCheckStatus}</button>
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
+        <pre>{`${t.jobCheckCopyStatus}: ${jobCheckCopyStatus}`}</pre>
         <pre>{`${t.exportStatus}: ${exportStatus}`}</pre>
       </section>
     </main>
@@ -2486,6 +2501,14 @@ function parseStringList(input: string): string[] {
     .map((v) => v.trim())
     .filter((v) => v.length > 0);
   return [...new Set(items)];
+}
+
+function checksumText(input: string): string {
+  let acc = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    acc = (acc + input.charCodeAt(i) * (i + 1)) % 65535;
+  }
+  return acc.toString(16).padStart(4, "0");
 }
 
 function sanitizeFixtureName(value: string): string {
