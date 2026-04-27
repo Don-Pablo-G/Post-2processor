@@ -197,6 +197,12 @@ To monitor recent CI gate health for required desktop E2E checks:
 npm run e2e:gate:report -- --limit=10
 ```
 
+Quick summary only:
+
+```bash
+npm run e2e:gate:report -- --limit=10 --summary-only
+```
+
 ### Policy UX Release Notes
 
 - Added named policy presets with persisted per-controller defaults and source states (`saved|bootstrap|manual`).
