@@ -23,3 +23,4 @@ Track required `desktop-e2e` gate behavior and triage outcomes.
 | 2026-04-27 | triage follow-up | - | - | - | environment_issue | Root cause identified from failed logs: desktop-e2e workflow skipped prebuild for `@cnc/core` and `@cnc/profile-haas-ngc`; added explicit prebuild steps in CI and nightly workflows. |
 
 | 2026-04-27 | last 10 CI runs (post-triage snapshot) | 0 | 6 | 4 | environment_issue | Multiple runs still failing/in-progress; proceed to isolate whether #150 prebuild fix resolved package-resolution errors once completed. |
+| 2026-04-27 | triage follow-up 2 | - | - | - | selector_drift | Failed run logs show language-sensitive selector dependency (`/safety policy preset/i`); hardened E2E selectors to stable preset option values (`strict/balanced/permissive`). |

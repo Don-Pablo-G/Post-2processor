@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { openPolicyPanel } from "./policy-helpers";
+import { openPolicyPanel, policyPresetSelect } from "./policy-helpers";
 
 test("policy audit trail records transitions with timestamp and source", async ({ page }) => {
   await openPolicyPanel(page);
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
 
   await presetSelect.selectOption("strict");
   await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
@@ -28,7 +28,7 @@ test("policy events toggle off prevents local ui event emission", async ({ page 
   await openPolicyPanel(page);
 
   await page.getByRole("checkbox", { name: "Enable local policy UI events" }).uncheck();
-  const presetSelect = page.locator("label:has-text(/safety policy preset/i) select");
+  const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("permissive");
 
   const eventCount = await page.evaluate(() => {
