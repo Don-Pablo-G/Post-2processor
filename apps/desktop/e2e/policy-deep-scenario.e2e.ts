@@ -66,3 +66,34 @@ test("high-risk branch: manual override, drift, revert, and export", async ({ pa
   await expect(page.getByText(/source=bootstrap/i)).toBeVisible();
   await expect(page.getByText(/controller=fanuc/i)).toBeVisible();
 });
+
+test("controller-specific Haas branch: balanced default restore and export", async ({ page }) => {
+  await page.addInitScript(() => {
+    (window as Window & { __CNC_E2E_EXPORT_MOCK__?: { exportDirectory: string; artifactCount: number } }).__CNC_E2E_EXPORT_MOCK__ =
+      {
+        exportDirectory: "C:/deep-scenario-haas-export",
+        artifactCount: 4
+      };
+  });
+
+  await openPolicyPanel(page);
+  const programInput = page.locator("textarea").first();
+  const presetSelect = policyPresetSelect(page);
+
+  // Keep Haas controller context and apply manual strict override.
+  await programInput.fill("O9200 (HAAS ONLY BRANCH)\nG90 G54 G17\nG0 X0. Y0.\nM30");
+  await presetSelect.selectOption("strict");
+  await expect(page.getByText(/Preset source:\s*manual/i)).toBeVisible();
+
+  // Revert should restore Haas controller bootstrap default (balanced).
+  await page.keyboard.press("Control+Shift+R");
+  await expect(page.getByText(/Preset source:\s*bootstrap/i)).toBeVisible();
+
+  await page.getByRole("button", { name: "Export now" }).click();
+  await expect(page.getByText("Export policy context")).toBeVisible();
+  await expect(page.getByText("dir=C:/deep-scenario-haas-export")).toBeVisible();
+  await expect(page.getByText("artifacts=4")).toBeVisible();
+  await expect(page.getByText(/preset=balanced/i)).toBeVisible();
+  await expect(page.getByText(/source=bootstrap/i)).toBeVisible();
+  await expect(page.getByText(/controller=haas-ngc|controller=haas-legacy/i)).toBeVisible();
+});
