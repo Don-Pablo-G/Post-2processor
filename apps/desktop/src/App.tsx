@@ -120,6 +120,7 @@ const UI_TEXT: Record<
     savePolicyPresetAndRunCheck: string;
     copyPolicyContext: string;
     copyFullExportContext: string;
+    copyJobCheckStatus: string;
     policyUiEventsEnabled: string;
     policyLockManualChanges: string;
     revertPolicyPresetToControllerDefault: string;
@@ -250,6 +251,7 @@ const UI_TEXT: Record<
     savePolicyPresetAndRunCheck: "Zapisz preset i uruchom Job Check",
     copyPolicyContext: "Kopiuj kontekst polityki",
     copyFullExportContext: "Kopiuj pełny kontekst eksportu",
+    copyJobCheckStatus: "Kopiuj status Job Check",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     policyLockManualChanges: "Zablokuj ręczne zmiany presetu",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
@@ -382,6 +384,7 @@ const UI_TEXT: Record<
     savePolicyPresetAndRunCheck: "Save preset and run Job Check",
     copyPolicyContext: "Copy policy context",
     copyFullExportContext: "Copy full export context",
+    copyJobCheckStatus: "Copy Job Check status",
     policyUiEventsEnabled: "Enable local policy UI events",
     policyLockManualChanges: "Lock manual preset changes",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
@@ -1412,6 +1415,16 @@ export function App() {
     }
   }
 
+  async function handleCopyJobCheckStatus(): Promise<void> {
+    const line = `${t.runJobCheckStatus}: ${jobCheckStatus || "n/a"}`;
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied Job Check status: ${line}`);
+    } catch {
+      setExportStatus(`Copy Job Check status manually: ${line}`);
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -2340,6 +2353,9 @@ export function App() {
           <pre>- none</pre>
         )}
         </details>
+        <p style={{ marginTop: 8, marginBottom: 4 }}>
+          <button onClick={() => void handleCopyJobCheckStatus()}>{t.copyJobCheckStatus}</button>
+        </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
         <pre>{`${t.exportStatus}: ${exportStatus}`}</pre>
       </section>

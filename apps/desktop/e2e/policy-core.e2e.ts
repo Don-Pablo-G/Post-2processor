@@ -43,6 +43,18 @@ test("operator lock mode disables manual preset and revert controls", async ({ p
 });
 
 test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
+  await page.addInitScript(() => {
+    const nav = navigator as Navigator & { clipboard: { writeText: (value: string) => Promise<void> } };
+    Object.defineProperty(nav, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          (window as Window & { __CNC_E2E_LAST_COPIED__?: string }).__CNC_E2E_LAST_COPIED__ = value;
+        }
+      }
+    });
+    (window as Window & { __CNC_E2E_LAST_COPIED__?: string }).__CNC_E2E_LAST_COPIED__ = "";
+  });
   await openPolicyPanel(page);
   const presetSelect = policyPresetSelect(page);
   await presetSelect.selectOption("strict");
@@ -53,6 +65,8 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   await expect(page.locator("body")).toContainText(
     /score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)\s*\|\s*policy=(strict|balanced|permissive),\s*source=(saved|bootstrap|manual),\s*controller=(haas-ngc|haas-legacy|fanuc)/i
   );
+  await page.getByRole("button", { name: /Copy Job Check status|Kopiuj status Job Check/i }).click();
+  await expect(page.locator("body")).toContainText(/Copied Job Check status:/i);
 });
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
