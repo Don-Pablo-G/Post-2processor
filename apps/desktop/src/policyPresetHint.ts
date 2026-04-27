@@ -65,12 +65,11 @@ export function resolvePolicyPresetShortcutAction(input: {
   ctrlKey: boolean;
   shiftKey: boolean;
   isTypingContext: boolean;
-  hasUnsavedOverride: boolean;
 }): PolicyPresetShortcutAction {
   if (!(input.ctrlKey && input.shiftKey) || input.isTypingContext) return "none";
   const key = input.key.toLowerCase();
   if (key === "r") return "revert_to_default";
-  if (key === "j" && input.hasUnsavedOverride) return "save_and_run";
+  if (key === "j") return "save_and_run";
   return "none";
 }
 

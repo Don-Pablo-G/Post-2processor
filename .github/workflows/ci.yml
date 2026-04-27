@@ -98,4 +98,6 @@ jobs:
 
       - name: Add desktop E2E gate snapshot to job summary
         if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: npm run e2e:gate:report -- --limit=10 --github-summary >> "$GITHUB_STEP_SUMMARY"

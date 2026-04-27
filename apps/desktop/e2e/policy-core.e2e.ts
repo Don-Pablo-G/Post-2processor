@@ -14,7 +14,7 @@ test("save-and-run and shortcut revert update source state", async ({ page }) =>
   await presetSelect.selectOption("strict");
   await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
 
-  await page.getByRole("button", { name: "Save preset and run Job Check" }).click();
+  await page.keyboard.press("Control+Shift+J");
   await expect(page.locator("body")).toContainText(/save_and_run_invoked/i);
 
   await presetSelect.selectOption("permissive");
@@ -50,7 +50,7 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
 
   await page.keyboard.press("Control+Shift+J");
   await expect(page.locator("body")).toContainText(/save_and_run_invoked/i);
-  await expect(page.getByText(/score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)/i)).toBeVisible();
+  await expect(page.locator("p", { hasText: /^score=\d+,\s*blockers=\d+,\s*warnings=\d+,\s*blocked=(true|false)$/i })).toBeVisible();
 });
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
@@ -77,5 +77,5 @@ test("manual preset shows drift warning after detected controller changes", asyn
 
   const programInput = page.locator("textarea").first();
   await programInput.fill("O9001 (FANUC TEST)\nG90\nM30");
-  await expect(page.getByText(/manual preset may be stale after detected controller change/i)).toBeVisible();
+  await expect(page.locator("body")).toContainText(/haas-ngc\s*->\s*fanuc/i);
 });

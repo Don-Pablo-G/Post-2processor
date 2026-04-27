@@ -155,20 +155,18 @@ describe("resolvePolicyPresetShortcutAction", () => {
         key: "R",
         ctrlKey: true,
         shiftKey: true,
-        isTypingContext: false,
-        hasUnsavedOverride: false
+        isTypingContext: false
       })
     ).toBe("revert_to_default");
   });
 
-  it("returns save-and-run for Ctrl+Shift+J only when override exists", () => {
+  it("returns save-and-run for Ctrl+Shift+J outside typing context", () => {
     expect(
       resolvePolicyPresetShortcutAction({
         key: "j",
         ctrlKey: true,
         shiftKey: true,
-        isTypingContext: false,
-        hasUnsavedOverride: true
+        isTypingContext: false
       })
     ).toBe("save_and_run");
     expect(
@@ -176,8 +174,7 @@ describe("resolvePolicyPresetShortcutAction", () => {
         key: "j",
         ctrlKey: true,
         shiftKey: true,
-        isTypingContext: false,
-        hasUnsavedOverride: false
+        isTypingContext: true
       })
     ).toBe("none");
   });
@@ -188,8 +185,7 @@ describe("resolvePolicyPresetShortcutAction", () => {
         key: "r",
         ctrlKey: true,
         shiftKey: true,
-        isTypingContext: true,
-        hasUnsavedOverride: true
+        isTypingContext: true
       })
     ).toBe("none");
     expect(
@@ -197,8 +193,7 @@ describe("resolvePolicyPresetShortcutAction", () => {
         key: "r",
         ctrlKey: true,
         shiftKey: false,
-        isTypingContext: false,
-        hasUnsavedOverride: true
+        isTypingContext: false
       })
     ).toBe("none");
   });
