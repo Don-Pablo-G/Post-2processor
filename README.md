@@ -188,6 +188,12 @@ Policy E2E coverage includes:
 - export confirmation card context and copy-context actions
 - session policy history entry shape (timestamp + event + preset/source/controller)
 
+To monitor recent CI gate health for required desktop E2E checks:
+
+```bash
+npm run e2e:gate:report -- --limit=10
+```
+
 ### Policy UX Release Notes
 
 - Added named policy presets with persisted per-controller defaults and source states (`saved|bootstrap|manual`).
