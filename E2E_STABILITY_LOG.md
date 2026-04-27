@@ -65,3 +65,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-27 | post-A5-main-push checkpoint (last 20 runs) | 17 | 3 | 0 | other | A5 operator handoff bundle copy slice passed verify and desktop-e2e on main push run; reliability trend remains strong |
 | 2026-04-27 | post-A6-main-push checkpoint (last 20 runs) | 19 | 1 | 0 | other | A6 machine-safe startup brief slice passed verify and desktop-e2e on main push run; reliability remains strong |
 | 2026-04-27 | post-A7-main-push checkpoint (last 20 runs) | 20 | 0 | - | other | A7 first-cut risk brief slice passed verify and desktop-e2e on main push run; no dominant failure class in current window |
+| 2026-04-27 | post-A8-main-push checkpoint (last 20 runs) | 20 | 0 | - | other | A8 first-cut risk brief copy action slice passed verify and desktop-e2e on main push run; no dominant failure class in current window |
