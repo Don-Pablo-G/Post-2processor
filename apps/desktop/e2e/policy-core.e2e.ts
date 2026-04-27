@@ -84,6 +84,10 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   );
   await page.getByRole("button", { name: /Copy first-cut risk brief|Kopiuj brief ryzyka pierwszego cięcia/i }).click();
   await expect(page.locator("body")).toContainText(/Copied first-cut risk brief:/i);
+  await page.getByRole("button", { name: /Copy first-cut risk brief \+ policy context|Kopiuj brief ryzyka \+ kontekst polityki/i }).click();
+  await expect(page.locator("body")).toContainText(
+    /Copied first-cut risk brief \+ policy context:\s*preset=(strict|balanced|permissive)\s+source=(saved|bootstrap|manual)\s+controller=(haas-ngc|haas-legacy|fanuc)/i
+  );
 });
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {
