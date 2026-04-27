@@ -96,6 +96,7 @@
     "checkpoint:webhook-payload": "node ./scripts/checkpoint-webhook-payload.mjs",
     "dev": "npm run --workspace @cnc/desktop dev",
     "e2e:gate:report": "node ./scripts/e2e-gate-report.mjs",
+    "e2e:stability:log-entry": "node ./scripts/e2e-stability-log-entry.mjs",
     "mill:inventory:init": "node ./scripts/mill-controller-inventory-init.mjs",
     "guard:imports": "node ./scripts/verify-import-boundaries.mjs",
     "precommit:check": "node ./scripts/pre-commit-check.mjs",
