@@ -172,3 +172,12 @@ test("policy events toggle off prevents local ui event emission", async ({ page 
   });
   expect(eventCount).toBe(0);
 });
+
+test("setup sheet preview includes policy context block", async ({ page }) => {
+  await openPolicyPanel(page);
+  const pageBody = page.locator("body");
+  await expect(pageBody).toContainText(/Policy Context/i);
+  await expect(pageBody).toContainText(/policyPreset:/i);
+  await expect(pageBody).toContainText(/policyPresetSource:/i);
+  await expect(pageBody).toContainText(/controller:/i);
+});
