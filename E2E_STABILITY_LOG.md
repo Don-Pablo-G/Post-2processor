@@ -53,3 +53,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-27 | post-#160 single-path fix deployed | - | - | - | behavior_regression | Language-bound source assertions replaced with event-marker checks; await next completed CI window to measure effect. |
 | 2026-04-27 | green-streak evaluation | 0 | 11 | 9 | other | Two-consecutive-green-days criterion not met; stabilization remains pending. |
 | 2026-04-27 | post-#167 focused locale-control fix | 0 | 12 | 8 | selector_drift | Added structure-based lock/revert selectors; awaiting next fully completed run window to measure impact. |
+| 2026-04-27 | last 20 CI runs | 0 | 20 | 0 | selector_drift | dominant failure is locale-bound save/run button selector; switched policy-core flow to Ctrl+Shift+J shortcut to remove label dependency |

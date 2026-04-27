@@ -14,7 +14,7 @@ test("save-and-run and shortcut revert update source state", async ({ page }) =>
   await presetSelect.selectOption("strict");
   await expect(page.locator("body")).toContainText(/manual_selection_changed/i);
 
-  await page.getByRole("button", { name: "Save preset and run Job Check" }).click();
+  await page.keyboard.press("Control+Shift+J");
   await expect(page.locator("body")).toContainText(/save_and_run_invoked/i);
 
   await presetSelect.selectOption("permissive");
