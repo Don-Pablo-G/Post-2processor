@@ -127,6 +127,7 @@ const UI_TEXT: Record<
     copyMachineSafeStartupBrief: string;
     copyFirstCutRiskBrief: string;
     copyFirstCutRiskBriefWithPolicy: string;
+    copyFirstCutRiskBriefWithJobCheck: string;
     policyUiEventsEnabled: string;
     policyLockManualChanges: string;
     revertPolicyPresetToControllerDefault: string;
@@ -265,6 +266,7 @@ const UI_TEXT: Record<
     copyMachineSafeStartupBrief: "Kopiuj bezpieczny brief startowy",
     copyFirstCutRiskBrief: "Kopiuj brief ryzyka pierwszego cięcia",
     copyFirstCutRiskBriefWithPolicy: "Kopiuj brief ryzyka + kontekst polityki",
+    copyFirstCutRiskBriefWithJobCheck: "Kopiuj brief ryzyka + status Job Check",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     policyLockManualChanges: "Zablokuj ręczne zmiany presetu",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
@@ -405,6 +407,7 @@ const UI_TEXT: Record<
     copyMachineSafeStartupBrief: "Copy machine-safe startup brief",
     copyFirstCutRiskBrief: "Copy first-cut risk brief",
     copyFirstCutRiskBriefWithPolicy: "Copy first-cut risk brief + policy context",
+    copyFirstCutRiskBriefWithJobCheck: "Copy first-cut risk brief + Job Check status",
     policyUiEventsEnabled: "Enable local policy UI events",
     policyLockManualChanges: "Lock manual preset changes",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
@@ -1594,6 +1597,29 @@ export function App() {
     }
   }
 
+  async function handleCopyFirstCutRiskBriefWithJobCheckStatus(): Promise<void> {
+    const statusLine = `${t.runJobCheckStatus}: ${jobCheckStatus || "n/a"}`;
+    const briefLines = [
+      "FIRST-CUT RISK BRIEF",
+      ...firstCutRiskBriefItems.map(
+        (item, idx) =>
+          `#${idx + 1} code=${item.code}${item.blockIndex !== undefined ? ` block=B${item.blockIndex}` : ""} | reason=${item.reason} | action=${item.operatorAction}`
+      )
+    ];
+    const line = [statusLine, "", ...briefLines].join("\n");
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied first-cut risk brief + Job Check: ${jobCheckStatus || "n/a"}`);
+      recordPolicyPresetTransition("first_cut_risk_brief_with_job_check_copied", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
+    } catch {
+      setExportStatus("Copy first-cut risk brief + Job Check manually: see Job Check status and Workshop Advisor.");
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -2549,6 +2575,9 @@ export function App() {
           </button>
           <button onClick={() => void handleCopyFirstCutRiskBriefWithPolicyContext()} style={{ marginLeft: 8 }}>
             {t.copyFirstCutRiskBriefWithPolicy}
+          </button>
+          <button onClick={() => void handleCopyFirstCutRiskBriefWithJobCheckStatus()} style={{ marginLeft: 8 }}>
+            {t.copyFirstCutRiskBriefWithJobCheck}
           </button>
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
