@@ -61,3 +61,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-27 | post-feature-PR-172 merge checkpoint (last 20 runs) | 7 | 12 | 1 | other | feature slice A1 merged with verify+desktop-e2e green on PR; continue monitoring while feature development proceeds |
 | 2026-04-27 | post-A2-main-push checkpoint (last 20 runs) | 11 | 9 | 0 | other | A2 copy-job-check-status slice passed verify and desktop-e2e on main push run; continue feature cadence with monitoring |
 | 2026-04-27 | post-A3-main-push checkpoint (last 20 runs) | 13 | 7 | 0 | other | A3 telemetry-ready copy confirmation slice passed verify and desktop-e2e on main push run; continue feature cadence |
+| 2026-04-27 | post-A4-main-push checkpoint (last 20 runs) | 15 | 5 | 0 | other | A4 findings-summary copy action slice passed verify and desktop-e2e on main push run; reliability trend continues |
