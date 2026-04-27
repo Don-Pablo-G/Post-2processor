@@ -24,3 +24,4 @@ Track required `desktop-e2e` gate behavior and triage outcomes.
 
 | 2026-04-27 | last 10 CI runs (post-triage snapshot) | 0 | 6 | 4 | environment_issue | Multiple runs still failing/in-progress; proceed to isolate whether #150 prebuild fix resolved package-resolution errors once completed. |
 | 2026-04-27 | triage follow-up 2 | - | - | - | selector_drift | Failed run logs show language-sensitive selector dependency (`/safety policy preset/i`); hardened E2E selectors to stable preset option values (`strict/balanced/permissive`). |
+| 2026-04-27 | triage follow-up 3 | - | - | - | timing_flake | Hardened startup waits (`networkidle`, visible+enabled checks) and raised Playwright action/navigation/expect timeouts to reduce transient render timing failures. |
