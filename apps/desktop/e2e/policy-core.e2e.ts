@@ -78,6 +78,10 @@ test("Ctrl+Shift+J saves preset and runs check", async ({ page }) => {
   await expect(page.locator("body")).toContainText(
     /Copied operator handoff bundle:.*\|\s*findings:blockers=\d+,warnings=\d+,top=.*\|\s*export:dir=.*,artifacts=\d+\s*\|\s*drift=/i
   );
+  await page.getByRole("button", { name: /Copy machine-safe startup brief|Kopiuj bezpieczny brief startowy/i }).click();
+  await expect(page.locator("body")).toContainText(
+    /Copied machine-safe startup brief:\s*ready=\d+\/100 blocked=(true|false)\s*\|\s*blockers=\d+\s+warnings=\d+\s*\|\s*topFindings=/i
+  );
 });
 
 test("lock mode prevents keyboard shortcuts from mutating preset state", async ({ page }) => {

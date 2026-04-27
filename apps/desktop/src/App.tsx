@@ -123,6 +123,7 @@ const UI_TEXT: Record<
     copyJobCheckStatus: string;
     copyJobCheckWithFindings: string;
     copyOperatorHandoffBundle: string;
+    copyMachineSafeStartupBrief: string;
     policyUiEventsEnabled: string;
     policyLockManualChanges: string;
     revertPolicyPresetToControllerDefault: string;
@@ -257,6 +258,7 @@ const UI_TEXT: Record<
     copyJobCheckStatus: "Kopiuj status Job Check",
     copyJobCheckWithFindings: "Kopiuj status Job Check + findingi",
     copyOperatorHandoffBundle: "Kopiuj pełny pakiet przekazania operatora",
+    copyMachineSafeStartupBrief: "Kopiuj bezpieczny brief startowy",
     policyUiEventsEnabled: "Włącz lokalne eventy UI polityki",
     policyLockManualChanges: "Zablokuj ręczne zmiany presetu",
     revertPolicyPresetToControllerDefault: "Przywróć domyślny preset sterowania",
@@ -393,6 +395,7 @@ const UI_TEXT: Record<
     copyJobCheckStatus: "Copy Job Check status",
     copyJobCheckWithFindings: "Copy Job Check + findings summary",
     copyOperatorHandoffBundle: "Copy full operator handoff bundle",
+    copyMachineSafeStartupBrief: "Copy machine-safe startup brief",
     policyUiEventsEnabled: "Enable local policy UI events",
     policyLockManualChanges: "Lock manual preset changes",
     revertPolicyPresetToControllerDefault: "Revert to controller default preset",
@@ -1496,6 +1499,33 @@ export function App() {
     }
   }
 
+  async function handleCopyMachineSafeStartupBrief(): Promise<void> {
+    const topFindings = [...combinedBlockerFindings, ...combinedWarningFindings]
+      .slice(0, 2)
+      .map((f) => `${f.code}${f.blockIndex !== undefined ? `@B${f.blockIndex}` : ""}`);
+    const checklistHeadline = advisor.checklist.slice(0, 3).join(" | ");
+    const briefLines = [
+      "MACHINE SAFE STARTUP BRIEF",
+      `ready=${advisor.readyToRunScore}/100 blocked=${combinedBlockerFindings.length > 0 ? "true" : "false"}`,
+      `blockers=${combinedBlockerFindings.length} warnings=${combinedWarningFindings.length}`,
+      `topFindings=${topFindings.length > 0 ? topFindings.join(",") : "none"}`,
+      `checklist=${checklistHeadline || "n/a"}`,
+      `policy=${jobCheckPolicyPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`
+    ];
+    const line = briefLines.join("\n");
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`Copied machine-safe startup brief: ${briefLines[1]} | ${briefLines[2]} | ${briefLines[3]}`);
+      recordPolicyPresetTransition("machine_safe_startup_brief_copied", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
+    } catch {
+      setExportStatus("Copy machine-safe startup brief manually: see current Job Check and checklist panels.");
+    }
+  }
+
   function handleResetUiPrefsForController(): void {
     try {
       const parsed = JSON.parse(templateJson) as {
@@ -2431,6 +2461,9 @@ export function App() {
           </button>
           <button onClick={() => void handleCopyOperatorHandoffBundle()} style={{ marginLeft: 8 }}>
             {t.copyOperatorHandoffBundle}
+          </button>
+          <button onClick={() => void handleCopyMachineSafeStartupBrief()} style={{ marginLeft: 8 }}>
+            {t.copyMachineSafeStartupBrief}
           </button>
         </p>
         <pre>{`${t.runJobCheckStatus}: ${jobCheckStatus}`}</pre>
