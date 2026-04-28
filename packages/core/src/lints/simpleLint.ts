@@ -13,6 +13,8 @@ function motionModeConflictLabel(code: string): string | null {
   if (g0 && g1) return "G0 and G1";
   if (g0 && g2) return "G0 and G2";
   if (g0 && g3) return "G0 and G3";
+  if (g1 && g2) return "G1 and G2";
+  if (g1 && g3) return "G1 and G3";
   if (g2 && g3) return "G2 and G3";
   return null;
 }
