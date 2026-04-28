@@ -1263,6 +1263,11 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G0 and G3"))).toBe(false);
   });
 
+  it("does not warn G0 on one line and G2 on the next", () => {
+    const ast = parse("G0 X0\nG2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G0 and G2"))).toBe(false);
+  });
+
   it("warns when both M02 and M30 appear", () => {
     const ast = parse("G0 X0\nM02\nG0 Y0\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("both M02 and M30"))).toBe(true);
