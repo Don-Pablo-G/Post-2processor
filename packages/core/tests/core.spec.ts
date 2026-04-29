@@ -699,6 +699,22 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_M97")).toBe(true);
   });
 
+  it("adds one unsupported-M97 finding per fanuc warning", async () => {
+    const input = "M97 P100\nM97 P200\nM30\nN100\nM99\nN200\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "m97_fanuc_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) =>
+      w.includes("M97 local subprogram call is not supported in fanuc mode")
+    );
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_UNSUPPORTED_M97");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for unsupported fanuc macro function", async () => {
     const input = "#100=EXP[1]\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -980,6 +996,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_orphan_end_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END")).toBe(false);
+  });
+
+  it("does not add unsupported-M97 findings in haas mode", async () => {
+    const input = "M97 P100\nM30\nN100\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "m97_haas_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_M97")).toBe(false);
   });
 
   it("does not add subprogram-target-miss findings in shop-friendly fanuc mode", async () => {

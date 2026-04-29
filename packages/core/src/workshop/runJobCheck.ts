@@ -292,11 +292,13 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  if (simulation.warnings.some((w) => w.includes("M97 local subprogram call is not supported in fanuc mode"))) {
+  for (const unsupportedM97Warning of simulation.warnings.filter((w) =>
+    w.includes("M97 local subprogram call is not supported in fanuc mode")
+  )) {
     pushPolicyFinding(
       "unsupportedM97",
       "SIM_UNSUPPORTED_M97",
-      "Fanuc simulation encountered unsupported M97 local subprogram call.",
+      unsupportedM97Warning,
       simulation.trace.at(-1)?.blockIndex
     );
   }
