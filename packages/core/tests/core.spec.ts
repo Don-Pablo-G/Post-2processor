@@ -1306,6 +1306,13 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(msg).toBe("Block repeats G2 in one line; remove redundant arc mode token.");
   });
 
+  it("warns for each duplicated motion mode in the same block", () => {
+    const ast = parse("G1 G1 G2 G2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    const issues = lint(ast, haasNgcProfilePackaged).filter((i) => i.message.includes("repeats G"));
+    expect(issues.some((i) => i.message.includes("repeats G1"))).toBe(true);
+    expect(issues.some((i) => i.message.includes("repeats G2"))).toBe(true);
+  });
+
   it("does not warn G0 on one line and G1 on the next", () => {
     const ast = parse("G0 X0\nG1 X1.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G0 and G1"))).toBe(false);
@@ -1344,6 +1351,11 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
   it("does not warn repeated arc mode when arc mode is on separate lines", () => {
     const ast = parse("G2 X0 Y0 I0.5 J0.\nG2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("repeats G2"))).toBe(false);
+  });
+
+  it("does not warn repeated modes when duplicates are split across lines", () => {
+    const ast = parse("G1 X0\nG1 X1.\nG2 X2. Y0 I0.5 J0.\nG2 X3. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("repeats G"))).toBe(false);
   });
 
   it("warns when both M02 and M30 appear", () => {
