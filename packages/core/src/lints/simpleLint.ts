@@ -39,6 +39,13 @@ function duplicatedMotionModeLabel(code: string): string | null {
   return null;
 }
 
+function duplicatedMotionModeMessage(mode: string): string {
+  if (mode === "G2" || mode === "G3") {
+    return `Block repeats ${mode} in one line; remove redundant arc mode token.`;
+  }
+  return `Block repeats ${mode} in one line; keep one command per motion mode per block.`;
+}
+
 export function simpleLint(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
 
@@ -63,7 +70,7 @@ export function simpleLint(ast: ProgramAst): LintIssue[] {
     if (duplicatedMode) {
       issues.push({
         severity: "warning",
-        message: `Block repeats ${duplicatedMode} in one line; keep one command per motion mode per block.`,
+        message: duplicatedMotionModeMessage(duplicatedMode),
         blockIndex: index
       });
     }
