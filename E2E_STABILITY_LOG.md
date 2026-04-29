@@ -75,3 +75,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-28 | post-B-split-line-test checkpoint (last 20 runs) | 20 | 0 | - | other | added negative regression: split-line G0 then G3 should not warn (d6a94c2); core tests and CI 25057874019 green; gate 20/20 |
 | 2026-04-28 | post-CI-node24-readiness checkpoint (last 20 runs) | 20 | 0 | - | other | upgraded actions to v5 and set FORCE_JAVASCRIPT_ACTIONS_TO_NODE24 (5e07940, d3013fe); CI 25058215123 and 25058308869 green; upload-artifact still emits non-blocking Node20-target annotation |
 | 2026-04-28 | post-B-g1-arc-mix checkpoint (last 20 runs) | 20 | 0 | - | other | simpleLint warns for same-block G1+G2 and G1+G3 (ab3806b); verify and CI 25066851572 green; gate 20/20 |
+| 2026-04-29 | post-B-g1-g3-coverage checkpoint (last 20 runs) | 20 | 0 | - | other | completed G1+G3 paired tests (same-line warn + split-line no-warn) in core.spec (4036caa); verify and CI 25085158812 green; gate 20/20 |
