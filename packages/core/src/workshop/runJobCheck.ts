@@ -230,6 +230,7 @@ function buildSimulationFindings(
   policy: SimulationFindingPolicy
 ): SafetyFinding[] {
   const findings: SafetyFinding[] = [];
+  let hasCallDepthLimitFinding = false;
   const pushPolicyFinding = (
     key: keyof SimulationFindingPolicy,
     code: string,
@@ -253,7 +254,10 @@ function buildSimulationFindings(
     if (entry.event.kind === "main_m99") {
       pushPolicyFinding("mainM99", "SIM_MAIN_M99", entry.event.message, entry.blockIndex);
     } else if (entry.event.kind === "call_depth_limit") {
-      pushPolicyFinding("callDepthLimit", "SIM_CALL_DEPTH_LIMIT", entry.event.message, entry.blockIndex);
+      if (!hasCallDepthLimitFinding) {
+        pushPolicyFinding("callDepthLimit", "SIM_CALL_DEPTH_LIMIT", entry.event.message, entry.blockIndex);
+        hasCallDepthLimitFinding = true;
+      }
     }
   }
   if (simulation.warnings.some((w) => w.includes("unfinished subprogram return path"))) {

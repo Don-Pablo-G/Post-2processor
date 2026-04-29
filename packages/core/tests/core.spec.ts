@@ -660,6 +660,31 @@ describe("core pipeline", () => {
     expect(result.blockerCount).toBeGreaterThan(0);
   });
 
+  it("adds one canonical simulation finding for repeated call-depth-limit events", async () => {
+    const input = "G65 P1000\nG65 P1000\nM30\nO1000\nG65 P1000\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc", maxCallDepth: 1 },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "call_depth_limit_canonical_job" }
+    });
+    const depthEvents = result.simulation.trace.filter((t) => t.event?.kind === "call_depth_limit");
+    expect(depthEvents.length).toBeGreaterThan(0);
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_CALL_DEPTH_LIMIT");
+    expect(findings).toHaveLength(1);
+  });
+
+  it("does not add call-depth-limit finding when depth limit is not reached", async () => {
+    const input = "G65 P1000\nM30\nO1000\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc", maxCallDepth: 4 },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "call_depth_limit_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CALL_DEPTH_LIMIT")).toBe(false);
+  });
+
   it("adds simulation finding for unsupported fanuc M97 local subprogram call", async () => {
     const input = "M97 P100\nM30\nN100\nM99";
     const ast = parse(input, haasNgcProfile);
