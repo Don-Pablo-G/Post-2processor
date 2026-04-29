@@ -268,8 +268,7 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const functionDomainErrorWarning = simulation.warnings.find((w) => w.includes("domain error"));
-  if (functionDomainErrorWarning) {
+  for (const functionDomainErrorWarning of simulation.warnings.filter((w) => w.includes("domain error"))) {
     pushPolicyFinding(
       "functionDomainError",
       "SIM_FUNCTION_DOMAIN_ERROR",

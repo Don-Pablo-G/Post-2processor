@@ -723,6 +723,20 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(true);
   });
 
+  it("adds one function-domain finding per domain warning", async () => {
+    const input = "#120=LOG[-1]\n#121=LN[0]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "domain_error_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.includes("domain error"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for orphan END without matching WHILE", async () => {
     const input = "END2\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -875,6 +889,17 @@ describe("core pipeline", () => {
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
     expect(result.blocked).toBe(false);
+  });
+
+  it("does not add function-domain findings when expressions are valid", async () => {
+    const input = "#120=LOG[100]\n#121=LN[2.718281828]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "domain_error_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(false);
   });
 
   it("does not add rapid-Z finding in fanuc mode", async () => {
