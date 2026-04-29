@@ -311,10 +311,9 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const subprogramTargetMissWarning = simulation.warnings.find(
+  for (const subprogramTargetMissWarning of simulation.warnings.filter(
     (w) => w.includes("target O") && w.includes("not found")
-  );
-  if (subprogramTargetMissWarning) {
+  )) {
     pushPolicyFinding(
       "subprogramTargetMiss",
       "SIM_SUBPROGRAM_TARGET_MISS",

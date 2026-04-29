@@ -817,6 +817,20 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(true);
   });
 
+  it("adds one subprogram-target-miss finding per strict fanuc warning", async () => {
+    const input = "M98 P1234\nG65 P9010 A2.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "strict_controller" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "subprogram_target_miss_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.includes("target O") && w.includes("not found"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for haas rapid Z plunge warning", async () => {
     const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -941,6 +955,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_fn_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(false);
+  });
+
+  it("does not add subprogram-target-miss findings in shop-friendly fanuc mode", async () => {
+    const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "shop_friendly" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "subprogram_target_miss_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(false);
   });
 
   it("does not add function-domain findings when expressions are valid", async () => {
