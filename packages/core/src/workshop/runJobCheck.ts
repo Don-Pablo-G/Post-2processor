@@ -325,8 +325,7 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const rapidZPlungeWarning = simulation.warnings.find((w) => w.includes("rapid (G0) Z move down"));
-  if (rapidZPlungeWarning) {
+  for (const rapidZPlungeWarning of simulation.warnings.filter((w) => w.includes("rapid (G0) Z move down"))) {
     pushPolicyFinding(
       "rapidZPlunge",
       "SIM_RAPID_Z_PLUNGE",

@@ -785,6 +785,20 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
   });
 
+  it("adds one rapid-Z finding per rapid plunge warning", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nG0 Z-20.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "rapid_z_plunge_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.includes("rapid (G0) Z move down"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_RAPID_Z_PLUNGE");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for missing GOTO target label", async () => {
     const input = "IF [1 EQ 1] GOTO1234\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -861,6 +875,17 @@ describe("core pipeline", () => {
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
     expect(result.blocked).toBe(false);
+  });
+
+  it("does not add rapid-Z finding in fanuc mode", async () => {
+    const input = "G90 G0 Z0.\nG0 Z-10.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "rapid_z_plunge_fanuc_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(false);
   });
 
   it("loads shop-regression fixtures from manifest and validates baseline expectations", async () => {
