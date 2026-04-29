@@ -77,3 +77,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-28 | post-B-g1-arc-mix checkpoint (last 20 runs) | 20 | 0 | - | other | simpleLint warns for same-block G1+G2 and G1+G3 (ab3806b); verify and CI 25066851572 green; gate 20/20 |
 | 2026-04-29 | post-B-g1-g3-coverage checkpoint (last 20 runs) | 20 | 0 | - | other | completed G1+G3 paired tests (same-line warn + split-line no-warn) in core.spec (4036caa); verify and CI 25085158812 green; gate 20/20 |
 | 2026-04-29 | post-B-triple-mode-normalization checkpoint (last 20 runs) | 20 | 0 | - | other | simpleLint now emits single multiple-motion-mode warning for 3+ G0/G1/G2/G3 on one block (2a8794f); verify and CI 25120697845 green; gate 20/20 |
+| 2026-04-29 | post-B-wording-stability checkpoint (last 20 runs) | 20 | 0 | - | other | motion-conflict wording now routed via helper with explicit two-mode and multi-mode messages (c684b73); verify and CI 25120984338 green; gate 20/20 |
