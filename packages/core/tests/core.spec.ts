@@ -711,6 +711,22 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(true);
   });
 
+  it("adds one unsupported-function finding per fanuc warning", async () => {
+    const input = "#100=EXP[1]\n#101=EXP[2]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_fn_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter(
+      (w) => w.startsWith("Function ") && w.includes("is not supported in fanuc mode")
+    );
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_UNSUPPORTED_FUNCTION");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for macro function domain errors", async () => {
     const input = "#120=LOG[-1]\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -914,6 +930,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "cycle_param_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_CYCLE_PARAMETER_ISSUE")).toBe(false);
+  });
+
+  it("does not add unsupported-function findings in haas mode", async () => {
+    const input = "#100=EXP[1]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_fn_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(false);
   });
 
   it("does not add function-domain findings when expressions are valid", async () => {

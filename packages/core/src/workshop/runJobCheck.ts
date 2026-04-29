@@ -301,10 +301,9 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const unsupportedFunctionWarning = simulation.warnings.find(
+  for (const unsupportedFunctionWarning of simulation.warnings.filter(
     (w) => w.startsWith("Function ") && w.includes("is not supported in fanuc mode")
-  );
-  if (unsupportedFunctionWarning) {
+  )) {
     pushPolicyFinding(
       "unsupportedFunction",
       "SIM_UNSUPPORTED_FUNCTION",
