@@ -1262,10 +1262,24 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("uses stable wording for two-mode motion conflicts", () => {
+    const ast = parse("G1 G2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    const msg = lint(ast, haasNgcProfilePackaged).find((i) => i.message.includes("mixes G1 and G2"))?.message;
+    expect(msg).toBe("Block mixes G1 and G2 in one line; verify motion mode intent.");
+  });
+
   it("warns once when a block mixes three motion modes", () => {
     const ast = parse("G0 G1 G2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     const issues = lint(ast, haasNgcProfilePackaged).filter((i) => i.message.includes("multiple motion modes"));
     expect(issues).toHaveLength(1);
+  });
+
+  it("uses stable wording for multi-mode conflicts", () => {
+    const ast = parse("G0 G1 G2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    const msg = lint(ast, haasNgcProfilePackaged).find((i) => i.message.includes("multiple motion modes"))?.message;
+    expect(msg).toBe(
+      "Block has multiple motion modes (G0/G1/G2/G3) in one line; keep one active mode per block."
+    );
   });
 
   it("warns when a block mixes G2 and G3", () => {

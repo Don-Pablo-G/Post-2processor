@@ -21,6 +21,13 @@ function motionModeConflictLabel(code: string): string | null {
   return null;
 }
 
+function motionModeConflictMessage(label: string): string {
+  if (label.startsWith("multiple motion modes")) {
+    return `Block has ${label} in one line; keep one active mode per block.`;
+  }
+  return `Block mixes ${label} in one line; verify motion mode intent.`;
+}
+
 export function simpleLint(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
 
@@ -37,7 +44,7 @@ export function simpleLint(ast: ProgramAst): LintIssue[] {
     if (pair) {
       issues.push({
         severity: "warning",
-        message: `Block mixes ${pair} in one line; verify motion mode intent.`,
+        message: motionModeConflictMessage(pair),
         blockIndex: index
       });
     }
