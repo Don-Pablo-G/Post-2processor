@@ -1262,6 +1262,12 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns once when a block mixes three motion modes", () => {
+    const ast = parse("G0 G1 G2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    const issues = lint(ast, haasNgcProfilePackaged).filter((i) => i.message.includes("multiple motion modes"));
+    expect(issues).toHaveLength(1);
+  });
+
   it("warns when a block mixes G2 and G3", () => {
     const ast = parse("G2 G3 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(
@@ -1294,6 +1300,11 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
   it("does not warn G1 on one line and G3 on the next", () => {
     const ast = parse("G1 X0\nG3 X1. Y0 I-0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G1 and G3"))).toBe(false);
+  });
+
+  it("does not warn multiple motion modes when modes are split across lines", () => {
+    const ast = parse("G0 X0\nG1 X1.\nG2 X2. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("multiple motion modes"))).toBe(false);
   });
 
   it("warns when both M02 and M30 appear", () => {

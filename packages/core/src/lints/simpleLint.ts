@@ -10,6 +10,8 @@ function motionModeConflictLabel(code: string): string | null {
   const g1 = /\bG\s*1\b/.test(code);
   const g2 = /\bG\s*2\b/.test(code);
   const g3 = /\bG\s*3\b/.test(code);
+  const modeCount = [g0, g1, g2, g3].filter(Boolean).length;
+  if (modeCount >= 3) return "multiple motion modes (G0/G1/G2/G3)";
   if (g0 && g1) return "G0 and G1";
   if (g0 && g2) return "G0 and G2";
   if (g0 && g3) return "G0 and G3";
