@@ -1253,6 +1253,15 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns when a block mixes G1 and G3", () => {
+    const ast = parse("G1 G3 X1. Y0 I-0.5 J0.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.severity === "warning" && i.message.includes("mixes G1 and G3")
+      )
+    ).toBe(true);
+  });
+
   it("warns when a block mixes G2 and G3", () => {
     const ast = parse("G2 G3 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(
@@ -1280,6 +1289,11 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
   it("does not warn G1 on one line and G2 on the next", () => {
     const ast = parse("G1 X0\nG2 X1. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G1 and G2"))).toBe(false);
+  });
+
+  it("does not warn G1 on one line and G3 on the next", () => {
+    const ast = parse("G1 X0\nG3 X1. Y0 I-0.5 J0.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G1 and G3"))).toBe(false);
   });
 
   it("warns when both M02 and M30 appear", () => {
