@@ -285,8 +285,7 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const cycleParameterWarning = simulation.warnings.find((w) => w.startsWith("Cycle G"));
-  if (cycleParameterWarning) {
+  for (const cycleParameterWarning of simulation.warnings.filter((w) => w.startsWith("Cycle G"))) {
     pushPolicyFinding(
       "cycleParameterIssue",
       "SIM_CYCLE_PARAMETER_ISSUE",

@@ -761,6 +761,20 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_CYCLE_PARAMETER_ISSUE")).toBe(true);
   });
 
+  it("adds one cycle-parameter finding per cycle warning", async () => {
+    const input = "G83 X0 Y0 Z-10. R2. F200.\nG83 X1 Y0 Z-12. R2. F200.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "cycle_param_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.startsWith("Cycle G"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_CYCLE_PARAMETER_ISSUE");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for fanuc subprogram target miss", async () => {
     const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
     const ast = parse(input, haasNgcProfile);
@@ -889,6 +903,17 @@ describe("core pipeline", () => {
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_RAPID_Z_PLUNGE")).toBe(true);
     expect(result.blocked).toBe(false);
+  });
+
+  it("does not add cycle-parameter findings for valid canned cycles", async () => {
+    const input = "G83 X0 Y0 Z-10. R2. Q2. F200.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "cycle_param_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CYCLE_PARAMETER_ISSUE")).toBe(false);
   });
 
   it("does not add function-domain findings when expressions are valid", async () => {
