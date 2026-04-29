@@ -276,8 +276,7 @@ function buildSimulationFindings(
       simulation.trace.at(-1)?.blockIndex
     );
   }
-  const orphanEndWarning = simulation.warnings.find((w) => w.includes("has no matching WHILE"));
-  if (orphanEndWarning) {
+  for (const orphanEndWarning of simulation.warnings.filter((w) => w.includes("has no matching WHILE"))) {
     pushPolicyFinding(
       "controlFlowOrphanEnd",
       "SIM_CONTROL_FLOW_ORPHAN_END",

@@ -765,6 +765,20 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END")).toBe(true);
   });
 
+  it("adds one orphan-END finding per unmatched END warning", async () => {
+    const input = "END1\nEND2\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_orphan_end_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.includes("has no matching WHILE"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for cycle parameter issues", async () => {
     const input = "G83 X0 Y0 Z-10. R2. F200.\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -955,6 +969,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_fn_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(false);
+  });
+
+  it("does not add orphan-END findings when END has matching WHILE", async () => {
+    const input = "WHILE [#100 LT 1] DO1\n#100=#100+1\nEND1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_orphan_end_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END")).toBe(false);
   });
 
   it("does not add subprogram-target-miss findings in shop-friendly fanuc mode", async () => {
