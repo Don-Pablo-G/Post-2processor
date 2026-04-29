@@ -80,3 +80,4 @@ Resume primary product work (NGC/Fanuc feature slices) when all are true:
 | 2026-04-29 | post-B-wording-stability checkpoint (last 20 runs) | 20 | 0 | - | other | motion-conflict wording now routed via helper with explicit two-mode and multi-mode messages (c684b73); verify and CI 25120984338 green; gate 20/20 |
 | 2026-04-29 | post-B-duplicate-motion-mode checkpoint (last 20 runs) | 20 | 0 | - | other | simpleLint now warns when a motion mode repeats in one block (7a9977f); verify and CI 25121434117 green; gate 20/20 |
 | 2026-04-29 | post-B-arc-duplicate-hint checkpoint (last 20 runs) | 20 | 0 | - | other | arc-specific duplicate-mode hint added for G2/G3 repeats (0cd0566); verify and CI 25122314406 green; gate 20/20 |
+| 2026-04-29 | post-B-multi-duplicate-reporting checkpoint (last 20 runs) | 20 | 0 | - | other | simpleLint now reports each duplicated motion mode in a block (3834237); verify and CI 25122657824 green; gate 20/20 |
