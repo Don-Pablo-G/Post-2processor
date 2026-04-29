@@ -1291,6 +1291,15 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns when a block repeats the same motion mode", () => {
+    const ast = parse("G1 G1 X1.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.severity === "warning" && i.message.includes("repeats G1")
+      )
+    ).toBe(true);
+  });
+
   it("does not warn G0 on one line and G1 on the next", () => {
     const ast = parse("G0 X0\nG1 X1.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("mixes G0 and G1"))).toBe(false);
@@ -1319,6 +1328,11 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
   it("does not warn multiple motion modes when modes are split across lines", () => {
     const ast = parse("G0 X0\nG1 X1.\nG2 X2. Y0 I0.5 J0.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("multiple motion modes"))).toBe(false);
+  });
+
+  it("does not warn repeated motion mode when mode is on separate lines", () => {
+    const ast = parse("G1 X0\nG1 X1.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("repeats G1"))).toBe(false);
   });
 
   it("warns when both M02 and M30 appear", () => {

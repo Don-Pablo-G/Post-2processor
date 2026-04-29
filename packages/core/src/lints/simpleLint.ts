@@ -28,6 +28,17 @@ function motionModeConflictMessage(label: string): string {
   return `Block mixes ${label} in one line; verify motion mode intent.`;
 }
 
+function duplicatedMotionModeLabel(code: string): string | null {
+  const counts = { "0": 0, "1": 0, "2": 0, "3": 0 };
+  for (const match of code.matchAll(/\bG\s*([0123])\b/g)) {
+    counts[match[1] as keyof typeof counts] += 1;
+  }
+  for (const mode of ["0", "1", "2", "3"] as const) {
+    if (counts[mode] >= 2) return `G${mode}`;
+  }
+  return null;
+}
+
 export function simpleLint(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
 
@@ -45,6 +56,14 @@ export function simpleLint(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: motionModeConflictMessage(pair),
+        blockIndex: index
+      });
+    }
+    const duplicatedMode = duplicatedMotionModeLabel(code);
+    if (duplicatedMode) {
+      issues.push({
+        severity: "warning",
+        message: `Block repeats ${duplicatedMode} in one line; keep one command per motion mode per block.`,
         blockIndex: index
       });
     }
