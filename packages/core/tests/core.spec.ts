@@ -825,6 +825,8 @@ describe("core pipeline", () => {
     });
     expect(result.simulation.warnings.some((w) => w.includes("domain error"))).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR");
+    expect(finding?.message).toContain("domain error at block");
   });
 
   it("adds one function-domain finding per domain warning", async () => {
