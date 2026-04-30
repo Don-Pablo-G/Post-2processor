@@ -758,6 +758,23 @@ describe("core pipeline", () => {
     expect(findings).toHaveLength(warnings.length);
   });
 
+  it("uses warning block index for unsupported-function findings", async () => {
+    const input = "#100=EXP[1]\nG1 X1.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_function_block_index_job" }
+    });
+    const warning = result.simulation.warnings.find((w) =>
+      w.startsWith("Function ") && w.includes("is not supported in fanuc mode")
+    );
+    expect(warning).toBeDefined();
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_UNSUPPORTED_FUNCTION");
+    expect(finding).toBeDefined();
+    expect(finding?.blockIndex).toBe(0);
+  });
+
   it("adds simulation finding for macro function domain errors", async () => {
     const input = "#120=LOG[-1]\nM30";
     const ast = parse(input, haasNgcProfile);

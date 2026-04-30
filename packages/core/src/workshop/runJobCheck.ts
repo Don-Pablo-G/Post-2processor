@@ -252,6 +252,12 @@ function buildSimulationFindings(
   const findings: SafetyFinding[] = [];
   let hasCallDepthLimitFinding = false;
   let hasMainM99Finding = false;
+  const blockIndexFromWarning = (warning: string): number | undefined => {
+    const match = warning.match(/\bat block\s+(\d+)\b/i) ?? warning.match(/\(block\s+(\d+)\)/i);
+    if (!match) return undefined;
+    const parsed = Number.parseInt(match[1], 10);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  };
   const pushPolicyFinding = (
     key: keyof SimulationFindingPolicy,
     code: string,
@@ -311,7 +317,7 @@ function buildSimulationFindings(
       "invalidAssignment",
       "SIM_INVALID_ASSIGNMENT",
       invalidAssignmentWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(invalidAssignmentWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const ifThenRhsInvalidWarning of simulation.warnings.filter((w) =>
@@ -321,7 +327,7 @@ function buildSimulationFindings(
       "ifThenRhsInvalid",
       "SIM_IF_THEN_RHS_INVALID",
       ifThenRhsInvalidWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(ifThenRhsInvalidWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const missingEndWarning of simulation.warnings.filter((w) => w.includes("Missing END"))) {
@@ -329,7 +335,7 @@ function buildSimulationFindings(
       "controlFlowMissingEnd",
       "SIM_CONTROL_FLOW_MISSING_END",
       missingEndWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(missingEndWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const loopLimitWarning of simulation.warnings.filter((w) => w.includes("exceeded maxLoopIterations"))) {
@@ -337,7 +343,7 @@ function buildSimulationFindings(
       "controlFlowLoopLimit",
       "SIM_CONTROL_FLOW_LOOP_LIMIT",
       loopLimitWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(loopLimitWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const functionDomainErrorWarning of simulation.warnings.filter((w) => w.includes("domain error"))) {
@@ -345,7 +351,7 @@ function buildSimulationFindings(
       "functionDomainError",
       "SIM_FUNCTION_DOMAIN_ERROR",
       functionDomainErrorWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(functionDomainErrorWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const orphanEndWarning of simulation.warnings.filter((w) => w.includes("has no matching WHILE"))) {
@@ -353,7 +359,7 @@ function buildSimulationFindings(
       "controlFlowOrphanEnd",
       "SIM_CONTROL_FLOW_ORPHAN_END",
       orphanEndWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(orphanEndWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const cycleParameterWarning of simulation.warnings.filter((w) => w.startsWith("Cycle G"))) {
@@ -361,7 +367,7 @@ function buildSimulationFindings(
       "cycleParameterIssue",
       "SIM_CYCLE_PARAMETER_ISSUE",
       cycleParameterWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(cycleParameterWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const unsupportedM97Warning of simulation.warnings.filter((w) =>
@@ -371,7 +377,7 @@ function buildSimulationFindings(
       "unsupportedM97",
       "SIM_UNSUPPORTED_M97",
       unsupportedM97Warning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(unsupportedM97Warning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const unsupportedFunctionWarning of simulation.warnings.filter(
@@ -381,7 +387,7 @@ function buildSimulationFindings(
       "unsupportedFunction",
       "SIM_UNSUPPORTED_FUNCTION",
       unsupportedFunctionWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(unsupportedFunctionWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const subprogramTargetMissWarning of simulation.warnings.filter(
@@ -393,7 +399,7 @@ function buildSimulationFindings(
       "subprogramTargetMiss",
       "SIM_SUBPROGRAM_TARGET_MISS",
       subprogramTargetMissWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(subprogramTargetMissWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const rapidZPlungeWarning of simulation.warnings.filter((w) => w.includes("rapid (G0) Z move down"))) {
@@ -401,7 +407,7 @@ function buildSimulationFindings(
       "rapidZPlunge",
       "SIM_RAPID_Z_PLUNGE",
       rapidZPlungeWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(rapidZPlungeWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   for (const gotoTargetMissWarning of simulation.warnings.filter(
@@ -412,7 +418,7 @@ function buildSimulationFindings(
       "gotoTargetMiss",
       "SIM_GOTO_TARGET_MISS",
       gotoTargetMissWarning,
-      simulation.trace.at(-1)?.blockIndex
+      blockIndexFromWarning(gotoTargetMissWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
   if (simulation.warnings.some((w) => w.includes("maxSteps limit before program end"))) {
