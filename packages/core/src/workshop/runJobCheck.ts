@@ -273,7 +273,7 @@ function buildSimulationFindings(
     pushPolicyFinding(
       "macroAlarm",
       "SIM_MACRO_ALARM",
-      `Macro alarm #${alarm.parameter} code ${alarm.code}: ${alarm.message}`,
+      `Macro alarm #${alarm.parameter} code ${alarm.code} (block ${alarm.blockIndex}): ${alarm.message}`,
       alarm.blockIndex
     );
   }

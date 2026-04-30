@@ -645,6 +645,9 @@ describe("core pipeline", () => {
     });
     expect(result.simulation.alarms).toHaveLength(1);
     expect(result.simulationFindings.some((f) => f.code === "SIM_MACRO_ALARM")).toBe(true);
+    const macroAlarmFinding = result.simulationFindings.find((f) => f.code === "SIM_MACRO_ALARM");
+    expect(macroAlarmFinding?.message).toContain("(block");
+    expect(macroAlarmFinding?.blockIndex).toBe(1);
     expect(result.blockerCount).toBeGreaterThan(0);
     expect(result.messages.some((m) => m.includes("Macro alarm #3006"))).toBe(true);
   });
