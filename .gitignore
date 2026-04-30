@@ -6,3 +6,5 @@ coverage
 
 # Local mill/controller facts (fill from shop floor; not committed)
 mill-controller-inventory.local.json
+# Local Playwright artifacts for debugging failed/flaky desktop E2E runs
+apps/desktop/test-results/
