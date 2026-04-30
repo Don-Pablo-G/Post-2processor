@@ -995,6 +995,8 @@ describe("core pipeline", () => {
     });
     expect(result.simulation.warnings.some((w) => w.includes("M98 target O1234 not found"))).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS");
+    expect(finding?.message).toContain("M98 target O1234 not found");
   });
 
   it("adds one subprogram-target-miss finding per strict fanuc warning", async () => {
