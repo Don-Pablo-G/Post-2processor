@@ -907,10 +907,26 @@ describe("core pipeline", () => {
       simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "strict_controller" },
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "subprogram_target_miss_multi_job" }
     });
-    const warnings = result.simulation.warnings.filter((w) => w.includes("target O") && w.includes("not found"));
+    const warnings = result.simulation.warnings.filter(
+      (w) =>
+        (w.startsWith("M97 target ") || w.startsWith("M98 target ") || w.startsWith("G65 target ")) &&
+        w.includes("not found")
+    );
     const findings = result.simulationFindings.filter((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS");
     expect(warnings.length).toBeGreaterThan(1);
     expect(findings).toHaveLength(warnings.length);
+  });
+
+  it("adds simulation finding for missing haas M97 local target", async () => {
+    const input = "M97 P100\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "m97_target_miss_haas_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("M97 target N100 not found"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(true);
   });
 
   it("adds simulation finding for haas rapid Z plunge warning", async () => {
@@ -1118,6 +1134,17 @@ describe("core pipeline", () => {
       ast,
       simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "shop_friendly" },
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "subprogram_target_miss_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(false);
+  });
+
+  it("does not add subprogram-target-miss findings when haas M97 target exists", async () => {
+    const input = "M97 P100\nM30\nN100\n#120=#120+1\nM99";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "m97_target_present_haas_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(false);
   });

@@ -339,7 +339,9 @@ function buildSimulationFindings(
     );
   }
   for (const subprogramTargetMissWarning of simulation.warnings.filter(
-    (w) => w.includes("target O") && w.includes("not found")
+    (w) =>
+      (w.startsWith("M97 target ") || w.startsWith("M98 target ") || w.startsWith("G65 target ")) &&
+      w.includes("not found")
   )) {
     pushPolicyFinding(
       "subprogramTargetMiss",
