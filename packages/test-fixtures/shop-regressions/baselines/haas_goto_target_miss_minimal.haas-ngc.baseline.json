@@ -9,7 +9,7 @@
     "estimatedCycleTimeSeconds": 0,
     "warningCount": 1,
     "warnings": [
-      "IF GOTO target N1234 not found."
+      "IF GOTO target N1234 not found (block 1)."
     ],
     "alarmCount": 0,
     "alarms": []

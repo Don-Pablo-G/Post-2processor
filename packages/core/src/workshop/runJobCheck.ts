@@ -426,7 +426,7 @@ function buildSimulationFindings(
       "maxStepsLimit",
       "SIM_MAX_STEPS_LIMIT",
       "Simulation reached maxSteps limit before program end.",
-      simulation.trace.at(-1)?.blockIndex
+      simulation.state.currentBlock
     );
   }
   return findings;
