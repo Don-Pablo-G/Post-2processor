@@ -765,6 +765,8 @@ describe("core pipeline", () => {
     });
     expect(result.simulation.warnings.some((w) => w.includes("Function EXP is not supported in fanuc mode"))).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_UNSUPPORTED_FUNCTION");
+    expect(finding?.message).toContain("(block");
   });
 
   it("adds one unsupported-function finding per fanuc warning", async () => {
