@@ -181,7 +181,9 @@ export function simpleSimulate(
       const conditionalGoto = parseConditionalGoto(code, variables, warnings, currentBlock, profile);
       if (conditionalGoto !== null && conditionalGoto.passes) {
         const target = labelMap.get(conditionalGoto.target);
-        if (target === undefined) warnings.push(`IF GOTO target N${conditionalGoto.target} not found.`);
+        if (target === undefined) {
+          warnings.push(`IF GOTO target N${conditionalGoto.target} not found (block ${currentBlock}).`);
+        }
         else nextBlock = target;
       }
 
@@ -189,7 +191,7 @@ export function simpleSimulate(
         conditionalGoto === null ? parseGotoTarget(code, variables, warnings, currentBlock, profile) : null;
       if (gotoTarget !== null) {
         const target = labelMap.get(gotoTarget);
-        if (target === undefined) warnings.push(`GOTO target N${gotoTarget} not found.`);
+        if (target === undefined) warnings.push(`GOTO target N${gotoTarget} not found (block ${currentBlock}).`);
         else nextBlock = target;
       }
 

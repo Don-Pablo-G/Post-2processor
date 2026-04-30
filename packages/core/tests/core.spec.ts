@@ -1079,6 +1079,19 @@ describe("core pipeline", () => {
     expect(finding?.blockIndex).toBe(0);
   });
 
+  it("uses warning block index for GOTO target miss findings", async () => {
+    const input = "GOTO1234\nG1 X1.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "goto_target_block_index_job" }
+    });
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_GOTO_TARGET_MISS");
+    expect(finding).toBeDefined();
+    expect(finding?.blockIndex).toBe(0);
+  });
+
   it("does not add GOTO-target-miss findings when targets exist", async () => {
     const input = "GOTO100\nN100\nM30";
     const ast = parse(input, haasNgcProfile);
