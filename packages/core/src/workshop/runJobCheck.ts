@@ -286,7 +286,9 @@ function buildSimulationFindings(
   }
   if (
     !hasMainM99Finding &&
-    simulation.warnings.some((w) => w.includes("M99 encountered in main program"))
+    simulation.warnings.some(
+      (w) => w.includes("M99 encountered in main program") || w.includes("Fanuc mode: M99 in main program")
+    )
   ) {
     pushPolicyFinding(
       "mainM99",

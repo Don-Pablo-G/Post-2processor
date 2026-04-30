@@ -656,6 +656,9 @@ describe("core pipeline", () => {
       simulationLimits: { controllerMode: "fanuc" },
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "m99_job" }
     });
+    expect(
+      result.simulation.warnings.some((w) => w.includes("Fanuc mode: M99 in main program"))
+    ).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_MAIN_M99")).toBe(true);
     expect(result.blockerCount).toBeGreaterThan(0);
   });
