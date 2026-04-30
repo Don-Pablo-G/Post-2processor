@@ -165,7 +165,9 @@ export function simpleSimulate(
         const loopFrame = [...loopStack].reverse().find((f) => f.doLabel === endLabel);
         if (loopFrame) {
           if (loopFrame.iterations >= limits.maxLoopIterations) {
-            warnings.push(`Loop DO${endLabel} exceeded maxLoopIterations (${limits.maxLoopIterations}).`);
+            warnings.push(
+              `Loop DO${endLabel} exceeded maxLoopIterations (${limits.maxLoopIterations}) (block ${currentBlock}).`
+            );
           } else if (evaluateCondition(loopFrame.condition, variables, warnings, currentBlock, profile)) {
             loopFrame.iterations += 1;
             nextBlock = loopFrame.startBlockIndex + 1;

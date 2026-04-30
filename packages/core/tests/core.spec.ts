@@ -887,6 +887,8 @@ describe("core pipeline", () => {
     });
     expect(result.simulation.warnings.some((w) => w.includes("exceeded maxLoopIterations"))).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
+    expect(finding?.blockIndex).toBe(2);
   });
 
   it("adds one loop-limit finding per loop-limit warning", async () => {
