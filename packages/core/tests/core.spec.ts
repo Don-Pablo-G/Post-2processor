@@ -900,6 +900,8 @@ describe("core pipeline", () => {
     });
     expect(result.simulation.warnings.some((w) => w.includes("END2 has no matching WHILE"))).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_CONTROL_FLOW_ORPHAN_END");
+    expect(finding?.blockIndex).toBe(0);
   });
 
   it("adds one orphan-END finding per unmatched END warning", async () => {

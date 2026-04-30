@@ -174,7 +174,7 @@ export function simpleSimulate(
             if (idx >= 0) loopStack.splice(idx, 1);
           }
         } else {
-          warnings.push(`END${endLabel} has no matching WHILE.`);
+          warnings.push(`END${endLabel} has no matching WHILE (block ${currentBlock}).`);
         }
       }
 
