@@ -429,12 +429,13 @@ function buildSimulationFindings(
       blockIndexFromWarning(gotoTargetMissWarning) ?? simulation.trace.at(-1)?.blockIndex
     );
   }
-  if (simulation.warnings.some((w) => w.includes("maxSteps limit before program end"))) {
+  const maxStepsWarning = simulation.warnings.find((w) => w.includes("maxSteps limit before program end"));
+  if (maxStepsWarning) {
     pushPolicyFinding(
       "maxStepsLimit",
       "SIM_MAX_STEPS_LIMIT",
-      "Simulation reached maxSteps limit before program end.",
-      simulation.state.currentBlock
+      maxStepsWarning,
+      blockIndexFromWarning(maxStepsWarning) ?? simulation.state.currentBlock
     );
   }
   return findings;

@@ -1138,6 +1138,7 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_MAX_STEPS_LIMIT")).toBe(true);
     const finding = result.simulationFindings.find((f) => f.code === "SIM_MAX_STEPS_LIMIT");
     expect(finding?.blockIndex).toBe(result.simulation.state.currentBlock);
+    expect(finding?.message).toContain("maxSteps limit before program end (block");
   });
 
   it("allows simulation finding policy override to change severity and disable findings", async () => {
