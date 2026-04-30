@@ -19,8 +19,8 @@ export function simpleFormat(ast: ProgramAst, style: FormatStyle): string {
     .map((block) => {
       const raw = block.raw.trim();
       if (isMacroControlFlowLine(raw)) {
-        // Preserve macro/control-flow text exactly to avoid degrading logic lines.
-        return raw;
+        // Keep macro/control-flow structure, but normalize casing when uppercase style is requested.
+        return style.upperCaseWords ? raw.toUpperCase() : raw;
       }
       const words = block.words.map(({ letter, value }) => {
         const normalizedLetter = style.upperCaseWords ? letter.toUpperCase() : letter.toLowerCase();

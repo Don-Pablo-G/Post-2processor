@@ -92,6 +92,17 @@ describe("core pipeline", () => {
     expect(output).toContain("G1 X10.0 Y5.0 F200.");
   });
 
+  it("uppercases lowercase macro/control-flow lines for machine-safe output", () => {
+    const input = ["#100=exp[1]", "while [#100 lt 2] do1", "if [#100 eq 1] goto100", "end1", "n100 m30"].join("\n");
+    const ast = parse(input, haasNgcProfile);
+    const output = format(ast, haasNgcProfile);
+    expect(output).toContain("#100=EXP[1]");
+    expect(output).toContain("WHILE [#100 LT 2] DO1");
+    expect(output).toContain("IF [#100 EQ 1] GOTO100");
+    expect(output).toContain("END1");
+    expect(output).toContain("N100 M30");
+  });
+
   it("matches golden fixture formatting for basic Haas sample", async () => {
     const input = await readFixture(path.join("haas-ngc", "format", "input-basic.nc"));
     const expected = await readFixture(path.join("haas-ngc", "format", "expected-basic.nc"));
