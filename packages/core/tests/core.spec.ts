@@ -775,6 +775,19 @@ describe("core pipeline", () => {
     expect(finding?.blockIndex).toBe(0);
   });
 
+  it("uses warning block index for subprogram target miss findings", async () => {
+    const input = "M98 P4444\nG1 X1.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", strictControllerValidation: true },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "subprogram_target_miss_block_index_job" }
+    });
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS");
+    expect(finding).toBeDefined();
+    expect(finding?.blockIndex).toBe(0);
+  });
+
   it("adds simulation finding for macro function domain errors", async () => {
     const input = "#120=LOG[-1]\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -1051,6 +1064,19 @@ describe("core pipeline", () => {
     const findings = result.simulationFindings.filter((f) => f.code === "SIM_GOTO_TARGET_MISS");
     expect(warnings.length).toBeGreaterThan(1);
     expect(findings).toHaveLength(warnings.length);
+  });
+
+  it("uses warning block index for cycle parameter issue findings", async () => {
+    const input = "G83 X0. Y0. Z-8. Q2. F100.\nG1 X1.\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "cycle_parameter_block_index_job" }
+    });
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_CYCLE_PARAMETER_ISSUE");
+    expect(finding).toBeDefined();
+    expect(finding?.blockIndex).toBe(0);
   });
 
   it("does not add GOTO-target-miss findings when targets exist", async () => {
