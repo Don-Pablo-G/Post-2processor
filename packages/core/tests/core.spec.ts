@@ -318,6 +318,7 @@ describe("core pipeline", () => {
     const ast = parse(input, haasNgcProfile);
     const result = simulate(ast, {}, { maxSteps: 100, maxLoopIterations: 10, controllerMode: "haas-ngc" });
     expect(result.warnings.some((w) => w.includes("unfinished subprogram return path"))).toBe(true);
+    expect(result.warnings.some((w) => w.includes("unfinished subprogram return path (block"))).toBe(true);
   });
 
   it("allows fanuc M98 to resolve N-label in shop-friendly mode", () => {

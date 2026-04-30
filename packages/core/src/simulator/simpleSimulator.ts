@@ -370,7 +370,7 @@ export function simpleSimulate(
   if (callStack.length > 0) {
     const pending = callStack.map((f) => f.subprogram).join(", ");
     warnings.push(
-      `Simulation ended with unfinished subprogram return path (pending: ${pending}). Check M99/M30 flow in called programs.`
+      `Simulation ended with unfinished subprogram return path (block ${currentBlock}, pending: ${pending}). Check M99/M30 flow in called programs.`
     );
   }
 
