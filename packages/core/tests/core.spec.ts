@@ -735,6 +735,8 @@ describe("core pipeline", () => {
       true
     );
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_M97")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_UNSUPPORTED_M97");
+    expect(finding?.message).toContain("(block");
   });
 
   it("adds one unsupported-M97 finding per fanuc warning", async () => {
