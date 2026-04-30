@@ -178,17 +178,18 @@ export function simpleSimulate(
         }
       }
 
-      const gotoTarget = parseGotoTarget(code, variables, warnings, currentBlock, profile);
-      if (gotoTarget !== null) {
-        const target = labelMap.get(gotoTarget);
-        if (target === undefined) warnings.push(`GOTO target N${gotoTarget} not found.`);
-        else nextBlock = target;
-      }
-
       const conditionalGoto = parseConditionalGoto(code, variables, warnings, currentBlock, profile);
       if (conditionalGoto !== null && conditionalGoto.passes) {
         const target = labelMap.get(conditionalGoto.target);
         if (target === undefined) warnings.push(`IF GOTO target N${conditionalGoto.target} not found.`);
+        else nextBlock = target;
+      }
+
+      const gotoTarget =
+        conditionalGoto === null ? parseGotoTarget(code, variables, warnings, currentBlock, profile) : null;
+      if (gotoTarget !== null) {
+        const target = labelMap.get(gotoTarget);
+        if (target === undefined) warnings.push(`GOTO target N${gotoTarget} not found.`);
         else nextBlock = target;
       }
 

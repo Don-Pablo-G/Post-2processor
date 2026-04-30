@@ -912,6 +912,34 @@ describe("core pipeline", () => {
     expect(gotoFindings[0]?.message.startsWith("IF GOTO target N")).toBe(true);
   });
 
+  it("adds one GOTO-target-miss finding per missing-label warning", async () => {
+    const input = "IF [1 EQ 1] GOTO1000\nGOTO2000\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "goto_target_miss_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter(
+      (w) =>
+        (w.startsWith("IF GOTO target N") || w.startsWith("GOTO target N")) && w.includes("not found")
+    );
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_GOTO_TARGET_MISS");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
+  it("does not add GOTO-target-miss findings when targets exist", async () => {
+    const input = "GOTO100\nN100\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "goto_target_miss_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_GOTO_TARGET_MISS")).toBe(false);
+  });
+
   it("adds simulation finding when simulation hits maxSteps limit", async () => {
     const input = "G0 X0\nG1 X1\nG1 X2\nM30";
     const ast = parse(input, haasNgcProfile);
