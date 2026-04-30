@@ -19,11 +19,11 @@ export function simpleFormat(ast: ProgramAst, style: FormatStyle): string {
     .map((block) => {
       const raw = block.raw.trim();
       if (isMacroControlFlowLine(raw)) {
-        // Keep macro/control-flow structure, but normalize casing when uppercase style is requested.
-        return style.upperCaseWords ? raw.toUpperCase() : raw;
+        // Always emit uppercase for machine safety (Fanuc rejects lowercase keywords/functions).
+        return raw.toUpperCase();
       }
       const words = block.words.map(({ letter, value }) => {
-        const normalizedLetter = style.upperCaseWords ? letter.toUpperCase() : letter.toLowerCase();
+        const normalizedLetter = letter.toUpperCase();
         return `${normalizedLetter}${value}`;
       });
       const base = style.normalizeSpacing ? words.join(" ") : words.join("");

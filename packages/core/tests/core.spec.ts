@@ -103,6 +103,16 @@ describe("core pipeline", () => {
     expect(output).toContain("N100 M30");
   });
 
+  it("keeps uppercase output even when lowercase style is requested", () => {
+    const input = "g0x0y0\n#100=exp[1]\nif [#100 eq 1] goto100\nn100 m30";
+    const ast = parse(input, haasNgcProfile);
+    const output = format(ast, haasNgcProfile, { upperCaseWords: false });
+    expect(output).toContain("G0 X0 Y0");
+    expect(output).toContain("#100=EXP[1]");
+    expect(output).toContain("IF [#100 EQ 1] GOTO100");
+    expect(output).toContain("N100 M30");
+  });
+
   it("matches golden fixture formatting for basic Haas sample", async () => {
     const input = await readFixture(path.join("haas-ngc", "format", "input-basic.nc"));
     const expected = await readFixture(path.join("haas-ngc", "format", "expected-basic.nc"));
