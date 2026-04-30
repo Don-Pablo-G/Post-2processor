@@ -251,7 +251,7 @@
         "expectsMainM99": false,
         "expectsSimulationWarnings": true,
         "expectsSimulationFindings": true,
-        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION"]
+        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION", "SIM_INVALID_ASSIGNMENT"]
       }
     },
     {
@@ -368,7 +368,7 @@
         "expectsMainM99": false,
         "expectsSimulationWarnings": true,
         "expectsSimulationFindings": true,
-        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION"]
+        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION", "SIM_INVALID_ASSIGNMENT"]
       }
     },
     {
@@ -471,7 +471,7 @@
         "expectsMainM99": false,
         "expectsSimulationWarnings": true,
         "expectsSimulationFindings": true,
-        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION"]
+        "expectedFindingCodes": ["SIM_UNSUPPORTED_FUNCTION", "SIM_INVALID_ASSIGNMENT"]
       }
     },
     {
@@ -533,7 +533,7 @@
         "expectsMainM99": false,
         "expectsSimulationWarnings": true,
         "expectsSimulationFindings": true,
-        "expectedFindingCodes": ["SIM_FUNCTION_DOMAIN_ERROR"]
+        "expectedFindingCodes": ["SIM_FUNCTION_DOMAIN_ERROR", "SIM_INVALID_ASSIGNMENT"]
       }
     },
     {

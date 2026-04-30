@@ -769,6 +769,18 @@ describe("core pipeline", () => {
     expect(findings).toHaveLength(warnings.length);
   });
 
+  it("adds simulation finding for invalid assignment RHS", async () => {
+    const input = "#100=BAD\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "invalid_assignment_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("Invalid assignment #100=BAD"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_INVALID_ASSIGNMENT")).toBe(true);
+  });
+
   it("adds simulation finding for invalid IF…THEN RHS in haas mode", async () => {
     const input = "IF [1 EQ 1] THEN #100=\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -1170,6 +1182,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "domain_error_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(false);
+  });
+
+  it("does not add invalid-assignment findings when assignments are valid", async () => {
+    const input = "#100=1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "invalid_assignment_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_INVALID_ASSIGNMENT")).toBe(false);
   });
 
   it("does not add IF…THEN RHS-invalid findings when RHS is valid", async () => {

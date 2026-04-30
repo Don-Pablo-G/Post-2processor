@@ -19,6 +19,7 @@ const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
   mainM99: { enabled: true, severity: "blocker" },
   callDepthLimit: { enabled: true, severity: "warning" },
   unfinishedReturnPath: { enabled: true, severity: "blocker" },
+  invalidAssignment: { enabled: true, severity: "warning" },
   ifThenRhsInvalid: { enabled: true, severity: "warning" },
   controlFlowMissingEnd: { enabled: true, severity: "warning" },
   controlFlowLoopLimit: { enabled: true, severity: "warning" },
@@ -39,6 +40,7 @@ const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
     "SIM_RAPID_Z_PLUNGE",
     "SIM_GOTO_TARGET_MISS",
     "SIM_MAX_STEPS_LIMIT",
+    "SIM_INVALID_ASSIGNMENT",
     "SIM_IF_THEN_RHS_INVALID",
     "SIM_FUNCTION_DOMAIN_ERROR",
     "SIM_CONTROL_FLOW_MISSING_END",
@@ -58,6 +60,7 @@ const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPo
     functionDomainError: { enabled: true, severity: "blocker" },
     cycleParameterIssue: { enabled: true, severity: "blocker" },
     gotoTargetMiss: { enabled: true, severity: "blocker" },
+    invalidAssignment: { enabled: true, severity: "blocker" },
     ifThenRhsInvalid: { enabled: true, severity: "blocker" },
     controlFlowMissingEnd: { enabled: true, severity: "blocker" },
     controlFlowLoopLimit: { enabled: true, severity: "blocker" },
@@ -70,6 +73,7 @@ const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPo
     functionDomainError: { enabled: true, severity: "warning" },
     cycleParameterIssue: { enabled: true, severity: "warning" },
     gotoTargetMiss: { enabled: true, severity: "warning" },
+    invalidAssignment: { enabled: false, severity: "warning" },
     ifThenRhsInvalid: { enabled: false, severity: "warning" },
     controlFlowMissingEnd: { enabled: false, severity: "warning" },
     controlFlowLoopLimit: { enabled: false, severity: "warning" },
@@ -86,6 +90,7 @@ const exportBlockingPolicyByPreset: Record<JobCheckPolicyPreset, ExportBlockingP
       "SIM_FUNCTION_DOMAIN_ERROR",
       "SIM_CYCLE_PARAMETER_ISSUE",
       "SIM_GOTO_TARGET_MISS",
+      "SIM_INVALID_ASSIGNMENT",
       "SIM_IF_THEN_RHS_INVALID",
       "SIM_CONTROL_FLOW_MISSING_END",
       "SIM_CONTROL_FLOW_LOOP_LIMIT",
@@ -280,6 +285,14 @@ function buildSimulationFindings(
       "unfinishedReturnPath",
       "SIM_UNFINISHED_RETURN_PATH",
       "Simulation ended with unfinished subprogram return path.",
+      simulation.trace.at(-1)?.blockIndex
+    );
+  }
+  for (const invalidAssignmentWarning of simulation.warnings.filter((w) => w.includes("Invalid assignment "))) {
+    pushPolicyFinding(
+      "invalidAssignment",
+      "SIM_INVALID_ASSIGNMENT",
+      invalidAssignmentWarning,
       simulation.trace.at(-1)?.blockIndex
     );
   }
