@@ -981,6 +981,8 @@ describe("core pipeline", () => {
       result.simulation.warnings.some((w) => w.includes("G65 target O9010 not found in strict fanuc mode"))
     ).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(true);
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS");
+    expect(finding?.message).toContain("strict fanuc mode");
   });
 
   it("adds simulation finding for fanuc M98 target miss in strict mode", async () => {
