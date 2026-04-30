@@ -769,6 +769,18 @@ describe("core pipeline", () => {
     expect(findings).toHaveLength(warnings.length);
   });
 
+  it("adds simulation finding for invalid IF…THEN RHS in haas mode", async () => {
+    const input = "IF [1 EQ 1] THEN #100=\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "if_then_rhs_invalid_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("IF…THEN assignment RHS invalid"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_IF_THEN_RHS_INVALID")).toBe(true);
+  });
+
   it("adds simulation finding for missing END in WHILE flow", async () => {
     const input = "WHILE [0] DO1\n#100=#100+1\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -1158,6 +1170,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "domain_error_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_FUNCTION_DOMAIN_ERROR")).toBe(false);
+  });
+
+  it("does not add IF…THEN RHS-invalid findings when RHS is valid", async () => {
+    const input = "IF [1 EQ 1] THEN #100=[#101+1]\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "if_then_rhs_valid_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_IF_THEN_RHS_INVALID")).toBe(false);
   });
 
   it("does not add rapid-Z finding in fanuc mode", async () => {
