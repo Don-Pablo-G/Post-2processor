@@ -795,6 +795,32 @@ describe("core pipeline", () => {
     expect(findings).toHaveLength(warnings.length);
   });
 
+  it("adds simulation finding for loop max-iteration limit warning", async () => {
+    const input = "WHILE [1 EQ 1] DO1\n#100=#100+1\nEND1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("exceeded maxLoopIterations"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT")).toBe(true);
+  });
+
+  it("adds one loop-limit finding per loop-limit warning", async () => {
+    const input = "WHILE [1 EQ 1] DO1\n#100=#100+1\nEND1\nWHILE [1 EQ 1] DO2\n#101=#101+1\nEND2\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.includes("exceeded maxLoopIterations"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for orphan END without matching WHILE", async () => {
     const input = "END2\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -1050,6 +1076,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_missing_end_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_MISSING_END")).toBe(false);
+  });
+
+  it("does not add loop-limit findings when loop exits normally", async () => {
+    const input = "#100=0\nWHILE [#100 LT 1] DO1\n#100=#100+1\nEND1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT")).toBe(false);
   });
 
   it("does not add orphan-END findings when END has matching WHILE", async () => {

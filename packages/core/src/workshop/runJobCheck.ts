@@ -20,6 +20,7 @@ const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
   callDepthLimit: { enabled: true, severity: "warning" },
   unfinishedReturnPath: { enabled: true, severity: "blocker" },
   controlFlowMissingEnd: { enabled: true, severity: "warning" },
+  controlFlowLoopLimit: { enabled: true, severity: "warning" },
   functionDomainError: { enabled: true, severity: "warning" },
   controlFlowOrphanEnd: { enabled: true, severity: "warning" },
   cycleParameterIssue: { enabled: true, severity: "warning" },
@@ -39,6 +40,7 @@ const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
     "SIM_MAX_STEPS_LIMIT",
     "SIM_FUNCTION_DOMAIN_ERROR",
     "SIM_CONTROL_FLOW_MISSING_END",
+    "SIM_CONTROL_FLOW_LOOP_LIMIT",
     "SIM_CONTROL_FLOW_ORPHAN_END",
     "SIM_CYCLE_PARAMETER_ISSUE",
     "SIM_SUBPROGRAM_TARGET_MISS",
@@ -55,6 +57,7 @@ const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPo
     cycleParameterIssue: { enabled: true, severity: "blocker" },
     gotoTargetMiss: { enabled: true, severity: "blocker" },
     controlFlowMissingEnd: { enabled: true, severity: "blocker" },
+    controlFlowLoopLimit: { enabled: true, severity: "blocker" },
     controlFlowOrphanEnd: { enabled: true, severity: "blocker" }
   },
   balanced: conservativeShopSafetyPolicy,
@@ -65,6 +68,7 @@ const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPo
     cycleParameterIssue: { enabled: true, severity: "warning" },
     gotoTargetMiss: { enabled: true, severity: "warning" },
     controlFlowMissingEnd: { enabled: false, severity: "warning" },
+    controlFlowLoopLimit: { enabled: false, severity: "warning" },
     controlFlowOrphanEnd: { enabled: false, severity: "warning" },
     maxStepsLimit: { enabled: false, severity: "warning" }
   }
@@ -79,6 +83,7 @@ const exportBlockingPolicyByPreset: Record<JobCheckPolicyPreset, ExportBlockingP
       "SIM_CYCLE_PARAMETER_ISSUE",
       "SIM_GOTO_TARGET_MISS",
       "SIM_CONTROL_FLOW_MISSING_END",
+      "SIM_CONTROL_FLOW_LOOP_LIMIT",
       "SIM_CONTROL_FLOW_ORPHAN_END",
       "SIM_SUBPROGRAM_TARGET_MISS",
       "SIM_UNSUPPORTED_M97",
@@ -278,6 +283,14 @@ function buildSimulationFindings(
       "controlFlowMissingEnd",
       "SIM_CONTROL_FLOW_MISSING_END",
       missingEndWarning,
+      simulation.trace.at(-1)?.blockIndex
+    );
+  }
+  for (const loopLimitWarning of simulation.warnings.filter((w) => w.includes("exceeded maxLoopIterations"))) {
+    pushPolicyFinding(
+      "controlFlowLoopLimit",
+      "SIM_CONTROL_FLOW_LOOP_LIMIT",
+      loopLimitWarning,
       simulation.trace.at(-1)?.blockIndex
     );
   }
