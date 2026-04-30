@@ -660,6 +660,18 @@ describe("core pipeline", () => {
     expect(result.blockerCount).toBeGreaterThan(0);
   });
 
+  it("keeps one canonical finding for main-level M99", async () => {
+    const input = "M99\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "m99_canonical_job" }
+    });
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_MAIN_M99");
+    expect(findings).toHaveLength(1);
+  });
+
   it("adds one canonical simulation finding for repeated call-depth-limit events", async () => {
     const input = "G65 P1000\nG65 P1000\nM30\nO1000\nG65 P1000\nM99";
     const ast = parse(input, haasNgcProfile);

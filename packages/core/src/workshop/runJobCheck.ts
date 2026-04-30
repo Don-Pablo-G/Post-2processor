@@ -251,6 +251,7 @@ function buildSimulationFindings(
 ): SafetyFinding[] {
   const findings: SafetyFinding[] = [];
   let hasCallDepthLimitFinding = false;
+  let hasMainM99Finding = false;
   const pushPolicyFinding = (
     key: keyof SimulationFindingPolicy,
     code: string,
@@ -272,13 +273,28 @@ function buildSimulationFindings(
   for (const entry of simulation.trace) {
     if (!entry.event) continue;
     if (entry.event.kind === "main_m99") {
-      pushPolicyFinding("mainM99", "SIM_MAIN_M99", entry.event.message, entry.blockIndex);
+      if (!hasMainM99Finding) {
+        pushPolicyFinding("mainM99", "SIM_MAIN_M99", entry.event.message, entry.blockIndex);
+        hasMainM99Finding = true;
+      }
     } else if (entry.event.kind === "call_depth_limit") {
       if (!hasCallDepthLimitFinding) {
         pushPolicyFinding("callDepthLimit", "SIM_CALL_DEPTH_LIMIT", entry.event.message, entry.blockIndex);
         hasCallDepthLimitFinding = true;
       }
     }
+  }
+  if (
+    !hasMainM99Finding &&
+    simulation.warnings.some((w) => w.includes("M99 encountered in main program"))
+  ) {
+    pushPolicyFinding(
+      "mainM99",
+      "SIM_MAIN_M99",
+      "M99 encountered in main program; halting.",
+      simulation.trace.at(-1)?.blockIndex
+    );
+    hasMainM99Finding = true;
   }
   if (simulation.warnings.some((w) => w.includes("unfinished subprogram return path"))) {
     pushPolicyFinding(
