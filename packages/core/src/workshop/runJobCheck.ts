@@ -309,7 +309,7 @@ function buildSimulationFindings(
       "unfinishedReturnPath",
       "SIM_UNFINISHED_RETURN_PATH",
       "Simulation ended with unfinished subprogram return path.",
-      simulation.trace.at(-1)?.blockIndex
+      simulation.state.currentBlock
     );
   }
   for (const invalidAssignmentWarning of simulation.warnings.filter((w) => w.includes("Invalid assignment "))) {

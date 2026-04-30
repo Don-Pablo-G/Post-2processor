@@ -663,6 +663,19 @@ describe("core pipeline", () => {
     expect(result.blockerCount).toBeGreaterThan(0);
   });
 
+  it("uses simulator end position for unfinished-return-path finding block index", async () => {
+    const input = "M98 P1000\nM30\nO1000\n#100=#100+1";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "unfinished_return_path_block_job" }
+    });
+    const finding = result.simulationFindings.find((f) => f.code === "SIM_UNFINISHED_RETURN_PATH");
+    expect(finding).toBeDefined();
+    expect(finding?.blockIndex).toBe(result.simulation.state.currentBlock);
+  });
+
   it("keeps one canonical finding for main-level M99", async () => {
     const input = "M99\nM30";
     const ast = parse(input, haasNgcProfile);
