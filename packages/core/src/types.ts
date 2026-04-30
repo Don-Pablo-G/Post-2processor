@@ -168,6 +168,7 @@ export type SimulationFindingPolicy = {
   mainM99: SimulationFindingRulePolicy;
   callDepthLimit: SimulationFindingRulePolicy;
   unfinishedReturnPath: SimulationFindingRulePolicy;
+  controlFlowMissingEnd: SimulationFindingRulePolicy;
   functionDomainError: SimulationFindingRulePolicy;
   controlFlowOrphanEnd: SimulationFindingRulePolicy;
   cycleParameterIssue: SimulationFindingRulePolicy;

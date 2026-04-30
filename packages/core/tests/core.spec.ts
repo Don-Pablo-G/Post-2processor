@@ -769,6 +769,32 @@ describe("core pipeline", () => {
     expect(findings).toHaveLength(warnings.length);
   });
 
+  it("adds simulation finding for missing END in WHILE flow", async () => {
+    const input = "WHILE [0] DO1\n#100=#100+1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_missing_end_job" }
+    });
+    expect(result.simulation.warnings.some((w) => w.includes("Missing END1"))).toBe(true);
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_MISSING_END")).toBe(true);
+  });
+
+  it("adds one missing-END finding per missing-END warning", async () => {
+    const input = "WHILE [0] DO1\n#100=#100+1\nWHILE [0] DO2\n#101=#101+1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_missing_end_multi_job" }
+    });
+    const warnings = result.simulation.warnings.filter((w) => w.includes("Missing END"));
+    const findings = result.simulationFindings.filter((f) => f.code === "SIM_CONTROL_FLOW_MISSING_END");
+    expect(warnings.length).toBeGreaterThan(1);
+    expect(findings).toHaveLength(warnings.length);
+  });
+
   it("adds simulation finding for orphan END without matching WHILE", async () => {
     const input = "END2\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -1013,6 +1039,17 @@ describe("core pipeline", () => {
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "unsupported_fn_absent_job" }
     });
     expect(result.simulationFindings.some((f) => f.code === "SIM_UNSUPPORTED_FUNCTION")).toBe(false);
+  });
+
+  it("does not add missing-END findings when WHILE has matching END", async () => {
+    const input = "WHILE [#100 LT 1] DO1\n#100=#100+1\nEND1\nM30";
+    const ast = parse(input, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "haas-ngc" },
+      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_missing_end_absent_job" }
+    });
+    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_MISSING_END")).toBe(false);
   });
 
   it("does not add orphan-END findings when END has matching WHILE", async () => {

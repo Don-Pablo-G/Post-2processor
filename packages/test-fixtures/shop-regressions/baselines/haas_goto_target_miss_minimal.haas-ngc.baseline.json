@@ -7,9 +7,8 @@
     "halted": true,
     "steps": 3,
     "estimatedCycleTimeSeconds": 0,
-    "warningCount": 2,
+    "warningCount": 1,
     "warnings": [
-      "GOTO target N1234 not found.",
       "IF GOTO target N1234 not found."
     ],
     "alarmCount": 0,

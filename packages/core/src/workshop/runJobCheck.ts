@@ -19,6 +19,7 @@ const conservativeShopSafetyPolicy: SimulationFindingPolicy = {
   mainM99: { enabled: true, severity: "blocker" },
   callDepthLimit: { enabled: true, severity: "warning" },
   unfinishedReturnPath: { enabled: true, severity: "blocker" },
+  controlFlowMissingEnd: { enabled: true, severity: "warning" },
   functionDomainError: { enabled: true, severity: "warning" },
   controlFlowOrphanEnd: { enabled: true, severity: "warning" },
   cycleParameterIssue: { enabled: true, severity: "warning" },
@@ -37,6 +38,7 @@ const conservativeExportBlockingPolicy: ExportBlockingPolicy = {
     "SIM_GOTO_TARGET_MISS",
     "SIM_MAX_STEPS_LIMIT",
     "SIM_FUNCTION_DOMAIN_ERROR",
+    "SIM_CONTROL_FLOW_MISSING_END",
     "SIM_CONTROL_FLOW_ORPHAN_END",
     "SIM_CYCLE_PARAMETER_ISSUE",
     "SIM_SUBPROGRAM_TARGET_MISS",
@@ -52,6 +54,7 @@ const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPo
     functionDomainError: { enabled: true, severity: "blocker" },
     cycleParameterIssue: { enabled: true, severity: "blocker" },
     gotoTargetMiss: { enabled: true, severity: "blocker" },
+    controlFlowMissingEnd: { enabled: true, severity: "blocker" },
     controlFlowOrphanEnd: { enabled: true, severity: "blocker" }
   },
   balanced: conservativeShopSafetyPolicy,
@@ -61,6 +64,7 @@ const simulationPolicyByPreset: Record<JobCheckPolicyPreset, SimulationFindingPo
     functionDomainError: { enabled: true, severity: "warning" },
     cycleParameterIssue: { enabled: true, severity: "warning" },
     gotoTargetMiss: { enabled: true, severity: "warning" },
+    controlFlowMissingEnd: { enabled: false, severity: "warning" },
     controlFlowOrphanEnd: { enabled: false, severity: "warning" },
     maxStepsLimit: { enabled: false, severity: "warning" }
   }
@@ -74,6 +78,7 @@ const exportBlockingPolicyByPreset: Record<JobCheckPolicyPreset, ExportBlockingP
       "SIM_FUNCTION_DOMAIN_ERROR",
       "SIM_CYCLE_PARAMETER_ISSUE",
       "SIM_GOTO_TARGET_MISS",
+      "SIM_CONTROL_FLOW_MISSING_END",
       "SIM_CONTROL_FLOW_ORPHAN_END",
       "SIM_SUBPROGRAM_TARGET_MISS",
       "SIM_UNSUPPORTED_M97",
@@ -265,6 +270,14 @@ function buildSimulationFindings(
       "unfinishedReturnPath",
       "SIM_UNFINISHED_RETURN_PATH",
       "Simulation ended with unfinished subprogram return path.",
+      simulation.trace.at(-1)?.blockIndex
+    );
+  }
+  for (const missingEndWarning of simulation.warnings.filter((w) => w.includes("Missing END"))) {
+    pushPolicyFinding(
+      "controlFlowMissingEnd",
+      "SIM_CONTROL_FLOW_MISSING_END",
+      missingEndWarning,
       simulation.trace.at(-1)?.blockIndex
     );
   }
