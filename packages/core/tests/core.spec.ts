@@ -706,6 +706,7 @@ describe("core pipeline", () => {
     expect(depthEvents.length).toBeGreaterThan(0);
     const findings = result.simulationFindings.filter((f) => f.code === "SIM_CALL_DEPTH_LIMIT");
     expect(findings).toHaveLength(1);
+    expect(findings[0]?.message).toContain("(block");
   });
 
   it("does not add call-depth-limit finding when depth limit is not reached", async () => {

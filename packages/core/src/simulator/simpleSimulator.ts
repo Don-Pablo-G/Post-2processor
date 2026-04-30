@@ -209,7 +209,7 @@ export function simpleSimulate(
             warnings.push(`Max call depth ${maxCallDepth} reached at M97 P${m97Call.program} (block ${currentBlock}).`);
             blockEvent = chooseBlockEvent(blockEvent, {
               kind: "call_depth_limit",
-              message: `Call depth limit reached at M97 P${m97Call.program}.`,
+              message: `Call depth limit reached at M97 P${m97Call.program} (block ${currentBlock}).`,
               via: "M97",
               program: m97Call.program,
               maxCallDepth
@@ -245,7 +245,7 @@ export function simpleSimulate(
           );
           blockEvent = chooseBlockEvent(blockEvent, {
             kind: "call_depth_limit",
-            message: `Call depth limit reached at M98 P${m98Call.program}.`,
+            message: `Call depth limit reached at M98 P${m98Call.program} (block ${currentBlock}).`,
             via: "M98",
             program: m98Call.program,
             maxCallDepth
@@ -284,7 +284,7 @@ export function simpleSimulate(
           warnings.push(`Max call depth ${maxCallDepth} reached at G65 O${g65Call.program} (block ${currentBlock}).`);
           blockEvent = chooseBlockEvent(blockEvent, {
             kind: "call_depth_limit",
-            message: `Call depth limit reached at G65 P${g65Call.program}.`,
+            message: `Call depth limit reached at G65 P${g65Call.program} (block ${currentBlock}).`,
             via: "G65",
             program: g65Call.program,
             maxCallDepth
