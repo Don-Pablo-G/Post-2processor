@@ -253,7 +253,8 @@ function buildSimulationFindings(
   let hasCallDepthLimitFinding = false;
   let hasMainM99Finding = false;
   const blockIndexFromWarning = (warning: string): number | undefined => {
-    const match = warning.match(/\bat block\s+(\d+)\b/i) ?? warning.match(/\(block\s+(\d+)\)/i);
+    const match =
+      warning.match(/\bat block\s+(\d+)\b/i) ?? warning.match(/\(block\s+(\d+)(?:[,\s\)])?/i);
     if (!match) return undefined;
     const parsed = Number.parseInt(match[1], 10);
     return Number.isFinite(parsed) ? parsed : undefined;
@@ -304,12 +305,14 @@ function buildSimulationFindings(
     );
     hasMainM99Finding = true;
   }
-  if (simulation.warnings.some((w) => w.includes("unfinished subprogram return path"))) {
+  for (const unfinishedReturnPathWarning of simulation.warnings.filter((w) =>
+    w.includes("unfinished subprogram return path")
+  )) {
     pushPolicyFinding(
       "unfinishedReturnPath",
       "SIM_UNFINISHED_RETURN_PATH",
-      "Simulation ended with unfinished subprogram return path.",
-      simulation.state.currentBlock
+      unfinishedReturnPathWarning,
+      blockIndexFromWarning(unfinishedReturnPathWarning) ?? simulation.state.currentBlock
     );
   }
   for (const invalidAssignmentWarning of simulation.warnings.filter((w) => w.includes("Invalid assignment "))) {

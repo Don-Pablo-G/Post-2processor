@@ -675,6 +675,8 @@ describe("core pipeline", () => {
     const finding = result.simulationFindings.find((f) => f.code === "SIM_UNFINISHED_RETURN_PATH");
     expect(finding).toBeDefined();
     expect(finding?.blockIndex).toBe(result.simulation.state.currentBlock);
+    expect(finding?.message).toContain("pending: 1000");
+    expect(finding?.message).toContain("(block");
   });
 
   it("keeps one canonical finding for main-level M99", async () => {
