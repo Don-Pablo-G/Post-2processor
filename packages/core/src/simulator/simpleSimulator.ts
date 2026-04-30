@@ -118,8 +118,8 @@ export function simpleSimulate(
             kind: "main_m99",
             message:
               profile.mode === "fanuc"
-                ? "Fanuc main-level M99 detected (invalid in this context); program halted."
-                : "Main-level M99 detected; program halted."
+                ? `Fanuc main-level M99 detected at block ${currentBlock} (invalid in this context); program halted.`
+                : `Main-level M99 detected at block ${currentBlock}; program halted.`
           });
         } else if (frame.repeatRemaining > 1) {
           frame.repeatRemaining -= 1;

@@ -661,6 +661,9 @@ describe("core pipeline", () => {
       result.simulation.warnings.some((w) => w.includes("Fanuc mode: M99 in main program"))
     ).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_MAIN_M99")).toBe(true);
+    const mainM99Finding = result.simulationFindings.find((f) => f.code === "SIM_MAIN_M99");
+    expect(mainM99Finding?.message).toContain("at block");
+    expect(mainM99Finding?.blockIndex).toBe(0);
     expect(result.blockerCount).toBeGreaterThan(0);
   });
 

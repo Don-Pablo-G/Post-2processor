@@ -297,11 +297,16 @@ function buildSimulationFindings(
       (w) => w.includes("M99 encountered in main program") || w.includes("Fanuc mode: M99 in main program")
     )
   ) {
+    const mainM99Warning = simulation.warnings.find(
+      (w) => w.includes("M99 encountered in main program") || w.includes("Fanuc mode: M99 in main program")
+    );
     pushPolicyFinding(
       "mainM99",
       "SIM_MAIN_M99",
-      "M99 encountered in main program; halting.",
-      simulation.trace.at(-1)?.blockIndex
+      mainM99Warning ?? "M99 encountered in main program; halting.",
+      mainM99Warning
+        ? blockIndexFromWarning(mainM99Warning) ?? simulation.trace.at(-1)?.blockIndex
+        : simulation.trace.at(-1)?.blockIndex
     );
     hasMainM99Finding = true;
   }
