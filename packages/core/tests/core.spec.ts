@@ -1126,7 +1126,7 @@ describe("core pipeline", () => {
       simulationLimits: { controllerMode: "haas-ngc", maxSteps: 2 },
       exportOptions: { enabled: false, baseDirectory: ".", baseName: "max_steps_limit_job" }
     });
-    expect(result.simulation.warnings.some((w) => w.includes("maxSteps limit before program end"))).toBe(true);
+    expect(result.simulation.warnings.some((w) => w.includes("maxSteps limit before program end (block"))).toBe(true);
     expect(result.simulationFindings.some((f) => f.code === "SIM_MAX_STEPS_LIMIT")).toBe(true);
     const finding = result.simulationFindings.find((f) => f.code === "SIM_MAX_STEPS_LIMIT");
     expect(finding?.blockIndex).toBe(result.simulation.state.currentBlock);

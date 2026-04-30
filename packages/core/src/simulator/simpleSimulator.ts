@@ -363,7 +363,7 @@ export function simpleSimulate(
   }
 
   if (steps >= limits.maxSteps && currentBlock < ast.blocks.length && !halted) {
-    warnings.push("Simulation reached maxSteps limit before program end.");
+    warnings.push(`Simulation reached maxSteps limit before program end (block ${currentBlock}).`);
   }
   if (callStack.length > 0) {
     const pending = callStack.map((f) => f.subprogram).join(", ");
