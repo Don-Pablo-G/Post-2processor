@@ -325,4 +325,23 @@ describe("buildSetupSheetPdf", () => {
       }
     });
   });
+
+  describe("bidi / RTL shop names", () => {
+    it("reorders RTL title text in the PDF content stream", () => {
+      const pdf = buildSetupSheetPdf(
+        makeSetupSheet({ title: "מפעל", exportTxt: "Tools\n" }),
+        { bidi: "rtl" }
+      );
+      const joined = new TextDecoder().decode(pdf);
+      expect(joined).toContain("לעפמ");
+    });
+
+    it("leaves LTR-only titles byte-identical to default bidi auto", () => {
+      const baseline = buildSetupSheetPdf(makeSetupSheet({ title: "Haas Shop" }));
+      const withAuto = buildSetupSheetPdf(makeSetupSheet({ title: "Haas Shop" }), {
+        bidi: "auto"
+      });
+      expect(withAuto).toEqual(baseline);
+    });
+  });
 });

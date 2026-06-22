@@ -10,18 +10,18 @@ Every entry below is verified at generation time against the pack's own `validat
 
 Total rules: 10
 
-| Rule id | Severity | Deprecated since | Summary |
-| --- | --- | --- | --- |
-| `haas.m6-without-t` | warning | — | M6 (tool change) must be paired with T# on the same block. |
-| `haas.spindle-on-without-s` | warning | — | Spindle on (M3/M4/M13/M14) must specify an explicit S RPM. |
-| `haas.spindle-on-with-s0` | warning | — | Spindle start with S0 — verify intentional stop or missing speed. |
-| `haas.g43-without-h` | warning | — | G43 (tool length comp) requires an H offset on the same block. |
-| `haas.g41-g42-without-d` | warning | — | G41/G42 (cutter comp) requires a D offset (or a prior D in scope). |
-| `haas.t0-selected` | warning | — | T0 selects tool zero — usually invalid for a real tool change. |
-| `haas.duplicate-m30` | error | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
-| `haas.m02-and-m30-mixed` | warning | — | Mixing M02 and M30 program-end commands is ambiguous — pick one. |
-| `haas.duplicate-program-label-o` | warning | — | Two O#### headers with the same number — subprogram targets become ambiguous. |
-| `haas.missing-program-end` | warning | — | The last block must contain M02, M30, or M99 to close the program cleanly. |
+| Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
+| --- | --- | --- | --- | --- |
+| `haas.m6-without-t` | warning | — | — | M6 (tool change) must be paired with T# on the same block. |
+| `haas.spindle-on-without-s` | warning | — | — | Spindle on (M3/M4/M13/M14) must specify an explicit S RPM. |
+| `haas.spindle-on-with-s0` | warning | — | — | Spindle start with S0 — verify intentional stop or missing speed. |
+| `haas.g43-without-h` | warning | — | — | G43 (tool length comp) requires an H offset on the same block. |
+| `haas.g41-g42-without-d` | warning | — | — | G41/G42 (cutter comp) requires a D offset (or a prior D in scope). |
+| `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
+| `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
+| `haas.m02-and-m30-mixed` | warning | — | — | Mixing M02 and M30 program-end commands is ambiguous — pick one. |
+| `haas.duplicate-program-label-o` | warning | — | — | Two O#### headers with the same number — subprogram targets become ambiguous. |
+| `haas.missing-program-end` | warning | — | — | The last block must contain M02, M30, or M99 to close the program cleanly. |
 
 ### `haas.m6-without-t`
 
@@ -265,12 +265,12 @@ M30
 
 Total rules: 4 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`)
 
-| Rule id | Severity | Deprecated since | Summary |
-| --- | --- | --- | --- |
-| `fanuc.missing-o-header` | warning | — | Fanuc programs must open with an O#### header before the first motion block. |
-| `fanuc.g65-missing-p` | warning | — | G65 macro calls require an explicit P (program number) — controllers alarm without it. |
-| `fanuc.g65-non-integer-l` | warning | — | G65 L (loop count) must be a non-negative integer; fractional/negative values alarm. |
-| `fanuc.t0-before-real-tool` (deprecated) | warning | 2026-05 | T0 (tool cancel) before any real Tn (n>0) trips the Fanuc tool-life manager. |
+| Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
+| --- | --- | --- | --- | --- |
+| `fanuc.missing-o-header` | warning | — | — | Fanuc programs must open with an O#### header before the first motion block. |
+| `fanuc.g65-missing-p` | warning | — | — | G65 macro calls require an explicit P (program number) — controllers alarm without it. |
+| `fanuc.g65-non-integer-l` | warning | — | — | G65 L (loop count) must be a non-negative integer; fractional/negative values alarm. |
+| `fanuc.t0-before-real-tool` (deprecated) | warning | 2026-05 | — | T0 (tool cancel) before any real Tn (n>0) trips the Fanuc tool-life manager. |
 
 ### `fanuc.missing-o-header`
 

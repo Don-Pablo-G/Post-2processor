@@ -225,6 +225,12 @@ export type ProfileRuleDoc = {
    * once and bumped forward in time if the deprecation is re-confirmed.
    */
   deprecatedSince?: string;
+  /**
+   * When set alongside `deprecatedSince`, a one-line migration hint surfaced
+   * in `audit-deprecated-rules` output and `PROFILE_PACKS.md` so operators
+   * know what to switch to. Append-only optional field.
+   */
+  replacementSuggestion?: string;
 };
 
 export type ToolingReportOptions = {

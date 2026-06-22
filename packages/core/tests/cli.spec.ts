@@ -13,6 +13,7 @@ import {
   CliArgumentError,
   buildControllerProfile,
   buildJobCheckEnvelope,
+  buildBatchLintIssuesBySourceAggregation,
   clearDiscoveredProfilePackLoadersCache,
   formatJobCheckJson,
   formatJobCheckText,
@@ -1005,7 +1006,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=8\n");
+    expect(stdout).toBe("cnc-job-check schema=9\n");
     expect(stderr).toBe("");
   });
 
@@ -1363,21 +1364,25 @@ describe("main()", () => {
 
   it("CliBatchEnvelope.summary key-list includes lintIssuesByControllerCodePerInputFile [schema v6]", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "01.nc"), "G0 X1\nM30\n", "utf8");
-    await writeFile(path.join(tmp, "02.nc"), "G0 X2\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "01.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "02.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
     let stdout = "";
-    const exitCode = await main(["--input-dir", tmp, "--format", "json"], {
-      stdout: (chunk) => {
-        stdout += chunk;
+    const exitCode = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      {
+        stdout: (chunk) => {
+          stdout += chunk;
+        }
       }
-    });
+    );
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(8);
+    expect(parsed.schemaVersion).toBe(9);
     expect(Object.keys(parsed.summary).sort()).toEqual(
       ["blocked", "files", "lintIssuesByControllerCodePerInputFile"].sort()
     );
+    expect(parsed.summary.lintIssuesBySourceAggregated).toBeUndefined();
   });
 
   it("summary.lintIssuesByControllerCodePerInputFile is an empty array on a clean 2-file batch [schema v6]", async () => {
@@ -2591,8 +2596,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 8", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(8);
+  it("CLI_SCHEMA_VERSION is 9", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(9);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3054,6 +3059,79 @@ describe("Schema v8: blockReasons + summary.blockReasonsAggregated", () => {
       a.localeCompare(b)
     );
     expect(strictRow.matchedCodes).toEqual(sorted);
+  });
+});
+
+describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
+  it("batch summary.lintIssuesBySourceAggregated is undefined for a clean batch", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    expect(batch.schemaVersion).toBe(9);
+    expect(batch.summary.lintIssuesBySourceAggregated).toBeUndefined();
+  });
+
+  it("batch summary.lintIssuesBySourceAggregated unions lint by source across 2 inputs", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nN10 O0001\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "%\nO0002\nN20 O0002\nM30\n%\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    const agg = batch.summary.lintIssuesBySourceAggregated as Array<{
+      source: string;
+      count: number;
+      blockers: number;
+      warnings: number;
+      inputs: string[];
+    }>;
+    expect(Array.isArray(agg)).toBe(true);
+    expect(agg.length).toBeGreaterThan(0);
+    const cg = agg.find((r) => r.source === "controller_grammar");
+    expect(cg).toBeDefined();
+    expect(cg!.count).toBeGreaterThanOrEqual(2);
+    expect(cg!.inputs.length).toBe(2);
+    expect(cg!.blockers + cg!.warnings).toBe(cg!.count);
+  });
+
+  it("buildBatchLintIssuesBySourceAggregation sorts by count desc then source order", () => {
+    const entries = [
+      {
+        input: "b.nc",
+        schemaVersion: 9,
+        envelope: {
+          lintIssuesBySource: [
+            { source: "profile_lint", count: 1, blockers: 0, warnings: 1 },
+            { source: "controller_grammar", count: 1, blockers: 0, warnings: 1 }
+          ]
+        }
+      },
+      {
+        input: "a.nc",
+        schemaVersion: 9,
+        envelope: {
+          lintIssuesBySource: [
+            { source: "controller_grammar", count: 2, blockers: 0, warnings: 2 },
+            { source: "common_lint", count: 1, blockers: 0, warnings: 1 }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchLintIssuesBySourceAggregation>[0];
+    const agg = buildBatchLintIssuesBySourceAggregation(entries);
+    expect(agg[0].source).toBe("controller_grammar");
+    expect(agg[0].count).toBe(3);
+    expect(agg[0].inputs).toEqual(["a.nc", "b.nc"]);
   });
 });
 
@@ -3677,6 +3755,43 @@ describe("parseAuditDeprecatedRulesArgs", () => {
     });
   });
 
+  it("resolves --policy six-month-strict to olderThan=6mo and strict=true", () => {
+    const args = parseAuditDeprecatedRulesArgs(["--policy", "six-month-strict"]);
+    expect(args.policy).toBe("six-month-strict");
+    expect(args.olderThan).toBe("6mo");
+    expect(args.strict).toBe(true);
+  });
+
+  it("resolves --policy yearly-strict to olderThan=12mo and strict=true", () => {
+    const args = parseAuditDeprecatedRulesArgs(["--policy", "yearly-strict"]);
+    expect(args.olderThan).toBe("12mo");
+    expect(args.strict).toBe(true);
+  });
+
+  it("resolves --policy informational without threshold or strict", () => {
+    const args = parseAuditDeprecatedRulesArgs(["--policy", "informational"]);
+    expect(args.olderThan).toBeUndefined();
+    expect(args.strict).toBe(false);
+  });
+
+  it("rejects --policy combined with --older-than", () => {
+    expect(() =>
+      parseAuditDeprecatedRulesArgs(["--policy", "six-month-strict", "--older-than", "6mo"])
+    ).toThrow(/mutually exclusive with --older-than/);
+  });
+
+  it("rejects --policy combined with --strict", () => {
+    expect(() =>
+      parseAuditDeprecatedRulesArgs(["--policy", "six-month-strict", "--strict"])
+    ).toThrow(/mutually exclusive with --strict/);
+  });
+
+  it("rejects unknown --policy values", () => {
+    expect(() => parseAuditDeprecatedRulesArgs(["--policy", "bogus"])).toThrow(
+      /invalid --policy value/
+    );
+  });
+
   it("accepts --older-than 6mo and stores the raw token", () => {
     const args = parseAuditDeprecatedRulesArgs(["--older-than", "6mo"]);
     expect(args.olderThan).toBe("6mo");
@@ -3830,6 +3945,31 @@ describe("audit-deprecated-rules subcommand (end-to-end via main())", () => {
     expect(legacyRow.overThreshold).toBe(false);
   });
 
+  it("includes replacementSuggestion in JSON rows when present on the rule doc", async () => {
+    setDiscoveredProfilePackRuleDocsForTesting({
+      "haas-legacy": [
+        makeRuleDoc("legacy.deprecated", {
+          deprecatedSince: "2026-01",
+          replacementSuggestion: "Switch to controller-native checks."
+        })
+      ]
+    });
+    let stdout = "";
+    const exit = await main(
+      ["audit-deprecated-rules", "--format", "json"],
+      {
+        stdout: (c) => (stdout += c),
+        stderr: () => {}
+      }
+    );
+    setDiscoveredProfilePackRuleDocsForTesting(undefined);
+    expect(exit).toBe(0);
+    const row = JSON.parse(stdout).rows.find(
+      (r: { ruleId: string }) => r.ruleId === "legacy.deprecated"
+    );
+    expect(row.replacementSuggestion).toBe("Switch to controller-native checks.");
+  });
+
   it("--strict + --older-than fails exit 1 when at least one rule is over the threshold", async () => {
     setDiscoveredProfilePackRuleDocsForTesting({
       "haas-legacy": [
@@ -3896,6 +4036,8 @@ describe("audit-deprecated-rules subcommand (end-to-end via main())", () => {
     setDiscoveredProfilePackRuleDocsForTesting(undefined);
     expect(exit).toBe(0);
     const firstLine = stdout.split("\n", 1)[0];
-    expect(firstLine).toMatch(/^pack\s+ruleId\s+deprecatedSince\s+ageMonths\s+overThreshold$/);
+    expect(firstLine).toMatch(
+      /^pack\s+ruleId\s+deprecatedSince\s+ageMonths\s+overThreshold\s+replacementSuggestion$/
+    );
   });
 });

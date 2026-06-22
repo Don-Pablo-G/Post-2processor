@@ -45,6 +45,8 @@ export const fanucIsoRuleDocs: ProfileRuleDoc[] = [
     // own tool-life-manager warnings, so this rule is a candidate for shops
     // that want to lean on the controller-native check instead. Suppressed
     // when the CLI is invoked with `--no-deprecated-rules`.
-    deprecatedSince: "2026-05"
+    deprecatedSince: "2026-05",
+    replacementSuggestion:
+      "Rely on the Fanuc tool-life manager alarm instead of linting T0-before-Tn locally."
   }
 ];

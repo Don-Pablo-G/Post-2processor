@@ -1,4 +1,5 @@
 import type { LintIssueProvenanceSource, LintIssuesSummary, SetupSheet } from "../types.js";
+import { applyBidiVisualOrder, applyBidiVisualOrderMultiline, type BidiTextMode } from "./bidiVisualOrder.js";
 import {
   EMBEDDED_FONT_DEJAVU_SUBSET_AVAILABLE,
   embeddedFontDejaVuSubsetBase64,
@@ -41,6 +42,12 @@ export type BuildSetupSheetPdfOptions = {
    * `<HEX>` themselves.
    */
   onWarning?: (warning: string) => void;
+  /**
+   * Bidirectional text handling for shop names in Arabic / Hebrew.
+   * `"auto"` (default) reorders RTL-dominant lines for PDF left-to-right glyph
+   * placement; `"ltr"` and `"rtl"` force the base direction.
+   */
+  bidi?: BidiTextMode;
 };
 
 const PAGE_WIDTH_PT = 612; // US Letter @ 72 DPI
@@ -100,6 +107,7 @@ export function buildSetupSheetPdf(
   options: BuildSetupSheetPdfOptions = {}
 ): Uint8Array {
   const fontChoice = options.embeddedFont ?? "helvetica";
+  const bidiMode = options.bidi ?? "auto";
   const embeddedFont =
     fontChoice === "dejavu-sans-subset" ? resolveBundledDejaVuSubset() : undefined;
 
@@ -113,8 +121,10 @@ export function buildSetupSheetPdf(
   }
 
   const wrapWidthChars = approxCharsForWidth(PAGE_WIDTH_PT - MARGIN_PT * 2, BODY_FONT_SIZE);
+  const displayTitle = applyBidiVisualOrder(setupSheet.title, bidiMode);
+  const displayExportTxt = applyBidiVisualOrderMultiline(setupSheet.exportTxt, bidiMode);
   const bodyLines: string[] = [];
-  for (const raw of setupSheet.exportTxt.split("\n")) {
+  for (const raw of displayExportTxt.split("\n")) {
     if (raw.length === 0) {
       bodyLines.push("");
       continue;
@@ -127,7 +137,7 @@ export function buildSetupSheetPdf(
   const pages = paginateBodyLines(bodyLines, histogramRows.length);
   const contentStreams = pages.map((page, idx) =>
     buildPageContentStream({
-      title: idx === 0 ? setupSheet.title : undefined,
+      title: idx === 0 ? displayTitle : undefined,
       bodyLines: page.bodyLines,
       histogramRows: page.includeHistogram ? histogramRows : []
     })

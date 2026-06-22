@@ -3390,6 +3390,64 @@ node packages/core/dist/cli.js audit-deprecated-rules --format json
 #       "overThreshold": false }] }
 ```
 
+## ProfileRuleDoc replacementSuggestion + PDF RTL + audit policy presets + batch lint-by-source rollup + ide-bridge range helper + Schema v9
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `replacementSuggestion` on `ProfileRuleDoc`
+
+`ProfileRuleDoc` gains an optional `replacementSuggestion?: string` field.
+The Fanuc pilot rule `fanuc.t0-before-real-tool` ships the first migration hint.
+`buildDeprecatedRuleAudit` propagates it into `DeprecatedRuleAuditRow`, surfaced
+in both `--format text` and `--format json` audit output. `PROFILE_PACKS.md`
+gains a **Replacement suggestion** column via `scripts/generate-profile-pack-docs.mjs`.
+
+### Move 2 — PDF setup-sheet RTL / bidi text support
+
+`BuildSetupSheetPdfOptions.bidi?: "auto" | "ltr" | "rtl"` (default `"auto"`)
+reorders RTL-dominant lines before PDF glyph placement via the new pure helper
+`packages/core/src/workshop/bidiVisualOrder.ts`. Covers Arabic / Hebrew shop
+names without a full UAX#9 engine — pure RTL lines reverse; mixed lines reverse
+RTL runs and reorder segments when RTL-dominant.
+
+### Move 3 — `audit-deprecated-rules --policy <preset>`
+
+New presets in `packages/core/src/cli/auditDeprecatedRulesPresets.ts`:
+
+| Preset | Effect |
+| --- | --- |
+| `informational` | List all deprecated rules, never fail |
+| `six-month-strict` | `--older-than 6mo --strict` |
+| `yearly-strict` | `--older-than 12mo --strict` |
+
+Mutually exclusive with raw `--older-than` / `--strict`. CI can now write
+`cnc-job-check audit-deprecated-rules --policy six-month-strict`.
+
+### Move 4 — Cross-input `lintIssuesBySourceAggregated` (Schema v9)
+
+`CLI_SCHEMA_VERSION` bumps `8 → 9`. `CliBatchEnvelope.summary.lintIssuesBySourceAggregated`
+rolls up per-entry `lintIssuesBySource` across the batch: one row per `source`
+with summed `count` / `blockers` / `warnings` and a deduped `inputs[]` list.
+Sorted `count` desc → canonical source order asc. Absent when no entry has lint
+issues by source.
+
+### Move 5 — `@cnc/ide-bridge` range-resolution helper
+
+`resolveQuickFixRange(source, blockIndex)` maps parser block indices to 1-based
+editor ranges using the same non-empty-line semantics as `splitIntoRawBlocks`.
+`getQuickFixForLintIssue(issue, source?)` and `mapJobCheckEnvelopeToQuickFixes(envelope, source?)`
+populate `IdeQuickFix.range` when source is supplied.
+
+### Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # 867 tests pass (@cnc/core 637, profiles 20, ide-bridge 36, desktop 174)
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=9
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3403,35 +3461,17 @@ next planning wave can pick them up:
   subcommand already gives operators a no-deps integrity-checking
   path, so PGP is now a strict opt-in for shops that explicitly
   want detached signatures.
-- **Per-rule deprecation `replacementSuggestion` field on
-  `ProfileRuleDoc`** — `deprecatedSince` tells operators a rule is
-  on the way out, but doesn't tell them what to switch to.
-  Adding an optional `replacementSuggestion?: string` (free-form,
-  one-liner) and surfacing it in `audit-deprecated-rules` rows +
-  `PROFILE_PACKS.md` would close the migration loop. Append-only
-  on the type, no schema bump needed.
-- **PDF setup-sheet right-to-left text support** — the new
-  embedded-font path covers Latin Extended-A diacritics for
-  European shop names, but Arabic / Hebrew shop names still need
-  bidirectional layout. Would require a small bidi pass before
-  the WinAnsi/TTF text-encoding step, plus a Latin-fallback for
-  mixed-direction lines.
-- **`audit-deprecated-rules --policy <preset>` CI exit-code preset**
-  — today operators wire `--older-than 6mo --strict` per CI run.
-  A `--policy six-month-strict | yearly-strict | informational`
-  preset table (mirroring the `--policy-preset` chips on
-  `cnc-job-check`) would compress the canonical CI invocation to
-  a single flag and make the policy choice easier to audit in
-  workflow diffs.
-- **Cross-input lint-issue-by-source aggregation in batch envelope**
-  — Schema v8 added `summary.blockReasonsAggregated`; the same
-  cross-input rollup applied to `lintIssuesBySource` (already
-  per-entry) would let CI dashboards render a "warnings by source
-  across the whole batch" histogram without a client-side reduce.
-- **`@cnc/ide-bridge` range-resolution helper** —
-  `LintIssue.blockIndex` is the only positional field today. A
-  helper that takes the program source + block index and returns
-  `{ startLine, startColumn, endLine, endColumn }` would let the
-  bridge populate the existing `IdeQuickFix.range` field, unlocking
-  one-line code-action ranges in IDEs without each plugin
-  reinventing the lookup.
+- **Full UAX#9 bidi for mixed Arabic/Latin PDF lines** — today's
+  `bidiVisualOrder` helper covers pure RTL and RTL-dominant mixed
+  lines; complex bidirectional paragraphs with embedded Latin
+  numerals still need a fuller algorithm or an ICU-backed pass.
+- **`audit-deprecated-rules --policy` desktop chip parity** — the
+  CLI preset table ships; the desktop Job Check card could surface
+  the same three chips for operator-triggered deprecation sweeps.
+- **Cross-input `lintIssuesByParseDiagCode` batch aggregation** —
+  Schema v9 added `lintIssuesBySourceAggregated`; the same rollup
+  applied to `lintIssuesByParseDiagCode` would close the parse-diag
+  attribution loop for CI dashboards.
+- **`resolveQuickFixRange` semicolon-EOB mode** — today's helper
+  mirrors the default newline block splitter; Haas semicolon-EOB
+  programs need the `semicolonEob` branch from `splitIntoRawBlocks`.

@@ -42,6 +42,11 @@ export type DeprecatedRuleAuditRow = {
    * asked to enforce a cadence.
    */
   overThreshold: boolean;
+  /**
+   * Mirrors `ProfileRuleDoc.replacementSuggestion` when set. Omitted (not
+   * `null`) when the rule has no migration hint.
+   */
+  replacementSuggestion?: string;
 };
 
 export type BuildDeprecatedRuleAuditOptions = {
@@ -87,13 +92,17 @@ export function buildDeprecatedRuleAudit(
       const ageMonths = computeAgeMonthsUtc(doc.deprecatedSince, now);
       if (ageMonths === undefined) continue;
       const overThreshold = threshold !== undefined && ageMonths >= threshold;
-      rows.push({
+      const row: DeprecatedRuleAuditRow = {
         pack,
         ruleId: doc.id,
         deprecatedSince: doc.deprecatedSince,
         ageMonths,
         overThreshold
-      });
+      };
+      if (typeof doc.replacementSuggestion === "string" && doc.replacementSuggestion.length > 0) {
+        row.replacementSuggestion = doc.replacementSuggestion;
+      }
+      rows.push(row);
     }
   }
   rows.sort((a, b) => {

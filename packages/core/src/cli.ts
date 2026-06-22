@@ -36,10 +36,15 @@ import {
   parseOlderThanThreshold,
   type DeprecatedRuleAuditRow
 } from "./cli/auditDeprecatedRules.js";
+import {
+  isAuditDeprecatedRulesPolicyPresetId,
+  resolveAuditDeprecatedRulesPreset,
+  type AuditDeprecatedRulesPolicyPresetId
+} from "./cli/auditDeprecatedRulesPresets.js";
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 8;
+export const CLI_SCHEMA_VERSION = 9;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -367,18 +372,22 @@ export function parseRotateAuditTrailKeyArgs(
 }
 
 export const CLI_USAGE_AUDIT_DEPRECATED_RULES = [
-  "Usage: cnc-job-check audit-deprecated-rules [--older-than <N>{mo|d}] [--format json|text] [--strict] [--scope-roots <p>;<p>;...]",
+  "Usage: cnc-job-check audit-deprecated-rules [--policy <preset>] [--older-than <N>{mo|d}] [--format json|text] [--strict] [--scope-roots <p>;<p>;...]",
   "",
   "Walks every loaded profile pack (built-in + auto-discovered) and lists",
   "every rule whose `ProfileRuleDoc.deprecatedSince` is set. Informational",
-  "by default; combine with `--older-than` + `--strict` to fail CI when a",
-  "deprecation has aged past the configured cadence (see DEPRECATION_POLICY.md).",
+  "by default; combine with `--older-than` + `--strict` (or `--policy`) to",
+  "fail CI when a deprecation has aged past the configured cadence (see",
+  "DEPRECATION_POLICY.md).",
   "Exit codes:",
   "  0   audit completed (no over-threshold rows, OR --strict not supplied)",
   "  1   --strict was supplied AND at least one row is over the threshold",
   "  2   argument or IO error (malformed --older-than, unknown flag, etc.)",
   "",
   "Options:",
+  "  --policy <preset>          Named preset: informational | six-month-strict |",
+  "                             yearly-strict. Mutually exclusive with --older-than",
+  "                             and --strict (the preset supplies both).",
   "  --older-than <N>{mo|d}     Threshold for the `overThreshold` flag. `mo` = whole months;",
   "                             `d` = days, converted via Math.ceil(days/30) (a non-zero",
   "                             day count never collapses to 0 months). Without this flag,",
@@ -393,6 +402,7 @@ export const CLI_USAGE_AUDIT_DEPRECATED_RULES = [
 ].join("\n");
 
 export type AuditDeprecatedRulesArgs = {
+  policy?: AuditDeprecatedRulesPolicyPresetId;
   olderThan?: string; // raw token, e.g. "6mo" — translated by parseOlderThanThreshold
   format: "json" | "text";
   strict: boolean;
@@ -413,6 +423,16 @@ export function parseAuditDeprecatedRulesArgs(
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
+      case "--policy": {
+        const value = requireValue("--policy", argv[++i]);
+        if (!isAuditDeprecatedRulesPolicyPresetId(value)) {
+          throw new CliArgumentError(
+            `audit-deprecated-rules: invalid --policy value: ${value} (expected informational | six-month-strict | yearly-strict)`
+          );
+        }
+        result.policy = value;
+        break;
+      }
       case "--older-than":
         result.olderThan = requireValue("--older-than", argv[++i]);
         break;
@@ -454,6 +474,21 @@ export function parseAuditDeprecatedRulesArgs(
     }
   }
   if (result.help) return result;
+  if (result.policy !== undefined) {
+    if (result.olderThan !== undefined) {
+      throw new CliArgumentError(
+        "audit-deprecated-rules: --policy is mutually exclusive with --older-than"
+      );
+    }
+    if (result.strict) {
+      throw new CliArgumentError(
+        "audit-deprecated-rules: --policy is mutually exclusive with --strict"
+      );
+    }
+    const resolved = resolveAuditDeprecatedRulesPreset(result.policy);
+    result.olderThan = resolved.olderThan;
+    result.strict = resolved.strict;
+  }
   if (result.olderThan !== undefined) {
     const parsed = parseOlderThanThreshold(result.olderThan);
     if (parsed === undefined) {
@@ -1210,6 +1245,15 @@ export type CliBatchEnvelope = {
      * reason. Append-only optional field.
      */
     blockReasonsAggregated?: CliBatchBlockReasonAggregation[];
+    /**
+     * Schema v9: cross-input aggregation of every entry's
+     * `envelope.lintIssuesBySource`. One row per distinct `source`;
+     * `inputs` lists the entry inputs that reported the source (sorted
+     * ascending, deduped). Counts sum across entries. Sort order:
+     * `count` descending, then canonical `ENVELOPE_SOURCE_ORDER` asc.
+     * Absent (NOT empty array) when no entry has lint issues by source.
+     */
+    lintIssuesBySourceAggregated?: CliBatchLintIssuesBySourceAggregation[];
   };
 };
 
@@ -1218,6 +1262,19 @@ export type CliBatchBlockReasonAggregation = {
   count: number;
   inputs: string[];
   matchedCodes?: string[];
+};
+
+/**
+ * Schema v9: cross-input rollup of per-entry `lintIssuesBySource` rows.
+ * One row per distinct `source`; `inputs` lists batch entries that reported
+ * that source (sorted ascending, deduped). Counts sum across entries.
+ */
+export type CliBatchLintIssuesBySourceAggregation = {
+  source: LintIssueProvenanceSource;
+  count: number;
+  blockers: number;
+  warnings: number;
+  inputs: string[];
 };
 
 function buildBatchControllerCodeAttribution(
@@ -1264,6 +1321,10 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const aggregated = buildBatchBlockReasonAggregation(entries);
   if (aggregated.length > 0) {
     summary.blockReasonsAggregated = aggregated;
+  }
+  const lintBySource = buildBatchLintIssuesBySourceAggregation(entries);
+  if (lintBySource.length > 0) {
+    summary.lintIssuesBySourceAggregated = lintBySource;
   }
   return {
     schemaVersion: CLI_SCHEMA_VERSION,
@@ -1323,6 +1384,49 @@ function buildBatchBlockReasonAggregation(
   rows.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
     return a.reason.localeCompare(b.reason);
+  });
+  return rows;
+}
+
+/**
+ * Schema v9: walk every entry's `envelope.lintIssuesBySource` and group by
+ * `source`. Pure function — deterministic given the same `entries`.
+ */
+export function buildBatchLintIssuesBySourceAggregation(
+  entries: CliBatchEntry[]
+): CliBatchLintIssuesBySourceAggregation[] {
+  const bySource = new Map<
+    LintIssueProvenanceSource,
+    { count: number; blockers: number; warnings: number; inputs: Set<string> }
+  >();
+  for (const entry of entries) {
+    const rows = entry.envelope.lintIssuesBySource;
+    if (!rows || rows.length === 0) continue;
+    for (const row of rows) {
+      let bucket = bySource.get(row.source);
+      if (!bucket) {
+        bucket = { count: 0, blockers: 0, warnings: 0, inputs: new Set<string>() };
+        bySource.set(row.source, bucket);
+      }
+      bucket.count += row.count;
+      bucket.blockers += row.blockers;
+      bucket.warnings += row.warnings;
+      bucket.inputs.add(entry.input);
+    }
+  }
+  const rows: CliBatchLintIssuesBySourceAggregation[] = [];
+  for (const [source, bucket] of bySource) {
+    rows.push({
+      source,
+      count: bucket.count,
+      blockers: bucket.blockers,
+      warnings: bucket.warnings,
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    return ENVELOPE_SOURCE_ORDER.indexOf(a.source) - ENVELOPE_SOURCE_ORDER.indexOf(b.source);
   });
   return rows;
 }
@@ -2078,14 +2182,15 @@ function formatAuditRowsAsText(rows: readonly DeprecatedRuleAuditRow[]): string 
   // Stable column widths so terminal output stays scannable; widths
   // grow to fit the longest value but never shrink (so a short audit
   // doesn't render misaligned next to a longer one in the same shell).
-  const headers = ["pack", "ruleId", "deprecatedSince", "ageMonths", "overThreshold"];
+  const headers = ["pack", "ruleId", "deprecatedSince", "ageMonths", "overThreshold", "replacementSuggestion"];
   const widths = headers.map((h) => h.length);
   const cells = rows.map((row) => [
     row.pack,
     row.ruleId,
     row.deprecatedSince,
     String(row.ageMonths),
-    row.overThreshold ? "true" : "false"
+    row.overThreshold ? "true" : "false",
+    row.replacementSuggestion ?? "—"
   ]);
   for (const row of cells) {
     for (let i = 0; i < row.length; i += 1) {

@@ -15,6 +15,8 @@ import {
   getQuickFixForLintIssue,
   mapBatchAttributionToFileQuickFixes,
   mapJobCheckEnvelopeToQuickFixes,
+  resolveQuickFixRange,
+  splitProgramIntoDisplayBlocks,
   type IdeQuickFix
 } from "../src/index.js";
 
@@ -370,5 +372,59 @@ describe("deriveQuickFixBindings", () => {
     // its block tokens — IDE hosts derive the per-letter snippet locally).
     expect(expanded).toContain("{{FIRST_BLOCK_WITH_LETTER}}");
     expect(expanded).toContain("{{SECOND_BLOCK_WITH_LETTER}}");
+  });
+});
+
+describe("resolveQuickFixRange", () => {
+  const source = "O1234\n\nG0 X1\n( comment )\nG1 X2\n";
+
+  it("maps blockIndex 0 to the first non-empty line", () => {
+    expect(resolveQuickFixRange(source, 0)).toEqual({
+      startLine: 1,
+      startColumn: 1,
+      endLine: 1,
+      endColumn: 5
+    });
+  });
+
+  it("skips blank lines when counting blocks", () => {
+    expect(resolveQuickFixRange(source, 1)).toEqual({
+      startLine: 3,
+      startColumn: 1,
+      endLine: 3,
+      endColumn: 5
+    });
+  });
+
+  it("returns undefined for out-of-range blockIndex", () => {
+    expect(resolveQuickFixRange(source, 99)).toBeUndefined();
+  });
+
+  it("splitProgramIntoDisplayBlocks matches parser block semantics", () => {
+    expect(splitProgramIntoDisplayBlocks(source)).toEqual([
+      "O1234",
+      "G0 X1",
+      "( comment )",
+      "G1 X2"
+    ]);
+  });
+});
+
+describe("getQuickFixForLintIssue with source", () => {
+  it("populates range when source is supplied", () => {
+    const issue = makeIssue({ code: "CG_N_AND_O_MIXED", blockIndex: 1 });
+    const fix = getQuickFixForLintIssue(issue, "O1\nG0 X1\n");
+    expect(fix?.range).toEqual({
+      startLine: 2,
+      startColumn: 1,
+      endLine: 2,
+      endColumn: 5
+    });
+  });
+
+  it("omits range when source is not supplied", () => {
+    const issue = makeIssue({ code: "CG_N_AND_O_MIXED", blockIndex: 1 });
+    const fix = getQuickFixForLintIssue(issue);
+    expect(fix?.range).toBeUndefined();
   });
 });

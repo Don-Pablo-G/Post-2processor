@@ -96,8 +96,8 @@ function renderPackSection(pack) {
     lines.push(`Total rules: ${pack.rules.length}`);
   }
   lines.push("");
-  lines.push("| Rule id | Severity | Deprecated since | Summary |");
-  lines.push("| --- | --- | --- | --- |");
+  lines.push("| Rule id | Severity | Deprecated since | Replacement suggestion | Summary |");
+  lines.push("| --- | --- | --- | --- | --- |");
   for (const rule of pack.rules) {
     const idCell = rule.deprecatedSince !== undefined
       ? `\`${escapeCell(rule.id)}\` (deprecated)`
@@ -105,8 +105,10 @@ function renderPackSection(pack) {
     const deprecatedCell = rule.deprecatedSince !== undefined
       ? escapeCell(rule.deprecatedSince)
       : "—";
+    const replacementCell =
+      rule.replacementSuggestion !== undefined ? escapeCell(rule.replacementSuggestion) : "—";
     lines.push(
-      `| ${idCell} | ${escapeCell(rule.severity)} | ${deprecatedCell} | ${escapeCell(rule.summary)} |`
+      `| ${idCell} | ${escapeCell(rule.severity)} | ${deprecatedCell} | ${replacementCell} | ${escapeCell(rule.summary)} |`
     );
   }
   lines.push("");
@@ -119,6 +121,9 @@ function renderPackSection(pack) {
       lines.push(
         `- **Deprecated since:** ${rule.deprecatedSince} (suppressed by \`--no-deprecated-rules\`)`
       );
+    }
+    if (rule.replacementSuggestion !== undefined) {
+      lines.push(`- **Replacement suggestion:** ${rule.replacementSuggestion}`);
     }
     lines.push(`- **Matcher:** \`${rule.messageMatcher.toString()}\``);
     lines.push(`- **Summary:** ${rule.summary}`);

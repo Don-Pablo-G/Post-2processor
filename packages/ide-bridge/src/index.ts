@@ -80,11 +80,19 @@ export type IdeQuickFix = {
  * Honors the `CG_DUPLICATE_ADDRESSES_*` family via the catalogue's
  * built-in prefix matcher.
  */
-export function getQuickFixForLintIssue(issue: LintIssue): IdeQuickFix | undefined {
+export function getQuickFixForLintIssue(
+  issue: LintIssue,
+  source?: string
+): IdeQuickFix | undefined {
   if (typeof issue.code !== "string" || issue.code.length === 0) return undefined;
   const fix = getControllerGrammarFix(issue.code);
   if (!fix) return undefined;
-  return toQuickFix(issue.code, fix);
+  const out = toQuickFix(issue.code, fix);
+  if (source !== undefined) {
+    const range = resolveQuickFixRange(source, issue.blockIndex);
+    if (range) out.range = range;
+  }
+  return out;
 }
 
 /**
@@ -98,11 +106,12 @@ export function getQuickFixForLintIssue(issue: LintIssue): IdeQuickFix | undefin
  * stable across runs (asserted by the CLI tests).
  */
 export function mapJobCheckEnvelopeToQuickFixes(
-  envelope: CliJobCheckEnvelope
+  envelope: CliJobCheckEnvelope,
+  source?: string
 ): IdeQuickFix[] {
   const out: IdeQuickFix[] = [];
   for (const issue of envelope.controllerLints) {
-    const qf = getQuickFixForLintIssue(issue);
+    const qf = getQuickFixForLintIssue(issue, source);
     if (qf) out.push(qf);
   }
   return out;
@@ -238,4 +247,45 @@ export function deriveQuickFixBindings(issue: LintIssue): IdeQuickFixBindings {
     }
   }
   return Object.freeze({});
+}
+
+/**
+ * Split program source into display blocks using the same semantics as the
+ * core parser's default (newline-separated, trimmed, empty lines skipped).
+ */
+export function splitProgramIntoDisplayBlocks(source: string): string[] {
+  return source
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/**
+ * Resolve a parser `blockIndex` to a 1-based editor range in the original
+ * source. Returns `undefined` when `blockIndex` is out of range.
+ */
+export function resolveQuickFixRange(
+  source: string,
+  blockIndex: number
+): IdeQuickFix["range"] | undefined {
+  if (!Number.isFinite(blockIndex) || blockIndex < 0) return undefined;
+  let currentBlock = -1;
+  let lineNo = 0;
+  for (const rawLine of source.split(/\r?\n/)) {
+    lineNo += 1;
+    const trimmed = rawLine.trim();
+    if (trimmed.length === 0) continue;
+    currentBlock += 1;
+    if (currentBlock === blockIndex) {
+      const startColumn = rawLine.indexOf(trimmed) + 1;
+      const endColumn = startColumn + trimmed.length - 1;
+      return {
+        startLine: lineNo,
+        startColumn,
+        endLine: lineNo,
+        endColumn
+      };
+    }
+  }
+  return undefined;
 }

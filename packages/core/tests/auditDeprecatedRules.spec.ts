@@ -68,6 +68,29 @@ describe("buildDeprecatedRuleAudit", () => {
     expect(sameMonth.ageMonths).toBe(0);
   });
 
+  it("carries replacementSuggestion when set on the rule doc", () => {
+    const docs = new Map<string, ProfileRuleDoc[]>([
+      [
+        "fanuc",
+        [
+          doc("fanuc.deprecated", "2026-05", {
+            replacementSuggestion: "Use the controller alarm instead."
+          })
+        ]
+      ]
+    ]);
+    const rows = buildDeprecatedRuleAudit(docs, { nowFn: FROZEN_NOW_FN });
+    expect(rows[0].replacementSuggestion).toBe("Use the controller alarm instead.");
+  });
+
+  it("omits replacementSuggestion when not set on the rule doc", () => {
+    const docs = new Map<string, ProfileRuleDoc[]>([
+      ["fanuc", [doc("fanuc.deprecated", "2026-05")]]
+    ]);
+    const rows = buildDeprecatedRuleAudit(docs, { nowFn: FROZEN_NOW_FN });
+    expect(rows[0]).not.toHaveProperty("replacementSuggestion");
+  });
+
   it("flips overThreshold when ageMonths is exactly equal to thresholdMonths", () => {
     const docs = new Map<string, ProfileRuleDoc[]>([
       [
