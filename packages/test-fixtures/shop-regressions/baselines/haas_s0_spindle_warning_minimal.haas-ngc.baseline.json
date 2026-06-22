@@ -1,8 +1,16 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_s0_spindle_warning_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 1,
+  "lintIssueCount": 3,
   "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Program must start with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Program must end with a standalone % line."
+    },
     {
       "severity": "warning",
       "message": "Spindle start with S0 — verify intentional stop or missing speed."

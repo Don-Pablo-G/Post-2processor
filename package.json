@@ -8,7 +8,7 @@
     "packages/*/*"
   ],
   "scripts": {
-    "build": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/desktop build",
+    "build": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/profile-fanuc-iso build && npm run --workspace @cnc/ide-bridge build && npm run --workspace @cnc/desktop build",
     "checkpoint:burst": "node ./scripts/checkpoint-burst.mjs",
     "checkpoint:catalog": "node ./scripts/checkpoint-catalog.mjs",
     "checkpoint:catalog:md": "node ./scripts/checkpoint-catalog-md.mjs",
@@ -95,6 +95,8 @@
     "checkpoint:weekday": "node ./scripts/checkpoint-weekday.mjs",
     "checkpoint:webhook-payload": "node ./scripts/checkpoint-webhook-payload.mjs",
     "dev": "npm run --workspace @cnc/desktop dev",
+    "docs:cg-codes": "node ./scripts/generate-controller-grammar-codes.mjs",
+    "docs:profile-packs": "node ./scripts/generate-profile-pack-docs.mjs",
     "e2e:gate:report": "node ./scripts/e2e-gate-report.mjs",
     "e2e:stability:log-entry": "node ./scripts/e2e-stability-log-entry.mjs",
     "mill:inventory:init": "node ./scripts/mill-controller-inventory-init.mjs",
@@ -102,9 +104,9 @@
     "precommit:check": "node ./scripts/pre-commit-check.mjs",
     "repo:health": "node ./scripts/repo-health.mjs",
     "setup:hooks": "node ./scripts/setup-git-hooks.mjs",
-    "test": "npm run --workspace @cnc/core test && npm run --workspace @cnc/desktop test",
+    "test": "npm run --workspace @cnc/core test && npm run --workspace @cnc/profile-haas-ngc test && npm run --workspace @cnc/profile-fanuc-iso test && npm run --workspace @cnc/ide-bridge test && npm run --workspace @cnc/desktop test",
     "typecheck": "npm run guard:imports && npm run --workspaces typecheck",
-    "verify": "npm run guard:imports && npm run test && npm run check:shop-baselines && npm run typecheck && npm run build",
+    "verify": "npm run guard:imports && npm run test && npm run check:shop-baselines && npm run typecheck && npm run build && npm run docs:profile-packs && npm run docs:cg-codes",
     "validate:shop-fixtures": "node ./scripts/validate-shop-regressions.mjs",
     "check:shop-baselines": "node ./scripts/check-shop-regression-baselines.mjs",
     "check:shop-baselines:update": "node ./scripts/check-shop-regression-baselines.mjs --update"

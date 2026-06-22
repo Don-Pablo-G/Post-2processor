@@ -15,7 +15,7 @@ test("policy audit trail records transitions with timestamp and source", async (
     hasText: /\d{4}-\d{2}-\d{2}T.*\|.*\|\s*(strict|balanced|permissive)\/(saved|bootstrap|manual)\s*\|\s*(haas-ngc|haas-legacy|fanuc)/i
   });
   await expect(historyItems.first()).toBeVisible();
-  await expect(page.getByText(/saved_to_template/i)).toBeVisible();
+  await expect(historyItems.filter({ hasText: /saved_to_template/i }).first()).toBeVisible();
 });
 
 test("policy events toggle off prevents local ui event emission", async ({ page }) => {

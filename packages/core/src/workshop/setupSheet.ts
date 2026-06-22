@@ -1,8 +1,27 @@
 import { analyzeProgram } from "./advisor.js";
 import { buildToolingReport } from "../tooling/report.js";
-import type { ProgramAst, SetupSheet } from "../types.js";
+import {
+  formatLintIssuesSummaryBlock,
+  formatParseDiagnosticsBreachesBlock,
+  formatParseDiagnosticsSummary
+} from "./exportBundle.js";
+import type {
+  LintIssuesSummary,
+  ParseDiagnosticsPolicyBreach,
+  ParseDiagnosticsSummary,
+  ProgramAst,
+  SetupSheet
+} from "../types.js";
 
-export function generateSetupSheet(ast: ProgramAst, initialState: Record<string, number>): SetupSheet {
+export function generateSetupSheet(
+  ast: ProgramAst,
+  initialState: Record<string, number>,
+  options: {
+    parseDiagnosticsSummary?: ParseDiagnosticsSummary;
+    parseDiagnosticsBreaches?: ReadonlyArray<ParseDiagnosticsPolicyBreach>;
+    lintIssuesSummary?: LintIssuesSummary;
+  } = {}
+): SetupSheet {
   const tooling = buildToolingReport(ast, initialState, {
     includeSetupInstructions: true,
     fiveAxis: { enabled: true, machine: "umc" }
@@ -32,12 +51,42 @@ export function generateSetupSheet(ast: ProgramAst, initialState: Record<string,
     lines.push(`[${f.severity.toUpperCase()}] ${f.message}`);
   });
 
+  const exportTxtLines = [...lines];
+  const exportMarkdownExtras: string[] = [];
+  if (options.parseDiagnosticsSummary) {
+    const formatted = formatParseDiagnosticsSummary(options.parseDiagnosticsSummary);
+    exportTxtLines.push("");
+    exportTxtLines.push("PARSE DIAGNOSTICS");
+    exportTxtLines.push(formatted.txt);
+    exportMarkdownExtras.push("", "## Parse diagnostics", "", formatted.md);
+  }
+  if (options.parseDiagnosticsBreaches !== undefined) {
+    const formatted = formatParseDiagnosticsBreachesBlock(options.parseDiagnosticsBreaches);
+    exportTxtLines.push("");
+    exportTxtLines.push("PARSE DIAGNOSTICS BREACHES");
+    exportTxtLines.push(formatted.txt);
+    exportMarkdownExtras.push("", "## Parse diagnostics breaches", "", formatted.md);
+  }
+  if (options.lintIssuesSummary !== undefined) {
+    const formatted = formatLintIssuesSummaryBlock(options.lintIssuesSummary);
+    exportTxtLines.push("");
+    exportTxtLines.push("LINT ISSUES");
+    exportTxtLines.push(formatted.txt);
+    if (formatted.histogram) {
+      exportTxtLines.push(formatted.histogram.txt);
+    }
+    exportMarkdownExtras.push("", "## Lint issues", "", formatted.md);
+    if (formatted.histogram) {
+      exportMarkdownExtras.push(formatted.histogram.md);
+    }
+  }
+
   return {
     title: "Workshop Setup Sheet",
     lines,
     printable80mm: lines.map((l) => (l.length > 42 ? l.slice(0, 42) : l)).join("\n"),
-    exportTxt: lines.join("\n"),
-    exportMarkdown: toMarkdown(lines)
+    exportTxt: exportTxtLines.join("\n"),
+    exportMarkdown: [toMarkdown(lines), ...exportMarkdownExtras].join("\n")
   };
 }
 

@@ -7,9 +7,19 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@cnc/core": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  },
+  "cnc-workbench": {
+    "profilePack": {
+      "controllerKey": "haas-ngc",
+      "validateAstExport": "haasNgcProfile"
+    }
   }
 }

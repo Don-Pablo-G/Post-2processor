@@ -1,7 +1,27 @@
 import { analyzeProgram } from "./advisor.js";
-import type { ProgramAst, ProveoutPatchResult, ProveoutResult } from "../types.js";
+import {
+  formatLintIssuesSummaryBlock,
+  formatParseDiagnosticsBreachesBlock,
+  formatParseDiagnosticsSummary
+} from "./exportBundle.js";
+import type {
+  LintIssuesSummary,
+  ParseDiagnosticsPolicyBreach,
+  ParseDiagnosticsSummary,
+  ProgramAst,
+  ProveoutPatchResult,
+  ProveoutResult
+} from "../types.js";
 
-export function buildProveoutProgram(ast: ProgramAst, initialState: Record<string, number>): ProveoutResult {
+export function buildProveoutProgram(
+  ast: ProgramAst,
+  initialState: Record<string, number>,
+  options: {
+    parseDiagnosticsSummary?: ParseDiagnosticsSummary;
+    parseDiagnosticsBreaches?: ReadonlyArray<ParseDiagnosticsPolicyBreach>;
+    lintIssuesSummary?: LintIssuesSummary;
+  } = {}
+): ProveoutResult {
   const advisor = analyzeProgram(ast, initialState);
   const stopBlocks = new Map<number, string>(
     advisor.optionalStopSuggestions.map((s) => [s.blockIndex, s.suggestedLine])
@@ -12,6 +32,18 @@ export function buildProveoutProgram(ast: ProgramAst, initialState: Record<strin
   lines.push("(PROVEOUT MODE ENABLED)");
   lines.push("(SET FEED OVERRIDE <=25% AND RAPID <=5%)");
   lines.push("(RUN SINGLE BLOCK THROUGH FIRST CUT)");
+  if (options.parseDiagnosticsSummary) {
+    const formatted = formatParseDiagnosticsSummary(options.parseDiagnosticsSummary);
+    lines.push(`(${formatted.txt})`);
+  }
+  if (options.parseDiagnosticsBreaches !== undefined) {
+    const formatted = formatParseDiagnosticsBreachesBlock(options.parseDiagnosticsBreaches);
+    lines.push(`(${formatted.txt})`);
+  }
+  if (options.lintIssuesSummary !== undefined) {
+    const formatted = formatLintIssuesSummaryBlock(options.lintIssuesSummary);
+    lines.push(`(${formatted.txt})`);
+  }
 
   ast.blocks.forEach((block, index) => {
     if (stopBlocks.has(index)) {

@@ -1,11 +1,19 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_g41_without_d_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 1,
+  "lintIssueCount": 3,
   "lintIssues": [
     {
       "severity": "warning",
-      "message": "G41/G42 without D on the same block — cutter comp normally requires a D offset."
+      "message": "Program must start with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Program must end with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "G41/G42 without D and no prior D offset active — set D explicitly or confirm carried offset state."
     }
   ],
   "simulation": {

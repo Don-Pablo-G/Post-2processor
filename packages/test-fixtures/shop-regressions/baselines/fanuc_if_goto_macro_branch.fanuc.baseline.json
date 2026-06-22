@@ -1,8 +1,17 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_if_goto_macro_branch.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 0,
-  "lintIssues": [],
+  "lintIssueCount": 2,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Program must start with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Program must end with a standalone % line."
+    }
+  ],
   "simulation": {
     "halted": true,
     "steps": 12,

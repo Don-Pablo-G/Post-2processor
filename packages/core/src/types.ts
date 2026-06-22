@@ -1,7 +1,61 @@
 export type Word = {
   letter: string;
   value: string;
+  span?: SourceSpan;
+  expressionAst?: ParseExpressionNode;
 };
+
+export type SourceSpan = {
+  start: number;
+  end: number;
+};
+
+export type ParseDiagnostic = {
+  code:
+    | "UNMATCHED_OPEN_PAREN"
+    | "UNMATCHED_CLOSE_PAREN"
+    | "ADDRESS_MISSING_VALUE"
+    | "UNMATCHED_BRACKET"
+    | "BRACKET_EXPRESSION_INVALID"
+    | "UNKNOWN_TOKEN"
+    | "INVALID_CHARACTER";
+  severity: "warning" | "error";
+  message: string;
+  blockIndex: number;
+  span?: SourceSpan;
+  suggestedFixes?: ParseDiagnosticFixSuggestion[];
+};
+
+export type ParseDiagnosticFixSuggestion = {
+  title: string;
+  replacement?: string;
+};
+
+export type ParseBlockSummary = {
+  blockIndex: number;
+  errorCount: number;
+  warningCount: number;
+  hasRecovery: boolean;
+};
+
+export type ParseSummary = {
+  errorCount: number;
+  warningCount: number;
+  hasRecovery: boolean;
+  blocks: ParseBlockSummary[];
+};
+
+export type ParseExpressionNode =
+  | { kind: "number"; value: number; raw: string }
+  | { kind: "variable"; name: string; indexExpression?: ParseExpressionNode }
+  | { kind: "unary"; operator: "+" | "-"; operand: ParseExpressionNode }
+  | {
+      kind: "binary";
+      operator: "+" | "-" | "*" | "/" | "MOD" | "AND" | "OR" | "XOR" | "EQ" | "NE" | "GT" | "GE" | "LT" | "LE";
+      left: ParseExpressionNode;
+      right: ParseExpressionNode;
+    }
+  | { kind: "function"; name: string; args: ParseExpressionNode[] };
 
 export type Block = {
   raw: string;
@@ -12,6 +66,18 @@ export type Block = {
 export type ProgramAst = {
   profileId: string;
   blocks: Block[];
+  parseComplianceMode?: ParseComplianceMode;
+  parseDiagnostics?: ParseDiagnostic[];
+  parseSummary?: ParseSummary;
+};
+
+export type ParseComplianceMode = "strict" | "lenient" | "strict_haas" | "strict_fanuc";
+
+export type ParseOptions = {
+  complianceMode?: ParseComplianceMode;
+  semicolonEob?: boolean;
+  includeTokenSpans?: boolean;
+  includeExpressionAst?: boolean;
 };
 
 export type FormatStyle = {
@@ -107,6 +173,58 @@ export type LintIssue = {
   severity: "warning" | "error";
   message: string;
   blockIndex: number;
+  suggestedFixes?: ParseDiagnosticFixSuggestion[];
+  /**
+   * Optional stable rule code (e.g. `CG_N_AND_O_MIXED`,
+   * `CG_DUPLICATE_ADDRESSES_X`). Append-only — existing rules are NOT required
+   * to emit a code; new code-emitting rules MUST use the `CG_` prefix for
+   * controller-grammar lints. The CLI envelope's `lintIssuesByControllerCode`
+   * cross-table aggregates issues by this field.
+   */
+  code?: string;
+};
+
+export type LintIssueProvenance = {
+  source: "lexer" | "expression_parser" | "controller_grammar" | "common_lint" | "profile_lint";
+  relatedDiagnostics: Array<{
+    code: ParseDiagnostic["code"];
+    span?: SourceSpan;
+    suggestedFixes?: ParseDiagnosticFixSuggestion[];
+  }>;
+};
+
+export type LintIssueWithProvenance = LintIssue & {
+  provenance: LintIssueProvenance;
+};
+
+/**
+ * Structured documentation entry for a profile-pack lint rule. Used to drive
+ * the auto-generated PROFILE_PACKS.md reference and to provide a contract
+ * test surface (every rule MUST trigger on its `positiveSnippet` and MUST NOT
+ * trigger on its `negativeSnippet`). Append-only — new optional fields may be
+ * added to this type, but existing fields remain stable.
+ */
+export type ProfileRuleDoc = {
+  /** Stable, dotted, lowercase id (e.g. "fanuc.g65-missing-p"). */
+  id: string;
+  /** Mirrors LintIssue.severity. */
+  severity: LintIssue["severity"];
+  /** Substring/regex that matches `LintIssue.message` for this rule. */
+  messageMatcher: RegExp;
+  /** Minimal G-code snippet that MUST trigger this rule when linted. */
+  positiveSnippet: string;
+  /** Minimal G-code snippet that MUST NOT trigger this rule when linted. */
+  negativeSnippet: string;
+  /** One-liner human-readable summary suitable for a docs row. */
+  summary: string;
+  /**
+   * When set, this rule is "soft-deprecated": it still emits issues by default
+   * but can be suppressed via the CLI `--no-deprecated-rules` flag. Format is
+   * an ISO year-month string (e.g. `"2026-05"`); shops use this to plan
+   * migration off the rule. Append-only field — never set then unset, only set
+   * once and bumped forward in time if the deprecation is re-confirmed.
+   */
+  deprecatedSince?: string;
 };
 
 export type ToolingReportOptions = {
@@ -454,6 +572,7 @@ export type TimelineFindingsExportBundleInput = {
     message: string;
   }>;
   findings: SafetyFinding[];
+  parseDiagnosticsSummary?: ParseDiagnosticsSummary;
 };
 
 export type TimelineFindingsExportBundle = {
@@ -461,6 +580,12 @@ export type TimelineFindingsExportBundle = {
   timelineMarkdown: string;
   findingsTxt: string;
   findingsMarkdown: string;
+};
+
+export type ParseDiagnosticsThresholdPolicy = {
+  severity: "warning" | "blocker";
+  blockExport?: boolean;
+  thresholds: Partial<Record<ParseDiagnostic["code"] | "TOTAL", number>>;
 };
 
 export type RunJobCheckInput = {
@@ -471,12 +596,53 @@ export type RunJobCheckInput = {
   policyPreset?: JobCheckPolicyPreset;
   simulationFindingPolicy?: SimulationFindingPolicyOverride;
   exportBlockingPolicy?: ExportBlockingPolicyOverride;
+  parseDiagnosticsPolicy?: ParseDiagnosticsThresholdPolicy;
   exportOptions?: {
     enabled: boolean;
     allowExportWithBlockers?: boolean;
     baseDirectory: string;
     baseName?: string;
   };
+  profileLintIssues?: LintIssue[];
+};
+
+export type ParseDiagnosticsSummary = {
+  total: number;
+  byCode: Record<string, number>;
+  /**
+   * Severity sub-counts per code. Append-only field added with the schema-v3
+   * envelope wave; older consumers can ignore it. When defined,
+   * `bySeverity[c].warnings + .errors === byCode[c]` for every code `c`.
+   */
+  bySeverity?: Record<string, { warnings: number; errors: number }>;
+  topCodes: string[];
+};
+
+export type ParseDiagnosticsPolicyBreach = {
+  key: string;
+  observed: number;
+  threshold: number;
+  severity: "warning" | "blocker";
+  firstBlockIndex?: number;
+};
+
+export type LintIssueProvenanceSource = LintIssueProvenance["source"];
+
+export type LintIssuesSummary = {
+  total: number;
+  blockers: number;
+  warnings: number;
+  bySource: Partial<Record<LintIssueProvenanceSource, number>>;
+  /**
+   * Severity sub-counts per source. Append-only field added with the
+   * setup-sheet histogram wave; older consumers can ignore it. When defined,
+   * `bySourceSeverity[s].blockers + .warnings === bySource[s]` for every
+   * source `s` in `bySource`.
+   */
+  bySourceSeverity?: Partial<
+    Record<LintIssueProvenanceSource, { blockers: number; warnings: number }>
+  >;
+  topSources: LintIssueProvenanceSource[];
 };
 
 export type RunJobCheckResult = {
@@ -491,4 +657,8 @@ export type RunJobCheckResult = {
   proveout: ProveoutResult;
   exportResult?: ExportArtifactsResult;
   messages: string[];
+  parseDiagnosticsSummary: ParseDiagnosticsSummary;
+  parseDiagnosticsPolicyBreaches: ParseDiagnosticsPolicyBreach[];
+  lintIssues: LintIssueWithProvenance[];
+  lintIssuesSummary: LintIssuesSummary;
 };

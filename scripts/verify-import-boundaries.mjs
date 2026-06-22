@@ -19,6 +19,21 @@ const boundaryRules = [
     targetRoots: [path.join(root, "packages", "core", "tests")],
     allowed: ["../src/index.node.js"],
     forbidden: ["../src/index.js"]
+  },
+  {
+    label: "ide-bridge package imports",
+    // @cnc/ide-bridge is a thin adapter — it must only depend on the
+    // `@cnc/core` peer (transport-neutral types + getControllerGrammarFix),
+    // never on the Node-specific `@cnc/core/node` entry point. The check
+    // mirrors the browser-app rule: the `forbidden` import is allowed as
+    // long as the `allowed` form is also present. For ide-bridge we only
+    // ever want the bare `@cnc/core` form, so `allowed` includes that
+    // form unconditionally and `forbidden` lists the Node-only and
+    // browser-only entries so consumers don't accidentally pin a runtime
+    // shape onto the IDE bridge.
+    targetRoots: [path.join(root, "packages", "ide-bridge", "src")],
+    allowed: ["@cnc/core"],
+    forbidden: ["@cnc/core/node", "@cnc/core/browser"]
   }
 ];
 

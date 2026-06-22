@@ -86,15 +86,15 @@ export function simpleSimulate(
       const words = parseWords(code, block.words);
       const gWords = words
         .filter((w) => w.letter === "G")
-        .map((w) => Math.trunc(evalNumeric(w.value, variables, warnings, currentBlock, profile)));
+        .map((w) => Math.trunc(evalNumeric(w.value, variables, warnings, currentBlock, profile, w)));
       const mWords = words
         .filter((w) => w.letter === "M")
-        .map((w) => Math.trunc(evalNumeric(w.value, variables, warnings, currentBlock, profile)));
+        .map((w) => Math.trunc(evalNumeric(w.value, variables, warnings, currentBlock, profile, w)));
 
       if (words.some((w) => w.letter === "F")) {
         const lastF = words.filter((w) => w.letter === "F").at(-1);
         if (lastF) {
-          modal.feedMmPerMin = Math.max(1, evalNumeric(lastF.value, variables, warnings, currentBlock, profile));
+          modal.feedMmPerMin = Math.max(1, evalNumeric(lastF.value, variables, warnings, currentBlock, profile, lastF));
         }
       }
 
@@ -403,7 +403,18 @@ function parseWords(code: string, fallback: Word[]): Word[] {
     letter: m[1],
     value: m[2]
   }));
-  return parsed.length > 0 ? parsed : fallback;
+  if (parsed.length === 0) return fallback;
+  const used = new Set<number>();
+  return parsed.map((word) => {
+    const idx = fallback.findIndex(
+      (w, i) => !used.has(i) && w.letter === word.letter && w.value.replace(/\s+/g, "") === word.value.replace(/\s+/g, "")
+    );
+    if (idx >= 0) {
+      used.add(idx);
+      return { ...word, expressionAst: fallback[idx]!.expressionAst };
+    }
+    return word;
+  });
 }
 
 function applyAssignments(
@@ -428,12 +439,94 @@ function evalNumeric(
   variables: Record<string, number>,
   warnings: string[],
   blockIndex: number,
-  profile: MacroRuntimeProfile
+  profile: MacroRuntimeProfile,
+  word?: Word
 ): number {
+  if (word?.expressionAst) {
+    const astValue = evaluateExpressionAst(word.expressionAst, variables, warnings, blockIndex, profile);
+    if (Number.isFinite(astValue)) return astValue;
+  }
   const expr = token.trim();
   if (/^[+\-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(expr)) return Number(expr);
   if (/^#\d+$/.test(expr)) return variables[expr] ?? 0;
   return evaluateExpression(expr, variables, warnings, blockIndex, profile);
+}
+
+function evaluateExpressionAst(
+  node: NonNullable<Word["expressionAst"]>,
+  variables: Record<string, number>,
+  warnings: string[],
+  blockIndex: number,
+  profile: MacroRuntimeProfile
+): number {
+  switch (node.kind) {
+    case "number":
+      return node.value;
+    case "variable": {
+      if (node.indexExpression) {
+        const idx = evaluateExpressionAst(node.indexExpression, variables, warnings, blockIndex, profile);
+        if (!Number.isFinite(idx)) return Number.NaN;
+        return variables[`#${Math.trunc(idx)}`] ?? 0;
+      }
+      return variables[node.name] ?? 0;
+    }
+    case "unary": {
+      const value = evaluateExpressionAst(node.operand, variables, warnings, blockIndex, profile);
+      if (!Number.isFinite(value)) return Number.NaN;
+      return node.operator === "-" ? -value : value;
+    }
+    case "binary": {
+      const left = evaluateExpressionAst(node.left, variables, warnings, blockIndex, profile);
+      const right = evaluateExpressionAst(node.right, variables, warnings, blockIndex, profile);
+      if (!Number.isFinite(left) || !Number.isFinite(right)) return Number.NaN;
+      switch (node.operator) {
+        case "+":
+          return left + right;
+        case "-":
+          return left - right;
+        case "*":
+          return left * right;
+        case "/":
+          return right === 0 ? Number.NaN : left / right;
+        case "MOD":
+          return right === 0 ? Number.NaN : left % right;
+        case "AND":
+          return left !== 0 && right !== 0 ? 1 : 0;
+        case "OR":
+          return left !== 0 || right !== 0 ? 1 : 0;
+        case "XOR":
+          return (left !== 0) !== (right !== 0) ? 1 : 0;
+        case "EQ":
+          return left === right ? 1 : 0;
+        case "NE":
+          return left !== right ? 1 : 0;
+        case "GT":
+          return left > right ? 1 : 0;
+        case "GE":
+          return left >= right ? 1 : 0;
+        case "LT":
+          return left < right ? 1 : 0;
+        case "LE":
+          return left <= right ? 1 : 0;
+        default:
+          return Number.NaN;
+      }
+    }
+    case "function": {
+      const args = node.args.map((arg) => evaluateExpressionAst(arg, variables, warnings, blockIndex, profile));
+      if (args.some((v) => !Number.isFinite(v))) return Number.NaN;
+      if (node.name === "ATAN" && args.length === 2) {
+        if (!profile.supportedFunctions.has("ATAN")) {
+          warnings.push(`Function ATAN is not supported in ${profile.mode} mode (block ${blockIndex}).`);
+          return Number.NaN;
+        }
+        return (Math.atan2(args[0], args[1]) * 180) / Math.PI;
+      }
+      return applyMacroFunction(node.name, args[0] ?? Number.NaN, warnings, blockIndex, profile);
+    }
+    default:
+      return Number.NaN;
+  }
 }
 
 function evaluateExpression(
@@ -740,15 +833,15 @@ function parseM98Call(
   profile: MacroRuntimeProfile
 ): ParsedCall | null {
   const hasM98 = words.some(
-    (w) => w.letter === "M" && Math.trunc(evalNumeric(w.value, variables, warnings, blockIndex, profile)) === 98
+    (w) => w.letter === "M" && Math.trunc(evalNumeric(w.value, variables, warnings, blockIndex, profile, w)) === 98
   );
   if (!hasM98) return null;
   const p = words.filter((w) => w.letter === "P").at(-1);
   if (!p) return null;
   const l = words.filter((w) => w.letter === "L").at(-1);
   return {
-    program: Math.trunc(evalNumeric(p.value, variables, warnings, blockIndex, profile)),
-    repeats: Math.max(1, l ? Math.trunc(evalNumeric(l.value, variables, warnings, blockIndex, profile)) : 1),
+    program: Math.trunc(evalNumeric(p.value, variables, warnings, blockIndex, profile, p)),
+    repeats: Math.max(1, l ? Math.trunc(evalNumeric(l.value, variables, warnings, blockIndex, profile, l)) : 1),
     style: "o_label"
   };
 }
@@ -761,15 +854,15 @@ function parseM97Call(
   profile: MacroRuntimeProfile
 ): ParsedCall | null {
   const hasM97 = words.some(
-    (w) => w.letter === "M" && Math.trunc(evalNumeric(w.value, variables, warnings, blockIndex, profile)) === 97
+    (w) => w.letter === "M" && Math.trunc(evalNumeric(w.value, variables, warnings, blockIndex, profile, w)) === 97
   );
   if (!hasM97) return null;
   const p = words.filter((w) => w.letter === "P").at(-1);
   if (!p) return null;
   const l = words.filter((w) => w.letter === "L").at(-1);
   return {
-    program: Math.trunc(evalNumeric(p.value, variables, warnings, blockIndex, profile)),
-    repeats: Math.max(1, l ? Math.trunc(evalNumeric(l.value, variables, warnings, blockIndex, profile)) : 1),
+    program: Math.trunc(evalNumeric(p.value, variables, warnings, blockIndex, profile, p)),
+    repeats: Math.max(1, l ? Math.trunc(evalNumeric(l.value, variables, warnings, blockIndex, profile, l)) : 1),
     style: "n_label"
   };
 }
@@ -782,7 +875,7 @@ function parseG65Call(
   profile: MacroRuntimeProfile
 ): { program: number; repeats: number; arguments: Record<string, number>; style: SubprogramRefStyle } | null {
   const hasG65 = words.some(
-    (w) => w.letter === "G" && Math.trunc(evalNumeric(w.value, variables, warnings, blockIndex, profile)) === 65
+    (w) => w.letter === "G" && Math.trunc(evalNumeric(w.value, variables, warnings, blockIndex, profile, w)) === 65
   );
   if (!hasG65) return null;
   const p = words.filter((w) => w.letter === "P").at(-1);
@@ -792,11 +885,11 @@ function parseG65Call(
   const args: Record<string, number> = {};
   for (const word of words) {
     if (reserved.has(word.letter)) continue;
-    args[word.letter] = evalNumeric(word.value, variables, warnings, blockIndex, profile);
+    args[word.letter] = evalNumeric(word.value, variables, warnings, blockIndex, profile, word);
   }
   return {
-    program: Math.trunc(evalNumeric(p.value, variables, warnings, blockIndex, profile)),
-    repeats: Math.max(1, l ? Math.trunc(evalNumeric(l.value, variables, warnings, blockIndex, profile)) : 1),
+    program: Math.trunc(evalNumeric(p.value, variables, warnings, blockIndex, profile, p)),
+    repeats: Math.max(1, l ? Math.trunc(evalNumeric(l.value, variables, warnings, blockIndex, profile, l)) : 1),
     arguments: args,
     style: "o_label"
   };
@@ -905,13 +998,17 @@ function estimateCannedCycleSeconds(
   const lWord = words.filter((w) => w.letter === "L").at(-1);
   const qWord = words.filter((w) => w.letter === "Q").at(-1);
 
-  const r = rWord ? evalNumeric(rWord.value, variables, warnings, blockIndex, profile) : position.Z;
+  const r = rWord ? evalNumeric(rWord.value, variables, warnings, blockIndex, profile, rWord) : position.Z;
   const repeats = Math.max(
     1,
-    lWord ? Math.trunc(evalNumeric(lWord.value, variables, warnings, blockIndex, profile)) : 1
+    lWord ? Math.trunc(evalNumeric(lWord.value, variables, warnings, blockIndex, profile, lWord)) : 1
   );
-  const dwellSeconds = pWord ? Math.max(0, evalNumeric(pWord.value, variables, warnings, blockIndex, profile) / 1000) : 0;
-  const q = qWord ? Math.max(0.1, Math.abs(evalNumeric(qWord.value, variables, warnings, blockIndex, profile))) : 0;
+  const dwellSeconds = pWord
+    ? Math.max(0, evalNumeric(pWord.value, variables, warnings, blockIndex, profile, pWord) / 1000)
+    : 0;
+  const q = qWord
+    ? Math.max(0.1, Math.abs(evalNumeric(qWord.value, variables, warnings, blockIndex, profile, qWord)))
+    : 0;
   validateCycleInputs(cycle, words, z, r, modal.feedMmPerMin, q, warnings, blockIndex);
 
   const xyDistance = Math.hypot(x - position.X, y - position.Y);
@@ -1020,7 +1117,7 @@ function getDwellSeconds(
 ): number {
   const p = words.filter((w) => w.letter === "P").at(-1);
   if (!p) return 0;
-  return Math.max(0, evalNumeric(p.value, variables, warnings, blockIndex, profile) / 1000);
+  return Math.max(0, evalNumeric(p.value, variables, warnings, blockIndex, profile, p) / 1000);
 }
 
 function getAxisTargetWithContext(
@@ -1033,7 +1130,7 @@ function getAxisTargetWithContext(
 ): number | null {
   const axisWord = words.filter((w) => w.letter === axis).at(-1);
   if (!axisWord) return null;
-  return evalNumeric(axisWord.value, variables, warnings, blockIndex, profile);
+  return evalNumeric(axisWord.value, variables, warnings, blockIndex, profile, axisWord);
 }
 
 function getMacroRuntimeProfile(

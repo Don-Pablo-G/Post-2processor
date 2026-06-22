@@ -1,4 +1,5 @@
 import { simpleFormat } from "./formatter/simpleFormatter.js";
+import { withLintProvenance } from "./lints/lintProvenance.js";
 import { simpleLint } from "./lints/simpleLint.js";
 import { simpleParameterize } from "./parameterizer/suggest.js";
 import { simpleParse } from "./parser/simpleParser.js";
@@ -9,7 +10,7 @@ import { exportWorkshopArtifacts } from "./workshop/export.js";
 import { buildTimelineFindingsExportBundle as buildTimelineFindingsExportBundleInternal } from "./workshop/exportBundle.js";
 import { getParameterReserveProfiles } from "./workshop/parameterProfiles.js";
 import { applyProveoutMarkers, buildProveoutProgram, removeProveoutMarkers } from "./workshop/proveout.js";
-import { runJobCheckWorkflow } from "./workshop/runJobCheck.js";
+import { runJobCheckWorkflow, summarizeParseDiagnostics as summarizeParseDiagnosticsInternal } from "./workshop/runJobCheck.js";
 import {
   analyzeShopFixtures as analyzeShopFixturesInternal,
   applyShopFixtureAutoFixes as applyShopFixtureAutoFixesInternal,
@@ -30,6 +31,8 @@ import type {
   ExportArtifactsResult,
   TimelineFindingsExportBundle,
   TimelineFindingsExportBundleInput,
+  ParseDiagnostic,
+  ParseDiagnosticsSummary,
   ImportShopFixtureInput,
   ImportShopFixtureResult,
   PreviewShopFixtureAutoFixesInput,
@@ -42,9 +45,11 @@ import type {
   ValidateShopFixturesResult,
   FormatStyle,
   LintIssue,
+  LintIssueWithProvenance,
   ParameterReserveProfile,
   ParameterizeOptions,
   ParameterizeResult,
+  ParseOptions,
   ProgramTemplate,
   ProgramAdvisorOptions,
   ProgramAdvisorReport,
@@ -68,8 +73,8 @@ export type ControllerProfile = {
   validateAst?: (ast: ProgramAst) => LintIssue[];
 };
 
-export function parse(code: string, profile: ControllerProfile): ProgramAst {
-  return simpleParse(code, profile.id);
+export function parse(code: string, profile: ControllerProfile, options?: ParseOptions): ProgramAst {
+  return simpleParse(code, profile.id, options);
 }
 
 export function format(ast: ProgramAst, profile: ControllerProfile, style?: Partial<FormatStyle>): string {
@@ -92,6 +97,11 @@ export function lint(ast: ProgramAst, profile: ControllerProfile): LintIssue[] {
   const commonIssues = simpleLint(ast);
   const profileIssues = profile.validateAst ? profile.validateAst(ast) : [];
   return [...commonIssues, ...profileIssues];
+}
+
+export function lintWithProvenance(ast: ProgramAst, profile: ControllerProfile): LintIssueWithProvenance[] {
+  const issues = lint(ast, profile);
+  return withLintProvenance(ast, issues);
 }
 
 export function toolingReport(
@@ -154,6 +164,12 @@ export function buildTimelineFindingsExportBundle(
 
 export async function runJobCheck(input: RunJobCheckInput): Promise<RunJobCheckResult> {
   return runJobCheckWorkflow(input);
+}
+
+export function summarizeParseDiagnostics(
+  diagnostics: ParseDiagnostic[] | undefined
+): ParseDiagnosticsSummary {
+  return summarizeParseDiagnosticsInternal(diagnostics);
 }
 
 export async function importShopFixture(input: ImportShopFixtureInput): Promise<ImportShopFixtureResult> {

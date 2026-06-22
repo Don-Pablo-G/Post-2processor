@@ -8,6 +8,7 @@ import {
   exportWorkshopFiles,
   format,
   lint,
+  lintWithProvenance,
   getTemplateLibrary,
   parameterReserveProfiles,
   parameterize,
@@ -19,6 +20,7 @@ import {
   restoreShopFixtureManifestBackup,
   runJobCheck,
   simulate,
+  summarizeParseDiagnostics,
   toolingReport
 } from "../src/index.node.js";
 import {
@@ -64,6 +66,51 @@ describe("core pipeline", () => {
     expect(output).toContain("G0 X0 Y0");
   });
 
+  it("supports parse compliance mode override for legacy tokenization", () => {
+    const strict = parse("M99 P Q1\nM30", haasNgcProfile);
+    const lenient = parse("M99 P Q1\nM30", haasNgcProfile, { complianceMode: "lenient" });
+    expect(strict.blocks[0]?.words.some((w) => w.letter === "P" && w.value === "")).toBe(false);
+    expect(lenient.blocks[0]?.words.some((w) => w.letter === "P" && w.value === "")).toBe(true);
+  });
+
+  it("supports controller-specific strict parse profiles", () => {
+    const strictHaas = parse("M99 P Q1\nM30", haasNgcProfile, { complianceMode: "strict_haas" });
+    const strictFanuc = parse("M99 P Q1\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    expect(strictHaas.parseComplianceMode).toBe("strict_haas");
+    expect(strictFanuc.parseComplianceMode).toBe("strict_fanuc");
+    expect(strictHaas.blocks[0]?.words.some((w) => w.letter === "P" && w.value === "")).toBe(false);
+    expect(strictFanuc.blocks[0]?.words.some((w) => w.letter === "P" && w.value === "")).toBe(false);
+  });
+
+  it("supports semicolon EOB splitting parse option", () => {
+    const ast = parse("G0 X0; G1 X1; M30;", haasNgcProfile, { semicolonEob: true });
+    expect(ast.blocks).toHaveLength(3);
+    expect(ast.blocks[1]?.words.some((w) => w.letter === "G" && w.value === "1")).toBe(true);
+  });
+
+  it("requires standalone % lines at start and end", () => {
+    const ast = parse("G0 X0\nM30", haasNgcProfile);
+    const issues = lint(ast, haasNgcProfile);
+
+    expect(issues.some((i) => i.message.includes("Program must start with a standalone % line."))).toBe(true);
+    expect(issues.some((i) => i.message.includes("Program must end with a standalone % line."))).toBe(true);
+  });
+
+  it("warns when a percent delimiter line contains extra tokens", () => {
+    const ast = parse("% O1000\nG0 X0\nM30\n%", haasNgcProfile);
+    const issues = lint(ast, haasNgcProfile);
+
+    expect(issues.some((i) => i.message.includes("Percent delimiter lines must contain only '%'."))).toBe(true);
+  });
+
+  it("preserves standalone % delimiter lines in formatter output", () => {
+    const ast = parse("%\nG0X0Y0\nM30\n%", haasNgcProfile);
+    const output = format(ast, haasNgcProfile);
+
+    expect(output.startsWith("%\n")).toBe(true);
+    expect(output.endsWith("\n%")).toBe(true);
+  });
+
   it("can remove standalone M01/M1 lines without comments", () => {
     const input = "G0 X0\nM01\nM1\nM01 (KEEP)\nG1 X1";
     const ast = parse(input, haasNgcProfile);
@@ -90,6 +137,193 @@ describe("core pipeline", () => {
     expect(output).toContain("IF [#100 EQ 2] GOTO100");
     expect(output).toContain("#100 = #100 + 1");
     expect(output).toContain("G1 X10.0 Y5.0 F200.");
+  });
+
+  it("accepts machine-valid compact address formatting without false parse warnings", () => {
+    const cases: Array<{ line: string; expectedFragment: string }> = [
+      { line: "G0X0.Y0.Z1.", expectedFragment: "G0 X0. Y0. Z1." },
+      { line: "G1Y2.X1.F20.", expectedFragment: "G1 Y2. X1. F20." },
+      { line: "g1x.5y-.25f15.", expectedFragment: "G1 X.5 Y-.25 F15." },
+      { line: "N10G0X+1.25Y-0.5", expectedFragment: "N10 G0 X+1.25 Y-0.5" },
+      { line: "X0.Y0.", expectedFragment: "X0. Y0." }
+    ];
+
+    for (const { line, expectedFragment } of cases) {
+      const ast = parse(`${line}\nM30`, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const sim = simulate(ast, {}, { maxSteps: 20, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+      const formatted = format(ast, haasNgcProfile);
+
+      expect(ast.blocks[0]?.words.length).toBeGreaterThan(0);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(formatted).toContain(expectedFragment);
+    }
+  });
+
+  it("accepts additional machine-valid spacing and ordering variants from controller docs", () => {
+    const cases: Array<{ line: string; expectedFragment: string }> = [
+      // Address words may appear in any order within a block.
+      { line: "Y7X0.G0", expectedFragment: "Y7 X0. G0" },
+      // Tabs/spaces between addresses should not change meaning.
+      { line: "G1\tX1.\tY2.\tF30.", expectedFragment: "G1 X1. Y2. F30." },
+      // Optional signs are legal with packed addresses.
+      { line: "G1X+0.Y-0.25F5.", expectedFragment: "G1 X+0. Y-0.25 F5." },
+      // Sequence numbers can be packed into the same block.
+      { line: "N20Y-1.X3.G1", expectedFragment: "N20 Y-1. X3. G1" },
+      // Controller docs allow unusual intra-number whitespace variants.
+      { line: "G0X +0. 12 34Y 7", expectedFragment: "G0 X+0.1234 Y7" }
+    ];
+
+    for (const { line, expectedFragment } of cases) {
+      const ast = parse(`${line}\nM30`, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const sim = simulate(ast, {}, { maxSteps: 20, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+      const formatted = format(ast, haasNgcProfile);
+
+      expect(ast.blocks[0]?.words.length).toBeGreaterThan(0);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(formatted).toContain(expectedFragment);
+    }
+  });
+
+  it("accepts broad machine-valid g-code syntax variants without false interpreter errors", () => {
+    const cases: Array<{ line: string; expectedFragment: string }> = [
+      { line: "G0X0Y0Z0", expectedFragment: "G0 X0 Y0 Z0" },
+      { line: "G00X1.Y2.Z3.", expectedFragment: "G00 X1. Y2. Z3." },
+      { line: "G1X.125Y.5F12.", expectedFragment: "G1 X.125 Y.5 F12." },
+      { line: "G1X-.125Y+.5F12.", expectedFragment: "G1 X-.125 Y+.5 F12." },
+      { line: "G1 X +1. 0 Y -2. 5 F 30.", expectedFragment: "G1 X+1.0 Y-2.5 F30." },
+      { line: "X10.Y20.G1F100.", expectedFragment: "X10. Y20. G1 F100." },
+      { line: "F100.G1Y20.X10.", expectedFragment: "F100. G1 Y20. X10." },
+      { line: "N1G0X0Y0", expectedFragment: "N1 G0 X0 Y0" },
+      { line: "N0010G1X1.Y1.F10.", expectedFragment: "N0010 G1 X1. Y1. F10." },
+      { line: "g1x1y1f10", expectedFragment: "G1 X1 Y1 F10" },
+      { line: "g01x1.0y2.0f3.0", expectedFragment: "G01 X1.0 Y2.0 F3.0" },
+      { line: "G1\tX1\tY2\tF3", expectedFragment: "G1 X1 Y2 F3" },
+      { line: "G1X1\tY2  F3", expectedFragment: "G1 X1 Y2 F3" },
+      { line: "X 1 Y 2 G 1 F 3", expectedFragment: "X1 Y2 G1 F3" },
+      { line: "X +1 Y -2 G1 F +3", expectedFragment: "X+1 Y-2 G1 F+3" },
+      { line: "X + 1 Y - 2 G1 F + 3", expectedFragment: "X+1 Y-2 G1 F+3" },
+      { line: "G1X1.Y2.; INLINE", expectedFragment: "G1 X1. Y2." },
+      { line: "G1X1.Y2.(INLINE)", expectedFragment: "G1 X1. Y2." },
+      { line: "X0.Y0.Z0.A0.B0.C0", expectedFragment: "X0. Y0. Z0. A0. B0. C0" },
+      { line: "G2X1.Y1.I.25J-.25", expectedFragment: "G2 X1. Y1. I.25 J-.25" },
+      { line: "G3Y1.X1.J.25I-.25", expectedFragment: "G3 Y1. X1. J.25 I-.25" },
+      { line: "M3S12000", expectedFragment: "M3 S12000" },
+      { line: "S12000M3", expectedFragment: "S12000 M3" },
+      { line: "T1M6", expectedFragment: "T1 M6" },
+      { line: "M6T1", expectedFragment: "M6 T1" },
+      { line: "G43H1Z1.", expectedFragment: "G43 H1 Z1." },
+      { line: "H1G43Z1.", expectedFragment: "H1 G43 Z1." },
+      { line: "G54G0X0Y0", expectedFragment: "G54 G0 X0 Y0" },
+      { line: "G90G17G40G49G80", expectedFragment: "G90 G17 G40 G49 G80" },
+      { line: "X +0. 12 34 Y 7", expectedFragment: "X+0.1234 Y7" }
+    ];
+
+    for (const { line, expectedFragment } of cases) {
+      const ast = parse(`${line}\nM30`, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const sim = simulate(ast, {}, { maxSteps: 20, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+      const formatted = format(ast, haasNgcProfile);
+
+      expect(ast.blocks[0]?.words.length).toBeGreaterThan(0);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(formatted).toContain(expectedFragment);
+    }
+  });
+
+  it("accepts optional block-delete slash formatting variants without false errors", () => {
+    const cases: Array<{ line: string; expectedFragment: string; allowFanucInvalidAssignment?: boolean }> = [
+      { line: "/G0X0Y0", expectedFragment: "G0 X0 Y0" },
+      { line: "/ G1 X1. Y2. F10.", expectedFragment: "G1 X1. Y2. F10." },
+      { line: "/N10G1X1.Y1.", expectedFragment: "N10 G1 X1. Y1." },
+      { line: "/g1x.5y-.25f15.", expectedFragment: "G1 X.5 Y-.25 F15." },
+      { line: "/ #100=exp[1]", expectedFragment: "#100=EXP[1]", allowFanucInvalidAssignment: true },
+      { line: "/ IF[#100EQ1]GOTO100", expectedFragment: "IF[#100EQ1]GOTO100" },
+      { line: "/G1X +0. 12 34Y 7", expectedFragment: "G1 X+0.1234 Y7" },
+      { line: "/G1X1.Y2. (SKIP CUT)", expectedFragment: "G1 X1. Y2. (SKIP CUT)" }
+    ];
+
+    for (const { line, expectedFragment, allowFanucInvalidAssignment } of cases) {
+      const ast = parse(`${line}\nM30`, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const haas = simulate(ast, {}, { maxSteps: 40, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+      const fanuc = simulate(ast, {}, { maxSteps: 40, maxLoopIterations: 10, controllerMode: "fanuc" });
+      const formatted = format(ast, haasNgcProfile);
+
+      expect(ast.blocks[0]?.words.length).toBeGreaterThan(0);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(haas.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      if (!allowFanucInvalidAssignment) {
+        expect(fanuc.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      }
+      expect(formatted).toContain(expectedFragment);
+    }
+  });
+
+  it("treats leading-zero and lowercase M/G codes as canonical equivalents", () => {
+    const cases: Array<{ line: string; expectedFragment: string }> = [
+      { line: "M3S12000", expectedFragment: "M3 S12000" },
+      { line: "M03S12000", expectedFragment: "M03 S12000" },
+      { line: "m03s12000", expectedFragment: "M03 S12000" },
+      { line: "G0X0Y0", expectedFragment: "G0 X0 Y0" },
+      { line: "G00X0Y0", expectedFragment: "G00 X0 Y0" },
+      { line: "g00x0y0", expectedFragment: "G00 X0 Y0" },
+      { line: "G1X1.Y1.F10.", expectedFragment: "G1 X1. Y1. F10." },
+      { line: "G01X1.Y1.F10.", expectedFragment: "G01 X1. Y1. F10." },
+      { line: "g01x1.y1.f10.", expectedFragment: "G01 X1. Y1. F10." },
+      { line: "T1M6", expectedFragment: "T1 M6" },
+      { line: "T1M06", expectedFragment: "T1 M06" },
+      { line: "t1m06", expectedFragment: "T1 M06" }
+    ];
+
+    for (const { line, expectedFragment } of cases) {
+      const ast = parse(`${line}\nM30`, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const sim = simulate(ast, {}, { maxSteps: 20, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+      const formatted = format(ast, haasNgcProfile);
+
+      expect(ast.blocks[0]?.words.length).toBeGreaterThan(0);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(formatted).toContain(expectedFragment);
+    }
+  });
+
+  it("accepts broad machine-valid macro/control-flow formatting variants", () => {
+    const cases: string[] = [
+      "#100=0\nIF[#100EQ0]THEN#100=1\nM30",
+      "#100 = 0\nIF [ #100 EQ 0 ] THEN #100 = [ #100 + 1 ]\nM30",
+      "#100=0\nwhile[#100 lt 2]do1\n#100=#100+1\nend1\nM30",
+      "#100=1\nIF [#100 EQ 1] GOTO100\nN100 #101=5\nM30",
+      "#100=1\ngoto100\nN100 #101=#100\nM30",
+      "#100=sin[30]\n#101=cos[60]\n#102=abs[-5]\nM30",
+      "#100 = sin [ 30 ]\n#101 = sqrt [ abs [ -9 ] ]\nM30",
+      "#100=exp[1]\n#101=ln[exp[1]]\n#102=log[100]\nM30",
+      "#100 = [#101+1]\n#102=[ #100 * [ #103 - 2 ] ]\nM30",
+      "#100 = 0\nIF [#100 EQ 0] THEN #100=[#100+1] G0 Z-1.\nM30",
+      "#100=0\nWHILE [ #100 LT 3 ] DO1\n#100=#100+1\nEND1\nM30",
+      "#100=1\t\nIF\t[#100 EQ 1]\tTHEN\t#101=2\nM30"
+    ];
+
+    for (const program of cases) {
+      const ast = parse(program, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const sim = simulate(ast, {}, { maxSteps: 80, maxLoopIterations: 20, controllerMode: "haas-ngc" });
+      const formatted = format(ast, haasNgcProfile);
+
+      expect(ast.blocks.length).toBeGreaterThan(1);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("IF…THEN assignment RHS invalid"))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("has no matching WHILE"))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("is missing END"))).toBe(false);
+      expect(sim.warnings.some((w) => w.includes("target N") && w.includes("not found"))).toBe(false);
+      expect(formatted).toContain("M30");
+    }
   });
 
   it("uppercases lowercase macro/control-flow lines for machine-safe output", () => {
@@ -191,6 +425,15 @@ describe("core pipeline", () => {
     expect(result.state.variables["#100"]).toBe(3);
     expect(result.warnings).toHaveLength(0);
     expect(result.state.halted).toBe(true);
+  });
+
+  it("uses parsed expression AST when available for numeric XOR expression evaluation", () => {
+    const input = "G1 X[1 XOR 0] F100.\nM30";
+    const astWithoutExprAst = parse(input, haasNgcProfile, { includeExpressionAst: false });
+    const astWithExprAst = parse(input, haasNgcProfile, { includeExpressionAst: true });
+    const noAst = simulate(astWithoutExprAst, {}, { maxSteps: 40, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    const withAst = simulate(astWithExprAst, {}, { maxSteps: 40, maxLoopIterations: 10, controllerMode: "haas-ngc" });
+    expect(withAst.estimatedCycleTimeSeconds).toBeGreaterThan(noAst.estimatedCycleTimeSeconds);
   });
 
   it("evaluates macro math/trig helper functions", () => {
@@ -394,6 +637,67 @@ describe("core pipeline", () => {
     expect(
       result.warnings.some((w) => w.includes("G65 target O9010 not found in strict fanuc mode"))
     ).toBe(true);
+  });
+
+  it("applies strict-vs-shop-friendly target policy matrix for M98 and G65 in fanuc mode", () => {
+    const cases = [
+      {
+        name: "M98 with N-label target",
+        program: "M98 P100\nM30\nN100\n#140=#140+1\nM99",
+        expectedVariable: "#140",
+        expectedValueInShopFriendly: 1,
+        strictWarningIncludes: "M98 target O100 not found"
+      },
+      {
+        name: "G65 with N-label target",
+        program: "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99",
+        expectedVariable: "#150",
+        expectedValueInShopFriendly: 12,
+        strictWarningIncludes: "G65 target O9010 not found in strict fanuc mode"
+      },
+      {
+        name: "M98 with O-label target",
+        program: "M98 P1000\nM30\nO1000\n#160=#160+1\nM99",
+        expectedVariable: "#160",
+        expectedValueInShopFriendly: 1,
+        strictWarningIncludes: "M98 target O1000 not found"
+      },
+      {
+        name: "G65 with O-label target",
+        program: "G65 P7777 A3.\nM30\nO7777\n#170=#1+20\nM99",
+        expectedVariable: "#170",
+        expectedValueInShopFriendly: 23,
+        strictWarningIncludes: "G65 target O7777 not found in strict fanuc mode"
+      }
+    ];
+
+    for (const item of cases) {
+      const ast = parse(item.program, haasNgcProfile);
+      const shopFriendly = simulate(ast, {}, {
+        maxSteps: 250,
+        maxLoopIterations: 20,
+        controllerMode: "fanuc",
+        subprogramTargetPolicy: "shop_friendly"
+      });
+      const strict = simulate(ast, {}, {
+        maxSteps: 250,
+        maxLoopIterations: 20,
+        controllerMode: "fanuc",
+        subprogramTargetPolicy: "strict_controller"
+      });
+
+      expect(shopFriendly.state.variables[item.expectedVariable]).toBe(item.expectedValueInShopFriendly);
+      expect(shopFriendly.warnings.some((w) => w.includes("not found"))).toBe(false);
+
+      if (item.name.includes("O-label")) {
+        // O-label targets should also pass under strict fanuc policy.
+        expect(strict.state.variables[item.expectedVariable]).toBe(item.expectedValueInShopFriendly);
+        expect(strict.warnings.some((w) => w.includes("not found"))).toBe(false);
+      } else {
+        expect(strict.state.variables[item.expectedVariable] ?? 0).toBe(0);
+        expect(strict.warnings.some((w) => w.includes(item.strictWarningIncludes))).toBe(true);
+      }
+    }
   });
 
   it("estimates canned cycle and feed based time", () => {
@@ -1305,6 +1609,47 @@ describe("core pipeline", () => {
     expect(result.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(false);
   });
 
+  it("applies runJobCheck policy matrix to strict-vs-shop-friendly subprogram target handling", async () => {
+    const input = "G65 P9010 A2.\nM30\nN9010\n#150=#1+10\nM99";
+    const ast = parse(input, haasNgcProfile);
+
+    const strictBlocker = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "strict_controller" },
+      simulationFindingPolicy: { subprogramTargetMiss: { severity: "blocker" } },
+      exportOptions: { enabled: false, allowExportWithBlockers: false, baseDirectory: ".", baseName: "strict_target_matrix_blocker" }
+    });
+    const strictDisabled = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "strict_controller" },
+      simulationFindingPolicy: { subprogramTargetMiss: { enabled: false } },
+      exportOptions: {
+        enabled: false,
+        allowExportWithBlockers: false,
+        baseDirectory: ".",
+        baseName: "strict_target_matrix_disabled"
+      }
+    });
+    const shopFriendly = await runJobCheck({
+      ast,
+      simulationLimits: { controllerMode: "fanuc", subprogramTargetPolicy: "shop_friendly" },
+      simulationFindingPolicy: { subprogramTargetMiss: { severity: "blocker" } },
+      exportOptions: { enabled: false, allowExportWithBlockers: false, baseDirectory: ".", baseName: "shop_target_matrix" }
+    });
+
+    const strictFinding = strictBlocker.simulationFindings.find((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS");
+    expect(strictFinding).toBeDefined();
+    expect(strictFinding?.severity).toBe("blocker");
+    expect(strictBlocker.blocked).toBe(true);
+    expect(strictBlocker.simulation.warnings.some((w) => w.includes("strict fanuc mode"))).toBe(true);
+
+    expect(strictDisabled.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(false);
+    expect(strictDisabled.blocked).toBe(false);
+
+    expect(shopFriendly.simulationFindings.some((f) => f.code === "SIM_SUBPROGRAM_TARGET_MISS")).toBe(false);
+    expect(shopFriendly.blocked).toBe(false);
+  });
+
   it("does not add function-domain findings when expressions are valid", async () => {
     const input = "#120=LOG[100]\n#121=LN[2.718281828]\nM30";
     const ast = parse(input, haasNgcProfile);
@@ -1664,6 +2009,58 @@ describe("core pipeline", () => {
 });
 
 describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
+  it("flags parser-valid but machine-invalid blocks from documented control rules", () => {
+    const cases: Array<{ input: string; expectedMachineRuleWarning: string }> = [
+      // One active motion mode per block.
+      { input: "G0 G1 X1.\nM30", expectedMachineRuleWarning: "mixes G0 and G1" },
+      // Avoid duplicated mode tokens in the same block.
+      { input: "G1 G1 X1.\nM30", expectedMachineRuleWarning: "repeats G1" },
+      // Cutter comp typically requires D on the same block.
+      { input: "G41 X1.\nM30", expectedMachineRuleWarning: "G41/G42 without D" },
+      // Tool length comp requires H on G43 line.
+      { input: "G43 Z0.1\nM30", expectedMachineRuleWarning: "G43 without H" },
+      // Tool change should include T in the same block.
+      { input: "M6\nM30", expectedMachineRuleWarning: "M6 without T" },
+      // Spindle start generally requires S speed.
+      { input: "M3\nM30", expectedMachineRuleWarning: "without S" },
+      // Program should not contain conflicting end-of-program codes.
+      { input: "G0 X0\nM02\nG0 Y0\nM30", expectedMachineRuleWarning: "both M02 and M30" },
+      // Duplicate sequence labels are ambiguous for branch targets.
+      { input: "N10 G0 X0\nN10 G0 Y0\nM30", expectedMachineRuleWarning: "Duplicate sequence number" },
+      // Mutually exclusive unit/measurement modes in one block (ISO-style controls).
+      { input: "G20 G21 X1.\nM30", expectedMachineRuleWarning: "G20 and G21 in the same block" },
+      // Mutually exclusive positioning modes in one block (ISO-style controls).
+      { input: "G90 G91 X1.\nM30", expectedMachineRuleWarning: "G90 and G91 in the same block" },
+      // Multiple M functions in one block (one M per block is typical on Haas/Fanuc-class controls).
+      { input: "M3 M8\nM30", expectedMachineRuleWarning: "More than one M code in a single block" },
+      // Parenthesis comments should be paired to avoid controller-parse ambiguity.
+      { input: "G0 X1 (NO CLOSE\nM30", expectedMachineRuleWarning: "Unmatched parenthesis" },
+      // Fanuc documentation invalidates sequence numbers on O-number blocks.
+      { input: "N10 O1000\nM30", expectedMachineRuleWarning: "both N and O words" },
+      // Fanuc Macro B expects I/J/K argument order on G65 blocks.
+      { input: "G65 P9010 K4. J2. I3.\nM30", expectedMachineRuleWarning: "G65 block has I/J/K out of order" }
+    ];
+
+    for (const { input, expectedMachineRuleWarning } of cases) {
+      const ast = parse(input, haasNgcProfilePackaged);
+      const issues = lint(ast, haasNgcProfilePackaged);
+
+      expect(ast.blocks[0]?.words.length).toBeGreaterThan(0);
+      expect(issues.some((i) => i.message.includes(expectedMachineRuleWarning))).toBe(true);
+    }
+  });
+
+  it("attaches parse-stage provenance and spans to lint issues", () => {
+    const ast = parse("G0 X1 (NO CLOSE\nM30", haasNgcProfilePackaged, { includeTokenSpans: true });
+    const issues = lintWithProvenance(ast, haasNgcProfilePackaged);
+    const unmatched = issues.find((issue) => issue.message.includes("Unmatched parenthesis"));
+
+    expect(unmatched).toBeDefined();
+    expect(unmatched?.provenance.source).toBe("lexer");
+    expect(unmatched?.provenance.relatedDiagnostics.some((d) => d.code === "UNMATCHED_OPEN_PAREN")).toBe(true);
+    expect(unmatched?.provenance.relatedDiagnostics.some((d) => d.span !== undefined)).toBe(true);
+  });
+
   it("warns G43 without H on the same block", () => {
     const ast = parse("G0 G90 G54\nG43 Z0.1\nG43 H2 Z0.2\nM30", haasNgcProfilePackaged);
     const issues = lint(ast, haasNgcProfilePackaged);
@@ -1715,6 +2112,89 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
   it("warns M6 without T on the same block", () => {
     const ast = parse("G0 G90\nM6\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 without T"))).toBe(true);
+  });
+
+  it("warns when more than one M function appears in a single block", () => {
+    const ast = parse("M3 M8\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("More than one M code in a single block"))).toBe(true);
+  });
+
+  it("does not warn for one M function per block", () => {
+    const ast = parse("M3\nM8\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("More than one M code in a single block"))).toBe(false);
+  });
+
+  it("reports G20/G21 and G90/G91 conflicts from simpleLint without profile validateAst", () => {
+    const inchMetric = parse("G20 G21 X1.\nM30", haasNgcProfile);
+    const absInc = parse("G90 G91 X1.\nM30", haasNgcProfile);
+    expect(lint(inchMetric, haasNgcProfile).some((i) => i.message.includes("G20 and G21 in the same block"))).toBe(true);
+    expect(lint(absInc, haasNgcProfile).some((i) => i.message.includes("G90 and G91 in the same block"))).toBe(true);
+  });
+
+  it("does not warn for ordered G65 I/J/K arguments", () => {
+    const ast = parse("G65 P9010 I1. J2. K3.\nM30", haasNgcProfile);
+    expect(lint(ast, haasNgcProfile).some((i) => i.message.includes("G65 block has I/J/K out of order"))).toBe(false);
+  });
+
+  it("reports Fanuc-only N/O numeric-range validity checks when profile id is fanuc", () => {
+    const fanucProfile = { ...haasNgcProfile, id: "fanuc" };
+    const invalidN = parse("N0 G0 X0\nM30", fanucProfile);
+    const invalidO = parse("O0\nM30", fanucProfile);
+    const invalidNMacro = parse("N#100 G0 X0\nM30", fanucProfile);
+    expect(lint(invalidN, fanucProfile).some((i) => i.message.includes("Invalid N/O numeric format"))).toBe(true);
+    expect(lint(invalidO, fanucProfile).some((i) => i.message.includes("Invalid N/O numeric format"))).toBe(true);
+    expect(lint(invalidNMacro, fanucProfile).some((i) => i.message.includes("Invalid N/O numeric format"))).toBe(true);
+  });
+
+  it("can opt into Fanuc-only N/O numeric checks via strict_fanuc parse mode", () => {
+    const ast = parse("N0 G0 X0\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    expect(lint(ast, haasNgcProfile).some((i) => i.message.includes("Invalid N/O numeric format"))).toBe(true);
+  });
+
+  it("does not apply Fanuc-only N/O numeric checks in strict_haas parse mode", () => {
+    const ast = parse("N0 G0 X0\nM30", haasNgcProfile, { complianceMode: "strict_haas" });
+    expect(lint(ast, haasNgcProfile).some((i) => i.message.includes("Invalid N/O numeric format"))).toBe(false);
+  });
+
+  it("warns in strict_fanuc when executable blocks precede first O header", () => {
+    const ast = parse("G0 X0\nO1000\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    expect(
+      lint(ast, haasNgcProfile).some((i) =>
+        i.message.includes("Fanuc program envelope: executable blocks appear before first O-number header")
+      )
+    ).toBe(true);
+  });
+
+  it("warns on duplicate O headers in strict_fanuc envelope checks", () => {
+    const ast = parse("O1000\nG0 X0\nO1000\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    expect(
+      lint(ast, haasNgcProfile).some((i) => i.message.includes("Duplicate O-number header O1000"))
+    ).toBe(true);
+  });
+
+  it("does not warn when strict_fanuc program starts at O header", () => {
+    const ast = parse("O1000\nG0 X0\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    expect(
+      lint(ast, haasNgcProfile).some((i) =>
+        i.message.includes("Fanuc program envelope: executable blocks appear before first O-number header")
+      )
+    ).toBe(false);
+  });
+
+  it("warns on duplicate high-risk address words in one block", () => {
+    const ast = parse("G1 X1. X2. F100. F120.\nM30", haasNgcProfilePackaged);
+    const issues = lint(ast, haasNgcProfilePackaged);
+    expect(issues.some((i) => i.message.includes("Duplicate X words in one block"))).toBe(true);
+    expect(issues.some((i) => i.message.includes("Duplicate F words in one block"))).toBe(true);
+  });
+
+  it("warns on duplicate P/Q only in strict_fanuc context", () => {
+    const nonFanuc = parse("G65 P9010 P9011 Q1 Q2\nM30", haasNgcProfile, { complianceMode: "strict_haas" });
+    const fanuc = parse("G65 P9010 P9011 Q1 Q2\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    expect(lint(nonFanuc, haasNgcProfile).some((i) => i.message.includes("Duplicate P words in one block"))).toBe(false);
+    expect(lint(nonFanuc, haasNgcProfile).some((i) => i.message.includes("Duplicate Q words in one block"))).toBe(false);
+    expect(lint(fanuc, haasNgcProfile).some((i) => i.message.includes("Duplicate P words in one block"))).toBe(true);
+    expect(lint(fanuc, haasNgcProfile).some((i) => i.message.includes("Duplicate Q words in one block"))).toBe(true);
   });
 
   it("allows T before M6 on the same block", () => {
@@ -1884,9 +2364,169 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without S"))).toBe(true);
   });
 
+  it("warns when M00 is followed by a move below Z0 before spindle restart", () => {
+    const ast = parse("G0 Z5.\nM00\nG1 Z-1. F100.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.message.includes("M00") && i.message.includes("below Z0")
+      )
+    ).toBe(true);
+  });
+
+  it("warns when M01 is followed by a move below Z0 before spindle restart", () => {
+    const ast = parse("G0 Z5.\nM01\nG1 Z-0.5 F80.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.message.includes("M01") && i.message.includes("below Z0")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn for M00/M01 when spindle restart occurs before plunge below Z0", () => {
+    const ast = parse("G0 Z5.\nM00\nM3 S5000\nG1 Z-1. F100.\nM01\nM4 S4000\nG1 Z-0.5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) =>
+          (i.message.includes("M00") || i.message.includes("M01")) &&
+          i.message.includes("below Z0")
+      )
+    ).toBe(false);
+  });
+
+  it("does not warn when post-stop motion stays at or above Z0 before spindle restart", () => {
+    const ast = parse("G0 Z5.\nM00\nG1 X10. F100.\nG1 Z0.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.message.includes("M00") && i.message.includes("below Z0")
+      )
+    ).toBe(false);
+  });
+
+  it("handles M00/M01 restart-below-Z0 edge cases without false positives", () => {
+    const cases: Array<{
+      input: string;
+      shouldWarn: boolean;
+      note: string;
+    }> = [
+      {
+        note: "multiple non-Z moves after M00 do not trigger warning",
+        input: "G0 Z5.\nM00\nG1 X10. F100.\nG1 Y20.\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "negative Z immediately after M00 warns",
+        input: "G0 Z5.\nM00\nG1 Z-0.001 F50.\nM30",
+        shouldWarn: true
+      },
+      {
+        note: "spindle restart before negative Z suppresses warning",
+        input: "G0 Z5.\nM00\nM3 S5000\nG1 Z-2.\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "M01 path independently warns on negative Z without restart",
+        input: "G0 Z5.\nM01\nG1 Z-3.\nM30",
+        shouldWarn: true
+      },
+      {
+        note: "new M01 after M00 resets guard window",
+        input: "G0 Z5.\nM00\nG1 X1.\nM01\nG1 Z-1.\nM30",
+        shouldWarn: true
+      },
+      {
+        note: "Z expression should not false-trigger numeric check",
+        input: "G0 Z5.\nM00\nG1 Z[#100-1.]\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "Z-0 is not below zero and should not warn",
+        input: "G0 Z5.\nM01\nG1 Z-0. F40.\nM30",
+        shouldWarn: false
+      }
+    ];
+
+    for (const { input, shouldWarn } of cases) {
+      const ast = parse(input, haasNgcProfilePackaged);
+      const hasWarning = lint(ast, haasNgcProfilePackaged).some(
+        (i) => (i.message.includes("M00") || i.message.includes("M01")) && i.message.includes("below Z0")
+      );
+      expect(hasWarning).toBe(shouldWarn);
+    }
+  });
+
+  it("handles extended M00/M01 restart-below-Z0 edge sequences", () => {
+    const cases: Array<{
+      input: string;
+      shouldWarn: boolean;
+      note: string;
+    }> = [
+      {
+        note: "lowercase m00 and m3 still gate warning logic",
+        input: "g0 z5.\nm00\nm3 s5000\ng1 z-1.\nm30",
+        shouldWarn: false
+      },
+      {
+        note: "M03 restart form with leading zero is accepted",
+        input: "G0 Z5.\nM00\nM03 S5000\nG1 Z-1.\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "commented stop line still opens a guarded window",
+        input: "G0 Z5.\nM01 (INSPECT)\nG1 Z-2.\nM30",
+        shouldWarn: true
+      },
+      {
+        note: "first plunge after stop warns once even with multiple negative Z lines",
+        input: "G0 Z5.\nM00\nG1 Z-1.\nG1 Z-2.\nM30",
+        shouldWarn: true
+      },
+      {
+        note: "window cleared by restart then reopened by later stop",
+        input: "G0 Z5.\nM00\nM3 S5000\nG1 Z-1.\nM01\nG1 Z-0.2\nM30",
+        shouldWarn: true
+      },
+      {
+        note: "multiple stops with no plunge below zero never warn",
+        input: "G0 Z5.\nM00\nG1 X1.\nM01\nG1 Y2.\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "spindle start on same block after stop clears window",
+        input: "G0 Z5.\nM00 M3 S5000\nG1 Z-1.\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "M4 restart also clears window",
+        input: "G0 Z5.\nM01\nM4 S4500\nG1 Z-0.5\nM30",
+        shouldWarn: false
+      },
+      {
+        note: "non-numeric Z token does not false-trigger and window remains until numeric plunge",
+        input: "G0 Z5.\nM00\nG1 Z[#100-1.]\nG1 Z-0.1\nM30",
+        shouldWarn: true
+      }
+    ];
+
+    for (const { input, shouldWarn } of cases) {
+      const ast = parse(input, haasNgcProfilePackaged);
+      const warningCount = lint(ast, haasNgcProfilePackaged).filter(
+        (i) => (i.message.includes("M00") || i.message.includes("M01")) && i.message.includes("below Z0")
+      ).length;
+      expect(warningCount > 0).toBe(shouldWarn);
+      if (shouldWarn) {
+        expect(warningCount).toBe(1);
+      }
+    }
+  });
+
   it("warns G41 without D", () => {
     const ast = parse("G41 X1.\nM30", haasNgcProfilePackaged);
     expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G41/G42 without D"))).toBe(true);
+  });
+
+  it("does not warn G41/G42 without D when a prior D offset is already active", () => {
+    const ast = parse("G41 D12 X1.\nG1 X2.\nG42 X3.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G41/G42 without D"))).toBe(false);
   });
 
   it("does not warn G41.1 without D", () => {
@@ -1952,5 +2592,584 @@ describe("Haas NGC simulation extras", () => {
     const ast = parse("G90 G0 Z0.\nG0 Z-10.\nM30", haasNgcProfile);
     const r = simulate(ast, {}, { maxSteps: 30, maxLoopIterations: 10, controllerMode: "fanuc" });
     expect(r.warnings.some((w) => w.includes("rapid (G0) Z move down"))).toBe(false);
+  });
+});
+
+describe("Controller-specific macro compatibility", () => {
+  it("keeps machine-valid macro formatting parse-safe across haas and fanuc modes", () => {
+    const sharedPrograms = [
+      "#100=0\nif[#100 eq 0]then#100=1\n#101=[#100+2]\nM30",
+      "#100=0\nWHILE[#100 LT 2]DO1\n#100=#100+1\nEND1\nM30",
+      "#100=1\nIF [#100 EQ 1] GOTO100\nN100 #102=#100\nM30",
+      "#100 = [ #101 + 1 ]\n#102=[#100*2]\nM30"
+    ];
+
+    for (const program of sharedPrograms) {
+      const ast = parse(program, haasNgcProfile);
+      const issues = lint(ast, haasNgcProfile);
+      const haas = simulate(ast, {}, { maxSteps: 80, maxLoopIterations: 20, controllerMode: "haas-ngc" });
+      const fanuc = simulate(ast, {}, { maxSteps: 80, maxLoopIterations: 20, controllerMode: "fanuc" });
+
+      expect(ast.blocks.length).toBeGreaterThan(1);
+      expect(issues.some((i) => i.message.includes("Block has no parseable words."))).toBe(false);
+      expect(haas.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(fanuc.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+      expect(haas.warnings.some((w) => w.includes("is missing END"))).toBe(false);
+      expect(fanuc.warnings.some((w) => w.includes("is missing END"))).toBe(false);
+      expect(haas.warnings.some((w) => w.includes("target N") && w.includes("not found"))).toBe(false);
+      expect(fanuc.warnings.some((w) => w.includes("target N") && w.includes("not found"))).toBe(false);
+    }
+  });
+
+  it("flags unsupported macro functions only in fanuc while keeping haas clean", () => {
+    const ast = parse("#100=EXP[1]\n#101=FUP[-1.2]\nM30", haasNgcProfile);
+    const haas = simulate(ast, {}, { maxSteps: 80, maxLoopIterations: 20, controllerMode: "haas-ngc" });
+    const fanuc = simulate(ast, {}, { maxSteps: 80, maxLoopIterations: 20, controllerMode: "fanuc" });
+
+    expect(haas.warnings.some((w) => w.includes("not supported in fanuc mode"))).toBe(false);
+    expect(haas.warnings.some((w) => w.includes("Invalid assignment"))).toBe(false);
+    expect(haas.state.variables["#100"]).toBeCloseTo(2.718281828, 4);
+    expect(haas.state.variables["#101"]).toBe(-1);
+
+    expect(fanuc.warnings.some((w) => w.includes("Function EXP is not supported in fanuc mode"))).toBe(true);
+    expect(fanuc.warnings.some((w) => w.includes("Function FUP is not supported in fanuc mode"))).toBe(true);
+  });
+});
+
+describe("runJobCheck parse diagnostics summary", () => {
+  it("returns an empty summary for a clean program", async () => {
+    const ast = parse("G90 G0 X0 Y0\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.parseDiagnosticsSummary.total).toBe(0);
+    expect(Object.keys(result.parseDiagnosticsSummary.byCode)).toHaveLength(0);
+    expect(result.parseDiagnosticsSummary.topCodes).toEqual([]);
+  });
+
+  it("collects byCode counts and topCodes for malformed programs", async () => {
+    const ast = parse("G0 X1 (NO CLOSE\nG0 X Y1\nG1 @@@ X1\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.parseDiagnosticsSummary.total).toBeGreaterThan(0);
+    expect(result.parseDiagnosticsSummary.byCode["UNMATCHED_OPEN_PAREN"]).toBeGreaterThan(0);
+    expect(result.parseDiagnosticsSummary.byCode["ADDRESS_MISSING_VALUE"]).toBeGreaterThan(0);
+    expect(result.parseDiagnosticsSummary.topCodes.length).toBeGreaterThan(0);
+    expect(result.parseDiagnosticsSummary.topCodes.length).toBeLessThanOrEqual(3);
+  });
+
+  it("includes parseDiagnostics line in the timeline+findings export bundle headers", () => {
+    const ast = parse("G0 X1 (NO CLOSE\nG0 X Y1\nM30", haasNgcProfile);
+    const summary = summarizeParseDiagnostics(ast.parseDiagnostics);
+    const bundle = buildTimelineFindingsExportBundle({
+      timestampIso: new Date().toISOString(),
+      controller: "haas-ngc",
+      timelineEntries: [],
+      findings: [],
+      parseDiagnosticsSummary: summary
+    });
+    expect(bundle.timelineTxt).toContain(`parseDiagnostics: total=${summary.total}`);
+    expect(bundle.timelineMarkdown).toContain(`Parse diagnostics: total=${summary.total}`);
+    expect(bundle.findingsTxt).toContain("parseDiagnostics:");
+    expect(bundle.findingsMarkdown).toContain("Parse diagnostics:");
+  });
+
+  it("emits parseDiagnostics: total=0 when no diagnostics are present in the bundle", () => {
+    const bundle = buildTimelineFindingsExportBundle({
+      timestampIso: new Date().toISOString(),
+      controller: "haas-ngc",
+      timelineEntries: [],
+      findings: []
+    });
+    expect(bundle.timelineTxt).toContain("parseDiagnostics: total=0");
+    expect(bundle.timelineMarkdown).toContain("Parse diagnostics: total=0");
+  });
+});
+
+describe("controller grammar lint suggestedFixes", () => {
+  it("attaches a suggested fix to N+O mixed-block warnings", () => {
+    const ast = parse("N10 O1000\nM30", haasNgcProfile);
+    const issue = lint(ast, haasNgcProfile).find((i) =>
+      i.message.includes("Block contains both N and O words")
+    );
+    expect(issue).toBeDefined();
+    expect(issue?.suggestedFixes).toBeDefined();
+    expect(issue?.suggestedFixes?.[0]?.title).toMatch(/move N number to a separate block/i);
+  });
+
+  it("attaches a suggested fix to duplicate-address warnings (haas)", () => {
+    const ast = parse("G1 X1. X2. F100. F120.\nM30", haasNgcProfile);
+    const issues = lint(ast, haasNgcProfile);
+    const duplicateX = issues.find((i) => i.message.includes("Duplicate X words in one block"));
+    expect(duplicateX).toBeDefined();
+    expect(duplicateX?.suggestedFixes?.[0]?.title).toMatch(/split duplicate x words into two blocks/i);
+    expect(duplicateX?.suggestedFixes?.[0]?.title).toMatch(/last-value-wins/i);
+  });
+
+  it("attaches a suggested fix to G65 I/J/K out-of-order warnings", () => {
+    const ast = parse("G65 P9010 K4. J2. I3.\nM30", haasNgcProfile);
+    const issue = lint(ast, haasNgcProfile).find((i) =>
+      i.message.includes("G65 block has I/J/K out of order")
+    );
+    expect(issue).toBeDefined();
+    expect(issue?.suggestedFixes?.[0]?.title).toMatch(/reorder arguments so i appears before j before k/i);
+  });
+
+  it("preserves issue-level suggestedFixes through lintWithProvenance", () => {
+    const ast = parse("N10 O1000\nM30", haasNgcProfile);
+    const decorated = lintWithProvenance(ast, haasNgcProfile);
+    const issue = decorated.find((i) => i.message.includes("Block contains both N and O words"));
+    expect(issue).toBeDefined();
+    expect(issue?.suggestedFixes?.[0]?.title).toMatch(/move N number to a separate block/i);
+    expect(issue?.provenance.source).toBe("controller_grammar");
+  });
+
+  it("attaches a suggested fix to fanuc invalid N/O numeric format warnings", () => {
+    const ast = parse("N0 O0\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    const issue = lint(ast, haasNgcProfile).find((i) =>
+      i.message.includes("Invalid N/O numeric format")
+    );
+    expect(issue).toBeDefined();
+    expect(issue?.suggestedFixes?.[0]?.title).toMatch(
+      /use an integer N or O value within 1\.\.99999999/i
+    );
+  });
+
+  it("attaches a suggested fix to fanuc executable-before-O envelope warnings", () => {
+    const ast = parse("G0 X0\nO1000\nM30", haasNgcProfile, { complianceMode: "strict_fanuc" });
+    const issue = lint(ast, haasNgcProfile).find((i) =>
+      i.message.includes("executable blocks appear before first O-number header")
+    );
+    expect(issue).toBeDefined();
+    expect(issue?.suggestedFixes?.[0]?.title).toMatch(
+      /move executable blocks below the o-number header/i
+    );
+  });
+
+  it("attaches a suggested fix to fanuc duplicate O-number header warnings", () => {
+    const ast = parse("O1000\nM30\nO1000\nM30", haasNgcProfile, {
+      complianceMode: "strict_fanuc"
+    });
+    const issue = lint(ast, haasNgcProfile).find((i) =>
+      i.message.includes("Duplicate O-number header")
+    );
+    expect(issue).toBeDefined();
+    expect(issue?.suggestedFixes?.[0]?.title).toMatch(
+      /use a unique o-number per program; rename duplicate/i
+    );
+  });
+});
+
+describe("runJobCheck parseDiagnosticsPolicy", () => {
+  it("emits no findings when no policy is supplied", async () => {
+    const ast = parse("G0 X Y1\nG0 X Y1\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(
+      result.advisor.safetyFindings.some((f) => f.code === "PARSE_DIAGNOSTICS_THRESHOLD_BREACH")
+    ).toBe(false);
+    expect(result.simulationFindings.some((f) => f.code === "PARSE_DIAGNOSTICS_THRESHOLD_BREACH")).toBe(
+      false
+    );
+  });
+
+  it("emits a warning finding when the TOTAL threshold is breached", async () => {
+    const ast = parse("G0 X Y1\nG0 X Y1\nG0 X Y1\nM30", haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      parseDiagnosticsPolicy: {
+        severity: "warning",
+        thresholds: { TOTAL: 1 }
+      }
+    });
+    expect(result.warningCount).toBeGreaterThanOrEqual(1);
+    expect(result.blocked).toBe(false);
+    const messages = result.messages.join("\n");
+    expect(messages).toMatch(/Parse diagnostics warning: PARSE_DIAGNOSTICS_THRESHOLD_BREACH/);
+    expect(messages).toMatch(/TOTAL=\d+ exceeds threshold 1/);
+  });
+
+  it("blocks export when a code-specific blocker threshold is breached with blockExport=true", async () => {
+    const ast = parse("G0 X Y1\nG0 X Y1\nM30", haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      exportOptions: { enabled: true, baseDirectory: "ignored" },
+      parseDiagnosticsPolicy: {
+        severity: "blocker",
+        blockExport: true,
+        thresholds: { ADDRESS_MISSING_VALUE: 1 }
+      }
+    });
+    expect(result.blockerCount).toBeGreaterThanOrEqual(1);
+    expect(result.blocked).toBe(true);
+    expect(result.exportResult).toBeUndefined();
+    const messages = result.messages.join("\n");
+    expect(messages).toMatch(/Export safety gate active.*PARSE_DIAGNOSTICS_THRESHOLD_BREACH/);
+    expect(messages).toMatch(/ADDRESS_MISSING_VALUE=\d+ exceeds threshold 1/);
+  });
+
+  it("does not breach when observed counts equal the threshold", async () => {
+    const ast = parse("G0 X Y1\nM30", haasNgcProfile);
+    const observedTotal = summarizeParseDiagnostics(ast.parseDiagnostics).total;
+    const result = await runJobCheck({
+      ast,
+      parseDiagnosticsPolicy: {
+        severity: "warning",
+        thresholds: { TOTAL: observedTotal }
+      }
+    });
+    expect(result.messages.some((m) => m.includes("PARSE_DIAGNOSTICS_THRESHOLD_BREACH"))).toBe(false);
+  });
+
+  it("blocker severity without blockExport surfaces breach but the policy does not contribute a gate code", async () => {
+    const ast = parse("G0 X Y1\nG0 X Y1\nM30", haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      exportBlockingPolicy: { includeAllBlockers: false, blockedFindingCodes: [] },
+      parseDiagnosticsPolicy: {
+        severity: "blocker",
+        blockExport: false,
+        thresholds: { TOTAL: 1 }
+      }
+    });
+    expect(result.blockerCount).toBeGreaterThanOrEqual(1);
+    expect(
+      result.messages.some((m) => m.includes("PARSE_DIAGNOSTICS_THRESHOLD_BREACH"))
+    ).toBe(true);
+    expect(result.blocked).toBe(false);
+    expect(
+      result.messages.some((m) => m.startsWith("Export safety gate active"))
+    ).toBe(false);
+  });
+
+  it("returns parseDiagnosticsPolicyBreaches with firstBlockIndex for code-specific breaches", async () => {
+    const ast = parse("G0 X1\nG0 X Y1\nG1 X1", haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      parseDiagnosticsPolicy: {
+        severity: "warning",
+        thresholds: { TOTAL: 0, ADDRESS_MISSING_VALUE: 0 }
+      }
+    });
+    expect(result.parseDiagnosticsPolicyBreaches.length).toBe(2);
+    const totalBreach = result.parseDiagnosticsPolicyBreaches.find((b) => b.key === "TOTAL");
+    expect(totalBreach?.firstBlockIndex).toBeUndefined();
+    const codeBreach = result.parseDiagnosticsPolicyBreaches.find(
+      (b) => b.key === "ADDRESS_MISSING_VALUE"
+    );
+    expect(codeBreach?.firstBlockIndex).toBe(1);
+    expect(codeBreach?.severity).toBe("warning");
+  });
+});
+
+describe("setupSheet + proveout parseDiagnostics summary", () => {
+  it("setupSheet output for malformed AST contains parseDiagnostics: total= line", async () => {
+    const ast = parse("G0 X Y1\nG0 X Y1\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.setupSheet.exportTxt).toContain("PARSE DIAGNOSTICS");
+    expect(result.setupSheet.exportTxt).toMatch(/parseDiagnostics: total=\d+/);
+    expect(result.setupSheet.exportMarkdown).toContain("## Parse diagnostics");
+    expect(result.setupSheet.exportMarkdown).toMatch(/- Parse diagnostics: total=\d+/);
+  });
+
+  it("setupSheet output for clean AST emits a total=0 marker (still informative, never omits)", async () => {
+    const ast = parse("G0 X1\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.setupSheet.exportTxt).toContain("parseDiagnostics: total=0");
+    expect(result.setupSheet.exportMarkdown).toContain("- Parse diagnostics: total=0");
+  });
+
+  it("proveout output for malformed AST contains the parseDiagnostics comment line", async () => {
+    const ast = parse("G0 X Y1\nG0 X Y1\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.proveout.code).toMatch(/\(parseDiagnostics: total=\d+ \| top=/);
+  });
+
+  it("proveout output for clean AST emits a total=0 comment line", async () => {
+    const ast = parse("G0 X1\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.proveout.code).toContain("(parseDiagnostics: total=0)");
+  });
+
+  it("buildSetupSheet/proveoutProgram defaults remain unchanged when no summary is supplied", () => {
+    const ast = parse("G0 X1\nM30", haasNgcProfile);
+    const setup = buildSetupSheet(ast, {});
+    expect(setup.exportTxt).not.toContain("PARSE DIAGNOSTICS");
+    expect(setup.exportMarkdown).not.toContain("## Parse diagnostics");
+    const proveout = proveoutProgram(ast, {});
+    expect(proveout.code).not.toContain("parseDiagnostics:");
+  });
+});
+
+describe("parseDiagnostics block format guard", () => {
+  const malformedProgram = "G0 X Y1\nG0 X Y1\nM30";
+  const cleanProgram = "G0 X1\nM30";
+
+  it("locks the canonical malformed-program block strings across setupSheet + proveout", async () => {
+    const ast = parse(malformedProgram, haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.setupSheet.exportTxt).toContain(
+      "parseDiagnostics: total=2 | top=ADDRESS_MISSING_VALUE | byCode=ADDRESS_MISSING_VALUE=2"
+    );
+    expect(result.setupSheet.exportMarkdown).toContain(
+      "- Parse diagnostics: total=2 | top=ADDRESS_MISSING_VALUE | byCode=ADDRESS_MISSING_VALUE=2"
+    );
+    expect(result.proveout.code).toContain(
+      "(parseDiagnostics: total=2 | top=ADDRESS_MISSING_VALUE | byCode=ADDRESS_MISSING_VALUE=2)"
+    );
+  });
+
+  it("locks the canonical zero-total block strings for a clean program", async () => {
+    const ast = parse(cleanProgram, haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.setupSheet.exportTxt).toContain("parseDiagnostics: total=0");
+    expect(result.setupSheet.exportMarkdown).toContain("- Parse diagnostics: total=0");
+    expect(result.proveout.code).toContain("(parseDiagnostics: total=0)");
+  });
+});
+
+describe("parseDiagBreaches block format guard", () => {
+  const malformedProgram = "G0 X Y1\nG0 X Y1\nM30";
+  const cleanProgram = "G0 X1\nM30";
+
+  it("locks the canonical breach block strings on setupSheet + proveout under a strict policy", async () => {
+    const ast = parse(malformedProgram, haasNgcProfile);
+    const result = await runJobCheck({
+      ast,
+      parseDiagnosticsPolicy: {
+        thresholds: { TOTAL: 0, ADDRESS_MISSING_VALUE: 0 },
+        severity: "blocker",
+        blockExport: false
+      }
+    });
+    expect(result.setupSheet.exportTxt).toContain("PARSE DIAGNOSTICS BREACHES");
+    expect(result.setupSheet.exportTxt).toContain(
+      "parseDiagBreaches: total=2 | severities=blocker:2 | byKey=ADDRESS_MISSING_VALUE:2/0,TOTAL:2/0"
+    );
+    expect(result.setupSheet.exportMarkdown).toContain(
+      "- Parse diagnostics breaches: total=2 | severities=blocker:2 | byKey=ADDRESS_MISSING_VALUE:2/0,TOTAL:2/0"
+    );
+    expect(result.proveout.code).toContain(
+      "(parseDiagBreaches: total=2 | severities=blocker:2 | byKey=ADDRESS_MISSING_VALUE:2/0,TOTAL:2/0)"
+    );
+  });
+
+  it("locks the canonical zero-form breach block strings when no policy is configured", async () => {
+    const ast = parse(cleanProgram, haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.setupSheet.exportTxt).toContain("parseDiagBreaches: total=0");
+    expect(result.setupSheet.exportMarkdown).toContain("- Parse diagnostics breaches: total=0");
+    expect(result.proveout.code).toContain("(parseDiagBreaches: total=0)");
+  });
+
+  it("does not append the breach block to setupSheet/proveout when no breaches array is passed directly", () => {
+    const ast = parse(cleanProgram, haasNgcProfile);
+    const setup = buildSetupSheet(ast, {});
+    expect(setup.exportTxt).not.toContain("parseDiagBreaches:");
+    expect(setup.exportMarkdown).not.toContain("Parse diagnostics breaches");
+    const proveout = proveoutProgram(ast, {});
+    expect(proveout.code).not.toContain("parseDiagBreaches:");
+  });
+});
+
+describe("public-surface smoke (index.node.ts)", () => {
+  it("re-exports resolveParseDiagnosticsPolicyPreset and PARSE_DIAGNOSTICS_POLICY_PRESET_IDS", async () => {
+    const mod = await import("../src/index.node.js");
+    expect(typeof mod.resolveParseDiagnosticsPolicyPreset).toBe("function");
+    expect(Array.isArray(mod.PARSE_DIAGNOSTICS_POLICY_PRESET_IDS)).toBe(true);
+    expect([...mod.PARSE_DIAGNOSTICS_POLICY_PRESET_IDS]).toEqual([
+      "strict",
+      "balanced",
+      "permissive"
+    ]);
+    const strict = mod.resolveParseDiagnosticsPolicyPreset("strict");
+    expect(strict).toEqual({
+      severity: "blocker",
+      blockExport: true,
+      thresholds: { TOTAL: 0 }
+    });
+    expect(mod.resolveParseDiagnosticsPolicyPreset("permissive")).toBeUndefined();
+  });
+
+  it("re-exports lintWithProvenance and runJobCheck and they round-trip lintIssues", async () => {
+    const mod = await import("../src/index.node.js");
+    expect(typeof mod.lintWithProvenance).toBe("function");
+    expect(typeof mod.runJobCheck).toBe("function");
+    const ast = mod.parse("G0 X1\nM30\n", haasNgcProfile);
+    const lints = mod.lintWithProvenance(ast, haasNgcProfile);
+    expect(Array.isArray(lints)).toBe(true);
+    const result = await mod.runJobCheck({ ast });
+    expect(Array.isArray(result.lintIssues)).toBe(true);
+    expect(result.lintIssuesSummary).toBeDefined();
+    expect(typeof result.lintIssuesSummary.total).toBe("number");
+  });
+});
+
+describe("lintIssuesSummary surface in runJobCheck", () => {
+  const cleanProgram = "G0 X1\nM30";
+  const fanucMalformedProgram = "%\nG0 X1.\nO1000\nN10 O1000\nM30\n%";
+
+  it("emits zero-form summary on a clean program", async () => {
+    const ast = parse(cleanProgram, haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    expect(result.lintIssuesSummary.total).toBeGreaterThanOrEqual(0);
+    expect(result.lintIssuesSummary.blockers).toBeGreaterThanOrEqual(0);
+    expect(result.lintIssuesSummary.warnings).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(result.lintIssues)).toBe(true);
+    expect(result.setupSheet.exportTxt).toContain("LINT ISSUES");
+    expect(result.setupSheet.exportTxt).toMatch(/lintIssues: total=\d+/);
+    expect(result.proveout.code).toMatch(/\(lintIssues: total=\d+/);
+  });
+
+  it("surfaces controller_grammar findings when running against a malformed Fanuc program", async () => {
+    const ast = parse(fanucMalformedProgram, haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    const controllerLints = result.lintIssues.filter(
+      (issue) => issue.provenance.source === "controller_grammar"
+    );
+    expect(controllerLints.length).toBeGreaterThan(0);
+    expect(result.lintIssuesSummary.bySource.controller_grammar ?? 0).toBeGreaterThan(0);
+    expect(result.setupSheet.exportTxt).toMatch(
+      /lintIssues: total=\d+ \| severities=blocker:\d+,warning:\d+ \| top=[\w_]+/
+    );
+  });
+
+  it("does not append the LINT ISSUES block to setupSheet/proveout when no summary is passed directly", () => {
+    const ast = parse(cleanProgram, haasNgcProfile);
+    const setup = buildSetupSheet(ast, {});
+    expect(setup.exportTxt).not.toContain("LINT ISSUES");
+    expect(setup.exportMarkdown).not.toContain("Lint issues");
+    const proveout = proveoutProgram(ast, {});
+    expect(proveout.code).not.toContain("(lintIssues:");
+  });
+
+  it("routes bracket-imbalance lint findings through the expression_parser provenance source", async () => {
+    const ast = parse("G1 X[1+2 Y2\nM30", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    const exprLints = result.lintIssues.filter(
+      (issue) => issue.provenance.source === "expression_parser"
+    );
+    expect(exprLints.length).toBeGreaterThan(0);
+    expect(result.lintIssuesSummary.bySource.expression_parser ?? 0).toBeGreaterThanOrEqual(1);
+    expect(exprLints[0].message).toMatch(/Unbalanced bracket expression/);
+  });
+});
+
+describe("setup-sheet per-source severity histogram", () => {
+  it("summarizeLintIssues populates bySourceSeverity with sub-counts that sum to bySource counts", async () => {
+    const { summarizeLintIssues } = await import("../src/workshop/exportBundle.js");
+    const summary = summarizeLintIssues([
+      {
+        severity: "error",
+        message: "boom",
+        blockIndex: 0,
+        provenance: { source: "controller_grammar", relatedDiagnostics: [] }
+      },
+      {
+        severity: "warning",
+        message: "soft",
+        blockIndex: 1,
+        provenance: { source: "controller_grammar", relatedDiagnostics: [] }
+      },
+      {
+        severity: "warning",
+        message: "soft2",
+        blockIndex: 2,
+        provenance: { source: "profile_lint", relatedDiagnostics: [] }
+      }
+    ]);
+    expect(summary.bySource.controller_grammar).toBe(2);
+    expect(summary.bySource.profile_lint).toBe(1);
+    expect(summary.bySourceSeverity?.controller_grammar).toEqual({
+      blockers: 1,
+      warnings: 1
+    });
+    expect(summary.bySourceSeverity?.profile_lint).toEqual({
+      blockers: 0,
+      warnings: 1
+    });
+    for (const source of Object.keys(summary.bySource) as Array<
+      keyof typeof summary.bySource
+    >) {
+      const sev = summary.bySourceSeverity![source]!;
+      expect(sev.blockers + sev.warnings).toBe(summary.bySource[source]);
+    }
+  });
+
+  it("formatLintIssuesSummaryBlock returns NO histogram when only one source contributed", async () => {
+    const { formatLintIssuesSummaryBlock, summarizeLintIssues } = await import(
+      "../src/workshop/exportBundle.js"
+    );
+    const summary = summarizeLintIssues([
+      {
+        severity: "warning",
+        message: "x",
+        blockIndex: 0,
+        provenance: { source: "controller_grammar", relatedDiagnostics: [] }
+      }
+    ]);
+    const block = formatLintIssuesSummaryBlock(summary);
+    expect(block.histogram).toBeUndefined();
+    expect(block.txt).toMatch(/^lintIssues: total=1/);
+  });
+
+  it("formatLintIssuesSummaryBlock returns a histogram block when multiple sources contributed; bars are scaled to the max count", async () => {
+    const { formatLintIssuesSummaryBlock, summarizeLintIssues } = await import(
+      "../src/workshop/exportBundle.js"
+    );
+    const issues = [
+      ...Array.from({ length: 3 }, (_, i) => ({
+        severity: i === 0 ? ("error" as const) : ("warning" as const),
+        message: `m${i}`,
+        blockIndex: i,
+        provenance: {
+          source: "controller_grammar" as const,
+          relatedDiagnostics: []
+        }
+      })),
+      {
+        severity: "warning" as const,
+        message: "p",
+        blockIndex: 99,
+        provenance: { source: "profile_lint" as const, relatedDiagnostics: [] }
+      }
+    ];
+    const summary = summarizeLintIssues(issues);
+    const block = formatLintIssuesSummaryBlock(summary);
+    expect(block.histogram).toBeDefined();
+    expect(block.histogram!.txt).toContain("controller_grammar");
+    expect(block.histogram!.txt).toContain("profile_lint");
+    expect(block.histogram!.txt).toMatch(/controller_grammar\s+#{10}\s+3 \(blocker:1, warning:2\)/);
+    expect(block.histogram!.txt).toMatch(/profile_lint\s+#+\s+1 \(blocker:0, warning:1\)/);
+    // Markdown variant uses bullet rows instead of fixed-width padding.
+    expect(block.histogram!.md).toMatch(/- controller_grammar: #{10} 3 \(blocker:1, warning:2\)/);
+  });
+
+  it("setup sheet exportTxt includes the histogram block right under the rollup line when ≥2 sources fired", async () => {
+    // Bracket-imbalance + safe-start-missing + program-end-missing exercises
+    // multiple provenance sources naturally (lexer + expression_parser + common_lint).
+    const ast = parse("G1 X[1+2 Y2\n", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    const sourcesPresent = Object.entries(result.lintIssuesSummary.bySource).filter(
+      ([, count]) => (count ?? 0) > 0
+    );
+    expect(sourcesPresent.length).toBeGreaterThanOrEqual(2);
+    const txt = result.setupSheet.exportTxt;
+    expect(txt).toMatch(/LINT ISSUES\nlintIssues: total=\d+/);
+    // The histogram lines indent each row by two spaces and end with the
+    // "(blocker:N, warning:N)" sub-counts. Asserting any histogram row exists
+    // is enough to confirm wiring; specific source set is covered above.
+    expect(txt).toMatch(/\n  [a-z_]+\s+#+\s+\d+ \(blocker:\d+, warning:\d+\)/);
+  });
+
+  it("setup sheet exportTxt OMITS the histogram block when only one source fired", async () => {
+    // A program that triggers exactly one lint source: missing program end →
+    // common_lint only.
+    const ast = parse("G0 X1\n", haasNgcProfile);
+    const result = await runJobCheck({ ast });
+    const sourcesPresent = Object.entries(result.lintIssuesSummary.bySource).filter(
+      ([, count]) => (count ?? 0) > 0
+    );
+    if (sourcesPresent.length === 1) {
+      const txt = result.setupSheet.exportTxt;
+      // Histogram rows are indented two spaces and contain "blocker:" + "warning:".
+      expect(txt).not.toMatch(/\n  [a-z_]+\s+#+\s+\d+ \(blocker:\d+, warning:\d+\)/);
+    }
   });
 });

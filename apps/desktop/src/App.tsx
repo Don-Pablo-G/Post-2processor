@@ -9,7 +9,7 @@ import {
   format,
   getTemplateLibrary,
   importShopFixture,
-  lint,
+  lintWithProvenance,
   parameterReserveProfiles,
   parameterize,
   parseTemplateLibrary,
@@ -21,6 +21,7 @@ import {
   runShopRegressionTests,
   runJobCheck,
   simulate,
+  summarizeParseDiagnostics,
   isNodeCapable,
   toolingReport,
   validateShopFixturesManifest
@@ -34,13 +35,58 @@ import { haasNgcProfile } from "@cnc/profile-haas-ngc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addPolicyPresetContextToSetupSheetBundle,
+  buildPolicyUiEventPayload,
   defaultPolicyPresetForController,
   derivePolicyDriftWarning,
   derivePolicyUiEventEmissionDecision,
   derivePolicyPresetVisualState,
+  filterPolicyAuditTrailByCategory,
+  hydrateAuditEntriesFromTemplate,
+  isAuditTrailExportFormat,
   resolvePolicyPresetHintState,
-  resolvePolicyPresetShortcutAction
+  resolvePolicyPresetShortcutAction,
+  selectPersistableAuditEntries,
+  selectPolicyAuditTrailExportPayload,
+  summarizePolicyAuditTrail,
+  type AuditTrailExportFormat,
+  type PolicyAuditTrailCategory,
+  type PolicyUiEventExtras,
+  type PolicyUiEventPayload
 } from "./policyPresetHint";
+import { downloadPolicyAuditTrail } from "./auditTrailDownload";
+import {
+  DEFAULT_PARSE_DIAGNOSTICS_GROUP_CAP,
+  DIAGNOSTICS_DEMO_PROGRAM,
+  PARSE_DIAGNOSTICS_POLICY_PRESETS,
+  applyDiagnosticsCap,
+  applyParseDiagnosticsPolicyPreset,
+  buildAllFixesPayload,
+  buildAllLintFixesPayload,
+  buildDiagnosticsSummaryChip,
+  buildLintFixLine,
+  buildLintIssuesSummaryChip,
+  buildParseDiagBreachSeveritiesBriefField,
+  buildParseDiagBreachesBriefField,
+  buildParseDiagnosticsBreachContext,
+  buildParseDiagnosticsPolicyBriefField,
+  buildParseFixLine,
+  groupAndSortDiagnostics,
+  groupLintIssuesBySource,
+  resolveParseDiagnosticsPolicy,
+  formatLintIssuesSummaryChip,
+  selectLintDemoProgram,
+  selectMatchingParseDiagnosticsPolicyPreset,
+  serializeParseDiagnosticsPolicy,
+  summarizeLintIssuesBySource,
+  summarizeParseDiagBreachSeverities,
+  type LintIssueLike,
+  type LintIssueProvenanceSource,
+  type LintIssuesSummaryLike,
+  type ParseDiagnosticLike,
+  type ParseDiagnosticsPolicyPreset,
+  type ParseDiagnosticsPolicyResolved,
+  type ParseDiagnosticsPolicyUiState
+} from "./parseDiagnosticsView";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -165,6 +211,85 @@ const UI_TEXT: Record<
     firstCutRiskBriefCopyStatusPolicy: string;
     firstCutRiskBriefCopyStatusJobCheck: string;
     jobCheckCard: string;
+    jobCheckLintSummaryLabel: string;
+    jobCheckLintSummaryDetailsLabel: string;
+    parseDiagnosticsSummaryLabel: string;
+    parseDiagnosticsChipEmpty: string;
+    parseDiagnosticsLoadDemo: string;
+    parseDiagnosticsLoadDemoStatus: string;
+    parseDiagnosticsPolicyHeading: string;
+    parseDiagnosticsPolicyEnabledLabel: string;
+    parseDiagnosticsPolicySeverityLabel: string;
+    parseDiagnosticsPolicyBlockExportLabel: string;
+    parseDiagnosticsPolicyThresholdsLabel: string;
+    parseDiagnosticsPolicyThresholdsHint: string;
+    parseDiagnosticsPolicyInvalidEntriesLabel: string;
+    parseDiagnosticsPolicyCopyContext: string;
+    parseDiagnosticsPolicyCopiedStatus: string;
+    parseDiagnosticsPolicyCopyFallback: string;
+    parseDiagnosticsPolicySeverityWarning: string;
+    parseDiagnosticsPolicySeverityBlocker: string;
+    parseDiagnosticsBreachLabel: string;
+    parseDiagnosticsBreachJumpLabel: string;
+    parseDiagnosticsBreachCopy: string;
+    parseDiagnosticsBreachCopiedStatus: string;
+    parseDiagnosticsBreachCopyFallback: string;
+    parseDiagnosticsPolicyPresetsLabel: string;
+    parseDiagnosticsPolicyPresetStrict: string;
+    parseDiagnosticsPolicyPresetBalanced: string;
+    parseDiagnosticsPolicyPresetPermissive: string;
+    parseDiagnosticsPolicyActiveLabel: string;
+    parseDiagnosticsPolicyActiveCustom: string;
+    confirmResetUiPrefs: string;
+    resetUiPrefsCancelled: string;
+    confirmResetFixturePrefs: string;
+    resetFixturePrefsCancelled: string;
+    copyPolicyAuditTrail: string;
+    copiedPolicyAuditTrail: string;
+    copyPolicyAuditTrailFallback: string;
+    policyAuditTrailNoEntries: string;
+    copyPolicyAuditTrailParseOnly: string;
+    copiedPolicyAuditTrailParseOnly: string;
+    copyPolicyAuditTrailParseOnlyFallback: string;
+    auditTrailExportFormatLabel: string;
+    auditTrailExportFormatText: string;
+    auditTrailExportFormatMarkdown: string;
+    auditTrailExportFormatCsv: string;
+    auditTrailExportFormatNdjson: string;
+    auditTrailDownloadButtonLabel: string;
+    auditTrailDownloadStatus: (filename: string, rowCount: number) => string;
+    auditTrailDownloadFallback: string;
+    auditTrailDownloadSidecarLabel: string;
+    auditTrailDownloadSidecarStatus: (
+      filename: string,
+      sidecarFilename: string,
+      rowCount: number
+    ) => string;
+    auditTrailHmacSecretLabel: string;
+    auditTrailDownloadHmacLabel: string;
+    auditTrailDownloadHmacStatus: (
+      filename: string,
+      hmacSidecarFilename: string,
+      rowCount: number
+    ) => string;
+    auditTrailDownloadHmacMissingSecret: string;
+    auditTrailEncryptionSecretLabel: string;
+    auditTrailDownloadEncryptionLabel: string;
+    auditTrailDownloadEncryptionStatus: (
+      filename: string,
+      encryptedFilename: string,
+      rowCount: number
+    ) => string;
+    auditTrailDownloadEncryptionMissingSecret: string;
+    clearAuditTrail: string;
+    confirmClearAuditTrail: string;
+    auditTrailClearedStatus: string;
+    auditTrailFilterAll: string;
+    auditTrailFilterParseLint: string;
+    auditTrailFilterReset: string;
+    auditTrailFilterPolicy: string;
+    auditTrailCountChip: (n: number) => string;
+    auditTrailHydratedChip: (n: number) => string;
     openExportFolder: string;
     jumpToBlockers: string;
     exportStatus: string;
@@ -212,6 +337,31 @@ const UI_TEXT: Record<
     allowCompD: string;
     polish: string;
     english: string;
+    parseDiagnostics: string;
+    parseDiagnosticsEmpty: string;
+    parseDiagnosticsBlockLabel: string;
+    suggestedFixesLabel: string;
+    copyFixText: string;
+    copyAllFixesInGroup: string;
+    parseDiagnosticsShowMore: string;
+    parseDiagnosticsHiddenSuffix: string;
+    parseDiagnosticsCapNote: string;
+    parseDiagnosticsCopiedFix: string;
+    parseDiagnosticsCopiedAllFixes: string;
+    parseDiagnosticsNoFixesToCopy: string;
+    parseDiagnosticsCopyFallback: string;
+    lintIssuesEmpty: string;
+    lintIssuesGroupSourceLabels: Record<LintIssueProvenanceSource, string>;
+    lintCopyFixText: string;
+    lintCopyAllFixesInGroup: string;
+    lintCopiedFix: string;
+    lintCopiedAllFixes: string;
+    lintNoFixesToCopy: string;
+    lintIssuesChipEmpty: string;
+    lintIssuesLoadDemo: string;
+    lintIssuesLoadDemoStatus: string;
+    lintDemoControllerLabel: string;
+    lintDemoControllerAuto: string;
   }
 > = {
   pl: {
@@ -315,6 +465,81 @@ const UI_TEXT: Record<
     firstCutRiskBriefCopyStatusPolicy: "Ostatnio: brief ryzyka (polityka)",
     firstCutRiskBriefCopyStatusJobCheck: "Ostatnio: brief ryzyka (Job Check)",
     jobCheckCard: "Wynik Job Check",
+    jobCheckLintSummaryLabel: "Lint",
+    jobCheckLintSummaryDetailsLabel: "Rozbicie wg źródła",
+    parseDiagnosticsSummaryLabel: "Diagnostyka parsera",
+    parseDiagnosticsChipEmpty: "diagnostyka parsera: total=0",
+    parseDiagnosticsLoadDemo: "Wczytaj demo diagnostyki",
+    parseDiagnosticsLoadDemoStatus: "Wczytano przykładowy program diagnostyczny.",
+    parseDiagnosticsPolicyHeading: "Polityka progów diagnostyki parsera",
+    parseDiagnosticsPolicyEnabledLabel: "Włącz politykę progów",
+    parseDiagnosticsPolicySeverityLabel: "Nasilenie",
+    parseDiagnosticsPolicyBlockExportLabel: "Blokuj eksport po przekroczeniu",
+    parseDiagnosticsPolicyThresholdsLabel: "Progi (KOD=N)",
+    parseDiagnosticsPolicyThresholdsHint: "np. TOTAL=10, ADDRESS_MISSING_VALUE=3",
+    parseDiagnosticsPolicyInvalidEntriesLabel: "Nieprawidłowe wpisy zignorowane",
+    parseDiagnosticsPolicyCopyContext: "Kopiuj kontekst progów diagnostyki",
+    parseDiagnosticsPolicyCopiedStatus: "Skopiowano kontekst progów diagnostyki",
+    parseDiagnosticsPolicyCopyFallback: "Skopiuj kontekst progów diagnostyki ręcznie",
+    parseDiagnosticsPolicySeverityWarning: "ostrzeżenie",
+    parseDiagnosticsPolicySeverityBlocker: "blocker",
+    parseDiagnosticsBreachLabel: "Przekroczenie progu diagnostyki",
+    parseDiagnosticsBreachJumpLabel: "Skocz do pierwszego",
+    parseDiagnosticsBreachCopy: "Kopiuj kontekst przekroczeń",
+    parseDiagnosticsBreachCopiedStatus: "Skopiowano kontekst przekroczeń",
+    parseDiagnosticsBreachCopyFallback: "Skopiuj kontekst przekroczeń ręcznie",
+    parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
+    parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
+    parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
+    parseDiagnosticsPolicyPresetPermissive: "Pobłażliwy",
+    parseDiagnosticsPolicyActiveLabel: "Dopasowany preset",
+    parseDiagnosticsPolicyActiveCustom: "własne ustawienia",
+    confirmResetUiPrefs: "Zresetować ustawienia UI dla bieżącego profilu sterownika? Tej operacji nie można cofnąć.",
+    resetUiPrefsCancelled: "Reset ustawień UI anulowany.",
+    confirmResetFixturePrefs:
+      "Zresetować ustawienia importu fixturek dla bieżącego profilu sterownika? Tej operacji nie można cofnąć.",
+    resetFixturePrefsCancelled: "Reset ustawień fixturek anulowany.",
+    copyPolicyAuditTrail: "Kopiuj historię polityki",
+    copiedPolicyAuditTrail: "Skopiowano historię polityki",
+    copyPolicyAuditTrailFallback: "Skopiuj historię polityki ręcznie",
+    policyAuditTrailNoEntries: "Brak wpisów do skopiowania.",
+    copyPolicyAuditTrailParseOnly: "Kopiuj historię diagnostyki (parse + lint)",
+    copiedPolicyAuditTrailParseOnly: "Skopiowano historię diagnostyki (parse + lint)",
+    copyPolicyAuditTrailParseOnlyFallback: "Skopiuj historię diagnostyki ręcznie",
+    auditTrailExportFormatLabel: "Format eksportu",
+    auditTrailExportFormatText: "Tekst",
+    auditTrailExportFormatMarkdown: "Markdown",
+    auditTrailExportFormatCsv: "CSV",
+    auditTrailExportFormatNdjson: "NDJSON",
+    auditTrailDownloadButtonLabel: "Pobierz dziennik audytu",
+    auditTrailDownloadStatus: (filename, rowCount) =>
+      `Pobrano ${filename} (${rowCount}).`,
+    auditTrailDownloadFallback: "Pobranie dziennika audytu nie powiodło się.",
+    auditTrailDownloadSidecarLabel: "Dołącz sumę SHA-256",
+    auditTrailDownloadSidecarStatus: (filename, sidecarFilename, rowCount) =>
+      `Pobrano ${filename} oraz ${sidecarFilename} (${rowCount}).`,
+    auditTrailHmacSecretLabel: "Sekret HMAC",
+    auditTrailDownloadHmacLabel: "Dołącz sygnaturę HMAC-SHA-256",
+    auditTrailDownloadHmacStatus: (filename, hmacSidecarFilename, rowCount) =>
+      `Pobrano ${filename} oraz ${hmacSidecarFilename} (${rowCount}).`,
+    auditTrailDownloadHmacMissingSecret:
+      "Sygnatura HMAC pominięta — wprowadź wspólny sekret aby ją wygenerować.",
+    auditTrailEncryptionSecretLabel: "Hasło szyfrowania (AES-GCM)",
+    auditTrailDownloadEncryptionLabel: "Dołącz zaszyfrowaną kopię (AES-256-GCM)",
+    auditTrailDownloadEncryptionStatus: (filename, encryptedFilename, rowCount) =>
+      `Pobrano ${filename} oraz ${encryptedFilename} (${rowCount}).`,
+    auditTrailDownloadEncryptionMissingSecret:
+      "Zaszyfrowana kopia pominięta — wprowadź hasło aby wygenerować plik AES-GCM.",
+    clearAuditTrail: "Wyczyść historię",
+    confirmClearAuditTrail:
+      "Wyczyścić historię polityki w sesji? Wpis 'policy_audit_trail_cleared' pozostanie jako zapis tej operacji.",
+    auditTrailClearedStatus: "Wyczyszczono historię polityki w sesji.",
+    auditTrailFilterAll: "Wszystkie",
+    auditTrailFilterParseLint: "Parse + lint",
+    auditTrailFilterReset: "Resety",
+    auditTrailFilterPolicy: "Polityka",
+    auditTrailCountChip: (n: number) => `${n} wpisów`,
+    auditTrailHydratedChip: (n: number) => `${n} przywróconych`,
     openExportFolder: "Otwórz folder eksportu",
     jumpToBlockers: "Przejdź do blockerów",
     exportStatus: "Status eksportu",
@@ -361,7 +586,38 @@ const UI_TEXT: Record<
     strictD: "Haas - D razem z G43 H (bez D na G41/G42)",
     allowCompD: "Fanuc - D na G41/G42 i G40 D00",
     polish: "Polski",
-    english: "English"
+    english: "English",
+    parseDiagnostics: "Diagnostyka parsera",
+    parseDiagnosticsEmpty: "Brak diagnostyki parsera.",
+    parseDiagnosticsBlockLabel: "blok",
+    suggestedFixesLabel: "Sugerowane poprawki",
+    copyFixText: "Kopiuj tekst poprawki",
+    copyAllFixesInGroup: "Kopiuj wszystkie poprawki w grupie",
+    parseDiagnosticsShowMore: "Pokaż wszystkie",
+    parseDiagnosticsHiddenSuffix: "ukrytych",
+    parseDiagnosticsCapNote: "Lista skrócona dla czytelności; akcje kopiowania działają na pełnej grupie.",
+    parseDiagnosticsCopiedFix: "Skopiowano poprawkę parsera",
+    parseDiagnosticsCopiedAllFixes: "Skopiowano poprawki parsera dla",
+    parseDiagnosticsNoFixesToCopy: "Brak poprawek do skopiowania dla",
+    parseDiagnosticsCopyFallback: "Skopiuj ręcznie poprawkę parsera",
+    lintIssuesEmpty: "Brak uwag lintera.",
+    lintIssuesGroupSourceLabels: {
+      lexer: "Lekser",
+      expression_parser: "Parser wyrażeń",
+      controller_grammar: "Gramatyka sterownika",
+      common_lint: "Wspólny lint",
+      profile_lint: "Lint profilu"
+    },
+    lintCopyFixText: "Kopiuj poprawkę lintera",
+    lintCopyAllFixesInGroup: "Kopiuj wszystkie poprawki lintera w grupie",
+    lintCopiedFix: "Skopiowano poprawkę lintera",
+    lintCopiedAllFixes: "Skopiowano poprawki lintera dla",
+    lintNoFixesToCopy: "Brak poprawek lintera do skopiowania dla",
+    lintIssuesChipEmpty: "lint: total=0",
+    lintIssuesLoadDemo: "Wczytaj demo lintera",
+    lintIssuesLoadDemoStatus: "Wczytano przykładowy program lintera.",
+    lintDemoControllerLabel: "Wariant demo lintera",
+    lintDemoControllerAuto: "auto (wykryty kontroler)"
   },
   en: {
     title: "CNC Workbench - Haas NGC Scaffold",
@@ -464,6 +720,82 @@ const UI_TEXT: Record<
     firstCutRiskBriefCopyStatusPolicy: "Last copied risk brief (policy)",
     firstCutRiskBriefCopyStatusJobCheck: "Last copied risk brief (Job Check)",
     jobCheckCard: "Job Check result",
+    jobCheckLintSummaryLabel: "Lint",
+    jobCheckLintSummaryDetailsLabel: "Per-source breakdown",
+    parseDiagnosticsSummaryLabel: "Parse diagnostics",
+    parseDiagnosticsChipEmpty: "parseDiagnostics: total=0",
+    parseDiagnosticsLoadDemo: "Load diagnostics demo",
+    parseDiagnosticsLoadDemoStatus: "Loaded sample diagnostics program.",
+    parseDiagnosticsPolicyHeading: "Parse diagnostics threshold policy",
+    parseDiagnosticsPolicyEnabledLabel: "Enable threshold policy",
+    parseDiagnosticsPolicySeverityLabel: "Severity",
+    parseDiagnosticsPolicyBlockExportLabel: "Block export on breach",
+    parseDiagnosticsPolicyThresholdsLabel: "Thresholds (CODE=N)",
+    parseDiagnosticsPolicyThresholdsHint: "e.g. TOTAL=10, ADDRESS_MISSING_VALUE=3",
+    parseDiagnosticsPolicyInvalidEntriesLabel: "Invalid entries (ignored)",
+    parseDiagnosticsPolicyCopyContext: "Copy diagnostics threshold context",
+    parseDiagnosticsPolicyCopiedStatus: "Copied diagnostics threshold context",
+    parseDiagnosticsPolicyCopyFallback: "Copy diagnostics threshold context manually",
+    parseDiagnosticsPolicySeverityWarning: "warning",
+    parseDiagnosticsPolicySeverityBlocker: "blocker",
+    parseDiagnosticsBreachLabel: "Diagnostics threshold breach",
+    parseDiagnosticsBreachJumpLabel: "Jump to first",
+    parseDiagnosticsBreachCopy: "Copy diagnostics breach context",
+    parseDiagnosticsBreachCopiedStatus: "Copied diagnostics breach context",
+    parseDiagnosticsBreachCopyFallback: "Copy diagnostics breach context manually",
+    parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
+    parseDiagnosticsPolicyPresetStrict: "Strict",
+    parseDiagnosticsPolicyPresetBalanced: "Balanced",
+    parseDiagnosticsPolicyPresetPermissive: "Permissive",
+    parseDiagnosticsPolicyActiveLabel: "Active preset",
+    parseDiagnosticsPolicyActiveCustom: "custom",
+    confirmResetUiPrefs:
+      "Reset UI defaults for the current controller profile? This cannot be undone.",
+    resetUiPrefsCancelled: "UI defaults reset cancelled.",
+    confirmResetFixturePrefs:
+      "Reset fixture import defaults for the current controller profile? This cannot be undone.",
+    resetFixturePrefsCancelled: "Fixture defaults reset cancelled.",
+    copyPolicyAuditTrail: "Copy policy audit trail",
+    copiedPolicyAuditTrail: "Copied policy audit trail",
+    copyPolicyAuditTrailFallback: "Copy policy audit trail manually",
+    policyAuditTrailNoEntries: "No entries to copy.",
+    copyPolicyAuditTrailParseOnly: "Copy diagnostics audit subset (parse + lint)",
+    copiedPolicyAuditTrailParseOnly: "Copied diagnostics audit subset (parse + lint)",
+    copyPolicyAuditTrailParseOnlyFallback: "Copy diagnostics audit subset manually",
+    auditTrailExportFormatLabel: "Export format",
+    auditTrailExportFormatText: "Text",
+    auditTrailExportFormatMarkdown: "Markdown",
+    auditTrailExportFormatCsv: "CSV",
+    auditTrailExportFormatNdjson: "NDJSON",
+    auditTrailDownloadButtonLabel: "Download audit trail",
+    auditTrailDownloadStatus: (filename, rowCount) =>
+      `Downloaded ${filename} (${rowCount}).`,
+    auditTrailDownloadFallback: "Audit trail download failed.",
+    auditTrailDownloadSidecarLabel: "Attach SHA-256 sidecar",
+    auditTrailDownloadSidecarStatus: (filename, sidecarFilename, rowCount) =>
+      `Downloaded ${filename} + ${sidecarFilename} (${rowCount}).`,
+    auditTrailHmacSecretLabel: "HMAC secret key",
+    auditTrailDownloadHmacLabel: "Attach HMAC-SHA-256 sidecar",
+    auditTrailDownloadHmacStatus: (filename, hmacSidecarFilename, rowCount) =>
+      `Downloaded ${filename} + ${hmacSidecarFilename} (${rowCount}).`,
+    auditTrailDownloadHmacMissingSecret:
+      "HMAC sidecar skipped — enter a shared secret to sign it.",
+    auditTrailEncryptionSecretLabel: "Encryption password (AES-GCM)",
+    auditTrailDownloadEncryptionLabel: "Attach encrypted copy (AES-256-GCM)",
+    auditTrailDownloadEncryptionStatus: (filename, encryptedFilename, rowCount) =>
+      `Downloaded ${filename} + ${encryptedFilename} (${rowCount}).`,
+    auditTrailDownloadEncryptionMissingSecret:
+      "Encrypted copy skipped — enter a password to derive the AES-GCM key.",
+    clearAuditTrail: "Clear audit trail",
+    confirmClearAuditTrail:
+      "Clear the policy audit trail for this session? The 'policy_audit_trail_cleared' entry stays as proof of this action.",
+    auditTrailClearedStatus: "Cleared session policy audit trail.",
+    auditTrailFilterAll: "All",
+    auditTrailFilterParseLint: "Parse + lint",
+    auditTrailFilterReset: "Resets",
+    auditTrailFilterPolicy: "Policy",
+    auditTrailCountChip: (n: number) => `${n} entries`,
+    auditTrailHydratedChip: (n: number) => `${n} hydrated`,
     openExportFolder: "Open export folder",
     jumpToBlockers: "Jump to blockers",
     exportStatus: "Export status",
@@ -510,7 +842,38 @@ const UI_TEXT: Record<
     strictD: "Haas - D with G43 H (no D on G41/G42)",
     allowCompD: "Fanuc - D on G41/G42 and G40 D00",
     polish: "Polski",
-    english: "English"
+    english: "English",
+    parseDiagnostics: "Parse diagnostics",
+    parseDiagnosticsEmpty: "No parse diagnostics.",
+    parseDiagnosticsBlockLabel: "block",
+    suggestedFixesLabel: "Suggested fixes",
+    copyFixText: "Copy fix text",
+    copyAllFixesInGroup: "Copy all fixes in group",
+    parseDiagnosticsShowMore: "Show all",
+    parseDiagnosticsHiddenSuffix: "hidden",
+    parseDiagnosticsCapNote: "List trimmed for readability; copy actions still operate on the full group.",
+    parseDiagnosticsCopiedFix: "Copied parse fix",
+    parseDiagnosticsCopiedAllFixes: "Copied parse fixes for",
+    parseDiagnosticsNoFixesToCopy: "No suggested fixes to copy for",
+    parseDiagnosticsCopyFallback: "Copy parse fix manually",
+    lintIssuesEmpty: "No lint issues.",
+    lintIssuesGroupSourceLabels: {
+      lexer: "Lexer",
+      expression_parser: "Expression parser",
+      controller_grammar: "Controller grammar",
+      common_lint: "Common lint",
+      profile_lint: "Profile lint"
+    },
+    lintCopyFixText: "Copy lint fix",
+    lintCopyAllFixesInGroup: "Copy all lint fixes in group",
+    lintCopiedFix: "Copied lint fix",
+    lintCopiedAllFixes: "Copied lint fixes for",
+    lintNoFixesToCopy: "No lint fixes to copy for",
+    lintIssuesChipEmpty: "lintIssues: total=0",
+    lintIssuesLoadDemo: "Load lint demo",
+    lintIssuesLoadDemoStatus: "Loaded sample lint program.",
+    lintDemoControllerLabel: "Lint demo variant",
+    lintDemoControllerAuto: "auto (detected controller)"
   }
 };
 
@@ -541,6 +904,25 @@ export function App() {
   const [policyPresetManuallySet, setPolicyPresetManuallySet] = useState(false);
   const [policyUiEventsEnabled, setPolicyUiEventsEnabled] = useState(true);
   const [policyLockManualChanges, setPolicyLockManualChanges] = useState(false);
+  const [parseDiagnosticsPolicy, setParseDiagnosticsPolicy] = useState<ParseDiagnosticsPolicyUiState>({
+    enabled: false,
+    severity: "warning",
+    blockExport: false,
+    thresholdsText: ""
+  });
+  const [lintDemoControllerOverride, setLintDemoControllerOverride] = useState<
+    "auto" | ControllerProfileKey
+  >("auto");
+  const [auditTrailExportFormat, setAuditTrailExportFormat] =
+    useState<AuditTrailExportFormat>("text");
+  const [auditTrailDownloadWithSidecar, setAuditTrailDownloadWithSidecar] =
+    useState<boolean>(false);
+  const [auditTrailDownloadWithHmacSidecar, setAuditTrailDownloadWithHmacSidecar] =
+    useState<boolean>(false);
+  const [auditTrailHmacSecret, setAuditTrailHmacSecret] = useState<string>("");
+  const [auditTrailDownloadWithEncryption, setAuditTrailDownloadWithEncryption] =
+    useState<boolean>(false);
+  const [auditTrailEncryptionSecret, setAuditTrailEncryptionSecret] = useState<string>("");
   const [subprogramTargetPolicy, setSubprogramTargetPolicy] = useState<SubprogramTargetPolicy>("shop_friendly");
   const [subprogramPolicyManuallySet, setSubprogramPolicyManuallySet] = useState(false);
   const [logSemantics, setLogSemantics] = useState<LogSemantics>("controller_default");
@@ -576,8 +958,18 @@ export function App() {
       preset: JobCheckPolicyPreset;
       source: "saved" | "bootstrap" | "manual";
       controller: ControllerProfileKey;
+      code?: string;
+      blockIndex?: number;
+      fixCount?: number;
+      count?: number;
+      severities?: string;
+      hydratedFromTemplate?: boolean;
     }>
   >([]);
+  const [auditTrailHydrated, setAuditTrailHydrated] = useState(false);
+  const [auditTrailFilterCategory, setAuditTrailFilterCategory] = useState<
+    "all" | "parse_lint" | "reset" | "policy"
+  >("all");
   const [testsWorkspaceRoot, setTestsWorkspaceRoot] = useState(".");
   const [fixturesRoot, setFixturesRoot] = useState("./packages/test-fixtures");
   const [fixtureId, setFixtureId] = useState("my_shop_fixture");
@@ -632,7 +1024,7 @@ export function App() {
 
   const blacklistedParameters = useMemo(() => parseBlacklistedParameters(parameterBlacklistInput), [parameterBlacklistInput]);
 
-  const ast = useMemo(() => parse(code, haasNgcProfile), [code]);
+  const ast = useMemo(() => parse(code, haasNgcProfile, { includeExpressionAst: true }), [code]);
   const formatted = useMemo(
     () => format(ast, haasNgcProfile, { removeStandaloneOptionalStops }),
     [ast, removeStandaloneOptionalStops]
@@ -645,7 +1037,94 @@ export function App() {
       }).suggestions,
     [ast, blacklistedParameters, selectedPreset]
   );
-  const lintIssues = useMemo(() => lint(ast, haasNgcProfile), [ast]);
+  const lintIssues = useMemo(() => lintWithProvenance(ast, haasNgcProfile), [ast]);
+  const lintIssuesBySource = useMemo<Array<[LintIssueProvenanceSource, LintIssueLike[]]>>(
+    () => groupLintIssuesBySource(lintIssues as unknown as LintIssueLike[]),
+    [lintIssues]
+  );
+  const lintIssuesSummaryChip = useMemo(
+    () =>
+      buildLintIssuesSummaryChip(lintIssuesBySource, {
+        emptyText: t.lintIssuesChipEmpty
+      }),
+    [lintIssuesBySource, t.lintIssuesChipEmpty]
+  );
+  const parseDiagnosticsPolicyResolved = useMemo<{
+    policy: ParseDiagnosticsPolicyResolved | undefined;
+    invalidEntries: string[];
+  }>(() => resolveParseDiagnosticsPolicy(parseDiagnosticsPolicy), [parseDiagnosticsPolicy]);
+  const currentMatchingParseDiagnosticsPolicyPreset = useMemo(
+    () => selectMatchingParseDiagnosticsPolicyPreset(parseDiagnosticsPolicy),
+    [parseDiagnosticsPolicy]
+  );
+  const policyAuditTrailSummary = useMemo(
+    () => summarizePolicyAuditTrail(policyAuditTrail),
+    [policyAuditTrail]
+  );
+  const filteredPolicyAuditTrail = useMemo(
+    () => filterPolicyAuditTrailByCategory(policyAuditTrail, auditTrailFilterCategory),
+    [policyAuditTrail, auditTrailFilterCategory]
+  );
+  const parseDiagnosticsPolicyBriefField = useMemo(() => {
+    const summary = ast.parseDiagnostics ?? [];
+    const observedTotal = summary.length;
+    const observedByCode: Record<string, number> = {};
+    for (const diag of summary) {
+      observedByCode[diag.code] = (observedByCode[diag.code] ?? 0) + 1;
+    }
+    const thresholds = parseDiagnosticsPolicyResolved.policy?.thresholds ?? {};
+    const breaches: { key: string; observed: number; threshold: number }[] = [];
+    for (const [key, threshold] of Object.entries(thresholds)) {
+      if (threshold === undefined) continue;
+      const observed = key === "TOTAL" ? observedTotal : observedByCode[key] ?? 0;
+      if (observed > threshold) {
+        breaches.push({ key, observed, threshold });
+      }
+    }
+    return buildParseDiagnosticsPolicyBriefField({ state: parseDiagnosticsPolicy, breaches });
+  }, [ast, parseDiagnosticsPolicy, parseDiagnosticsPolicyResolved]);
+  const parseDiagBreachesBriefField = useMemo(
+    () => buildParseDiagBreachesBriefField(jobCheckResult?.parseDiagnosticsPolicyBreaches),
+    [jobCheckResult]
+  );
+  const parseDiagBreachSeveritiesBriefField = useMemo(
+    () =>
+      buildParseDiagBreachSeveritiesBriefField(
+        jobCheckResult?.parseDiagnosticsPolicyBreaches
+      ),
+    [jobCheckResult]
+  );
+  const parseDiagBreachSeveritiesSummary = useMemo(
+    () =>
+      summarizeParseDiagBreachSeverities(
+        jobCheckResult?.parseDiagnosticsPolicyBreaches ?? []
+      ),
+    [jobCheckResult]
+  );
+  const parseDiagnostics = useMemo<ParseDiagnosticLike[]>(
+    () => (ast.parseDiagnostics ?? []) as ParseDiagnosticLike[],
+    [ast]
+  );
+  const parseDiagnosticsByCode = useMemo(() => groupAndSortDiagnostics(parseDiagnostics), [parseDiagnostics]);
+  const parseDiagnosticsSummaryChip = useMemo(
+    () =>
+      buildDiagnosticsSummaryChip(parseDiagnosticsByCode, {
+        emptyText: t.parseDiagnosticsChipEmpty
+      }),
+    [parseDiagnosticsByCode, t.parseDiagnosticsChipEmpty]
+  );
+  const [parseDiagnosticsExpandedCodes, setParseDiagnosticsExpandedCodes] = useState<Set<string>>(
+    () => new Set<string>()
+  );
+
+  function setParseDiagnosticsCodeExpanded(code: string, expanded: boolean): void {
+    setParseDiagnosticsExpandedCodes((prev) => {
+      const next = new Set(prev);
+      if (expanded) next.add(code);
+      else next.delete(code);
+      return next;
+    });
+  }
   const simulation = useMemo(
     () => simulate(ast, {}, { maxSteps: 200, maxLoopIterations: 200, subprogramTargetPolicy, logSemantics }),
     [ast, subprogramTargetPolicy, logSemantics]
@@ -789,9 +1268,11 @@ export function App() {
       findings: [...combinedBlockerFindings, ...combinedWarningFindings].map((f) => ({
         ...f,
         message: `${f.message} | Fix: ${suggestedFixForFinding(f.code, language)}`
-      }))
+      })),
+      parseDiagnosticsSummary: summarizeParseDiagnostics(ast.parseDiagnostics)
     });
   }, [
+    ast,
     filteredSimulationEvents,
     combinedBlockerFindings,
     combinedWarningFindings,
@@ -806,11 +1287,27 @@ export function App() {
   ]);
   const recordPolicyPresetTransition = (
     eventName: string,
-    detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
+    detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" },
+    extra?: {
+      code?: string;
+      blockIndex?: number;
+      fixCount?: number;
+      count?: number;
+      severities?: string;
+    }
   ): void => {
     const timestampIso = new Date().toISOString();
-    setPolicyAuditTrail((prev) => [{ event: eventName, timestampIso, ...detail }, ...prev].slice(0, 30));
-    emitPolicyPresetUiEvent(policyUiEventsEnabled, eventName, detail);
+    const extraEntry = extra
+      ? {
+          ...(extra.code !== undefined ? { code: extra.code } : {}),
+          ...(extra.blockIndex !== undefined ? { blockIndex: extra.blockIndex } : {}),
+          ...(extra.fixCount !== undefined ? { fixCount: extra.fixCount } : {}),
+          ...(extra.count !== undefined ? { count: extra.count } : {}),
+          ...(extra.severities !== undefined ? { severities: extra.severities } : {})
+        }
+      : {};
+    setPolicyAuditTrail((prev) => [{ event: eventName, timestampIso, ...detail, ...extraEntry }, ...prev].slice(0, 30));
+    emitPolicyPresetUiEvent(policyUiEventsEnabled, eventName, detail, timestampIso, extra);
   };
   const autoFixPreviewMatchesCurrentSettings = useMemo(() => {
     if (!autoFixPreview || !autoFixPreviewInputSnapshot) return false;
@@ -837,6 +1334,23 @@ export function App() {
       setParameterBlacklistInput(defaults.blacklistedParameters.join(","));
     }
   }, [templateLibrary, parameterPresets, detectedControllerProfile]);
+
+  useEffect(() => {
+    if (auditTrailHydrated) return;
+    let parsed: unknown = null;
+    try {
+      parsed = JSON.parse(templateJson);
+    } catch {
+      return;
+    }
+    const hydrated = hydrateAuditEntriesFromTemplate(parsed);
+    if (hydrated.length === 0) return;
+    setPolicyAuditTrail((prev) => [
+      ...hydrated.map((entry) => ({ ...entry, hydratedFromTemplate: true })),
+      ...prev
+    ]);
+    setAuditTrailHydrated(true);
+  }, [templateJson, auditTrailHydrated]);
 
   useEffect(() => {
     const uiDefaults = readUiDefaultsFromTemplateJson(templateJson, detectedControllerProfile);
@@ -895,6 +1409,23 @@ export function App() {
         preset: uiDefaults.jobCheckPolicyPreset,
         source: "saved"
       });
+    }
+    if (uiDefaults.parseDiagnosticsPolicy) {
+      setParseDiagnosticsPolicy({
+        enabled: Boolean(uiDefaults.parseDiagnosticsPolicy.enabled),
+        severity: uiDefaults.parseDiagnosticsPolicy.severity ?? "warning",
+        blockExport: Boolean(uiDefaults.parseDiagnosticsPolicy.blockExport),
+        thresholdsText: uiDefaults.parseDiagnosticsPolicy.thresholdsText ?? ""
+      });
+    }
+    if (uiDefaults.lintDemoControllerOverride !== undefined) {
+      setLintDemoControllerOverride(uiDefaults.lintDemoControllerOverride);
+    }
+    if (
+      uiDefaults.auditTrailExportFormat !== undefined &&
+      isAuditTrailExportFormat(uiDefaults.auditTrailExportFormat)
+    ) {
+      setAuditTrailExportFormat(uiDefaults.auditTrailExportFormat);
     }
   }, [templateJson, detectedControllerProfile, policyUiEventsEnabled]);
 
@@ -1057,10 +1588,16 @@ export function App() {
           maxLoopIterations: 1000,
           subprogramTargetPolicy,
           logSemantics
-        }
+        },
+        parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy
       });
+      const parseSummary = result.parseDiagnosticsSummary;
+      const parseSummaryStatusSuffix =
+        parseSummary && parseSummary.total > 0
+          ? ` | parseDiagnostics=${parseSummary.total} (top=${parseSummary.topCodes.join(",") || "n/a"})`
+          : ` | parseDiagnostics=0`;
       setJobCheckStatus(
-        `score=${result.readyToRunScore}, blockers=${result.blockerCount}, warnings=${result.warningCount}, blocked=${result.blocked} | policy=${jobCheckPolicyPreset}, source=${policyPresetHintState.source}, controller=${detectedControllerProfile}`
+        `score=${result.readyToRunScore}, blockers=${result.blockerCount}, warnings=${result.warningCount}, blocked=${result.blocked} | policy=${jobCheckPolicyPreset}, source=${policyPresetHintState.source}, controller=${detectedControllerProfile}${parseSummaryStatusSuffix}`
       );
       setJobCheckResult(result);
       if (result.exportResult) {
@@ -1400,11 +1937,25 @@ export function App() {
               jobCheckPolicyPreset?: JobCheckPolicyPreset;
               policyUiEventsEnabled?: boolean;
               policyLockManualChanges?: boolean;
+              parseDiagnosticsPolicy?: ParseDiagnosticsPolicyUiState;
+              lintDemoControllerOverride?: "auto" | ControllerProfileKey;
+              auditTrailExportFormat?: AuditTrailExportFormat;
             }
           >;
         };
       };
 
+      const inflightSaveEntry = {
+        timestampIso: new Date().toISOString(),
+        event: "saved_to_template",
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source,
+        controller: detectedControllerProfile
+      };
+      const auditTrailRecent = selectPersistableAuditEntries([
+        inflightSaveEntry,
+        ...policyAuditTrail
+      ]);
       const next = {
         templates: Array.isArray(parsed.templates) ? parsed.templates : templateLibrary.templates,
         settings: {
@@ -1432,18 +1983,32 @@ export function App() {
               advancedQaExpanded,
               jobCheckPolicyPreset,
               policyUiEventsEnabled,
-              policyLockManualChanges
+              policyLockManualChanges,
+              parseDiagnosticsPolicy,
+              lintDemoControllerOverride,
+              auditTrailExportFormat
             }
-          }
+          },
+          auditTrailRecent
         }
       };
 
       setTemplateJson(JSON.stringify(next, null, 2));
+      setAuditTrailHydrated(true);
       recordPolicyPresetTransition("saved_to_template", {
         controller: detectedControllerProfile,
         preset: jobCheckPolicyPreset,
         source: policyPresetHintState.source
       });
+      recordPolicyPresetTransition(
+        "policy_audit_trail_persisted",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { count: auditTrailRecent.length }
+      );
       setExportStatus("Parameter preferences saved into template JSON.");
     } catch {
       setExportStatus("Cannot save preferences: invalid template JSON.");
@@ -1470,6 +2035,419 @@ export function App() {
     } catch {
       setPolicyContextCopyStatus("");
       setExportStatus(`Copy policy context manually: ${line}`);
+    }
+  }
+
+  async function handleCopyParseDiagnosticsPolicyContext(): Promise<void> {
+    const line = `${serializeParseDiagnosticsPolicy(parseDiagnosticsPolicy)} | controller=${detectedControllerProfile}`;
+    try {
+      await navigator.clipboard.writeText(line);
+      setExportStatus(`${t.parseDiagnosticsPolicyCopiedStatus}: ${line}`);
+      recordPolicyPresetTransition("parse_diag_policy_context_copied", {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      });
+    } catch {
+      setExportStatus(`${t.parseDiagnosticsPolicyCopyFallback}: ${line}`);
+    }
+  }
+
+  async function handleCopyParseDiagnosticsBreachContext(): Promise<void> {
+    const breaches = jobCheckResult?.parseDiagnosticsPolicyBreaches ?? [];
+    const { payload, count, severities } = buildParseDiagnosticsBreachContext(
+      breaches,
+      detectedControllerProfile
+    );
+    if (count === 0) {
+      setExportStatus(`${t.parseDiagnosticsBreachCopiedStatus}: ${payload}`);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(`${t.parseDiagnosticsBreachCopiedStatus}: ${payload}`);
+      recordPolicyPresetTransition(
+        "parse_breach_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { count, severities }
+      );
+    } catch {
+      setExportStatus(`${t.parseDiagnosticsBreachCopyFallback}: ${payload}`);
+    }
+  }
+
+  function handleApplyParseDiagnosticsPolicyPreset(preset: ParseDiagnosticsPolicyPreset): void {
+    const next = applyParseDiagnosticsPolicyPreset(preset);
+    setParseDiagnosticsPolicy(next);
+    recordPolicyPresetTransition(
+      "parse_diag_policy_preset_applied",
+      {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      },
+      { code: `preset:${preset}` }
+    );
+  }
+
+  async function handleCopyPolicyAuditTrail(): Promise<void> {
+    const { payload, rowCount } = selectPolicyAuditTrailExportPayload(policyAuditTrail, {
+      format: auditTrailExportFormat,
+      limit: 30
+    });
+    if (rowCount === 0) {
+      setExportStatus(t.policyAuditTrailNoEntries);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(`${t.copiedPolicyAuditTrail} (${rowCount}).`);
+      recordPolicyPresetTransition(
+        "policy_audit_trail_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { fixCount: rowCount, severities: `format=${auditTrailExportFormat}` }
+      );
+    } catch {
+      setExportStatus(`${t.copyPolicyAuditTrailFallback}: ${payload}`);
+    }
+  }
+
+  async function handleCopyPolicyAuditTrailParseOnly(): Promise<void> {
+    const { payload, rowCount } = selectPolicyAuditTrailExportPayload(policyAuditTrail, {
+      format: auditTrailExportFormat,
+      limit: 30,
+      categoryFilter: "parse_lint"
+    });
+    if (rowCount === 0) {
+      setExportStatus(t.policyAuditTrailNoEntries);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(`${t.copiedPolicyAuditTrailParseOnly} (${rowCount}).`);
+      recordPolicyPresetTransition(
+        "policy_audit_trail_subset_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { count: rowCount, severities: `subset=parse_lint;format=${auditTrailExportFormat}` }
+      );
+    } catch {
+      setExportStatus(`${t.copyPolicyAuditTrailParseOnlyFallback}: ${payload}`);
+    }
+  }
+
+  async function handleDownloadPolicyAuditTrail(): Promise<void> {
+    const { payload, rowCount } = selectPolicyAuditTrailExportPayload(policyAuditTrail, {
+      format: auditTrailExportFormat,
+      limit: 30
+    });
+    if (rowCount === 0) {
+      setExportStatus(t.policyAuditTrailNoEntries);
+      return;
+    }
+    // We refuse to silently downgrade the HMAC sidecar to plain SHA-256 when
+    // the user opts in to HMAC but leaves the secret blank — surface a
+    // dedicated UI status and skip the HMAC leg only. Same contract for the
+    // AES-GCM encryption opt-in.
+    const hmacRequested = auditTrailDownloadWithHmacSidecar;
+    const hmacSecretTrimmed = auditTrailHmacSecret.trim();
+    const hmacSecretMissing = hmacRequested && hmacSecretTrimmed.length === 0;
+    const effectiveHmacOption =
+      hmacRequested && !hmacSecretMissing
+        ? { secretKey: auditTrailHmacSecret }
+        : undefined;
+    const encryptionRequested = auditTrailDownloadWithEncryption;
+    const encryptionSecretTrimmed = auditTrailEncryptionSecret.trim();
+    const encryptionSecretMissing =
+      encryptionRequested && encryptionSecretTrimmed.length === 0;
+    const effectiveEncryptionOption =
+      encryptionRequested && !encryptionSecretMissing
+        ? { secretKey: auditTrailEncryptionSecret }
+        : undefined;
+    try {
+      const result = await downloadPolicyAuditTrail(
+        payload,
+        auditTrailExportFormat,
+        new Date().toISOString(),
+        {
+          withSidecar: auditTrailDownloadWithSidecar,
+          ...(effectiveHmacOption ? { withHmacSidecar: effectiveHmacOption } : {}),
+          ...(effectiveEncryptionOption
+            ? { withEncryption: effectiveEncryptionOption }
+            : {})
+        }
+      );
+      const missingFragments: string[] = [];
+      if (hmacSecretMissing) missingFragments.push(t.auditTrailDownloadHmacMissingSecret);
+      if (encryptionSecretMissing)
+        missingFragments.push(t.auditTrailDownloadEncryptionMissingSecret);
+      const appendMissing = (base: string): string =>
+        missingFragments.length === 0 ? base : `${base} ${missingFragments.join(" ")}`;
+      if (result.encryptedFilename) {
+        setExportStatus(
+          appendMissing(
+            t.auditTrailDownloadEncryptionStatus(
+              result.filename,
+              result.encryptedFilename,
+              rowCount
+            )
+          )
+        );
+        recordPolicyPresetTransition(
+          "policy_audit_trail_downloaded_with_encryption",
+          {
+            controller: detectedControllerProfile,
+            preset: jobCheckPolicyPreset,
+            source: policyPresetHintState.source
+          },
+          {
+            count: rowCount,
+            severities: `format=${auditTrailExportFormat};encryption=aes-gcm${
+              result.hmacSidecarFilename ? ";hmac=sha256" : ""
+            }${result.sidecarFilename ? ";sidecar=sha256" : ""}`
+          }
+        );
+      } else if (result.hmacSidecarFilename) {
+        setExportStatus(
+          appendMissing(
+            t.auditTrailDownloadHmacStatus(
+              result.filename,
+              result.hmacSidecarFilename,
+              rowCount
+            )
+          )
+        );
+        recordPolicyPresetTransition(
+          "policy_audit_trail_downloaded_with_hmac_sidecar",
+          {
+            controller: detectedControllerProfile,
+            preset: jobCheckPolicyPreset,
+            source: policyPresetHintState.source
+          },
+          {
+            count: rowCount,
+            severities: `format=${auditTrailExportFormat};hmac=sha256${
+              result.sidecarFilename ? ";sidecar=sha256" : ""
+            }`
+          }
+        );
+      } else if (result.sidecarFilename) {
+        setExportStatus(
+          appendMissing(
+            t.auditTrailDownloadSidecarStatus(
+              result.filename,
+              result.sidecarFilename,
+              rowCount
+            )
+          )
+        );
+        recordPolicyPresetTransition(
+          "policy_audit_trail_downloaded_with_sidecar",
+          {
+            controller: detectedControllerProfile,
+            preset: jobCheckPolicyPreset,
+            source: policyPresetHintState.source
+          },
+          {
+            count: rowCount,
+            severities: `format=${auditTrailExportFormat};sidecar=sha256`
+          }
+        );
+      } else {
+        setExportStatus(
+          appendMissing(t.auditTrailDownloadStatus(result.filename, rowCount))
+        );
+        recordPolicyPresetTransition(
+          "policy_audit_trail_downloaded",
+          {
+            controller: detectedControllerProfile,
+            preset: jobCheckPolicyPreset,
+            source: policyPresetHintState.source
+          },
+          { count: rowCount, severities: `format=${auditTrailExportFormat}` }
+        );
+      }
+    } catch {
+      setExportStatus(t.auditTrailDownloadFallback);
+    }
+  }
+
+  function handleClearAuditTrail(): void {
+    if (!window.confirm(t.confirmClearAuditTrail)) return;
+    const priorLength = policyAuditTrail.length;
+    const timestampIso = new Date().toISOString();
+    const detail = {
+      controller: detectedControllerProfile,
+      preset: jobCheckPolicyPreset,
+      source: policyPresetHintState.source
+    };
+    setPolicyAuditTrail([
+      {
+        event: "policy_audit_trail_cleared",
+        timestampIso,
+        ...detail,
+        count: priorLength
+      }
+    ]);
+    emitPolicyPresetUiEvent(
+      policyUiEventsEnabled,
+      "policy_audit_trail_cleared",
+      detail,
+      timestampIso,
+      { count: priorLength }
+    );
+    setExportStatus(t.auditTrailClearedStatus);
+  }
+
+  async function handleCopyParseFix(input: {
+    line: string;
+    code: string;
+    blockIndex: number;
+  }): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(input.line);
+      setExportStatus(`${t.parseDiagnosticsCopiedFix}: ${input.line}`);
+      recordPolicyPresetTransition(
+        "parse_fix_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code: input.code, blockIndex: input.blockIndex, fixCount: 1 }
+      );
+    } catch {
+      setExportStatus(`${t.parseDiagnosticsCopyFallback}: ${input.line}`);
+    }
+  }
+
+  async function handleCopyAllParseFixesForCode(
+    code: string,
+    items: ParseDiagnosticLike[]
+  ): Promise<void> {
+    const { payload, fixCount } = buildAllFixesPayload(code, items);
+    if (fixCount === 0) {
+      setExportStatus(`${t.parseDiagnosticsNoFixesToCopy} ${code}.`);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(`${t.parseDiagnosticsCopiedAllFixes} ${code} (${fixCount}).`);
+      recordPolicyPresetTransition(
+        "parse_fix_group_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code, fixCount }
+      );
+    } catch {
+      setExportStatus(`${t.parseDiagnosticsCopyFallback} (${code}): ${payload}`);
+    }
+  }
+
+  function handleParseDiagnosticsExpandToggle(code: string, items: ParseDiagnosticLike[]): void {
+    setParseDiagnosticsCodeExpanded(code, true);
+    recordPolicyPresetTransition(
+      "parse_fix_group_expanded",
+      {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      },
+      { code, fixCount: items.length }
+    );
+  }
+
+  function handleLoadDiagnosticsDemo(): void {
+    setCode(DIAGNOSTICS_DEMO_PROGRAM);
+    setExportStatus(t.parseDiagnosticsLoadDemoStatus);
+    recordPolicyPresetTransition(
+      "diagnostics_demo_loaded",
+      {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      }
+    );
+  }
+
+  function handleLoadLintDemo(): void {
+    const effectiveController =
+      lintDemoControllerOverride === "auto"
+        ? detectedControllerProfile
+        : lintDemoControllerOverride;
+    const program = selectLintDemoProgram(effectiveController);
+    setCode(program);
+    setExportStatus(t.lintIssuesLoadDemoStatus);
+    recordPolicyPresetTransition(
+      "lint_demo_loaded",
+      {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      },
+      { code: `override=${lintDemoControllerOverride}` }
+    );
+  }
+
+  async function handleCopyLintFix(input: {
+    line: string;
+    source: LintIssueProvenanceSource;
+    blockIndex: number;
+  }): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(input.line);
+      setExportStatus(`${t.lintCopiedFix}: ${input.line}`);
+      recordPolicyPresetTransition(
+        "lint_fix_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code: input.source, blockIndex: input.blockIndex, fixCount: 1 }
+      );
+    } catch {
+      setExportStatus(`${t.parseDiagnosticsCopyFallback}: ${input.line}`);
+    }
+  }
+
+  async function handleCopyAllLintFixesForSource(
+    source: LintIssueProvenanceSource,
+    items: LintIssueLike[]
+  ): Promise<void> {
+    const { payload, fixCount } = buildAllLintFixesPayload(source, items);
+    if (fixCount === 0) {
+      setExportStatus(`${t.lintNoFixesToCopy} ${source}.`);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(`${t.lintCopiedAllFixes} ${source} (${fixCount}).`);
+      recordPolicyPresetTransition(
+        "lint_fix_group_copied",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code: source, fixCount }
+      );
+    } catch {
+      setExportStatus(`${t.parseDiagnosticsCopyFallback} (${source}): ${payload}`);
     }
   }
 
@@ -1547,7 +2525,11 @@ export function App() {
       `${t.runJobCheckStatus}: ${jobCheckStatus || "n/a"}`,
       `findings:blockers=${combinedBlockerFindings.length},warnings=${combinedWarningFindings.length},top=${findingCodes.length > 0 ? findingCodes.join(",") : "none"}`,
       `export:dir=${exportDir},artifacts=${artifactCount}`,
-      `drift=${driftStatus}`
+      `drift=${driftStatus}`,
+      parseDiagnosticsSummaryChip.briefField,
+      parseDiagnosticsPolicyBriefField,
+      parseDiagBreachesBriefField,
+      parseDiagBreachSeveritiesBriefField
     ].join(" | ");
     try {
       await navigator.clipboard.writeText(line);
@@ -1576,7 +2558,11 @@ export function App() {
       `blockers=${combinedBlockerFindings.length} warnings=${combinedWarningFindings.length}`,
       `topFindings=${topFindings.length > 0 ? topFindings.join(",") : "none"}`,
       `checklist=${checklistHeadline || "n/a"}`,
-      `policy=${jobCheckPolicyPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`
+      `policy=${jobCheckPolicyPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`,
+      parseDiagnosticsSummaryChip.briefField,
+      parseDiagnosticsPolicyBriefField,
+      parseDiagBreachesBriefField,
+      parseDiagBreachSeveritiesBriefField
     ];
     const line = briefLines.join("\n");
     try {
@@ -1601,7 +2587,8 @@ export function App() {
       ...firstCutRiskBriefItems.map(
         (item, idx) =>
           `#${idx + 1} code=${item.code}${item.blockIndex !== undefined ? ` block=B${item.blockIndex}` : ""} | reason=${item.reason} | action=${item.operatorAction}`
-      )
+      ),
+      parseDiagnosticsSummaryChip.briefField
     ];
     const line = briefLines.join("\n");
     try {
@@ -1630,7 +2617,11 @@ export function App() {
         (item, idx) =>
           `#${idx + 1} code=${item.code}${item.blockIndex !== undefined ? ` block=B${item.blockIndex}` : ""} | reason=${item.reason} | action=${item.operatorAction}`
       ),
-      `POLICY CONTEXT | preset=${jobCheckPolicyPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`
+      `POLICY CONTEXT | preset=${jobCheckPolicyPreset} source=${policyPresetHintState.source} controller=${detectedControllerProfile}`,
+      parseDiagnosticsSummaryChip.briefField,
+      parseDiagnosticsPolicyBriefField,
+      parseDiagBreachesBriefField,
+      parseDiagBreachSeveritiesBriefField
     ];
     const line = briefLines.join("\n");
     try {
@@ -1659,7 +2650,11 @@ export function App() {
       ...firstCutRiskBriefItems.map(
         (item, idx) =>
           `#${idx + 1} code=${item.code}${item.blockIndex !== undefined ? ` block=B${item.blockIndex}` : ""} | reason=${item.reason} | action=${item.operatorAction}`
-      )
+      ),
+      parseDiagnosticsSummaryChip.briefField,
+      parseDiagnosticsPolicyBriefField,
+      parseDiagBreachesBriefField,
+      parseDiagBreachSeveritiesBriefField
     ];
     const line = [statusLine, "", ...briefLines].join("\n");
     try {
@@ -1680,6 +2675,23 @@ export function App() {
   }
 
   function handleResetUiPrefsForController(): void {
+    const confirmed =
+      typeof window !== "undefined" && typeof window.confirm === "function"
+        ? window.confirm(t.confirmResetUiPrefs)
+        : true;
+    if (!confirmed) {
+      setExportStatus(t.resetUiPrefsCancelled);
+      recordPolicyPresetTransition(
+        "ui_defaults_reset_aborted",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code: detectedControllerProfile }
+      );
+      return;
+    }
     try {
       const parsed = JSON.parse(templateJson) as {
         templates?: unknown;
@@ -1726,15 +2738,48 @@ export function App() {
       setJobCheckPolicyPreset(defaultPolicyPresetForController(detectedControllerProfile));
       setPolicyUiEventsEnabled(true);
       setPolicyLockManualChanges(false);
+      setParseDiagnosticsPolicy({
+        enabled: false,
+        severity: "warning",
+        blockExport: false,
+        thresholdsText: ""
+      });
+      setLintDemoControllerOverride("auto");
       setShowOnlyBlockers(false);
       setTimelineFilters({ alarms: true, flow: true, control: true });
       setExportStatus("UI defaults reset for current controller profile.");
+      recordPolicyPresetTransition(
+        "ui_defaults_reset_confirmed",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code: detectedControllerProfile }
+      );
     } catch {
       setExportStatus("Cannot reset UI defaults: invalid template JSON.");
     }
   }
 
   function handleResetFixturePrefsForController(): void {
+    const confirmed =
+      typeof window !== "undefined" && typeof window.confirm === "function"
+        ? window.confirm(t.confirmResetFixturePrefs)
+        : true;
+    if (!confirmed) {
+      setExportStatus(t.resetFixturePrefsCancelled);
+      recordPolicyPresetTransition(
+        "fixture_prefs_reset_aborted",
+        {
+          controller: detectedControllerProfile,
+          preset: jobCheckPolicyPreset,
+          source: policyPresetHintState.source
+        },
+        { code: detectedControllerProfile }
+      );
+      return;
+    }
     setFixtureControllerManuallySet(false);
     setFixtureController(detectedControllerProfile);
     setFixturesRoot("./packages/test-fixtures");
@@ -1742,6 +2787,15 @@ export function App() {
     setAutoValidateAfterImport(true);
     setAutoRunTestsAfterImport(false);
     setExportStatus("Fixture import defaults reset for current controller profile.");
+    recordPolicyPresetTransition(
+      "fixture_prefs_reset_confirmed",
+      {
+        controller: detectedControllerProfile,
+        preset: jobCheckPolicyPreset,
+        source: policyPresetHintState.source
+      },
+      { code: detectedControllerProfile }
+    );
   }
 
   return (
@@ -1786,6 +2840,130 @@ export function App() {
           <p>
             {`score=${jobCheckResult.readyToRunScore}, blockers=${jobCheckResult.blockerCount}, warnings=${jobCheckResult.warningCount}, blocked=${jobCheckResult.blocked}`}
           </p>
+          {jobCheckResult.parseDiagnosticsSummary && (
+            <p
+              data-testid="job-check-parse-diagnostics-summary"
+              style={{ fontFamily: "Consolas, monospace", marginTop: -6 }}
+            >
+              {`${t.parseDiagnosticsSummaryLabel}: total=${jobCheckResult.parseDiagnosticsSummary.total}${
+                jobCheckResult.parseDiagnosticsSummary.total > 0
+                  ? ` | top=${jobCheckResult.parseDiagnosticsSummary.topCodes.join(",") || "n/a"}`
+                  : ""
+              }`}
+            </p>
+          )}
+          {jobCheckResult.lintIssuesSummary && (
+            <p
+              data-testid="job-check-lint-summary-chip"
+              style={{ fontFamily: "Consolas, monospace", marginTop: -6 }}
+              title={t.jobCheckLintSummaryLabel}
+            >
+              {formatLintIssuesSummaryChip(
+                jobCheckResult.lintIssuesSummary as LintIssuesSummaryLike
+              )}
+            </p>
+          )}
+          {jobCheckResult.lintIssuesSummary &&
+            jobCheckResult.lintIssuesSummary.total > 0 && (
+              <details
+                data-testid="job-check-lint-summary-drilldown"
+                style={{ marginTop: 4, fontFamily: "Consolas, monospace" }}
+              >
+                <summary style={{ cursor: "pointer" }}>
+                  {t.jobCheckLintSummaryDetailsLabel}
+                </summary>
+                <ul style={{ marginTop: 4, marginBottom: 4, paddingLeft: 18 }}>
+                  {summarizeLintIssuesBySource(
+                    jobCheckResult.lintIssuesSummary as LintIssuesSummaryLike
+                  ).map(([source, count]) => {
+                    const issuesForSource = jobCheckResult.lintIssues.filter(
+                      (issue) => issue.provenance.source === source
+                    );
+                    const blockers = issuesForSource.filter(
+                      (issue) => issue.severity === "error"
+                    ).length;
+                    const warnings = issuesForSource.length - blockers;
+                    const sourceLabel = t.lintIssuesGroupSourceLabels[source];
+                    return (
+                      <li
+                        key={source}
+                        data-testid={`job-check-lint-summary-source-${source}`}
+                      >
+                        {`${source}: ${count} (blocker:${blockers}, warning:${warnings}) — ${sourceLabel}`}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            )}
+          {(jobCheckResult.parseDiagnosticsPolicyBreaches ?? []).length > 0 && (
+            <>
+              <span
+                data-testid="job-check-parse-diag-breach-summary"
+                style={{
+                  display: "inline-block",
+                  marginTop: 4,
+                  marginBottom: 4,
+                  fontFamily: "Consolas, monospace",
+                  opacity: 0.9
+                }}
+              >
+                {parseDiagBreachSeveritiesSummary.chip}
+              </span>
+              <ul
+                data-testid="job-check-parse-diag-breach-list"
+                style={{
+                  marginTop: 4,
+                  marginBottom: 4,
+                  paddingLeft: 18,
+                  fontFamily: "Consolas, monospace"
+                }}
+              >
+                {(jobCheckResult.parseDiagnosticsPolicyBreaches ?? []).map((breach) => {
+                  const summaryText = `${t.parseDiagnosticsBreachLabel}: ${breach.key}=${breach.observed} > ${breach.threshold} (${breach.severity})`;
+                  return (
+                    <li
+                      key={`breach-${breach.key}`}
+                      data-testid={`job-check-parse-diag-breach-${breach.key}`}
+                      style={{ marginBottom: 4 }}
+                    >
+                      {operatorReviewMode ? (
+                        <span
+                          data-testid={`job-check-parse-diag-breach-readonly-${breach.key}`}
+                        >
+                          {summaryText}
+                        </span>
+                      ) : (
+                        <>
+                          {summaryText}
+                          {breach.firstBlockIndex !== undefined && (
+                            <button
+                              type="button"
+                              onClick={() => jumpToSimulationBlock(breach.firstBlockIndex ?? 0)}
+                              data-testid={`job-check-parse-diag-breach-jump-${breach.key}`}
+                              style={{ marginLeft: 8 }}
+                            >
+                              {`${t.parseDiagnosticsBreachJumpLabel} ${breach.key}`}
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+              {!operatorReviewMode && (
+                <button
+                  type="button"
+                  onClick={() => void handleCopyParseDiagnosticsBreachContext()}
+                  data-testid="job-check-parse-diag-breach-copy"
+                  style={{ marginBottom: 8 }}
+                >
+                  {t.parseDiagnosticsBreachCopy}
+                </button>
+              )}
+            </>
+          )}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={jumpToBlockers}>{t.jumpToBlockers}</button>
             <button onClick={openExportFolderFromResult} disabled={!jobCheckResult.exportResult}>
@@ -1854,8 +3032,306 @@ export function App() {
 
       {!operatorReviewMode && (
         <section>
-          <h2>{t.lintIssues}</h2>
-          <pre>{JSON.stringify(lintIssues, null, 2)}</pre>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <h2 style={{ margin: 0 }}>{t.lintIssues}</h2>
+            <span
+              data-testid="lint-issues-summary-chip"
+              style={{
+                fontFamily: "Consolas, monospace",
+                fontSize: 12,
+                padding: "2px 8px",
+                borderRadius: 999,
+                border: "1px solid #2e2e2e",
+                background: lintIssuesSummaryChip.total > 0 ? "#27361a" : "#1e1e1e"
+              }}
+            >
+              {lintIssuesSummaryChip.text}
+            </span>
+            <span
+              data-testid="parse-diagnostics-summary-chip"
+              style={{
+                fontFamily: "Consolas, monospace",
+                fontSize: 12,
+                padding: "2px 8px",
+                borderRadius: 999,
+                border: "1px solid #2e2e2e",
+                background: parseDiagnosticsSummaryChip.total > 0 ? "#3b2a17" : "#1e1e1e"
+              }}
+            >
+              {parseDiagnosticsSummaryChip.text}
+            </span>
+            <button
+              type="button"
+              onClick={handleLoadLintDemo}
+              data-testid="lint-issues-load-demo"
+            >
+              {t.lintIssuesLoadDemo}
+            </button>
+            <label
+              style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
+            >
+              {t.lintDemoControllerLabel}
+              <select
+                value={lintDemoControllerOverride}
+                onChange={(event) =>
+                  setLintDemoControllerOverride(
+                    event.target.value as "auto" | ControllerProfileKey
+                  )
+                }
+                data-testid="lint-demo-controller-override"
+              >
+                <option value="auto">{t.lintDemoControllerAuto}</option>
+                <option value="haas-ngc">haas-ngc</option>
+                <option value="haas-legacy">haas-legacy</option>
+                <option value="fanuc">fanuc</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={handleLoadDiagnosticsDemo}
+              data-testid="parse-diagnostics-load-demo"
+            >
+              {t.parseDiagnosticsLoadDemo}
+            </button>
+          </div>
+          {lintIssues.length === 0 ? (
+            <pre data-testid="lint-issues-empty">{t.lintIssuesEmpty}</pre>
+          ) : (
+            <div style={{ display: "grid", gap: 8, marginTop: 8 }} data-testid="lint-issues-list">
+              {lintIssuesBySource.map(([source, items]) => {
+                const sourceLabel = t.lintIssuesGroupSourceLabels[source];
+                return (
+                  <details
+                    key={source}
+                    style={{ border: "1px solid #2e2e2e", borderRadius: 6, padding: 8 }}
+                    data-testid={`lint-issues-group-${source}`}
+                  >
+                    <summary
+                      style={{
+                        cursor: "pointer",
+                        fontFamily: "Consolas, monospace",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8
+                      }}
+                    >
+                      <span>
+                        <strong>{sourceLabel}</strong>
+                        {` (${source}) (${items.length})`}
+                      </span>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void handleCopyAllLintFixesForSource(source, items);
+                        }}
+                        data-testid={`lint-issues-copy-all-${source}`}
+                      >
+                        {t.lintCopyAllFixesInGroup}
+                      </button>
+                    </summary>
+                    <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                      {items.map((issue, index) => (
+                        <div
+                          key={`${source}-${issue.blockIndex}-${index}`}
+                          style={{
+                            border: "1px solid #2e2e2e",
+                            borderRadius: 6,
+                            padding: 8,
+                            background: "#121212"
+                          }}
+                          data-testid={`lint-issues-item-${source}-${index}`}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: 8,
+                              alignItems: "center",
+                              marginBottom: 4
+                            }}
+                          >
+                            <div style={{ fontFamily: "Consolas, monospace" }}>
+                              {`${t.parseDiagnosticsBlockLabel} ${issue.blockIndex} | ${issue.severity}`}
+                            </div>
+                            <button
+                              onClick={() => jumpToSimulationBlock(issue.blockIndex)}
+                              data-testid={`lint-issues-jump-${source}-${index}`}
+                            >
+                              {`Jump to B${issue.blockIndex}`}
+                            </button>
+                          </div>
+                          <div style={{ marginBottom: 4 }}>{issue.message}</div>
+                          {issue.suggestedFixes && issue.suggestedFixes.length > 0 && (
+                            <div>
+                              <strong>{`${t.suggestedFixesLabel}:`}</strong>
+                              <ul style={{ marginTop: 4, marginBottom: 0 }}>
+                                {issue.suggestedFixes.map((fix, fixIdx) => {
+                                  const fixLine = buildLintFixLine({
+                                    source,
+                                    blockIndex: issue.blockIndex,
+                                    fix
+                                  });
+                                  return (
+                                    <li key={`${fix.title}-${fixIdx}`} style={{ marginBottom: 6 }}>
+                                      <div>
+                                        {fix.replacement ? `${fix.title} -> ${fix.replacement}` : fix.title}
+                                      </div>
+                                      <button
+                                        onClick={() =>
+                                          void handleCopyLintFix({
+                                            line: fixLine,
+                                            source,
+                                            blockIndex: issue.blockIndex
+                                          })
+                                        }
+                                        style={{ marginTop: 4 }}
+                                        data-testid={`lint-issues-copy-fix-${source}-${index}-${fixIdx}`}
+                                      >
+                                        {t.lintCopyFixText}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
+          <h3 style={{ marginTop: 12 }} data-testid="parse-diagnostics-heading">{t.parseDiagnostics}</h3>
+          {parseDiagnostics.length === 0 ? (
+            <pre data-testid="parse-diagnostics-empty">{t.parseDiagnosticsEmpty}</pre>
+          ) : (
+            <div style={{ display: "grid", gap: 8 }} data-testid="parse-diagnostics-list">
+              {parseDiagnosticsByCode.map(([code, items]) => {
+                const expanded = parseDiagnosticsExpandedCodes.has(code);
+                const view = applyDiagnosticsCap(items, {
+                  cap: DEFAULT_PARSE_DIAGNOSTICS_GROUP_CAP,
+                  expanded
+                });
+                return (
+                  <details
+                    key={code}
+                    style={{ border: "1px solid #2e2e2e", borderRadius: 6, padding: 8 }}
+                    data-testid={`parse-diagnostics-group-${code}`}
+                  >
+                    <summary
+                      style={{
+                        cursor: "pointer",
+                        fontFamily: "Consolas, monospace",
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: 8
+                      }}
+                    >
+                      <span>
+                        <strong>{code}</strong>
+                        {` (${items.length})`}
+                      </span>
+                      <button
+                        onClick={(event) => {
+                          event.preventDefault();
+                          void handleCopyAllParseFixesForCode(code, items);
+                        }}
+                        data-testid={`parse-diagnostics-copy-all-${code}`}
+                      >
+                        {t.copyAllFixesInGroup}
+                      </button>
+                    </summary>
+                    <div style={{ display: "grid", gap: 8, marginTop: 8 }}>
+                      {view.visible.map((diag, index) => (
+                        <div
+                          key={`${diag.code}-${diag.blockIndex}-${index}`}
+                          style={{
+                            border: "1px solid #2e2e2e",
+                            borderRadius: 6,
+                            padding: 8,
+                            background: "#121212"
+                          }}
+                          data-testid={`parse-diagnostics-item-${code}-${index}`}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              gap: 8,
+                              alignItems: "center",
+                              marginBottom: 4
+                            }}
+                          >
+                            <div style={{ fontFamily: "Consolas, monospace" }}>
+                              {`${t.parseDiagnosticsBlockLabel} ${diag.blockIndex} | ${diag.severity}`}
+                            </div>
+                            <button
+                              onClick={() => jumpToSimulationBlock(diag.blockIndex)}
+                              data-testid={`parse-diagnostics-jump-${code}-${index}`}
+                            >
+                              {`Jump to B${diag.blockIndex}`}
+                            </button>
+                          </div>
+                          <div style={{ marginBottom: 4 }}>{diag.message}</div>
+                          {diag.suggestedFixes && diag.suggestedFixes.length > 0 && (
+                            <div>
+                              <strong>{`${t.suggestedFixesLabel}:`}</strong>
+                              <ul style={{ marginTop: 4, marginBottom: 0 }}>
+                                {diag.suggestedFixes.map((fix, fixIdx) => {
+                                  const fixLine = buildParseFixLine({
+                                    code: diag.code,
+                                    blockIndex: diag.blockIndex,
+                                    fix
+                                  });
+                                  return (
+                                    <li key={`${fix.title}-${fixIdx}`} style={{ marginBottom: 6 }}>
+                                      <div>{fix.replacement ? `${fix.title} -> ${fix.replacement}` : fix.title}</div>
+                                      <button
+                                        onClick={() =>
+                                          void handleCopyParseFix({
+                                            line: fixLine,
+                                            code: diag.code,
+                                            blockIndex: diag.blockIndex
+                                          })
+                                        }
+                                        style={{ marginTop: 4 }}
+                                        data-testid={`parse-diagnostics-copy-fix-${code}-${index}-${fixIdx}`}
+                                      >
+                                        {t.copyFixText}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {view.truncated && (
+                        <div
+                          style={{ display: "flex", gap: 8, alignItems: "center" }}
+                          data-testid={`parse-diagnostics-cap-${code}`}
+                        >
+                          <em>{`${view.hiddenCount} ${t.parseDiagnosticsHiddenSuffix}`}</em>
+                          <button
+                            onClick={() => handleParseDiagnosticsExpandToggle(code, items)}
+                            data-testid={`parse-diagnostics-show-all-${code}`}
+                          >
+                            {t.parseDiagnosticsShowMore}
+                          </button>
+                          <span style={{ fontStyle: "italic" }}>{t.parseDiagnosticsCapNote}</span>
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                );
+              })}
+            </div>
+          )}
         </section>
       )}
 
@@ -2133,13 +3609,23 @@ export function App() {
             <h3>{t.templates}</h3>
             <pre>{JSON.stringify(templates, null, 2)}</pre>
             <textarea
+              data-testid="template-json"
               value={templateJson}
               onChange={(event) => setTemplateJson(event.target.value)}
               rows={10}
               style={{ width: "100%", fontFamily: "Consolas, monospace" }}
             />
-            <button onClick={handleSaveParameterPrefsToTemplateJson}>{t.saveParamPrefs}</button>
-            <button onClick={handleResetUiPrefsForController} style={{ marginLeft: 8 }}>
+            <button
+              data-testid="save-parameter-prefs"
+              onClick={handleSaveParameterPrefsToTemplateJson}
+            >
+              {t.saveParamPrefs}
+            </button>
+            <button
+              data-testid="reset-ui-prefs"
+              onClick={handleResetUiPrefsForController}
+              style={{ marginLeft: 8 }}
+            >
               {t.resetUiPrefs}
             </button>
           </>
@@ -2252,17 +3738,198 @@ export function App() {
           </ul>
         </details>
         <details style={{ marginTop: 4, marginBottom: 8 }}>
-          <summary style={{ cursor: "pointer", fontWeight: 600 }}>{t.policyAuditTrail}</summary>
+          <summary style={{ cursor: "pointer", fontWeight: 600 }}>
+            {t.policyAuditTrail}
+            <span
+              data-testid="policy-audit-trail-count-chip"
+              style={{
+                marginLeft: 8,
+                padding: "1px 6px",
+                borderRadius: 8,
+                background: "#27313f",
+                fontSize: "0.85em",
+                fontWeight: 500
+              }}
+            >
+              {`${t.auditTrailCountChip(policyAuditTrailSummary.total)} (${t.auditTrailHydratedChip(policyAuditTrailSummary.hydrated)})`}
+            </span>
+          </summary>
           {policyAuditTrail.length === 0 ? (
             <p style={{ marginTop: 6, opacity: 0.8 }}>{t.policyAuditTrailEmpty}</p>
           ) : (
-            <ul style={{ marginTop: 6 }}>
-              {policyAuditTrail.map((entry, idx) => (
-                <li key={`${entry.timestampIso}-${idx}`}>
-                  {`${entry.timestampIso} | ${entry.event} | ${entry.preset}/${entry.source} | ${entry.controller}`}
-                </li>
-              ))}
-            </ul>
+            <>
+              <div style={{ marginTop: 6, marginBottom: 6, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                <label
+                  style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12 }}
+                >
+                  <span>{t.auditTrailExportFormatLabel}</span>
+                  <select
+                    data-testid="policy-audit-trail-export-format"
+                    value={auditTrailExportFormat}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      if (isAuditTrailExportFormat(next)) {
+                        setAuditTrailExportFormat(next);
+                      }
+                    }}
+                  >
+                    <option value="text">{t.auditTrailExportFormatText}</option>
+                    <option value="markdown">{t.auditTrailExportFormatMarkdown}</option>
+                    <option value="csv">{t.auditTrailExportFormatCsv}</option>
+                    <option value="ndjson">{t.auditTrailExportFormatNdjson}</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyPolicyAuditTrail()}
+                  data-testid="policy-audit-trail-copy"
+                >
+                  {t.copyPolicyAuditTrail}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyPolicyAuditTrailParseOnly()}
+                  data-testid="policy-audit-trail-copy-parse-only"
+                >
+                  {t.copyPolicyAuditTrailParseOnly}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadPolicyAuditTrail()}
+                  data-testid="policy-audit-trail-download"
+                >
+                  {t.auditTrailDownloadButtonLabel}
+                </button>
+                <label>
+                  <input
+                    type="checkbox"
+                    data-testid="policy-audit-trail-download-with-sidecar"
+                    checked={auditTrailDownloadWithSidecar}
+                    onChange={(event) =>
+                      setAuditTrailDownloadWithSidecar(event.target.checked)
+                    }
+                  />
+                  {t.auditTrailDownloadSidecarLabel}
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    data-testid="policy-audit-trail-download-with-hmac"
+                    checked={auditTrailDownloadWithHmacSidecar}
+                    onChange={(event) =>
+                      setAuditTrailDownloadWithHmacSidecar(event.target.checked)
+                    }
+                  />
+                  {t.auditTrailDownloadHmacLabel}
+                </label>
+                <label>
+                  {t.auditTrailHmacSecretLabel}
+                  <input
+                    type="password"
+                    data-testid="policy-audit-trail-hmac-secret"
+                    value={auditTrailHmacSecret}
+                    onChange={(event) => setAuditTrailHmacSecret(event.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                    style={{ marginLeft: 4 }}
+                  />
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    data-testid="policy-audit-trail-download-with-encryption"
+                    checked={auditTrailDownloadWithEncryption}
+                    onChange={(event) =>
+                      setAuditTrailDownloadWithEncryption(event.target.checked)
+                    }
+                  />
+                  {t.auditTrailDownloadEncryptionLabel}
+                </label>
+                <label>
+                  {t.auditTrailEncryptionSecretLabel}
+                  <input
+                    type="password"
+                    data-testid="policy-audit-trail-encryption-secret"
+                    value={auditTrailEncryptionSecret}
+                    onChange={(event) =>
+                      setAuditTrailEncryptionSecret(event.target.value)
+                    }
+                    autoComplete="off"
+                    spellCheck={false}
+                    style={{ marginLeft: 4 }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => handleClearAuditTrail()}
+                  data-testid="policy-audit-trail-clear"
+                >
+                  {t.clearAuditTrail}
+                </button>
+              </div>
+              <div
+                data-testid="policy-audit-trail-filter"
+                style={{ marginBottom: 6, display: "flex", flexWrap: "wrap", gap: 6 }}
+              >
+                {(
+                  [
+                    { id: "all", label: t.auditTrailFilterAll },
+                    { id: "parse_lint", label: t.auditTrailFilterParseLint },
+                    { id: "reset", label: t.auditTrailFilterReset },
+                    { id: "policy", label: t.auditTrailFilterPolicy }
+                  ] as Array<{ id: PolicyAuditTrailCategory; label: string }>
+                ).map((chip) => {
+                  const isActive = auditTrailFilterCategory === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      data-testid={`policy-audit-trail-filter-${chip.id}`}
+                      aria-pressed={isActive}
+                      onClick={() => setAuditTrailFilterCategory(chip.id)}
+                      style={
+                        isActive
+                          ? {
+                              background: "#2c4f8a",
+                              borderColor: "#5b8de6",
+                              color: "#fff",
+                              fontWeight: 600
+                            }
+                          : undefined
+                      }
+                    >
+                      {chip.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <ul style={{ marginTop: 6 }}>
+                {filteredPolicyAuditTrail.map((entry, idx) => {
+                  const extras: string[] = [];
+                  if (entry.code !== undefined) extras.push(`code=${entry.code}`);
+                  if (entry.blockIndex !== undefined) extras.push(`block=${entry.blockIndex}`);
+                  if (entry.fixCount !== undefined) extras.push(`fix=${entry.fixCount}`);
+                  if (entry.count !== undefined) extras.push(`count=${entry.count}`);
+                  if (entry.severities !== undefined) extras.push(`severities=${entry.severities}`);
+                  const extrasSuffix = extras.length > 0 ? ` | ${extras.join(" ")}` : "";
+                  return (
+                    <li
+                      key={`${entry.timestampIso}-${idx}`}
+                      data-testid={
+                        entry.hydratedFromTemplate
+                          ? "policy-audit-trail-entry-hydrated"
+                          : undefined
+                      }
+                    >
+                      {`${entry.timestampIso} | ${entry.event} | ${entry.preset}/${entry.source} | ${entry.controller}${extrasSuffix}`}
+                      {entry.hydratedFromTemplate ? (
+                        <span style={{ marginLeft: 6, opacity: 0.6 }}>{"(hydrated)"}</span>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
         </details>
         <p style={{ marginTop: 4, marginBottom: 8, opacity: 0.8 }}>
@@ -2295,6 +3962,7 @@ export function App() {
         <label style={{ display: "block", marginTop: 4, marginBottom: 8 }}>
           <input
             type="checkbox"
+            data-testid="policy-lock-manual-changes"
             checked={policyLockManualChanges}
             onChange={(event) => setPolicyLockManualChanges(event.target.checked)}
           />{" "}
@@ -2331,7 +3999,139 @@ export function App() {
             </button>
           </div>
         ) : null}
-        <button onClick={() => void handleRunJobCheck()}>{t.runJobCheck}</button>
+        <div
+          data-testid="parse-diagnostics-policy-presets"
+          style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}
+        >
+          <span style={{ opacity: 0.85, marginRight: 4 }}>{`${t.parseDiagnosticsPolicyPresetsLabel}:`}</span>
+          {PARSE_DIAGNOSTICS_POLICY_PRESETS.map((preset) => {
+            const isActive = currentMatchingParseDiagnosticsPolicyPreset === preset;
+            return (
+              <button
+                key={preset}
+                type="button"
+                data-testid={`parse-diagnostics-policy-preset-${preset}`}
+                aria-pressed={isActive}
+                onClick={() => handleApplyParseDiagnosticsPolicyPreset(preset)}
+                style={
+                  isActive
+                    ? {
+                        background: "#2c4f8a",
+                        borderColor: "#5b8de6",
+                        color: "#fff",
+                        fontWeight: 600
+                      }
+                    : undefined
+                }
+              >
+                {preset === "strict"
+                  ? t.parseDiagnosticsPolicyPresetStrict
+                  : preset === "balanced"
+                    ? t.parseDiagnosticsPolicyPresetBalanced
+                    : t.parseDiagnosticsPolicyPresetPermissive}
+              </button>
+            );
+          })}
+          <span
+            data-testid="parse-diagnostics-policy-preset-active"
+            style={{ opacity: 0.85, marginLeft: 4 }}
+          >
+            {`${t.parseDiagnosticsPolicyActiveLabel}: ${
+              currentMatchingParseDiagnosticsPolicyPreset === "custom"
+                ? t.parseDiagnosticsPolicyActiveCustom
+                : currentMatchingParseDiagnosticsPolicyPreset === "strict"
+                  ? t.parseDiagnosticsPolicyPresetStrict
+                  : currentMatchingParseDiagnosticsPolicyPreset === "balanced"
+                    ? t.parseDiagnosticsPolicyPresetBalanced
+                    : t.parseDiagnosticsPolicyPresetPermissive
+            }`}
+          </span>
+        </div>
+        <fieldset
+          data-testid="parse-diagnostics-policy-row"
+          style={{ marginTop: 8, marginBottom: 8, padding: 8, border: "1px solid #2e2e2e", borderRadius: 6 }}
+        >
+          <legend style={{ padding: "0 6px", fontWeight: 600 }}>{t.parseDiagnosticsPolicyHeading}</legend>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 12 }}>
+            <input
+              type="checkbox"
+              data-testid="parse-diagnostics-policy-enabled"
+              checked={parseDiagnosticsPolicy.enabled}
+              onChange={(event) =>
+                setParseDiagnosticsPolicy((prev) => ({ ...prev, enabled: event.target.checked }))
+              }
+            />
+            {t.parseDiagnosticsPolicyEnabledLabel}
+          </label>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 12 }}>
+            {`${t.parseDiagnosticsPolicySeverityLabel}:`}
+            <select
+              data-testid="parse-diagnostics-policy-severity"
+              value={parseDiagnosticsPolicy.severity}
+              onChange={(event) =>
+                setParseDiagnosticsPolicy((prev) => ({
+                  ...prev,
+                  severity: event.target.value === "blocker" ? "blocker" : "warning"
+                }))
+              }
+              disabled={!parseDiagnosticsPolicy.enabled}
+            >
+              <option value="warning">{t.parseDiagnosticsPolicySeverityWarning}</option>
+              <option value="blocker">{t.parseDiagnosticsPolicySeverityBlocker}</option>
+            </select>
+          </label>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 12 }}>
+            <input
+              type="checkbox"
+              data-testid="parse-diagnostics-policy-block-export"
+              checked={parseDiagnosticsPolicy.blockExport}
+              onChange={(event) =>
+                setParseDiagnosticsPolicy((prev) => ({ ...prev, blockExport: event.target.checked }))
+              }
+              disabled={!parseDiagnosticsPolicy.enabled}
+            />
+            {t.parseDiagnosticsPolicyBlockExportLabel}
+          </label>
+          <label style={{ display: "block", marginTop: 8 }}>
+            {`${t.parseDiagnosticsPolicyThresholdsLabel} (${t.parseDiagnosticsPolicyThresholdsHint}):`}
+            <input
+              type="text"
+              data-testid="parse-diagnostics-policy-thresholds"
+              value={parseDiagnosticsPolicy.thresholdsText}
+              onChange={(event) =>
+                setParseDiagnosticsPolicy((prev) => ({ ...prev, thresholdsText: event.target.value }))
+              }
+              placeholder={t.parseDiagnosticsPolicyThresholdsHint}
+              disabled={!parseDiagnosticsPolicy.enabled}
+              style={{ marginLeft: 8, width: "60%", fontFamily: "Consolas, monospace" }}
+            />
+          </label>
+          {parseDiagnosticsPolicyResolved.invalidEntries.length > 0 && (
+            <p
+              data-testid="parse-diagnostics-policy-invalid-entries"
+              style={{ marginTop: 6, marginBottom: 0, color: "#c08a00", fontFamily: "Consolas, monospace" }}
+            >
+              {`${t.parseDiagnosticsPolicyInvalidEntriesLabel}: ${parseDiagnosticsPolicyResolved.invalidEntries.join(", ")}`}
+            </p>
+          )}
+          <p
+            data-testid="parse-diagnostics-policy-summary"
+            style={{ marginTop: 6, marginBottom: 0, fontFamily: "Consolas, monospace" }}
+          >
+            {serializeParseDiagnosticsPolicy(parseDiagnosticsPolicy)}
+          </p>
+          <button
+            type="button"
+            onClick={() => void handleCopyParseDiagnosticsPolicyContext()}
+            data-testid="parse-diagnostics-policy-copy"
+            style={{ marginTop: 6 }}
+          >
+            {t.parseDiagnosticsPolicyCopyContext}
+          </button>
+        </fieldset>
+        <button data-testid="run-job-check" onClick={() => void handleRunJobCheck()}>
+          {t.runJobCheck}
+        </button>
         <details
           open={advancedQaExpanded}
           onToggle={(event) => setAdvancedQaExpanded((event.currentTarget as HTMLDetailsElement).open)}
@@ -2440,7 +4240,12 @@ export function App() {
         >
           {fixtureOpsBusy ? t.fixtureOpsInProgress : t.fixtureImportNow}
         </button>
-        <button onClick={handleResetFixturePrefsForController} style={{ marginLeft: 8 }} disabled={fixtureOpsBusy}>
+        <button
+          data-testid="reset-fixture-prefs"
+          onClick={handleResetFixturePrefsForController}
+          style={{ marginLeft: 8 }}
+          disabled={fixtureOpsBusy}
+        >
           {t.resetFixturePrefs}
         </button>
         <button
@@ -2688,6 +4493,14 @@ function readUiDefaultsFromTemplateJson(
       jobCheckPolicyPreset?: JobCheckPolicyPreset;
       policyUiEventsEnabled?: boolean;
       policyLockManualChanges?: boolean;
+      parseDiagnosticsPolicy?: {
+        enabled?: boolean;
+        severity?: "warning" | "blocker";
+        blockExport?: boolean;
+        thresholdsText?: string;
+      };
+      lintDemoControllerOverride?: "auto" | ControllerProfileKey;
+      auditTrailExportFormat?: AuditTrailExportFormat;
     }
   | undefined {
   try {
@@ -2710,6 +4523,14 @@ function readUiDefaultsFromTemplateJson(
             jobCheckPolicyPreset?: JobCheckPolicyPreset;
             policyUiEventsEnabled?: boolean;
             policyLockManualChanges?: boolean;
+            parseDiagnosticsPolicy?: {
+              enabled?: boolean;
+              severity?: "warning" | "blocker";
+              blockExport?: boolean;
+              thresholdsText?: string;
+            };
+            lintDemoControllerOverride?: "auto" | ControllerProfileKey;
+            auditTrailExportFormat?: AuditTrailExportFormat;
           }
         >;
       };
@@ -2723,15 +4544,17 @@ function readUiDefaultsFromTemplateJson(
 function emitPolicyPresetUiEvent(
   enabled: boolean,
   eventName: string,
-  detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" }
-): { event: string; controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual"; timestampIso: string } | null {
+  detail: { controller: ControllerProfileKey; preset: JobCheckPolicyPreset; source: "saved" | "bootstrap" | "manual" },
+  timestampIso?: string,
+  extras?: PolicyUiEventExtras
+): PolicyUiEventPayload | null {
   if (!derivePolicyUiEventEmissionDecision(enabled).emit) return null;
-  const payload = {
-    schemaVersion: 1,
+  const payload = buildPolicyUiEventPayload({
     event: eventName,
-    ...detail,
-    timestampIso: new Date().toISOString()
-  };
+    detail,
+    timestampIso: timestampIso ?? new Date().toISOString(),
+    extras
+  });
   try {
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("cnc:policy-preset-ui", { detail: payload }));

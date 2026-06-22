@@ -1,9 +1,16 @@
-import { buildTimelineFindingsExportBundle } from "./exportBundle.js";
+import { buildTimelineFindingsExportBundle, summarizeLintIssues } from "./exportBundle.js";
 import { buildProveoutProgram } from "./proveout.js";
 import { generateSetupSheet } from "./setupSheet.js";
 import { analyzeProgram } from "./advisor.js";
 import { simpleSimulate } from "../simulator/simpleSimulator.js";
+import { simpleLint } from "../lints/simpleLint.js";
+import { withLintProvenance } from "../lints/lintProvenance.js";
 import type {
+  LintIssue,
+  ParseDiagnostic,
+  ParseDiagnosticsPolicyBreach,
+  ParseDiagnosticsSummary,
+  ParseDiagnosticsThresholdPolicy,
   RunJobCheckInput,
   RunJobCheckResult,
   SafetyFinding,
@@ -11,6 +18,27 @@ import type {
   ExportBlockingPolicy,
   JobCheckPolicyPreset
 } from "../types.js";
+
+export function summarizeParseDiagnostics(diagnostics: ParseDiagnostic[] | undefined): ParseDiagnosticsSummary {
+  const list = diagnostics ?? [];
+  const byCode: Record<string, number> = {};
+  const bySeverity: Record<string, { warnings: number; errors: number }> = {};
+  for (const diag of list) {
+    byCode[diag.code] = (byCode[diag.code] ?? 0) + 1;
+    const bucket = bySeverity[diag.code] ?? { warnings: 0, errors: 0 };
+    if (diag.severity === "error") bucket.errors += 1;
+    else bucket.warnings += 1;
+    bySeverity[diag.code] = bucket;
+  }
+  const topCodes = Object.entries(byCode)
+    .sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return a[0].localeCompare(b[0]);
+    })
+    .slice(0, 3)
+    .map(([code]) => code);
+  return { total: list.length, byCode, bySeverity, topCodes };
+}
 
 const dynamicImport = new Function("path", "return import(path);") as (path: string) => Promise<unknown>;
 
@@ -123,6 +151,59 @@ function resolveSimulationFindingPolicy(input: RunJobCheckInput): SimulationFind
   return merged;
 }
 
+export const PARSE_DIAGNOSTICS_THRESHOLD_BREACH_CODE = "PARSE_DIAGNOSTICS_THRESHOLD_BREACH";
+
+export function evaluateParseDiagnosticsThresholdPolicy(
+  summary: ParseDiagnosticsSummary,
+  policy: ParseDiagnosticsThresholdPolicy | undefined,
+  diagnostics?: ParseDiagnostic[]
+): {
+  findings: SafetyFinding[];
+  blockedCodes: string[];
+  breaches: ParseDiagnosticsPolicyBreach[];
+} {
+  if (!policy) return { findings: [], blockedCodes: [], breaches: [] };
+  const findings: SafetyFinding[] = [];
+  const breaches: ParseDiagnosticsPolicyBreach[] = [];
+  const firstBlockIndexByCode = computeFirstBlockIndexByCode(diagnostics ?? []);
+  const entries = Object.entries(policy.thresholds) as Array<[string, number | undefined]>;
+  entries.sort((a, b) => a[0].localeCompare(b[0]));
+  for (const [key, threshold] of entries) {
+    if (threshold === undefined) continue;
+    const observed = key === "TOTAL" ? summary.total : summary.byCode[key] ?? 0;
+    if (observed > threshold) {
+      const firstBlockIndex = key === "TOTAL" ? undefined : firstBlockIndexByCode[key];
+      findings.push({
+        severity: policy.severity,
+        code: PARSE_DIAGNOSTICS_THRESHOLD_BREACH_CODE,
+        message: `Parse diagnostics ${key}=${observed} exceeds threshold ${threshold}.`,
+        ...(firstBlockIndex !== undefined ? { blockIndex: firstBlockIndex } : {})
+      });
+      breaches.push({
+        key,
+        observed,
+        threshold,
+        severity: policy.severity,
+        ...(firstBlockIndex !== undefined ? { firstBlockIndex } : {})
+      });
+    }
+  }
+  const blockedCodes =
+    policy.blockExport && findings.length > 0 ? [PARSE_DIAGNOSTICS_THRESHOLD_BREACH_CODE] : [];
+  return { findings, blockedCodes, breaches };
+}
+
+function computeFirstBlockIndexByCode(diagnostics: ParseDiagnostic[]): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const diag of diagnostics) {
+    const existing = result[diag.code];
+    if (existing === undefined || diag.blockIndex < existing) {
+      result[diag.code] = diag.blockIndex;
+    }
+  }
+  return result;
+}
+
 function resolveExportBlockingPolicy(input: RunJobCheckInput): ExportBlockingPolicy {
   const preset = input.policyPreset ?? "balanced";
   const basePolicy = exportBlockingPolicyByPreset[preset];
@@ -146,16 +227,43 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
     subprogramTargetPolicy: input.simulationLimits?.subprogramTargetPolicy
   });
   const advisor = analyzeProgram(input.ast, initialState, input.advisorOptions);
-  const setupSheet = generateSetupSheet(input.ast, initialState);
-  const proveout = buildProveoutProgram(input.ast, initialState);
+  const parseDiagnosticsSummary = summarizeParseDiagnostics(input.ast.parseDiagnostics);
   const simulationFindings = buildSimulationFindings(simulation, resolveSimulationFindingPolicy(input));
   const exportBlockingPolicy = resolveExportBlockingPolicy(input);
+  const parseDiagnosticsPolicyResult = evaluateParseDiagnosticsThresholdPolicy(
+    parseDiagnosticsSummary,
+    input.parseDiagnosticsPolicy,
+    input.ast.parseDiagnostics
+  );
+  const rawLintIssues: LintIssue[] = [
+    ...simpleLint(input.ast),
+    ...(input.profileLintIssues ?? [])
+  ];
+  const lintIssues = withLintProvenance(input.ast, rawLintIssues);
+  const lintIssuesSummary = summarizeLintIssues(lintIssues);
+  const setupSheet = generateSetupSheet(input.ast, initialState, {
+    parseDiagnosticsSummary,
+    parseDiagnosticsBreaches: parseDiagnosticsPolicyResult.breaches,
+    lintIssuesSummary
+  });
+  const proveout = buildProveoutProgram(input.ast, initialState, {
+    parseDiagnosticsSummary,
+    parseDiagnosticsBreaches: parseDiagnosticsPolicyResult.breaches,
+    lintIssuesSummary
+  });
 
-  const allFindings = [...advisor.safetyFindings, ...simulationFindings];
+  const allFindings = [
+    ...advisor.safetyFindings,
+    ...simulationFindings,
+    ...parseDiagnosticsPolicyResult.findings
+  ];
   const blockerCount = allFindings.filter((f) => f.severity === "blocker").length;
   const warningCount = allFindings.filter((f) => f.severity === "warning").length;
   const allowExportWithBlockers = input.exportOptions?.allowExportWithBlockers ?? false;
-  const blockedCodes = new Set(exportBlockingPolicy.blockedFindingCodes);
+  const blockedCodes = new Set([
+    ...exportBlockingPolicy.blockedFindingCodes,
+    ...parseDiagnosticsPolicyResult.blockedCodes
+  ]);
   const policyBlockedFindings = allFindings.filter(
     (f) =>
       blockedCodes.has(f.code) || (exportBlockingPolicy.includeAllBlockers && f.severity === "blocker")
@@ -172,6 +280,9 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
       const at = finding.blockIndex !== undefined ? ` at block ${finding.blockIndex}` : "";
       messages.push(`Simulation ${finding.severity}: ${finding.code}${at} - ${finding.message}`);
     }
+  }
+  for (const finding of parseDiagnosticsPolicyResult.findings) {
+    messages.push(`Parse diagnostics ${finding.severity}: ${finding.code} - ${finding.message}`);
   }
   if (warningCount > 0) {
     messages.push(`Detected ${warningCount} warning(s); review before release.`);
@@ -213,7 +324,8 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
             kind: entry.event!.kind,
             message: entry.event!.message
           })),
-        findings: allFindings
+        findings: allFindings,
+        parseDiagnosticsSummary
       });
       exportResult = await exportMod.exportWorkshopArtifacts({
         baseDirectory: input.exportOptions.baseDirectory,
@@ -241,7 +353,11 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
     setupSheet,
     proveout,
     exportResult,
-    messages
+    messages,
+    parseDiagnosticsSummary,
+    parseDiagnosticsPolicyBreaches: parseDiagnosticsPolicyResult.breaches,
+    lintIssues,
+    lintIssuesSummary
   };
 }
 

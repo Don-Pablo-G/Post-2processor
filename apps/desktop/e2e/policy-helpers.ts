@@ -16,5 +16,8 @@ export function policyRevertButton(page: Page) {
 }
 
 export function policyLockToggle(page: Page) {
-  return page.locator("xpath=(//label[.//select[.//option[@value='strict']]][1]/following::input[@type='checkbox'])[2]");
+  // Stable data-testid; an earlier index-based xpath turned out to be
+  // ambiguous as soon as a sibling control added another <input type=checkbox>
+  // earlier in document order (e.g. the audit-trail SHA-256 sidecar checkbox).
+  return page.locator("[data-testid='policy-lock-manual-changes']");
 }

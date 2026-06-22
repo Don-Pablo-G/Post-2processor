@@ -1,8 +1,16 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_duplicate_n_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 1,
+  "lintIssueCount": 3,
   "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Program must start with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Program must end with a standalone % line."
+    },
     {
       "severity": "warning",
       "message": "Duplicate sequence number N10 — GOTO/M97 targets may be ambiguous."

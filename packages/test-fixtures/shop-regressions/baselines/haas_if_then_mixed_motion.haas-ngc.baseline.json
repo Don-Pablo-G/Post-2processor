@@ -1,11 +1,15 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_if_then_mixed_motion.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 1,
+  "lintIssueCount": 2,
   "lintIssues": [
     {
       "severity": "warning",
-      "message": "Duplicate sequence number N#100 — GOTO/M97 targets may be ambiguous."
+      "message": "Program must start with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Program must end with a standalone % line."
     }
   ],
   "simulation": {

@@ -19,14 +19,22 @@
       "default": "./dist/index.browser.js"
     }
   },
+  "bin": {
+    "cnc-job-check": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "cli": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
+  "dependencies": {
+    "@cnc/profile-fanuc-iso": "*",
+    "@cnc/profile-haas-ngc": "*"
+  },
   "devDependencies": {
-    "@cnc/profile-haas-ngc": "*",
+    "tsx": "^4.21.0",
     "vitest": "^3.2.4"
   }
 }

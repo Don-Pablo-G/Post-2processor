@@ -54,8 +54,57 @@ function isMeaningfulFirstG43Z(zWordRaw: string | undefined): boolean {
 export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
   let sawFirstG43Activation = false;
+  let sawAnyDOffset = false;
+  let activeStopResumeSafety:
+    | {
+        stopBlockIndex: number;
+        stopCode: 0 | 1;
+        spindleRestartSeen: boolean;
+      }
+    | undefined;
 
   ast.blocks.forEach((block, index) => {
+    const hasM00 = hasWordM(block, 0);
+    const hasM01 = hasWordM(block, 1);
+    if (hasM00 || hasM01) {
+      const hasRestartSpindleSameBlock = block.words.some((w) => {
+        if (w.letter !== "M") return false;
+        const m = Math.trunc(Number.parseFloat(w.value));
+        return m === 3 || m === 4;
+      });
+      activeStopResumeSafety = {
+        stopBlockIndex: index,
+        stopCode: hasM00 ? 0 : 1,
+        spindleRestartSeen: hasRestartSpindleSameBlock
+      };
+    } else if (activeStopResumeSafety) {
+      const hasRestartSpindle = block.words.some((w) => {
+        if (w.letter !== "M") return false;
+        const m = Math.trunc(Number.parseFloat(w.value));
+        return m === 3 || m === 4;
+      });
+      if (hasRestartSpindle) {
+        activeStopResumeSafety.spindleRestartSeen = true;
+      }
+
+      if (activeStopResumeSafety.spindleRestartSeen) {
+        // A spindle restart clears this specific safety concern window.
+        activeStopResumeSafety = undefined;
+      } else {
+        const zWord = block.words.filter((w) => w.letter === "Z").at(-1);
+        const zValue = zWord ? Number.parseFloat(zWord.value) : Number.NaN;
+        if (Number.isFinite(zValue) && zValue < 0) {
+          const stopLabel = activeStopResumeSafety.stopCode === 0 ? "M00" : "M01";
+          issues.push({
+            severity: "warning",
+            message: `${stopLabel} is followed by a move below Z0 before spindle restart (M3/M4) — verify safe restart procedure.`,
+            blockIndex: index
+          });
+          activeStopResumeSafety = undefined;
+        }
+      }
+    }
+
     if (block.raw.includes("M30") && index !== ast.blocks.length - 1) {
       issues.push({
         severity: "warning",
@@ -110,11 +159,17 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasExactG41Or42(block) && !hasLetter(block, "D")) {
-      issues.push({
-        severity: "warning",
-        message: "G41/G42 without D on the same block — cutter comp normally requires a D offset.",
-        blockIndex: index
-      });
+      if (!sawAnyDOffset) {
+        issues.push({
+          severity: "warning",
+          message: "G41/G42 without D and no prior D offset active — set D explicitly or confirm carried offset state.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasLetter(block, "D")) {
+      sawAnyDOffset = true;
     }
 
     const tWord = block.words.filter((w) => w.letter === "T").at(-1);

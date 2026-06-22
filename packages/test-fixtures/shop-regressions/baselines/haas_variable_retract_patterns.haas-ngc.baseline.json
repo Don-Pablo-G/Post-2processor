@@ -1,8 +1,17 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_variable_retract_patterns.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 0,
-  "lintIssues": [],
+  "lintIssueCount": 2,
+  "lintIssues": [
+    {
+      "severity": "warning",
+      "message": "Program must start with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Program must end with a standalone % line."
+    }
+  ],
   "simulation": {
     "halted": true,
     "steps": 17,

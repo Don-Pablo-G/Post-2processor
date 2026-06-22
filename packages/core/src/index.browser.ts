@@ -7,6 +7,7 @@ import {
   getProgramTemplates,
   getTemplateLibrary,
   lint,
+  lintWithProvenance,
   parameterReserveProfiles,
   parameterize,
   parseTemplateLibrary,
@@ -15,6 +16,7 @@ import {
   removeProveout,
   runJobCheck,
   simulate,
+  summarizeParseDiagnostics,
   toolingReport
 } from "./api.js";
 import type {
@@ -52,6 +54,7 @@ export {
   getProgramTemplates,
   getTemplateLibrary,
   lint,
+  lintWithProvenance,
   parameterReserveProfiles,
   parameterize,
   parseTemplateLibrary,
@@ -60,8 +63,38 @@ export {
   removeProveout,
   runJobCheck,
   simulate,
+  summarizeParseDiagnostics,
   toolingReport
 };
+
+export {
+  PARSE_DIAGNOSTICS_POLICY_PRESET_IDS,
+  resolveParseDiagnosticsPolicyPreset
+} from "./workshop/parseDiagnosticsPresets.js";
+
+export type { ParseDiagnosticsPolicyPresetId } from "./workshop/parseDiagnosticsPresets.js";
+
+export {
+  CONTROLLER_GRAMMAR_FIXES,
+  CG_DUPLICATE_ADDRESSES_PREFIX,
+  getControllerGrammarFix
+} from "./lints/controllerGrammarFixes.js";
+export type { ControllerGrammarFix } from "./lints/controllerGrammarFixes.js";
+
+export { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecation.js";
+
+export type {
+  CliJobCheckEnvelope,
+  CliBatchEnvelope,
+  CliBatchEntry,
+  CliBatchControllerCodeAttribution,
+  CliBatchBlockReasonAggregation,
+  CliBlockReason,
+  CliLintIssuesByControllerCodeEntry,
+  CliLintIssuesBySourceEntry,
+  CliLintIssuesByParseDiagCodeEntry,
+  CliParseDiagnosticsByCodeEntry
+} from "./cli.js";
 
 export function isNodeCapable(): boolean {
   return false;

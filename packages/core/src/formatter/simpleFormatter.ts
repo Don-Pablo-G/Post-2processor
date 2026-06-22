@@ -3,7 +3,9 @@ import type { FormatStyle, ProgramAst } from "../types.js";
 export function simpleFormat(ast: ProgramAst, style: FormatStyle): string {
   return ast.blocks
     .filter((block) => {
-      // Drop structural lines like "%" that produce no parseable words/comments.
+      if (block.raw.trim() === "%") return true;
+      if (isMacroControlFlowLine(block.raw.trim())) return true;
+      // Drop structural lines that produce no parseable words/comments.
       if (block.words.length === 0 && !block.comment) return false;
       return true;
     })
@@ -18,6 +20,7 @@ export function simpleFormat(ast: ProgramAst, style: FormatStyle): string {
     })
     .map((block) => {
       const raw = block.raw.trim();
+      if (raw === "%") return "%";
       if (isMacroControlFlowLine(raw)) {
         // Always emit uppercase for machine safety (Fanuc rejects lowercase keywords/functions).
         return raw.toUpperCase();
@@ -33,7 +36,12 @@ export function simpleFormat(ast: ProgramAst, style: FormatStyle): string {
 }
 
 function isMacroControlFlowLine(raw: string): boolean {
-  const codeOnly = raw.replace(/\([^)]*\)/g, "").replace(/;.*$/g, "").trim().toUpperCase();
+  const codeOnly = raw
+    .replace(/\([^)]*\)/g, "")
+    .replace(/;.*$/g, "")
+    .trim()
+    .replace(/^\/+\s*/, "")
+    .toUpperCase();
   if (codeOnly.length === 0) return false;
   return (
     /^#\d+\s*=/.test(codeOnly) ||
