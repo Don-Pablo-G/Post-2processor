@@ -24,6 +24,10 @@
 
 import {
   getControllerGrammarFix,
+  blockSpanToRange,
+  splitProgramIntoBlockSpans,
+  splitProgramIntoBlocks,
+  type BlockSplitOptions,
   type CliBatchEnvelope,
   type CliJobCheckEnvelope,
   type LintIssue
@@ -34,9 +38,8 @@ import {
  * shape inlines the catalogue's `title` + `rationale` + optional
  * `replacementTemplate` so consumers don't have to hop through the
  * underlying `ControllerGrammarFix` reference. An optional `range`
- * field is reserved for future line/column resolution — today's
- * `LintIssue` carries only a `blockIndex`, so callers that need an
- * editor range derive it themselves; the field is left undefined.
+ * field is populated when `getQuickFixForLintIssue(issue, source)` is
+ * called with program source (and optional `semicolonEob` options).
  */
 export type IdeQuickFix = {
   /**
@@ -57,9 +60,8 @@ export type IdeQuickFix = {
   replacementTemplate?: string;
   /**
    * Optional editor range when the quick-fix can be tied back to a
-   * specific source location. Today's pipeline does not populate this
-   * (LintIssue only carries `blockIndex`); reserved for a future move
-   * that resolves block index → line/column at envelope-build time.
+   * specific source location. Populated by `resolveQuickFixRange` when
+   * program `source` is supplied to `getQuickFixForLintIssue`.
    */
   range?: {
     startLine: number;
@@ -68,6 +70,27 @@ export type IdeQuickFix = {
     endColumn?: number;
   };
 };
+
+export type QuickFixRangeOptions = BlockSplitOptions;
+
+export { splitProgramIntoBlocks as splitProgramIntoDisplayBlocks };
+
+/**
+ * Resolve a parser `blockIndex` to a 1-based editor range in the original
+ * source. Supports Haas semicolon-EOB block splitting when
+ * `options.semicolonEob` is true.
+ */
+export function resolveQuickFixRange(
+  source: string,
+  blockIndex: number,
+  options?: QuickFixRangeOptions
+): IdeQuickFix["range"] | undefined {
+  if (!Number.isFinite(blockIndex) || blockIndex < 0) return undefined;
+  const spans = splitProgramIntoBlockSpans(source, options);
+  const span = spans[blockIndex];
+  if (!span) return undefined;
+  return blockSpanToRange(source, span);
+}
 
 /**
  * Resolve the canonical quick-fix for a single `LintIssue`. Returns
@@ -82,14 +105,15 @@ export type IdeQuickFix = {
  */
 export function getQuickFixForLintIssue(
   issue: LintIssue,
-  source?: string
+  source?: string,
+  rangeOptions?: QuickFixRangeOptions
 ): IdeQuickFix | undefined {
   if (typeof issue.code !== "string" || issue.code.length === 0) return undefined;
   const fix = getControllerGrammarFix(issue.code);
   if (!fix) return undefined;
   const out = toQuickFix(issue.code, fix);
   if (source !== undefined) {
-    const range = resolveQuickFixRange(source, issue.blockIndex);
+    const range = resolveQuickFixRange(source, issue.blockIndex, rangeOptions);
     if (range) out.range = range;
   }
   return out;
@@ -107,11 +131,12 @@ export function getQuickFixForLintIssue(
  */
 export function mapJobCheckEnvelopeToQuickFixes(
   envelope: CliJobCheckEnvelope,
-  source?: string
+  source?: string,
+  rangeOptions?: QuickFixRangeOptions
 ): IdeQuickFix[] {
   const out: IdeQuickFix[] = [];
   for (const issue of envelope.controllerLints) {
-    const qf = getQuickFixForLintIssue(issue, source);
+    const qf = getQuickFixForLintIssue(issue, source, rangeOptions);
     if (qf) out.push(qf);
   }
   return out;
@@ -247,45 +272,4 @@ export function deriveQuickFixBindings(issue: LintIssue): IdeQuickFixBindings {
     }
   }
   return Object.freeze({});
-}
-
-/**
- * Split program source into display blocks using the same semantics as the
- * core parser's default (newline-separated, trimmed, empty lines skipped).
- */
-export function splitProgramIntoDisplayBlocks(source: string): string[] {
-  return source
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-}
-
-/**
- * Resolve a parser `blockIndex` to a 1-based editor range in the original
- * source. Returns `undefined` when `blockIndex` is out of range.
- */
-export function resolveQuickFixRange(
-  source: string,
-  blockIndex: number
-): IdeQuickFix["range"] | undefined {
-  if (!Number.isFinite(blockIndex) || blockIndex < 0) return undefined;
-  let currentBlock = -1;
-  let lineNo = 0;
-  for (const rawLine of source.split(/\r?\n/)) {
-    lineNo += 1;
-    const trimmed = rawLine.trim();
-    if (trimmed.length === 0) continue;
-    currentBlock += 1;
-    if (currentBlock === blockIndex) {
-      const startColumn = rawLine.indexOf(trimmed) + 1;
-      const endColumn = startColumn + trimmed.length - 1;
-      return {
-        startLine: lineNo,
-        startColumn,
-        endLine: lineNo,
-        endColumn
-      };
-    }
-  }
-  return undefined;
 }

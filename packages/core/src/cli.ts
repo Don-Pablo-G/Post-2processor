@@ -44,7 +44,7 @@ import {
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 9;
+export const CLI_SCHEMA_VERSION = 10;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -1254,6 +1254,15 @@ export type CliBatchEnvelope = {
      * Absent (NOT empty array) when no entry has lint issues by source.
      */
     lintIssuesBySourceAggregated?: CliBatchLintIssuesBySourceAggregation[];
+    /**
+     * Schema v10: cross-input aggregation of every entry's
+     * `envelope.lintIssuesByParseDiagCode`. One row per distinct
+     * `(source, code)` pair; `inputs` lists entry inputs that reported
+     * the pair (sorted ascending, deduped). Counts sum across entries.
+     * Sort order: `count` desc → `source` asc → `code` asc. Absent when
+     * no entry has parse-diag-linked lint issues.
+     */
+    lintIssuesByParseDiagCodeAggregated?: CliBatchLintIssuesByParseDiagCodeAggregation[];
   };
 };
 
@@ -1274,6 +1283,17 @@ export type CliBatchLintIssuesBySourceAggregation = {
   count: number;
   blockers: number;
   warnings: number;
+  inputs: string[];
+};
+
+/**
+ * Schema v10: cross-input rollup of per-entry `lintIssuesByParseDiagCode`
+ * rows. One row per distinct `(source, code)` pair.
+ */
+export type CliBatchLintIssuesByParseDiagCodeAggregation = {
+  source: LintIssueProvenanceSource;
+  code: string;
+  count: number;
   inputs: string[];
 };
 
@@ -1325,6 +1345,10 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const lintBySource = buildBatchLintIssuesBySourceAggregation(entries);
   if (lintBySource.length > 0) {
     summary.lintIssuesBySourceAggregated = lintBySource;
+  }
+  const lintByParseDiag = buildBatchLintIssuesByParseDiagCodeAggregation(entries);
+  if (lintByParseDiag.length > 0) {
+    summary.lintIssuesByParseDiagCodeAggregated = lintByParseDiag;
   }
   return {
     schemaVersion: CLI_SCHEMA_VERSION,
@@ -1427,6 +1451,53 @@ export function buildBatchLintIssuesBySourceAggregation(
   rows.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
     return ENVELOPE_SOURCE_ORDER.indexOf(a.source) - ENVELOPE_SOURCE_ORDER.indexOf(b.source);
+  });
+  return rows;
+}
+
+/**
+ * Schema v10: walk every entry's `envelope.lintIssuesByParseDiagCode` and
+ * group by `(source, code)`. Pure function — deterministic given `entries`.
+ */
+export function buildBatchLintIssuesByParseDiagCodeAggregation(
+  entries: CliBatchEntry[]
+): CliBatchLintIssuesByParseDiagCodeAggregation[] {
+  const byKey = new Map<
+    string,
+    { source: LintIssueProvenanceSource; code: string; count: number; inputs: Set<string> }
+  >();
+  for (const entry of entries) {
+    const rows = entry.envelope.lintIssuesByParseDiagCode;
+    if (!rows || rows.length === 0) continue;
+    for (const row of rows) {
+      const key = `${row.source}::${row.code}`;
+      let bucket = byKey.get(key);
+      if (!bucket) {
+        bucket = {
+          source: row.source,
+          code: row.code,
+          count: 0,
+          inputs: new Set<string>()
+        };
+        byKey.set(key, bucket);
+      }
+      bucket.count += row.count;
+      bucket.inputs.add(entry.input);
+    }
+  }
+  const rows: CliBatchLintIssuesByParseDiagCodeAggregation[] = [];
+  for (const bucket of byKey.values()) {
+    rows.push({
+      source: bucket.source,
+      code: bucket.code,
+      count: bucket.count,
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    if (a.source !== b.source) return a.source.localeCompare(b.source);
+    return a.code.localeCompare(b.code);
   });
   return rows;
 }

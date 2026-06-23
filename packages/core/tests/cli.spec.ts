@@ -13,6 +13,7 @@ import {
   CliArgumentError,
   buildControllerProfile,
   buildJobCheckEnvelope,
+  buildBatchLintIssuesByParseDiagCodeAggregation,
   buildBatchLintIssuesBySourceAggregation,
   clearDiscoveredProfilePackLoadersCache,
   formatJobCheckJson,
@@ -1006,7 +1007,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=9\n");
+    expect(stdout).toBe("cnc-job-check schema=10\n");
     expect(stderr).toBe("");
   });
 
@@ -1378,7 +1379,7 @@ describe("main()", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(9);
+    expect(parsed.schemaVersion).toBe(10);
     expect(Object.keys(parsed.summary).sort()).toEqual(
       ["blocked", "files", "lintIssuesByControllerCodePerInputFile"].sort()
     );
@@ -2597,7 +2598,7 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 
 describe("--strict-controller-codes gate (schema v7)", () => {
   it("CLI_SCHEMA_VERSION is 9", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(9);
+    expect(CLI_SCHEMA_VERSION).toBe(10);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3074,7 +3075,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(9);
+    expect(batch.schemaVersion).toBe(10);
     expect(batch.summary.lintIssuesBySourceAggregated).toBeUndefined();
   });
 
@@ -3109,7 +3110,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 9,
+        schemaVersion: 10,
         envelope: {
           lintIssuesBySource: [
             { source: "profile_lint", count: 1, blockers: 0, warnings: 1 },
@@ -3119,7 +3120,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 9,
+        schemaVersion: 10,
         envelope: {
           lintIssuesBySource: [
             { source: "controller_grammar", count: 2, blockers: 0, warnings: 2 },
@@ -3132,6 +3133,84 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     expect(agg[0].source).toBe("controller_grammar");
     expect(agg[0].count).toBe(3);
     expect(agg[0].inputs).toEqual(["a.nc", "b.nc"]);
+  });
+});
+
+describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
+  it("batch summary.lintIssuesByParseDiagCodeAggregated is undefined for a clean batch", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    expect(batch.schemaVersion).toBe(10);
+    expect(batch.summary.lintIssuesByParseDiagCodeAggregated).toBeUndefined();
+  });
+
+  it("batch summary.lintIssuesByParseDiagCodeAggregated unions parse-diag codes across 2 inputs", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "G0 X1 (unclosed\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "G0 Y[1+2 X3.\nM30\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    const agg = batch.summary.lintIssuesByParseDiagCodeAggregated as Array<{
+      source: string;
+      code: string;
+      count: number;
+      inputs: string[];
+    }>;
+    expect(Array.isArray(agg)).toBe(true);
+    expect(agg.length).toBeGreaterThan(0);
+    expect(agg[0].count).toBeGreaterThanOrEqual(agg[agg.length - 1].count);
+    const withTwoInputs = agg.filter((row) => row.inputs.length === 2);
+    expect(withTwoInputs.length).toBeGreaterThanOrEqual(0);
+    for (const row of agg) {
+      expect(row.inputs.length).toBeGreaterThan(0);
+      expect(row.count).toBeGreaterThan(0);
+    }
+  });
+
+  it("buildBatchLintIssuesByParseDiagCodeAggregation sorts by count desc then source then code", () => {
+    const entries = [
+      {
+        input: "b.nc",
+        schemaVersion: 10,
+        envelope: {
+          lintIssuesByParseDiagCode: [
+            { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 1 }
+          ]
+        }
+      },
+      {
+        input: "a.nc",
+        schemaVersion: 10,
+        envelope: {
+          lintIssuesByParseDiagCode: [
+            { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 2 },
+            { source: "expression_parser", code: "UNBALANCED_BRACKET", count: 1 }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchLintIssuesByParseDiagCodeAggregation>[0];
+    const agg = buildBatchLintIssuesByParseDiagCodeAggregation(entries);
+    expect(agg[0]).toMatchObject({
+      source: "lexer",
+      code: "UNMATCHED_OPEN_PAREN",
+      count: 3,
+      inputs: ["a.nc", "b.nc"]
+    });
+    expect(agg[1].source).toBe("expression_parser");
+    expect(agg[1].count).toBe(1);
   });
 });
 

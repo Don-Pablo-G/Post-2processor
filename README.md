@@ -3448,6 +3448,45 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=9
 ```
 
+## Semicolon-EOB block split + parse-diag batch rollup + desktop audit chips + mixed bidi + Schema v10
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Cross-input `lintIssuesByParseDiagCodeAggregated` (Schema v10)
+
+`CLI_SCHEMA_VERSION` bumps `9 → 10`. `CliBatchEnvelope.summary.lintIssuesByParseDiagCodeAggregated`
+rolls up per-entry `lintIssuesByParseDiagCode` across the batch: one row per `(source, code)`
+with summed `count` and a deduped `inputs[]` list. Sorted `count` desc → `source` asc →
+`code` asc. Absent when no entry has parse-diag attribution rows.
+
+### Move 2 — `resolveQuickFixRange` semicolon-EOB mode
+
+New shared helper `packages/core/src/parser/blockSplit.ts` centralises block splitting
+with optional `semicolonEob` (matching `simpleParser.splitIntoRawBlocks`). `@cnc/ide-bridge`
+imports it for `resolveQuickFixRange(source, blockIndex, { semicolonEob?: boolean })` and
+`getQuickFixForLintIssue(issue, source?, rangeOptions?)`.
+
+### Move 3 — Desktop `audit-deprecated-rules` policy chip parity
+
+`apps/desktop/src/deprecatedRulesAuditView.ts` wires the three CLI presets
+(`informational`, `six-month-strict`, `yearly-strict`) into the Job Check card as
+operator-triggered chips with a live summary line (`deprecated-rules: …`).
+
+### Move 4 — Improved mixed Arabic/Latin bidi for PDF
+
+`bidiVisualOrder` now assigns digit runs to the preceding strong direction (UAX#9-lite)
+instead of treating all ASCII digits as LTR-strong, improving mixed RTL shop-name lines.
+
+### Move 5 — Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # 878 tests pass (@cnc/core 644, profiles 20, ide-bridge 37, desktop 177)
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=10
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3461,17 +3500,17 @@ next planning wave can pick them up:
   subcommand already gives operators a no-deps integrity-checking
   path, so PGP is now a strict opt-in for shops that explicitly
   want detached signatures.
-- **Full UAX#9 bidi for mixed Arabic/Latin PDF lines** — today's
-  `bidiVisualOrder` helper covers pure RTL and RTL-dominant mixed
-  lines; complex bidirectional paragraphs with embedded Latin
-  numerals still need a fuller algorithm or an ICU-backed pass.
-- **`audit-deprecated-rules --policy` desktop chip parity** — the
-  CLI preset table ships; the desktop Job Check card could surface
-  the same three chips for operator-triggered deprecation sweeps.
-- **Cross-input `lintIssuesByParseDiagCode` batch aggregation** —
-  Schema v9 added `lintIssuesBySourceAggregated`; the same rollup
-  applied to `lintIssuesByParseDiagCode` would close the parse-diag
-  attribution loop for CI dashboards.
-- **`resolveQuickFixRange` semicolon-EOB mode** — today's helper
-  mirrors the default newline block splitter; Haas semicolon-EOB
-  programs need the `semicolonEob` branch from `splitIntoRawBlocks`.
+- **Full UAX#9 bidi for complex mixed paragraphs** — today's
+  `bidiVisualOrder` helper covers pure RTL, RTL-dominant mixed
+  lines, and digit runs following preceding strong direction; nested
+  LTR islands inside RTL paragraphs still need ICU or a full UAX#9
+  implementation.
+- **`simpleParser` → `blockSplit` internal refactor** — block split
+  logic is shared for IDE range resolution but the parser still
+  carries a parallel copy; consolidating would reduce drift risk.
+- **Desktop audit chip → full audit report export** — chips show a
+  live summary; exporting the full `DeprecatedRuleAuditRow[]` table
+  (CSV/JSON) from the desktop would close the operator loop.
+- **Batch rollup for per-input `lintIssuesByControllerCode`** —
+  Schema v9/v10 added source and parse-diag rollups; controller-code
+  attribution across inputs is the remaining CI dashboard gap.

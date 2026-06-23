@@ -7,7 +7,8 @@
 
 const RTL_STRONG =
   /[\u0590-\u05FF\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
-const LTR_STRONG = /[A-Za-z0-9]/;
+const LTR_STRONG = /[A-Za-z]/;
+const DIGIT_RUN = /[0-9]/;
 
 export type BidiTextMode = "auto" | "ltr" | "rtl";
 
@@ -23,23 +24,31 @@ function isLtrChar(char: string): boolean {
   return LTR_STRONG.test(char);
 }
 
+function isDigitChar(char: string): boolean {
+  return DIGIT_RUN.test(char);
+}
+
 type DirectionRun = { rtl: boolean; text: string };
+
+function classifyChar(char: string, currentRtl: boolean | undefined): boolean | undefined {
+  if (isRtlChar(char)) return true;
+  if (isLtrChar(char)) return false;
+  if (isDigitChar(char)) return currentRtl;
+  return currentRtl;
+}
 
 function splitDirectionRuns(text: string): DirectionRun[] {
   const runs: DirectionRun[] = [];
   let current = "";
   let currentRtl: boolean | undefined;
   for (const char of text) {
-    let rtl: boolean;
-    if (isRtlChar(char)) rtl = true;
-    else if (isLtrChar(char)) rtl = false;
-    else if (currentRtl !== undefined) rtl = currentRtl;
-    else rtl = false;
+    const classified = classifyChar(char, currentRtl);
+    const rtl = classified ?? false;
     if (currentRtl !== undefined && rtl !== currentRtl) {
       runs.push({ rtl: currentRtl, text: current });
       current = "";
     }
-    currentRtl = rtl;
+    currentRtl = classified ?? currentRtl ?? false;
     current += char;
   }
   if (current.length > 0) runs.push({ rtl: currentRtl ?? false, text: current });
@@ -61,9 +70,8 @@ function dominantRtl(text: string): boolean {
 }
 
 /**
- * Reorder a single line for left-to-right PDF glyph placement. Pure RTL lines
- * are reversed; mixed lines reverse RTL runs and may reverse run order when
- * RTL-dominant.
+ * UAX#9-lite: on LTR-dominant mixed lines, reverse RTL runs but keep Latin
+ * digit runs with their preceding RTL segment (e.g. Arabic label + order no).
  */
 export function applyBidiVisualOrder(text: string, mode: BidiTextMode = "auto"): string {
   if (text.length === 0) return text;
@@ -84,6 +92,7 @@ export function applyBidiVisualOrder(text: string, mode: BidiTextMode = "auto"):
       .join("");
   }
 
+  // LTR-dominant mixed line: mirror each RTL run in place; Latin stays put.
   return runs.map((run) => run.text).join("");
 }
 

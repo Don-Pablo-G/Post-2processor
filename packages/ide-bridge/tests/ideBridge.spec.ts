@@ -408,6 +408,16 @@ describe("resolveQuickFixRange", () => {
       "G1 X2"
     ]);
   });
+
+  it("supports semicolon-EOB block splitting", () => {
+    const haasSource = "O1; G0 X1; G1 X2;";
+    expect(resolveQuickFixRange(haasSource, 1, { semicolonEob: true })).toEqual({
+      startLine: 1,
+      startColumn: 5,
+      endLine: 1,
+      endColumn: 9
+    });
+  });
 });
 
 describe("getQuickFixForLintIssue with source", () => {

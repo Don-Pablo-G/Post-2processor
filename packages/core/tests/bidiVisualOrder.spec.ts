@@ -27,4 +27,10 @@ describe("bidiVisualOrder", () => {
     expect(out.split("\n")[0]).toBe("Line A");
     expect(out.split("\n")[2]).toBe("Line C");
   });
+
+  it("assigns digit runs to the preceding RTL segment on LTR-dominant lines", () => {
+    const line = "Shop מפעל 42";
+    const out = applyBidiVisualOrder(line, "auto");
+    expect(out).toBe("Shop 24 לעפמ");
+  });
 });

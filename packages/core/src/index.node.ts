@@ -33,6 +33,33 @@ export {
   resolveParseDiagnosticsPolicyPreset
 } from "./workshop/parseDiagnosticsPresets.js";
 
+export {
+  AUDIT_DEPRECATED_RULES_POLICY_PRESET_IDS,
+  resolveAuditDeprecatedRulesPreset,
+  isAuditDeprecatedRulesPolicyPresetId
+} from "./cli/auditDeprecatedRulesPresets.js";
+
+export type {
+  AuditDeprecatedRulesPolicyPresetId,
+  ResolvedAuditDeprecatedRulesPreset
+} from "./cli/auditDeprecatedRulesPresets.js";
+
+export {
+  buildDeprecatedRuleAudit,
+  parseOlderThanThreshold
+} from "./cli/auditDeprecatedRules.js";
+
+export type { DeprecatedRuleAuditRow } from "./cli/auditDeprecatedRules.js";
+
+export {
+  blockSpanToRange,
+  offsetToLineColumn,
+  splitProgramIntoBlockSpans,
+  splitProgramIntoBlocks
+} from "./parser/blockSplit.js";
+
+export type { BlockSplitOptions, ProgramBlockSpan } from "./parser/blockSplit.js";
+
 export { buildSetupSheetPdf } from "./workshop/setupSheetPdf.js";
 export type { BuildSetupSheetPdfOptions } from "./workshop/setupSheetPdf.js";
 
@@ -53,6 +80,8 @@ export type {
   CliBatchEntry,
   CliBatchControllerCodeAttribution,
   CliBatchBlockReasonAggregation,
+  CliBatchLintIssuesByParseDiagCodeAggregation,
+  CliBatchLintIssuesBySourceAggregation,
   CliBlockReason,
   CliLintIssuesByControllerCodeEntry,
   CliLintIssuesBySourceEntry,

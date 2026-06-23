@@ -87,6 +87,13 @@ import {
   type ParseDiagnosticsPolicyResolved,
   type ParseDiagnosticsPolicyUiState
 } from "./parseDiagnosticsView";
+import {
+  DEPRECATED_RULES_AUDIT_POLICY_PRESETS,
+  deprecatedRulesAuditPresetLabel,
+  formatDeprecatedRulesAuditChip,
+  runDeprecatedRulesAudit,
+  type DeprecatedRulesAuditPolicyPresetId
+} from "./deprecatedRulesAuditView";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -240,6 +247,11 @@ const UI_TEXT: Record<
     parseDiagnosticsPolicyPresetPermissive: string;
     parseDiagnosticsPolicyActiveLabel: string;
     parseDiagnosticsPolicyActiveCustom: string;
+    deprecatedRulesAuditPresetsLabel: string;
+    deprecatedRulesAuditPresetInformational: string;
+    deprecatedRulesAuditPresetSixMonthStrict: string;
+    deprecatedRulesAuditPresetYearlyStrict: string;
+    deprecatedRulesAuditActiveLabel: string;
     confirmResetUiPrefs: string;
     resetUiPrefsCancelled: string;
     confirmResetFixturePrefs: string;
@@ -494,6 +506,11 @@ const UI_TEXT: Record<
     parseDiagnosticsPolicyPresetPermissive: "Pobłażliwy",
     parseDiagnosticsPolicyActiveLabel: "Dopasowany preset",
     parseDiagnosticsPolicyActiveCustom: "własne ustawienia",
+    deprecatedRulesAuditPresetsLabel: "Audyt reguł wycofywanych",
+    deprecatedRulesAuditPresetInformational: "Informacyjny",
+    deprecatedRulesAuditPresetSixMonthStrict: "6 mies. strict",
+    deprecatedRulesAuditPresetYearlyStrict: "12 mies. strict",
+    deprecatedRulesAuditActiveLabel: "Aktywny preset audytu",
     confirmResetUiPrefs: "Zresetować ustawienia UI dla bieżącego profilu sterownika? Tej operacji nie można cofnąć.",
     resetUiPrefsCancelled: "Reset ustawień UI anulowany.",
     confirmResetFixturePrefs:
@@ -749,6 +766,11 @@ const UI_TEXT: Record<
     parseDiagnosticsPolicyPresetPermissive: "Permissive",
     parseDiagnosticsPolicyActiveLabel: "Active preset",
     parseDiagnosticsPolicyActiveCustom: "custom",
+    deprecatedRulesAuditPresetsLabel: "Deprecated rules audit",
+    deprecatedRulesAuditPresetInformational: "Informational",
+    deprecatedRulesAuditPresetSixMonthStrict: "6-month strict",
+    deprecatedRulesAuditPresetYearlyStrict: "Yearly strict",
+    deprecatedRulesAuditActiveLabel: "Active audit preset",
     confirmResetUiPrefs:
       "Reset UI defaults for the current controller profile? This cannot be undone.",
     resetUiPrefsCancelled: "UI defaults reset cancelled.",
@@ -910,6 +932,12 @@ export function App() {
     blockExport: false,
     thresholdsText: ""
   });
+  const [deprecatedRulesAuditPreset, setDeprecatedRulesAuditPreset] =
+    useState<DeprecatedRulesAuditPolicyPresetId>("informational");
+  const deprecatedRulesAuditSummary = useMemo(
+    () => runDeprecatedRulesAudit(deprecatedRulesAuditPreset),
+    [deprecatedRulesAuditPreset]
+  );
   const [lintDemoControllerOverride, setLintDemoControllerOverride] = useState<
     "auto" | ControllerProfileKey
   >("auto");
@@ -2896,6 +2924,48 @@ export function App() {
                 </ul>
               </details>
             )}
+          <div
+            data-testid="deprecated-rules-audit-presets"
+            style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ opacity: 0.85, marginRight: 4 }}>
+              {`${t.deprecatedRulesAuditPresetsLabel}:`}
+            </span>
+            {DEPRECATED_RULES_AUDIT_POLICY_PRESETS.map((preset) => {
+              const isActive = deprecatedRulesAuditPreset === preset;
+              return (
+                <button
+                  key={preset}
+                  type="button"
+                  data-testid={`deprecated-rules-audit-preset-${preset}`}
+                  aria-pressed={isActive}
+                  onClick={() => setDeprecatedRulesAuditPreset(preset)}
+                  style={
+                    isActive
+                      ? {
+                          background: "#2c4f8a",
+                          borderColor: "#5b8de6",
+                          color: "#fff",
+                          fontWeight: 600
+                        }
+                      : undefined
+                  }
+                >
+                  {deprecatedRulesAuditPresetLabel(preset, {
+                    informational: t.deprecatedRulesAuditPresetInformational,
+                    sixMonthStrict: t.deprecatedRulesAuditPresetSixMonthStrict,
+                    yearlyStrict: t.deprecatedRulesAuditPresetYearlyStrict
+                  })}
+                </button>
+              );
+            })}
+            <span
+              data-testid="deprecated-rules-audit-chip"
+              style={{ opacity: 0.85, marginLeft: 4, fontFamily: "Consolas, monospace" }}
+            >
+              {formatDeprecatedRulesAuditChip(deprecatedRulesAuditSummary)}
+            </span>
+          </div>
           {(jobCheckResult.parseDiagnosticsPolicyBreaches ?? []).length > 0 && (
             <>
               <span
