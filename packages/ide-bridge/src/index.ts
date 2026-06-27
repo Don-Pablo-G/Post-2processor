@@ -223,6 +223,66 @@ export function mapBatchControllerCodeAggregatedToQuickFixes(
   return out;
 }
 
+/**
+ * Map aggregated controller-code quick-fixes to per-input fixes with optional
+ * editor ranges when program sources are supplied via `sourcesByInput`.
+ */
+export function mapBatchControllerCodeAggregatedToFileQuickFixes(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string>,
+  rangeOptions?: QuickFixRangeOptions
+): Map<string, IdeQuickFix[]> {
+  const aggregated = mapBatchControllerCodeAggregatedToQuickFixes(envelope);
+  if (aggregated.length === 0) return new Map();
+
+  const blockIndexByInputCode = new Map<string, Map<string, number>>();
+  for (const entry of envelope.results) {
+    const byCode = new Map<string, number>();
+    for (const issue of entry.envelope.controllerLints) {
+      if (typeof issue.code !== "string" || issue.code.length === 0) continue;
+      if (!byCode.has(issue.code)) byCode.set(issue.code, issue.blockIndex);
+    }
+    blockIndexByInputCode.set(entry.input, byCode);
+  }
+
+  const result = new Map<string, IdeQuickFix[]>();
+  const seenPerInput = new Map<string, Set<string>>();
+  for (const fix of aggregated) {
+    for (const input of fix.inputs) {
+      let seen = seenPerInput.get(input);
+      if (!seen) {
+        seen = new Set<string>();
+        seenPerInput.set(input, seen);
+      }
+      if (seen.has(fix.code)) continue;
+      seen.add(fix.code);
+
+      const out: IdeQuickFix = {
+        code: fix.code,
+        title: fix.title,
+        rationale: fix.rationale
+      };
+      if (fix.replacementTemplate !== undefined) {
+        out.replacementTemplate = fix.replacementTemplate;
+      }
+      const source = sourcesByInput.get(input);
+      const blockIndex = blockIndexByInputCode.get(input)?.get(fix.code);
+      if (source !== undefined && blockIndex !== undefined) {
+        const range = resolveQuickFixRange(source, blockIndex, rangeOptions);
+        if (range) out.range = range;
+      }
+
+      const existing = result.get(input);
+      if (existing) {
+        existing.push(out);
+      } else {
+        result.set(input, [out]);
+      }
+    }
+  }
+  return result;
+}
+
 function toQuickFix(
   code: string,
   fix: { title: string; rationale: string; replacementTemplate?: string }

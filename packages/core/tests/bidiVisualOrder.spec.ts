@@ -42,6 +42,13 @@ describe("bidiVisualOrder", () => {
     expect(out).not.toContain("pohS");
   });
 
+  it("preserves parenthesized Latin islands inside RTL runs", () => {
+    const line = "מפעל (CNC) שם";
+    const out = applyBidiVisualOrder(line, "rtl");
+    expect(out).toContain("(CNC)");
+    expect(out).not.toContain(")CNC(");
+  });
+
   it("reverses visual line order in RTL-dominant paragraphs", () => {
     const input = "שורה א\nשורה ב";
     const out = applyBidiVisualOrderParagraphs(input, "rtl");

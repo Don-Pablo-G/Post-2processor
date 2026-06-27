@@ -41,15 +41,34 @@ function splitDirectionRuns(text: string): DirectionRun[] {
   const runs: DirectionRun[] = [];
   let current = "";
   let currentRtl: boolean | undefined;
-  for (const char of text) {
-    const classified = classifyChar(char, currentRtl);
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (ch === "(" || ch === "[" || ch === '"' || ch === "'") {
+      const close = ch === "(" ? ")" : ch === "[" ? "]" : ch;
+      let j = i + 1;
+      while (j < text.length && text[j] !== close) j += 1;
+      if (j < text.length) j += 1;
+      const island = text.slice(i, j);
+      const rtl = currentRtl ?? false;
+      if (currentRtl !== undefined && rtl !== currentRtl) {
+        runs.push({ rtl: currentRtl, text: current });
+        current = "";
+      }
+      currentRtl = currentRtl ?? rtl;
+      current += island;
+      i = j;
+      continue;
+    }
+    const classified = classifyChar(ch, currentRtl);
     const rtl = classified ?? false;
     if (currentRtl !== undefined && rtl !== currentRtl) {
       runs.push({ rtl: currentRtl, text: current });
       current = "";
     }
     currentRtl = classified ?? currentRtl ?? false;
-    current += char;
+    current += ch;
+    i += 1;
   }
   if (current.length > 0) runs.push({ rtl: currentRtl ?? false, text: current });
   return runs;
@@ -69,14 +88,31 @@ function reverseRtlRunPreservingEmbeddedLtr(text: string): string {
   let i = 0;
   while (i < text.length) {
     const ch = text[i];
-    if (isLtrChar(ch) || isDigitChar(ch)) {
+    if (ch === "(" || ch === "[" || ch === '"' || ch === "'") {
+      const close = ch === "(" ? ")" : ch === "[" ? "]" : ch;
+      let j = i + 1;
+      while (j < text.length && text[j] !== close) j += 1;
+      if (j < text.length) j += 1;
+      segments.push({ preserve: true, text: text.slice(i, j) });
+      i = j;
+    } else if (isLtrChar(ch) || isDigitChar(ch)) {
       let j = i + 1;
       while (j < text.length && (isLtrChar(text[j]) || isDigitChar(text[j]))) j += 1;
       segments.push({ preserve: true, text: text.slice(i, j) });
       i = j;
     } else {
       let j = i + 1;
-      while (j < text.length && !isLtrChar(text[j]) && !isDigitChar(text[j])) j += 1;
+      while (
+        j < text.length &&
+        !isLtrChar(text[j]) &&
+        !isDigitChar(text[j]) &&
+        text[j] !== "(" &&
+        text[j] !== "[" &&
+        text[j] !== '"' &&
+        text[j] !== "'"
+      ) {
+        j += 1;
+      }
       segments.push({ preserve: false, text: text.slice(i, j) });
       i = j;
     }

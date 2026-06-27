@@ -32,9 +32,9 @@ import {
   rotateAuditTrailKey
 } from "./audit/auditTrailRotation.js";
 import {
-  formatDeprecatedRuleAuditAsJson,
-  formatDeprecatedRuleAuditAsText
-} from "./cli/deprecatedRuleAuditFormat.js";
+  matchesAnyStrictControllerCodePattern,
+  resolveStrictControllerCodesGate
+} from "./cli/strictControllerCodesGate.js";
 import {
   isAuditDeprecatedRulesPolicyPresetId,
   resolveAuditDeprecatedRulesPreset,
@@ -45,10 +45,14 @@ import {
   parseOlderThanThreshold,
   type DeprecatedRuleAuditRow
 } from "./cli/auditDeprecatedRules.js";
+import {
+  formatDeprecatedRuleAuditAsJson,
+  formatDeprecatedRuleAuditAsText
+} from "./cli/deprecatedRuleAuditFormat.js";
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 12;
+export const CLI_SCHEMA_VERSION = 13;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -1124,7 +1128,7 @@ export function applyStrictControllerCodesGate(
   if (!patterns || patterns.length === 0) return envelope;
   const matched = new Set<string>();
   for (const entry of envelope.lintIssuesByControllerCode) {
-    if (matchesAnyStrictPattern(entry.code, patterns)) {
+    if (matchesAnyStrictControllerCodePattern(entry.code, patterns)) {
       matched.add(entry.code);
     }
   }
@@ -1147,17 +1151,7 @@ export function applyStrictControllerCodesGate(
   return envelope;
 }
 
-function matchesAnyStrictPattern(code: string, patterns: readonly string[]): boolean {
-  for (const pat of patterns) {
-    if (pat.endsWith("*")) {
-      const prefix = pat.slice(0, -1);
-      if (code.startsWith(prefix)) return true;
-    } else if (code === pat) {
-      return true;
-    }
-  }
-  return false;
-}
+export { matchesAnyStrictControllerCodePattern, resolveStrictControllerCodesGate };
 
 export function formatJobCheckJson(
   result: RunJobCheckResult,
@@ -1284,6 +1278,14 @@ export type CliBatchEnvelope = {
      * `code` asc. Absent when no entry has parse diagnostics by code.
      */
     parseDiagnosticsByCodeAggregated?: CliBatchParseDiagnosticsByCodeAggregation[];
+    /**
+     * Schema v13: per-code attribution for `--strict-controller-codes` gate
+     * matches across the batch. One row per gated `code`; `inputs` lists
+     * entry inputs where the code was gated (sorted ascending, deduped).
+     * Sort order: `inputs.length` desc → `code` asc. Absent when no entry
+     * matched a strict-controller-codes pattern.
+     */
+    strictControllerCodesGatedAggregated?: CliBatchStrictControllerCodesGatedAggregation[];
   };
 };
 
@@ -1340,6 +1342,14 @@ export type CliBatchParseDiagnosticsByCodeAggregation = {
   count: number;
   warnings: number;
   errors: number;
+  inputs: string[];
+};
+
+/**
+ * Schema v13: cross-input attribution of per-entry `strictControllerCodesGated`.
+ */
+export type CliBatchStrictControllerCodesGatedAggregation = {
+  code: string;
   inputs: string[];
 };
 
@@ -1403,6 +1413,10 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const parseDiagByCode = buildBatchParseDiagnosticsByCodeAggregation(entries);
   if (parseDiagByCode.length > 0) {
     summary.parseDiagnosticsByCodeAggregated = parseDiagByCode;
+  }
+  const strictGated = buildBatchStrictControllerCodesGatedAggregation(entries);
+  if (strictGated.length > 0) {
+    summary.strictControllerCodesGatedAggregated = strictGated;
   }
   return {
     schemaVersion: CLI_SCHEMA_VERSION,
@@ -1654,6 +1668,40 @@ export function buildBatchParseDiagnosticsByCodeAggregation(
   }
   rows.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
+    return a.code.localeCompare(b.code);
+  });
+  return rows;
+}
+
+/**
+ * Schema v13: walk every entry's `envelope.strictControllerCodesGated` and
+ * group by `code`. Pure function — deterministic given `entries`.
+ */
+export function buildBatchStrictControllerCodesGatedAggregation(
+  entries: CliBatchEntry[]
+): CliBatchStrictControllerCodesGatedAggregation[] {
+  const byCode = new Map<string, Set<string>>();
+  for (const entry of entries) {
+    const gated = entry.envelope.strictControllerCodesGated;
+    if (!gated || gated.length === 0) continue;
+    for (const code of gated) {
+      let inputs = byCode.get(code);
+      if (!inputs) {
+        inputs = new Set<string>();
+        byCode.set(code, inputs);
+      }
+      inputs.add(entry.input);
+    }
+  }
+  const rows: CliBatchStrictControllerCodesGatedAggregation[] = [];
+  for (const [code, inputs] of byCode) {
+    rows.push({
+      code,
+      inputs: [...inputs].sort((a, b) => a.localeCompare(b))
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.inputs.length !== b.inputs.length) return b.inputs.length - a.inputs.length;
     return a.code.localeCompare(b.code);
   });
   return rows;

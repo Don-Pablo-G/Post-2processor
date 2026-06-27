@@ -96,6 +96,13 @@ import {
   type DeprecatedRulesAuditPolicyPresetId
 } from "./deprecatedRulesAuditView";
 import { downloadDeprecatedRulesAuditReport } from "./deprecatedRulesAuditDownload";
+import {
+  evaluateStrictControllerGate,
+  formatStrictControllerGateChip,
+  STRICT_CONTROLLER_GATE_WATCH_PRESETS,
+  strictControllerGatePatternLabel,
+  type StrictControllerGateWatchPattern
+} from "./strictControllerGateView";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -261,6 +268,13 @@ const UI_TEXT: Record<
     deprecatedRulesAuditCopyJsonFallback: string;
     deprecatedRulesAuditExported: string;
     deprecatedRulesAuditExportFailed: string;
+    strictGateWatchLabel: string;
+    strictGatePatternNAndO: string;
+    strictGatePatternDuplicateO: string;
+    strictGatePatternDuplicateAddresses: string;
+    deprecatedRulesAuditCopyCsv: string;
+    deprecatedRulesAuditCopiedCsv: string;
+    deprecatedRulesAuditCopyCsvFallback: string;
     confirmResetUiPrefs: string;
     resetUiPrefsCancelled: string;
     confirmResetFixturePrefs: string;
@@ -527,6 +541,13 @@ const UI_TEXT: Record<
     deprecatedRulesAuditCopyJsonFallback: "Kopiuj audyt reguł wycofywanych ręcznie",
     deprecatedRulesAuditExported: "Wyeksportowano audyt reguł wycofywanych",
     deprecatedRulesAuditExportFailed: "Eksport audytu nie powiódł się — skopiuj ręcznie",
+    strictGateWatchLabel: "Strażnik kodów CG_*",
+    strictGatePatternNAndO: "N+O mixed",
+    strictGatePatternDuplicateO: "Duplicate O",
+    strictGatePatternDuplicateAddresses: "Duplicate addr.*",
+    deprecatedRulesAuditCopyCsv: "Kopiuj CSV",
+    deprecatedRulesAuditCopiedCsv: "Skopiowano audyt reguł wycofywanych (CSV)",
+    deprecatedRulesAuditCopyCsvFallback: "Kopiuj audyt CSV ręcznie",
     confirmResetUiPrefs: "Zresetować ustawienia UI dla bieżącego profilu sterownika? Tej operacji nie można cofnąć.",
     resetUiPrefsCancelled: "Reset ustawień UI anulowany.",
     confirmResetFixturePrefs:
@@ -794,6 +815,13 @@ const UI_TEXT: Record<
     deprecatedRulesAuditCopyJsonFallback: "Copy deprecated rules audit manually",
     deprecatedRulesAuditExported: "Exported deprecated rules audit",
     deprecatedRulesAuditExportFailed: "Deprecated rules audit export failed — copy manually",
+    strictGateWatchLabel: "Strict CG_* gate watch",
+    strictGatePatternNAndO: "N+O mixed",
+    strictGatePatternDuplicateO: "Duplicate O",
+    strictGatePatternDuplicateAddresses: "Duplicate addr.*",
+    deprecatedRulesAuditCopyCsv: "Copy CSV",
+    deprecatedRulesAuditCopiedCsv: "Copied deprecated rules audit (CSV)",
+    deprecatedRulesAuditCopyCsvFallback: "Copy deprecated rules audit CSV manually",
     confirmResetUiPrefs:
       "Reset UI defaults for the current controller profile? This cannot be undone.",
     resetUiPrefsCancelled: "UI defaults reset cancelled.",
@@ -961,6 +989,9 @@ export function App() {
     () => runDeprecatedRulesAudit(deprecatedRulesAuditPreset),
     [deprecatedRulesAuditPreset]
   );
+  const [strictGateWatchPatterns, setStrictGateWatchPatterns] = useState<
+    StrictControllerGateWatchPattern[]
+  >([...STRICT_CONTROLLER_GATE_WATCH_PRESETS]);
   const [lintDemoControllerOverride, setLintDemoControllerOverride] = useState<
     "auto" | ControllerProfileKey
   >("auto");
@@ -995,6 +1026,16 @@ export function App() {
   const [policyContextCopyStatus, setPolicyContextCopyStatus] = useState("");
   const [fullExportContextCopyStatus, setFullExportContextCopyStatus] = useState("");
   const [jobCheckResult, setJobCheckResult] = useState<RunJobCheckResult | null>(null);
+  const strictGateSummary = useMemo(() => {
+    if (!jobCheckResult || strictGateWatchPatterns.length === 0) {
+      return {
+        patterns: strictGateWatchPatterns,
+        matchedCodes: [] as string[],
+        wouldBlock: false
+      };
+    }
+    return evaluateStrictControllerGate(jobCheckResult.lintIssues, strictGateWatchPatterns);
+  }, [jobCheckResult, strictGateWatchPatterns]);
   const [lastExportContext, setLastExportContext] = useState<{
     directory: string;
     artifactCount: number;
@@ -2145,6 +2186,18 @@ export function App() {
     );
   }
 
+  async function handleCopyDeprecatedRulesAuditCsv(): Promise<void> {
+    const payload = formatDeprecatedRulesAuditForExport(deprecatedRulesAuditSummary, "csv");
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(
+        `${t.deprecatedRulesAuditCopiedCsv} (${deprecatedRulesAuditSummary.deprecatedCount}).`
+      );
+    } catch {
+      setExportStatus(`${t.deprecatedRulesAuditCopyCsvFallback}: ${payload}`);
+    }
+  }
+
   async function handleCopyDeprecatedRulesAudit(): Promise<void> {
     const payload = formatDeprecatedRulesAuditForExport(deprecatedRulesAuditSummary, "json");
     try {
@@ -2974,6 +3027,54 @@ export function App() {
               </details>
             )}
           <div
+            data-testid="strict-controller-gate-watch"
+            style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ opacity: 0.85, marginRight: 4 }}>
+              {`${t.strictGateWatchLabel}:`}
+            </span>
+            {STRICT_CONTROLLER_GATE_WATCH_PRESETS.map((pattern) => {
+              const isActive = strictGateWatchPatterns.includes(pattern);
+              return (
+                <button
+                  key={pattern}
+                  type="button"
+                  data-testid={`strict-gate-pattern-${pattern}`}
+                  aria-pressed={isActive}
+                  onClick={() =>
+                    setStrictGateWatchPatterns((prev) =>
+                      prev.includes(pattern)
+                        ? prev.filter((p) => p !== pattern)
+                        : [...prev, pattern]
+                    )
+                  }
+                  style={
+                    isActive
+                      ? {
+                          background: strictGateSummary.wouldBlock ? "#5a1b1b" : "#2c4f8a",
+                          borderColor: strictGateSummary.wouldBlock ? "#e65b5b" : "#5b8de6",
+                          color: "#fff",
+                          fontWeight: 600
+                        }
+                      : undefined
+                  }
+                >
+                  {strictControllerGatePatternLabel(pattern, {
+                    nAndO: t.strictGatePatternNAndO,
+                    duplicateO: t.strictGatePatternDuplicateO,
+                    duplicateAddresses: t.strictGatePatternDuplicateAddresses
+                  })}
+                </button>
+              );
+            })}
+            <span
+              data-testid="strict-controller-gate-chip"
+              style={{ opacity: 0.85, marginLeft: 4, fontFamily: "Consolas, monospace" }}
+            >
+              {formatStrictControllerGateChip(strictGateSummary)}
+            </span>
+          </div>
+          <div
             data-testid="deprecated-rules-audit-presets"
             style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}
           >
@@ -3020,6 +3121,13 @@ export function App() {
               onClick={() => void handleCopyDeprecatedRulesAudit()}
             >
               {t.deprecatedRulesAuditCopyJson}
+            </button>
+            <button
+              type="button"
+              data-testid="deprecated-rules-audit-copy-csv"
+              onClick={() => void handleCopyDeprecatedRulesAuditCsv()}
+            >
+              {t.deprecatedRulesAuditCopyCsv}
             </button>
             <button
               type="button"

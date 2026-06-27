@@ -15,6 +15,7 @@ import {
   expandIdeQuickFixTemplate,
   getQuickFixForLintIssue,
   mapBatchAttributionToFileQuickFixes,
+  mapBatchControllerCodeAggregatedToFileQuickFixes,
   mapBatchControllerCodeAggregatedToQuickFixes,
   mapJobCheckEnvelopeToQuickFixes,
   resolveQuickFixRange,
@@ -304,6 +305,65 @@ describe("mapBatchControllerCodeAggregatedToQuickFixes", () => {
       }
     ]);
     expect(mapBatchControllerCodeAggregatedToQuickFixes(envelope)).toEqual([]);
+  });
+});
+
+describe("mapBatchControllerCodeAggregatedToFileQuickFixes", () => {
+  it("groups aggregated fixes per input and attaches ranges when sources are supplied", () => {
+    const envelope: CliBatchEnvelope = {
+      schemaVersion: 13,
+      results: [
+        {
+          schemaVersion: 13,
+          input: "a.nc",
+          envelope: makeEnvelope([makeIssue({ code: "CG_N_AND_O_MIXED", blockIndex: 1 })])
+        },
+        {
+          schemaVersion: 13,
+          input: "b.nc",
+          envelope: makeEnvelope([makeIssue({ code: "CG_N_AND_O_MIXED", blockIndex: 0 })])
+        }
+      ],
+      summary: {
+        files: 2,
+        blocked: 0,
+        lintIssuesByControllerCodePerInputFile: [],
+        lintIssuesByControllerCodeAggregated: [
+          {
+            source: "controller_grammar",
+            code: "CG_N_AND_O_MIXED",
+            count: 2,
+            blockers: 0,
+            warnings: 2,
+            inputs: ["a.nc", "b.nc"]
+          }
+        ]
+      }
+    };
+    const sources = new Map([
+      ["a.nc", "O1\nG0 X1\n"],
+      ["b.nc", "O2\n"]
+    ]);
+    const grouped = mapBatchControllerCodeAggregatedToFileQuickFixes(envelope, sources);
+    expect([...grouped.keys()]).toEqual(["a.nc", "b.nc"]);
+    expect(grouped.get("a.nc")?.[0].range).toEqual({
+      startLine: 2,
+      startColumn: 1,
+      endLine: 2,
+      endColumn: 5
+    });
+    expect(grouped.get("b.nc")?.[0].range).toEqual({
+      startLine: 1,
+      startColumn: 1,
+      endLine: 1,
+      endColumn: 2
+    });
+  });
+
+  it("returns an empty Map when aggregated rows are absent", () => {
+    expect(
+      mapBatchControllerCodeAggregatedToFileQuickFixes(makeBatchEnvelope([]), new Map())
+    ).toEqual(new Map());
   });
 });
 

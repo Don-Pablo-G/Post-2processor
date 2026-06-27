@@ -55,6 +55,14 @@ export {
   formatDeprecatedRuleAuditAsText
 } from "./cli/deprecatedRuleAuditFormat.js";
 
+export {
+  matchesAnyStrictControllerCodePattern,
+  resolveStrictControllerCodesGate,
+  STRICT_CONTROLLER_GATE_WATCH_PATTERNS
+} from "./cli/strictControllerCodesGate.js";
+
+export type { StrictControllerGateWatchPattern } from "./cli/strictControllerCodesGate.js";
+
 export type { DeprecatedRuleAuditRow } from "./cli/auditDeprecatedRules.js";
 
 export {
@@ -89,6 +97,7 @@ export type {
   CliBatchLintIssuesByParseDiagCodeAggregation,
   CliBatchLintIssuesByControllerCodeAggregation,
   CliBatchParseDiagnosticsByCodeAggregation,
+  CliBatchStrictControllerCodesGatedAggregation,
   CliBatchLintIssuesBySourceAggregation,
   CliBlockReason,
   CliLintIssuesByControllerCodeEntry,

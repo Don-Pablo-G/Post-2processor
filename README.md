@@ -3569,6 +3569,48 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=12
 ```
 
+## Strict-gate rollup + CSV clipboard + ide-bridge ranges + gate chips + bracket bidi + Schema v13
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Cross-input `strictControllerCodesGatedAggregated` (Schema v13)
+
+`CLI_SCHEMA_VERSION` bumps `12 → 13`. `CliBatchEnvelope.summary.strictControllerCodesGatedAggregated`
+rolls up per-entry `strictControllerCodesGated` across the batch: one row per gated
+`code` with a deduped `inputs[]` list. Sorted `inputs.length` desc → `code` asc.
+Absent when no entry matched the strict gate.
+
+### Move 2 — Desktop deprecated-rules audit CSV clipboard copy
+
+Job Check card gains a **Copy CSV** button alongside **Copy JSON** for the active
+deprecation audit preset — parity with export buttons.
+
+### Move 3 — `@cnc/ide-bridge` aggregated quick-fix range resolution
+
+`mapBatchControllerCodeAggregatedToFileQuickFixes(envelope, sourcesByInput, rangeOptions?)`
+maps Schema v11 aggregated controller-code rows to per-input `IdeQuickFix` entries
+with optional editor `range` when program sources and `blockIndex` are available.
+
+### Move 4 — Desktop strict-controller-codes gate watch chips
+
+Job Check card surfaces CLI-aligned strict-gate watch presets as chips that evaluate
+`lintIssues` locally and show which patterns would block under `--strict-controller-codes`.
+
+### Move 5 — Bracket/quote LTR islands in bidi PDF helper
+
+`reverseRtlRunPreservingEmbeddedLtr` now preserves `()`, `[]`, `"`, and `'` delimited
+islands inside RTL runs so mixed shop labels like `מפעל (CNC) שם` stay readable in PDF.
+
+### Move 6 — Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # see test run for current count
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=13
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3583,13 +3625,13 @@ next planning wave can pick them up:
   path, so PGP is now a strict opt-in for shops that explicitly
   want detached signatures.
 - **Full UAX#9 bidi for complex mixed paragraphs** — paragraph line
-  reorder and embedded LTR islands ship; deeply nested embeddings and
-  multi-script runs still need ICU or a full UAX#9 implementation.
-- **Desktop deprecated-rules audit CSV clipboard copy** — JSON clipboard
-  ships; CSV copy would complete parity with export buttons.
-- **ide-bridge aggregated quick-fix range resolution** — aggregated fixes
-  carry batch metadata but no editor `range`; a future move could accept
-  per-input source maps for jump-to-block in IDE plugins.
-- **Batch strict-gate rollup dashboard field** — `strictControllerCodesGated`
-  unions codes across inputs; a structured per-code gate attribution rollup
-  would close the remaining CI strict-policy dashboard gap.
+  reorder, embedded LTR islands, and bracket/quote preservation ship;
+  deeply nested embeddings and multi-script runs still need ICU or a
+  full UAX#9 implementation.
+- **ide-bridge parse-diag aggregated quick-fix hints** — controller-code
+  aggregated fixes now resolve editor ranges; parse-diag aggregated rows
+  could gain a parallel `mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes`.
+- **Desktop strict-gate export** — watch chips evaluate locally; JSON/CSV
+  clipboard or file export for strict-gate summaries would close CI parity.
+- **Other CI dashboard rollups** — additional batch summary fields for
+  policy breaches, deprecation audits, or advisor findings as needed.
