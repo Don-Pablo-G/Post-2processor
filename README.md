@@ -3487,6 +3487,88 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=10
 ```
 
+## Controller-code batch rollup + blockSplit parser refactor + audit export formatters + desktop export + nested bidi islands + Schema v11
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Cross-input `lintIssuesByControllerCodeAggregated` (Schema v11)
+
+`CLI_SCHEMA_VERSION` bumps `10 → 11`. `CliBatchEnvelope.summary.lintIssuesByControllerCodeAggregated`
+rolls up per-entry `lintIssuesByControllerCode` across the batch: one row per `(source, code)`
+with summed `count` / `blockers` / `warnings` and a deduped `inputs[]` list.
+Sorted `count` desc → `source` asc → `code` asc. Absent when no entry has controller-code rows.
+
+### Move 2 — `simpleParser` → `blockSplit` internal refactor
+
+`simpleParser` now calls `splitProgramIntoBlocks` from `blockSplit.ts` instead of
+maintaining a parallel `splitIntoRawBlocks` copy — single source of truth for newline
+and semicolon-EOB block semantics.
+
+### Move 3 — Shared deprecated-rule audit export formatters
+
+`packages/core/src/cli/deprecatedRuleAuditFormat.ts` centralises JSON, CSV, and text
+table formatting for `DeprecatedRuleAuditRow[]`. The CLI `audit-deprecated-rules` subcommand
+and desktop export both consume the same helpers.
+
+### Move 4 — Desktop deprecated-rules audit report export
+
+The Job Check card gains **Export JSON** and **Export CSV** buttons that download the full
+`DeprecatedRuleAuditRow[]` table for the active policy preset via
+`deprecatedRulesAuditDownload.ts`.
+
+### Move 5 — Nested LTR islands in RTL PDF runs
+
+`bidiVisualOrder` reverses RTL segments while preserving embedded Latin/digit islands
+(e.g. `אב Shop גד` keeps `Shop` readable) — incremental UAX#9-lite without ICU.
+
+### Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # 896 tests pass (@cnc/core 656, profiles 20, ide-bridge 40, desktop 180)
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=11
+```
+
+## Parse-diag batch rollup + ide-bridge aggregated quick-fixes + audit clipboard + paragraph bidi + Schema v12
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Cross-input `parseDiagnosticsByCodeAggregated` (Schema v12)
+
+`CLI_SCHEMA_VERSION` bumps `11 → 12`. `CliBatchEnvelope.summary.parseDiagnosticsByCodeAggregated`
+rolls up per-entry `parseDiagnosticsByCode` across the batch: one row per `code`
+with summed `count` / `warnings` / `errors` and a deduped `inputs[]` list.
+Sorted `count` desc → `code` asc. Absent when no entry has parse diagnostics.
+
+### Move 2 — `@cnc/ide-bridge` batch aggregated controller-code quick-fix map
+
+`mapBatchControllerCodeAggregatedToQuickFixes(envelope)` maps Schema v11
+`lintIssuesByControllerCodeAggregated` rows to catalogue `IdeQuickFix` entries
+with `count`, `blockers`, `warnings`, and `inputs[]` — no per-input walk required.
+
+### Move 3 — Desktop deprecated-rules audit clipboard copy
+
+Job Check card gains a **Copy JSON** button that mirrors the policy-audit-trail
+clipboard UX for the active deprecation audit preset.
+
+### Move 4 — Multiline RTL paragraph bidi for PDF
+
+`applyBidiVisualOrderParagraphs` reverses visual line order in RTL-dominant
+blank-line-separated paragraphs. `BuildSetupSheetPdfOptions.bidiParagraphs`
+opts `exportTxt` into paragraph mode.
+
+### Move 5 — Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # see test run for current count
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=12
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3500,17 +3582,14 @@ next planning wave can pick them up:
   subcommand already gives operators a no-deps integrity-checking
   path, so PGP is now a strict opt-in for shops that explicitly
   want detached signatures.
-- **Full UAX#9 bidi for complex mixed paragraphs** — today's
-  `bidiVisualOrder` helper covers pure RTL, RTL-dominant mixed
-  lines, and digit runs following preceding strong direction; nested
-  LTR islands inside RTL paragraphs still need ICU or a full UAX#9
-  implementation.
-- **`simpleParser` → `blockSplit` internal refactor** — block split
-  logic is shared for IDE range resolution but the parser still
-  carries a parallel copy; consolidating would reduce drift risk.
-- **Desktop audit chip → full audit report export** — chips show a
-  live summary; exporting the full `DeprecatedRuleAuditRow[]` table
-  (CSV/JSON) from the desktop would close the operator loop.
-- **Batch rollup for per-input `lintIssuesByControllerCode`** —
-  Schema v9/v10 added source and parse-diag rollups; controller-code
-  attribution across inputs is the remaining CI dashboard gap.
+- **Full UAX#9 bidi for complex mixed paragraphs** — paragraph line
+  reorder and embedded LTR islands ship; deeply nested embeddings and
+  multi-script runs still need ICU or a full UAX#9 implementation.
+- **Desktop deprecated-rules audit CSV clipboard copy** — JSON clipboard
+  ships; CSV copy would complete parity with export buttons.
+- **ide-bridge aggregated quick-fix range resolution** — aggregated fixes
+  carry batch metadata but no editor `range`; a future move could accept
+  per-input source maps for jump-to-block in IDE plugins.
+- **Batch strict-gate rollup dashboard field** — `strictControllerCodesGated`
+  unions codes across inputs; a structured per-code gate attribution rollup
+  would close the remaining CI strict-policy dashboard gap.

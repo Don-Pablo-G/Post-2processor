@@ -91,9 +91,11 @@ import {
   DEPRECATED_RULES_AUDIT_POLICY_PRESETS,
   deprecatedRulesAuditPresetLabel,
   formatDeprecatedRulesAuditChip,
+  formatDeprecatedRulesAuditForExport,
   runDeprecatedRulesAudit,
   type DeprecatedRulesAuditPolicyPresetId
 } from "./deprecatedRulesAuditView";
+import { downloadDeprecatedRulesAuditReport } from "./deprecatedRulesAuditDownload";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -252,6 +254,13 @@ const UI_TEXT: Record<
     deprecatedRulesAuditPresetSixMonthStrict: string;
     deprecatedRulesAuditPresetYearlyStrict: string;
     deprecatedRulesAuditActiveLabel: string;
+    deprecatedRulesAuditExportJson: string;
+    deprecatedRulesAuditExportCsv: string;
+    deprecatedRulesAuditCopyJson: string;
+    deprecatedRulesAuditCopiedJson: string;
+    deprecatedRulesAuditCopyJsonFallback: string;
+    deprecatedRulesAuditExported: string;
+    deprecatedRulesAuditExportFailed: string;
     confirmResetUiPrefs: string;
     resetUiPrefsCancelled: string;
     confirmResetFixturePrefs: string;
@@ -511,6 +520,13 @@ const UI_TEXT: Record<
     deprecatedRulesAuditPresetSixMonthStrict: "6 mies. strict",
     deprecatedRulesAuditPresetYearlyStrict: "12 mies. strict",
     deprecatedRulesAuditActiveLabel: "Aktywny preset audytu",
+    deprecatedRulesAuditExportJson: "Eksport JSON",
+    deprecatedRulesAuditExportCsv: "Eksport CSV",
+    deprecatedRulesAuditCopyJson: "Kopiuj JSON",
+    deprecatedRulesAuditCopiedJson: "Skopiowano audyt reguł wycofywanych (JSON)",
+    deprecatedRulesAuditCopyJsonFallback: "Kopiuj audyt reguł wycofywanych ręcznie",
+    deprecatedRulesAuditExported: "Wyeksportowano audyt reguł wycofywanych",
+    deprecatedRulesAuditExportFailed: "Eksport audytu nie powiódł się — skopiuj ręcznie",
     confirmResetUiPrefs: "Zresetować ustawienia UI dla bieżącego profilu sterownika? Tej operacji nie można cofnąć.",
     resetUiPrefsCancelled: "Reset ustawień UI anulowany.",
     confirmResetFixturePrefs:
@@ -771,6 +787,13 @@ const UI_TEXT: Record<
     deprecatedRulesAuditPresetSixMonthStrict: "6-month strict",
     deprecatedRulesAuditPresetYearlyStrict: "Yearly strict",
     deprecatedRulesAuditActiveLabel: "Active audit preset",
+    deprecatedRulesAuditExportJson: "Export JSON",
+    deprecatedRulesAuditExportCsv: "Export CSV",
+    deprecatedRulesAuditCopyJson: "Copy JSON",
+    deprecatedRulesAuditCopiedJson: "Copied deprecated rules audit (JSON)",
+    deprecatedRulesAuditCopyJsonFallback: "Copy deprecated rules audit manually",
+    deprecatedRulesAuditExported: "Exported deprecated rules audit",
+    deprecatedRulesAuditExportFailed: "Deprecated rules audit export failed — copy manually",
     confirmResetUiPrefs:
       "Reset UI defaults for the current controller profile? This cannot be undone.",
     resetUiPrefsCancelled: "UI defaults reset cancelled.",
@@ -2122,6 +2145,32 @@ export function App() {
     );
   }
 
+  async function handleCopyDeprecatedRulesAudit(): Promise<void> {
+    const payload = formatDeprecatedRulesAuditForExport(deprecatedRulesAuditSummary, "json");
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(
+        `${t.deprecatedRulesAuditCopiedJson} (${deprecatedRulesAuditSummary.deprecatedCount}).`
+      );
+    } catch {
+      setExportStatus(`${t.deprecatedRulesAuditCopyJsonFallback}: ${payload}`);
+    }
+  }
+
+  async function handleExportDeprecatedRulesAudit(format: "json" | "csv"): Promise<void> {
+    const payload = formatDeprecatedRulesAuditForExport(deprecatedRulesAuditSummary, format);
+    try {
+      const result = await downloadDeprecatedRulesAuditReport(
+        payload,
+        format,
+        new Date().toISOString()
+      );
+      setExportStatus(`${t.deprecatedRulesAuditExported}: ${result.filename}`);
+    } catch {
+      setExportStatus(`${t.deprecatedRulesAuditExportFailed}: ${payload}`);
+    }
+  }
+
   async function handleCopyPolicyAuditTrail(): Promise<void> {
     const { payload, rowCount } = selectPolicyAuditTrailExportPayload(policyAuditTrail, {
       format: auditTrailExportFormat,
@@ -2965,6 +3014,27 @@ export function App() {
             >
               {formatDeprecatedRulesAuditChip(deprecatedRulesAuditSummary)}
             </span>
+            <button
+              type="button"
+              data-testid="deprecated-rules-audit-copy-json"
+              onClick={() => void handleCopyDeprecatedRulesAudit()}
+            >
+              {t.deprecatedRulesAuditCopyJson}
+            </button>
+            <button
+              type="button"
+              data-testid="deprecated-rules-audit-export-json"
+              onClick={() => void handleExportDeprecatedRulesAudit("json")}
+            >
+              {t.deprecatedRulesAuditExportJson}
+            </button>
+            <button
+              type="button"
+              data-testid="deprecated-rules-audit-export-csv"
+              onClick={() => void handleExportDeprecatedRulesAudit("csv")}
+            >
+              {t.deprecatedRulesAuditExportCsv}
+            </button>
           </div>
           {(jobCheckResult.parseDiagnosticsPolicyBreaches ?? []).length > 0 && (
             <>

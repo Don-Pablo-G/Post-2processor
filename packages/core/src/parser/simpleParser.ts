@@ -1,4 +1,5 @@
 import type { Block, ParseComplianceMode, ParseDiagnostic, ParseOptions, ProgramAst } from "../types.js";
+import { splitProgramIntoBlocks } from "./blockSplit.js";
 
 const LENIENT_WORD_RE = /([A-Z#])\s*([+\-]?(?:(?:\d|\s)+(?:\.(?:\d|\s)*)?|\.(?:\d|\s)+)|#\d+|\[[^\]]+\])/gi;
 
@@ -444,64 +445,6 @@ function parseBracketExpressionAst(value: string): ExprParseResult {
   return cursor.parseAll();
 }
 
-function splitIntoRawBlocks(code: string, options?: ParseOptions): string[] {
-  if (!options?.semicolonEob) {
-    return code
-      .split(/\r?\n/)
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0);
-  }
-
-  const blocks: string[] = [];
-  let current = "";
-  let parenDepth = 0;
-  let bracketDepth = 0;
-
-  const pushCurrent = (): void => {
-    const trimmed = current.trim();
-    if (trimmed.length > 0) {
-      blocks.push(trimmed);
-    }
-    current = "";
-  };
-
-  for (let i = 0; i < code.length; i += 1) {
-    const ch = code[i];
-    if (ch === "(") {
-      parenDepth += 1;
-      current += ch;
-      continue;
-    }
-    if (ch === ")") {
-      if (parenDepth > 0) parenDepth -= 1;
-      current += ch;
-      continue;
-    }
-    if (ch === "[" && parenDepth === 0) {
-      bracketDepth += 1;
-      current += ch;
-      continue;
-    }
-    if (ch === "]" && parenDepth === 0) {
-      if (bracketDepth > 0) bracketDepth -= 1;
-      current += ch;
-      continue;
-    }
-    if (ch === ";" && parenDepth === 0 && bracketDepth === 0) {
-      pushCurrent();
-      continue;
-    }
-    if ((ch === "\n" || ch === "\r") && parenDepth === 0 && bracketDepth === 0) {
-      pushCurrent();
-      continue;
-    }
-    current += ch;
-  }
-
-  pushCurrent();
-  return blocks;
-}
-
 function allowedExtraSymbolsForMode(mode: ParseComplianceMode): Set<string> {
   // Baseline symbols accepted in code words/operators across controllers.
   const base = new Set(["+", "-", "*", "/", ".", "[", "]", "(", ")", "#", "=", " ", "\t"]);
@@ -547,7 +490,7 @@ export function simpleParse(code: string, profileId: string, options?: ParseOpti
     complianceMode === "strict" || complianceMode === "strict_haas" || complianceMode === "strict_fanuc";
   const includeTokenSpans = options?.includeTokenSpans ?? false;
   const includeExpressionAst = options?.includeExpressionAst ?? false;
-  const lines = splitIntoRawBlocks(code, options);
+  const lines = splitProgramIntoBlocks(code, { semicolonEob: options?.semicolonEob });
   const parseDiagnostics: ParseDiagnostic[] = [];
 
   const blocks: Block[] = lines.map((raw, blockIndex) => {

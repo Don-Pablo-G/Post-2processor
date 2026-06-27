@@ -59,6 +59,34 @@ function reverseRunText(text: string): string {
   return [...text].reverse().join("");
 }
 
+/**
+ * Reverse an RTL run for PDF visual placement while preserving embedded
+ * Latin/digit islands (e.g. "אב Shop גד" keeps "Shop" readable).
+ */
+function reverseRtlRunPreservingEmbeddedLtr(text: string): string {
+  type Segment = { preserve: boolean; text: string };
+  const segments: Segment[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    if (isLtrChar(ch) || isDigitChar(ch)) {
+      let j = i + 1;
+      while (j < text.length && (isLtrChar(text[j]) || isDigitChar(text[j]))) j += 1;
+      segments.push({ preserve: true, text: text.slice(i, j) });
+      i = j;
+    } else {
+      let j = i + 1;
+      while (j < text.length && !isLtrChar(text[j]) && !isDigitChar(text[j])) j += 1;
+      segments.push({ preserve: false, text: text.slice(i, j) });
+      i = j;
+    }
+  }
+  return segments
+    .reverse()
+    .map((seg) => (seg.preserve ? seg.text : reverseRunText(seg.text)))
+    .join("");
+}
+
 function dominantRtl(text: string): boolean {
   let rtl = 0;
   let ltr = 0;
@@ -81,7 +109,7 @@ export function applyBidiVisualOrder(text: string, mode: BidiTextMode = "auto"):
 
   const runs = splitDirectionRuns(text).map((run) => ({
     rtl: run.rtl,
-    text: run.rtl ? reverseRunText(run.text) : run.text
+    text: run.rtl ? reverseRtlRunPreservingEmbeddedLtr(run.text) : run.text
   }));
 
   if (baseRtl) {
@@ -97,13 +125,43 @@ export function applyBidiVisualOrder(text: string, mode: BidiTextMode = "auto"):
 }
 
 /**
+ * Like {@link applyBidiVisualOrderMultiline} but treats blank-line-separated
+ * blocks as paragraphs. RTL-dominant paragraphs reverse visual line order
+ * after per-line bidi — incremental support for multi-line shop addresses.
+ */
+export function applyBidiVisualOrderParagraphs(
+  text: string,
+  mode: BidiTextMode = "auto"
+): string {
+  if (text.length === 0) return text;
+  const paragraphs = text.split(/\n{2,}/);
+  return paragraphs
+    .map((paragraph) => {
+      const lines = paragraph.split("\n");
+      const ordered = lines.map((line) => applyBidiVisualOrder(line, mode));
+      const flat = paragraph.replace(/\n/g, " ");
+      const paraRtl =
+        mode === "rtl" ? true : mode === "ltr" ? false : dominantRtl(flat);
+      if (paraRtl && lines.length > 1) {
+        return ordered.reverse().join("\n");
+      }
+      return ordered.join("\n");
+    })
+    .join("\n\n");
+}
+
+/**
  * Apply bidi visual ordering to every line in a multiline string, preserving
  * line breaks.
  */
 export function applyBidiVisualOrderMultiline(
   text: string,
-  mode: BidiTextMode = "auto"
+  mode: BidiTextMode = "auto",
+  options?: { paragraphs?: boolean }
 ): string {
+  if (options?.paragraphs) {
+    return applyBidiVisualOrderParagraphs(text, mode);
+  }
   return text
     .split("\n")
     .map((line) => applyBidiVisualOrder(line, mode))

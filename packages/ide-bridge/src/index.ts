@@ -29,6 +29,7 @@ import {
   splitProgramIntoBlocks,
   type BlockSplitOptions,
   type CliBatchEnvelope,
+  type CliBatchLintIssuesByControllerCodeAggregation,
   type CliJobCheckEnvelope,
   type LintIssue
 } from "@cnc/core";
@@ -184,6 +185,42 @@ export function mapBatchAttributionToFileQuickFixes(
     }
   }
   return result;
+}
+
+export type IdeBatchAggregatedQuickFix = IdeQuickFix & {
+  count: number;
+  blockers: number;
+  warnings: number;
+  inputs: string[];
+};
+
+/**
+ * Map Schema v11 `summary.lintIssuesByControllerCodeAggregated` rows to
+ * catalogue quick-fixes without walking per-input attribution. Output order
+ * mirrors the batch rollup (count desc → source asc → code asc). Rows whose
+ * `code` is not in the catalogue are skipped.
+ */
+export function mapBatchControllerCodeAggregatedToQuickFixes(
+  envelope: CliBatchEnvelope
+): IdeBatchAggregatedQuickFix[] {
+  const rows = envelope.summary.lintIssuesByControllerCodeAggregated;
+  if (!rows || rows.length === 0) return [];
+  const out: IdeBatchAggregatedQuickFix[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.code)) continue;
+    const fix = getControllerGrammarFix(row.code);
+    if (!fix) continue;
+    seen.add(row.code);
+    out.push({
+      ...toQuickFix(row.code, fix),
+      count: row.count,
+      blockers: row.blockers,
+      warnings: row.warnings,
+      inputs: [...row.inputs]
+    });
+  }
+  return out;
 }
 
 function toQuickFix(

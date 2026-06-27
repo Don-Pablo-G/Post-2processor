@@ -4,6 +4,7 @@ import {
   CG_DUPLICATE_ADDRESSES_PREFIX,
   type CliBatchControllerCodeAttribution,
   type CliBatchEnvelope,
+  type CliBatchLintIssuesByControllerCodeAggregation,
   type CliJobCheckEnvelope,
   type LintIssue,
   type LintIssueWithProvenance
@@ -14,6 +15,7 @@ import {
   expandIdeQuickFixTemplate,
   getQuickFixForLintIssue,
   mapBatchAttributionToFileQuickFixes,
+  mapBatchControllerCodeAggregatedToQuickFixes,
   mapJobCheckEnvelopeToQuickFixes,
   resolveQuickFixRange,
   splitProgramIntoDisplayBlocks,
@@ -77,15 +79,19 @@ function makeAttribution(
 }
 
 function makeBatchEnvelope(
-  rows: CliBatchControllerCodeAttribution[]
+  rows: CliBatchControllerCodeAttribution[],
+  aggregated?: CliBatchLintIssuesByControllerCodeAggregation[]
 ): CliBatchEnvelope {
   return {
-    schemaVersion: 7,
+    schemaVersion: 11,
     results: [],
     summary: {
       files: 0,
       blocked: 0,
-      lintIssuesByControllerCodePerInputFile: rows
+      lintIssuesByControllerCodePerInputFile: rows,
+      ...(aggregated && aggregated.length > 0
+        ? { lintIssuesByControllerCodeAggregated: aggregated }
+        : {})
     }
   };
 }
@@ -247,6 +253,57 @@ describe("mapBatchAttributionToFileQuickFixes", () => {
       makeAttribution({ input: "x.nc", code: "CG_DOES_NOT_EXIST" })
     ]);
     expect(mapBatchAttributionToFileQuickFixes(envelope).size).toBe(0);
+  });
+});
+
+describe("mapBatchControllerCodeAggregatedToQuickFixes", () => {
+  it("maps aggregated controller-code rows to catalogue quick-fixes with batch metadata", () => {
+    const envelope = makeBatchEnvelope(
+      [],
+      [
+        {
+          source: "controller_grammar",
+          code: "CG_N_AND_O_MIXED",
+          count: 3,
+          blockers: 0,
+          warnings: 3,
+          inputs: ["a.nc", "b.nc"]
+        },
+        {
+          source: "controller_grammar",
+          code: "CG_DUPLICATE_O_HEADER",
+          count: 1,
+          blockers: 0,
+          warnings: 1,
+          inputs: ["a.nc"]
+        }
+      ]
+    );
+    const fixes = mapBatchControllerCodeAggregatedToQuickFixes(envelope);
+    expect(fixes).toHaveLength(2);
+    expect(fixes[0].code).toBe("CG_N_AND_O_MIXED");
+    expect(fixes[0].count).toBe(3);
+    expect(fixes[0].inputs).toEqual(["a.nc", "b.nc"]);
+    expect(fixes[0].title).toMatch(/separate block/i);
+    expect(fixes[1].code).toBe("CG_DUPLICATE_O_HEADER");
+  });
+
+  it("returns an empty array when aggregated rows are absent", () => {
+    expect(mapBatchControllerCodeAggregatedToQuickFixes(makeBatchEnvelope([]))).toEqual([]);
+  });
+
+  it("skips codes that are not in the catalogue", () => {
+    const envelope = makeBatchEnvelope([], [
+      {
+        source: "controller_grammar",
+        code: "CG_DOES_NOT_EXIST",
+        count: 1,
+        blockers: 0,
+        warnings: 1,
+        inputs: ["x.nc"]
+      }
+    ]);
+    expect(mapBatchControllerCodeAggregatedToQuickFixes(envelope)).toEqual([]);
   });
 });
 

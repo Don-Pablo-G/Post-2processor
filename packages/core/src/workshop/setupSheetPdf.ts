@@ -43,11 +43,15 @@ export type BuildSetupSheetPdfOptions = {
    */
   onWarning?: (warning: string) => void;
   /**
-   * Bidirectional text handling for shop names in Arabic / Hebrew.
-   * `"auto"` (default) reorders RTL-dominant lines for PDF left-to-right glyph
-   * placement; `"ltr"` and `"rtl"` force the base direction.
+   * Bidirectional text mode for title and body (`auto` | `ltr` | `rtl`).
+   * Default `"auto"`. See `bidiVisualOrder.ts`.
    */
   bidi?: BidiTextMode;
+  /**
+   * When true, `exportTxt` uses paragraph-aware bidi (`applyBidiVisualOrderParagraphs`)
+   * so blank-line-separated RTL blocks reverse visual line order. Default false.
+   */
+  bidiParagraphs?: boolean;
 };
 
 const PAGE_WIDTH_PT = 612; // US Letter @ 72 DPI
@@ -108,6 +112,7 @@ export function buildSetupSheetPdf(
 ): Uint8Array {
   const fontChoice = options.embeddedFont ?? "helvetica";
   const bidiMode = options.bidi ?? "auto";
+  const bidiParagraphs = options.bidiParagraphs ?? false;
   const embeddedFont =
     fontChoice === "dejavu-sans-subset" ? resolveBundledDejaVuSubset() : undefined;
 
@@ -122,7 +127,9 @@ export function buildSetupSheetPdf(
 
   const wrapWidthChars = approxCharsForWidth(PAGE_WIDTH_PT - MARGIN_PT * 2, BODY_FONT_SIZE);
   const displayTitle = applyBidiVisualOrder(setupSheet.title, bidiMode);
-  const displayExportTxt = applyBidiVisualOrderMultiline(setupSheet.exportTxt, bidiMode);
+  const displayExportTxt = applyBidiVisualOrderMultiline(setupSheet.exportTxt, bidiMode, {
+    paragraphs: bidiParagraphs
+  });
   const bodyLines: string[] = [];
   for (const raw of displayExportTxt.split("\n")) {
     if (raw.length === 0) {

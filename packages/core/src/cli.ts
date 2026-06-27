@@ -32,19 +32,23 @@ import {
   rotateAuditTrailKey
 } from "./audit/auditTrailRotation.js";
 import {
-  buildDeprecatedRuleAudit,
-  parseOlderThanThreshold,
-  type DeprecatedRuleAuditRow
-} from "./cli/auditDeprecatedRules.js";
+  formatDeprecatedRuleAuditAsJson,
+  formatDeprecatedRuleAuditAsText
+} from "./cli/deprecatedRuleAuditFormat.js";
 import {
   isAuditDeprecatedRulesPolicyPresetId,
   resolveAuditDeprecatedRulesPreset,
   type AuditDeprecatedRulesPolicyPresetId
 } from "./cli/auditDeprecatedRulesPresets.js";
+import {
+  buildDeprecatedRuleAudit,
+  parseOlderThanThreshold,
+  type DeprecatedRuleAuditRow
+} from "./cli/auditDeprecatedRules.js";
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 10;
+export const CLI_SCHEMA_VERSION = 12;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -1263,6 +1267,23 @@ export type CliBatchEnvelope = {
      * no entry has parse-diag-linked lint issues.
      */
     lintIssuesByParseDiagCodeAggregated?: CliBatchLintIssuesByParseDiagCodeAggregation[];
+    /**
+     * Schema v11: cross-input aggregation of every entry's
+     * `envelope.lintIssuesByControllerCode`. One row per distinct
+     * `(source, code)` pair; `inputs` lists entry inputs that reported
+     * the pair (sorted ascending, deduped). Counts sum across entries.
+     * Sort order: `count` desc → `source` asc → `code` asc. Absent when
+     * no entry has controller-code lint issues.
+     */
+    lintIssuesByControllerCodeAggregated?: CliBatchLintIssuesByControllerCodeAggregation[];
+    /**
+     * Schema v12: cross-input aggregation of every entry's
+     * `envelope.parseDiagnosticsByCode`. One row per distinct `code`;
+     * `inputs` lists entry inputs that reported the code (sorted ascending,
+     * deduped). Counts sum across entries. Sort order: `count` desc →
+     * `code` asc. Absent when no entry has parse diagnostics by code.
+     */
+    parseDiagnosticsByCodeAggregated?: CliBatchParseDiagnosticsByCodeAggregation[];
   };
 };
 
@@ -1294,6 +1315,31 @@ export type CliBatchLintIssuesByParseDiagCodeAggregation = {
   source: LintIssueProvenanceSource;
   code: string;
   count: number;
+  inputs: string[];
+};
+
+/**
+ * Schema v11: cross-input rollup of per-entry `lintIssuesByControllerCode`
+ * rows. One row per distinct `(source, code)` pair.
+ */
+export type CliBatchLintIssuesByControllerCodeAggregation = {
+  source: LintIssueProvenanceSource;
+  code: string;
+  count: number;
+  blockers: number;
+  warnings: number;
+  inputs: string[];
+};
+
+/**
+ * Schema v12: cross-input rollup of per-entry `parseDiagnosticsByCode` rows.
+ * One row per distinct parse-diagnostic `code`.
+ */
+export type CliBatchParseDiagnosticsByCodeAggregation = {
+  code: string;
+  count: number;
+  warnings: number;
+  errors: number;
   inputs: string[];
 };
 
@@ -1349,6 +1395,14 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const lintByParseDiag = buildBatchLintIssuesByParseDiagCodeAggregation(entries);
   if (lintByParseDiag.length > 0) {
     summary.lintIssuesByParseDiagCodeAggregated = lintByParseDiag;
+  }
+  const lintByControllerCode = buildBatchLintIssuesByControllerCodeAggregation(entries);
+  if (lintByControllerCode.length > 0) {
+    summary.lintIssuesByControllerCodeAggregated = lintByControllerCode;
+  }
+  const parseDiagByCode = buildBatchParseDiagnosticsByCodeAggregation(entries);
+  if (parseDiagByCode.length > 0) {
+    summary.parseDiagnosticsByCodeAggregated = parseDiagByCode;
   }
   return {
     schemaVersion: CLI_SCHEMA_VERSION,
@@ -1497,6 +1551,109 @@ export function buildBatchLintIssuesByParseDiagCodeAggregation(
   rows.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
     if (a.source !== b.source) return a.source.localeCompare(b.source);
+    return a.code.localeCompare(b.code);
+  });
+  return rows;
+}
+
+/**
+ * Schema v11: walk every entry's `envelope.lintIssuesByControllerCode` and
+ * group by `(source, code)`. Pure function — deterministic given `entries`.
+ */
+export function buildBatchLintIssuesByControllerCodeAggregation(
+  entries: CliBatchEntry[]
+): CliBatchLintIssuesByControllerCodeAggregation[] {
+  const byKey = new Map<
+    string,
+    {
+      source: LintIssueProvenanceSource;
+      code: string;
+      count: number;
+      blockers: number;
+      warnings: number;
+      inputs: Set<string>;
+    }
+  >();
+  for (const entry of entries) {
+    const rows = entry.envelope.lintIssuesByControllerCode;
+    if (!rows || rows.length === 0) continue;
+    for (const row of rows) {
+      const key = `${row.source}::${row.code}`;
+      let bucket = byKey.get(key);
+      if (!bucket) {
+        bucket = {
+          source: row.source,
+          code: row.code,
+          count: 0,
+          blockers: 0,
+          warnings: 0,
+          inputs: new Set<string>()
+        };
+        byKey.set(key, bucket);
+      }
+      bucket.count += row.count;
+      bucket.blockers += row.blockers;
+      bucket.warnings += row.warnings;
+      bucket.inputs.add(entry.input);
+    }
+  }
+  const rows: CliBatchLintIssuesByControllerCodeAggregation[] = [];
+  for (const bucket of byKey.values()) {
+    rows.push({
+      source: bucket.source,
+      code: bucket.code,
+      count: bucket.count,
+      blockers: bucket.blockers,
+      warnings: bucket.warnings,
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    if (a.source !== b.source) return a.source.localeCompare(b.source);
+    return a.code.localeCompare(b.code);
+  });
+  return rows;
+}
+
+/**
+ * Schema v12: walk every entry's `envelope.parseDiagnosticsByCode` and group
+ * by `code`. Pure function — deterministic given `entries`.
+ */
+export function buildBatchParseDiagnosticsByCodeAggregation(
+  entries: CliBatchEntry[]
+): CliBatchParseDiagnosticsByCodeAggregation[] {
+  const byCode = new Map<
+    string,
+    { count: number; warnings: number; errors: number; inputs: Set<string> }
+  >();
+  for (const entry of entries) {
+    const rows = entry.envelope.parseDiagnosticsByCode;
+    if (!rows || rows.length === 0) continue;
+    for (const row of rows) {
+      let bucket = byCode.get(row.code);
+      if (!bucket) {
+        bucket = { count: 0, warnings: 0, errors: 0, inputs: new Set<string>() };
+        byCode.set(row.code, bucket);
+      }
+      bucket.count += row.count;
+      bucket.warnings += row.warnings;
+      bucket.errors += row.errors;
+      bucket.inputs.add(entry.input);
+    }
+  }
+  const rows: CliBatchParseDiagnosticsByCodeAggregation[] = [];
+  for (const [code, bucket] of byCode) {
+    rows.push({
+      code,
+      count: bucket.count,
+      warnings: bucket.warnings,
+      errors: bucket.errors,
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
     return a.code.localeCompare(b.code);
   });
   return rows;
@@ -2249,30 +2406,6 @@ async function defaultLoadRuleDocsByPack(
   return result;
 }
 
-function formatAuditRowsAsText(rows: readonly DeprecatedRuleAuditRow[]): string {
-  // Stable column widths so terminal output stays scannable; widths
-  // grow to fit the longest value but never shrink (so a short audit
-  // doesn't render misaligned next to a longer one in the same shell).
-  const headers = ["pack", "ruleId", "deprecatedSince", "ageMonths", "overThreshold", "replacementSuggestion"];
-  const widths = headers.map((h) => h.length);
-  const cells = rows.map((row) => [
-    row.pack,
-    row.ruleId,
-    row.deprecatedSince,
-    String(row.ageMonths),
-    row.overThreshold ? "true" : "false",
-    row.replacementSuggestion ?? "—"
-  ]);
-  for (const row of cells) {
-    for (let i = 0; i < row.length; i += 1) {
-      if (row[i].length > widths[i]) widths[i] = row[i].length;
-    }
-  }
-  const formatRow = (cells: readonly string[]) =>
-    cells.map((cell, i) => cell.padEnd(widths[i], " ")).join("  ").trimEnd();
-  return [formatRow(headers), ...cells.map(formatRow)].join("\n");
-}
-
 export async function runAuditDeprecatedRules(
   parsed: AuditDeprecatedRulesArgs,
   io: AuditDeprecatedRulesIo = {}
@@ -2301,13 +2434,13 @@ export async function runAuditDeprecatedRules(
   });
 
   if (parsed.format === "json") {
-    writeOut(`${JSON.stringify({ rows }, null, 2)}\n`);
+    writeOut(`${formatDeprecatedRuleAuditAsJson(rows)}\n`);
   } else if (rows.length === 0) {
     if (!parsed.quiet) {
       writeOut("cnc-job-check audit-deprecated-rules: (no deprecated rules found)\n");
     }
   } else {
-    writeOut(`${formatAuditRowsAsText(rows)}\n`);
+    writeOut(`${formatDeprecatedRuleAuditAsText(rows)}\n`);
   }
 
   if (parsed.strict) {

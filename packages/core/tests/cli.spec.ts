@@ -13,6 +13,9 @@ import {
   CliArgumentError,
   buildControllerProfile,
   buildJobCheckEnvelope,
+  buildBatchEnvelope,
+  buildBatchLintIssuesByControllerCodeAggregation,
+  buildBatchParseDiagnosticsByCodeAggregation,
   buildBatchLintIssuesByParseDiagCodeAggregation,
   buildBatchLintIssuesBySourceAggregation,
   clearDiscoveredProfilePackLoadersCache,
@@ -656,8 +659,8 @@ describe("main()", () => {
 
   it("--input-dir text format prints per-file separators", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "a.nc"), "G0 X1 Y1\nM30\n", "utf8");
-    await writeFile(path.join(tmp, "b.nc"), "G0 X2 Y2\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "a.nc"), "O1000\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O1001\nG0 X2\nM30\n", "utf8");
 
     let stdout = "";
     const exitCode = await main(["--input-dir", tmp, "--format", "text"], {
@@ -1007,7 +1010,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=10\n");
+    expect(stdout).toBe("cnc-job-check schema=12\n");
     expect(stderr).toBe("");
   });
 
@@ -1365,8 +1368,8 @@ describe("main()", () => {
 
   it("CliBatchEnvelope.summary key-list includes lintIssuesByControllerCodePerInputFile [schema v6]", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "01.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
-    await writeFile(path.join(tmp, "02.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "01.nc"), "G0 X1 Y1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "02.nc"), "G0 X2 Y2\nM30\n", "utf8");
     let stdout = "";
     const exitCode = await main(
       ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
@@ -1379,11 +1382,13 @@ describe("main()", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(10);
-    expect(Object.keys(parsed.summary).sort()).toEqual(
-      ["blocked", "files", "lintIssuesByControllerCodePerInputFile"].sort()
-    );
-    expect(parsed.summary.lintIssuesBySourceAggregated).toBeUndefined();
+    expect(parsed.schemaVersion).toBe(12);
+    expect(parsed.summary).toMatchObject({
+      files: 2,
+      blocked: 0,
+      lintIssuesByControllerCodePerInputFile: []
+    });
+    expect(parsed.summary.lintIssuesByControllerCodePerInputFile).toEqual([]);
   });
 
   it("summary.lintIssuesByControllerCodePerInputFile is an empty array on a clean 2-file batch [schema v6]", async () => {
@@ -1782,8 +1787,8 @@ describe("main()", () => {
 
   it("--out-dir + --format ndjson writes single-line .ndjson files (one envelope per file)", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "a.nc"), "G0 X1\nM30\n", "utf8");
-    await writeFile(path.join(tmp, "b.nc"), "G0 X2\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "a.nc"), "O1000\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O1001\nG0 X2\nM30\n", "utf8");
 
     const outDir = path.join(tmp, "out");
     const exitCode = await main(
@@ -2598,7 +2603,7 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 
 describe("--strict-controller-codes gate (schema v7)", () => {
   it("CLI_SCHEMA_VERSION is 9", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(10);
+    expect(CLI_SCHEMA_VERSION).toBe(12);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -2928,8 +2933,8 @@ describe("Schema v8: blockReasons + summary.blockReasonsAggregated", () => {
 
   it("batch summary.blockReasonsAggregated is undefined for a clean batch (no entry has block reasons)", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
-    await writeFile(path.join(tmp, "b.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "a.nc"), "O1000\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O1001\nG0 X2\nM30\n", "utf8");
     const out: string[] = [];
     const exit = await main(
       ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
@@ -3064,18 +3069,27 @@ describe("Schema v8: blockReasons + summary.blockReasonsAggregated", () => {
 });
 
 describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
-  it("batch summary.lintIssuesBySourceAggregated is undefined for a clean batch", async () => {
-    const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
-    await writeFile(path.join(tmp, "b.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
-    const out: string[] = [];
-    const exit = await main(
-      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
-      { stdout: (c) => out.push(c), stderr: () => {} }
-    );
-    expect(exit).toBe(0);
-    const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(10);
+  it("batch summary.lintIssuesBySourceAggregated is absent when every entry has empty lintIssuesBySource", () => {
+    const batch = buildBatchEnvelope([
+      {
+        input: "a.nc",
+        schemaVersion: 12,
+        envelope: {
+          lintIssuesBySource: [],
+          lintIssuesByControllerCode: [],
+          parseDiagnosticsByCode: []
+        }
+      },
+      {
+        input: "b.nc",
+        schemaVersion: 12,
+        envelope: {
+          lintIssuesBySource: [],
+          lintIssuesByControllerCode: [],
+          parseDiagnosticsByCode: []
+        }
+      }
+    ] as Parameters<typeof buildBatchEnvelope>[0]);
     expect(batch.summary.lintIssuesBySourceAggregated).toBeUndefined();
   });
 
@@ -3110,7 +3124,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 10,
+        schemaVersion: 12,
         envelope: {
           lintIssuesBySource: [
             { source: "profile_lint", count: 1, blockers: 0, warnings: 1 },
@@ -3120,7 +3134,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 10,
+        schemaVersion: 12,
         envelope: {
           lintIssuesBySource: [
             { source: "controller_grammar", count: 2, blockers: 0, warnings: 2 },
@@ -3139,8 +3153,8 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
 describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
   it("batch summary.lintIssuesByParseDiagCodeAggregated is undefined for a clean batch", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nG0 X1\nM30\n%\n", "utf8");
-    await writeFile(path.join(tmp, "b.nc"), "%\nO0002\nG0 X2\nM30\n%\n", "utf8");
+    await writeFile(path.join(tmp, "a.nc"), "O1000\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O1001\nG0 X2\nM30\n", "utf8");
     const out: string[] = [];
     const exit = await main(
       ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
@@ -3148,7 +3162,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(10);
+    expect(batch.schemaVersion).toBe(12);
     expect(batch.summary.lintIssuesByParseDiagCodeAggregated).toBeUndefined();
   });
 
@@ -3184,7 +3198,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 10,
+        schemaVersion: 12,
         envelope: {
           lintIssuesByParseDiagCode: [
             { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 1 }
@@ -3193,7 +3207,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 10,
+        schemaVersion: 12,
         envelope: {
           lintIssuesByParseDiagCode: [
             { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 2 },
@@ -3210,6 +3224,187 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
       inputs: ["a.nc", "b.nc"]
     });
     expect(agg[1].source).toBe("expression_parser");
+    expect(agg[1].count).toBe(1);
+  });
+});
+
+describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
+  it("batch summary.lintIssuesByControllerCodeAggregated is undefined for a clean batch", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1000\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O1001\nG0 X2\nM30\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    expect(batch.schemaVersion).toBe(12);
+    expect(batch.summary.lintIssuesByControllerCodeAggregated).toBeUndefined();
+  });
+
+  it("batch summary.lintIssuesByControllerCodeAggregated unions CG_* codes across 2 inputs", async () => {
+    const tmp = await setupTmpDir();
+    const alphaPath = path.join(tmp, "alpha.nc");
+    const betaPath = path.join(tmp, "beta.nc");
+    await writeFile(alphaPath, "N10 O1000\nO1000\nM30\n", "utf8");
+    await writeFile(betaPath, "O1234\nG65 P9000 K1 J2 I3\nG0 X1 X2\nM30\n", "utf8");
+
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    const agg = batch.summary.lintIssuesByControllerCodeAggregated as Array<{
+      source: string;
+      code: string;
+      count: number;
+      blockers: number;
+      warnings: number;
+      inputs: string[];
+    }>;
+    expect(Array.isArray(agg)).toBe(true);
+    expect(agg.length).toBeGreaterThan(0);
+    for (const row of agg) {
+      expect(row.count).toBeGreaterThan(0);
+      expect(row.blockers + row.warnings).toBe(row.count);
+      expect(row.inputs.length).toBeGreaterThan(0);
+    }
+    const dupO = agg.find((row) => row.code === "CG_DUPLICATE_O_HEADER");
+    expect(dupO).toBeDefined();
+    expect(dupO!.inputs).toEqual([alphaPath]);
+  });
+
+  it("buildBatchLintIssuesByControllerCodeAggregation sorts by count desc then source then code", () => {
+    const entries = [
+      {
+        input: "b.nc",
+        schemaVersion: 12,
+        envelope: {
+          lintIssuesByControllerCode: [
+            {
+              source: "controller_grammar",
+              code: "CG_N_AND_O_MIXED",
+              count: 1,
+              blockers: 0,
+              warnings: 1
+            }
+          ]
+        }
+      },
+      {
+        input: "a.nc",
+        schemaVersion: 12,
+        envelope: {
+          lintIssuesByControllerCode: [
+            {
+              source: "controller_grammar",
+              code: "CG_N_AND_O_MIXED",
+              count: 2,
+              blockers: 0,
+              warnings: 2
+            },
+            {
+              source: "controller_grammar",
+              code: "CG_DUPLICATE_O_HEADER",
+              count: 1,
+              blockers: 0,
+              warnings: 1
+            }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchLintIssuesByControllerCodeAggregation>[0];
+    const agg = buildBatchLintIssuesByControllerCodeAggregation(entries);
+    expect(agg[0]).toMatchObject({
+      source: "controller_grammar",
+      code: "CG_N_AND_O_MIXED",
+      count: 3,
+      inputs: ["a.nc", "b.nc"]
+    });
+    expect(agg[1].code).toBe("CG_DUPLICATE_O_HEADER");
+    expect(agg[1].count).toBe(1);
+  });
+});
+
+describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
+  it("batch summary.parseDiagnosticsByCodeAggregated is undefined for a clean batch", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1000\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O1001\nG0 X2\nM30\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    expect(batch.schemaVersion).toBe(12);
+    expect(batch.summary.parseDiagnosticsByCodeAggregated).toBeUndefined();
+  });
+
+  it("batch summary.parseDiagnosticsByCodeAggregated unions parse-diag codes across 2 inputs", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "G0 X1 (unclosed\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "G0 Y[1+2 X3.\nM30\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    const agg = batch.summary.parseDiagnosticsByCodeAggregated as Array<{
+      code: string;
+      count: number;
+      warnings: number;
+      errors: number;
+      inputs: string[];
+    }>;
+    expect(Array.isArray(agg)).toBe(true);
+    expect(agg.length).toBeGreaterThan(0);
+    for (const row of agg) {
+      expect(row.count).toBeGreaterThan(0);
+      expect(row.warnings + row.errors).toBe(row.count);
+      expect(row.inputs.length).toBeGreaterThan(0);
+    }
+    const paren = agg.find((row) => row.code === "UNMATCHED_OPEN_PAREN");
+    expect(paren).toBeDefined();
+    expect(paren!.inputs.length).toBe(1);
+  });
+
+  it("buildBatchParseDiagnosticsByCodeAggregation sorts by count desc then code asc", () => {
+    const entries = [
+      {
+        input: "b.nc",
+        schemaVersion: 12,
+        envelope: {
+          parseDiagnosticsByCode: [
+            { code: "UNMATCHED_OPEN_PAREN", count: 1, warnings: 1, errors: 0 }
+          ]
+        }
+      },
+      {
+        input: "a.nc",
+        schemaVersion: 12,
+        envelope: {
+          parseDiagnosticsByCode: [
+            { code: "UNMATCHED_OPEN_PAREN", count: 2, warnings: 2, errors: 0 },
+            { code: "UNBALANCED_BRACKET", count: 1, warnings: 1, errors: 0 }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchParseDiagnosticsByCodeAggregation>[0];
+    const agg = buildBatchParseDiagnosticsByCodeAggregation(entries);
+    expect(agg[0]).toMatchObject({
+      code: "UNMATCHED_OPEN_PAREN",
+      count: 3,
+      inputs: ["a.nc", "b.nc"]
+    });
+    expect(agg[1].code).toBe("UNBALANCED_BRACKET");
     expect(agg[1].count).toBe(1);
   });
 });

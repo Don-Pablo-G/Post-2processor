@@ -49,6 +49,12 @@ export {
   parseOlderThanThreshold
 } from "./cli/auditDeprecatedRules.js";
 
+export {
+  formatDeprecatedRuleAuditAsCsv,
+  formatDeprecatedRuleAuditAsJson,
+  formatDeprecatedRuleAuditAsText
+} from "./cli/deprecatedRuleAuditFormat.js";
+
 export type { DeprecatedRuleAuditRow } from "./cli/auditDeprecatedRules.js";
 
 export {
@@ -81,6 +87,8 @@ export type {
   CliBatchControllerCodeAttribution,
   CliBatchBlockReasonAggregation,
   CliBatchLintIssuesByParseDiagCodeAggregation,
+  CliBatchLintIssuesByControllerCodeAggregation,
+  CliBatchParseDiagnosticsByCodeAggregation,
   CliBatchLintIssuesBySourceAggregation,
   CliBlockReason,
   CliLintIssuesByControllerCodeEntry,

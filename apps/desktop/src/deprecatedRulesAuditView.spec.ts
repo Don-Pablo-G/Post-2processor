@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEPRECATED_RULES_AUDIT_POLICY_PRESETS,
   formatDeprecatedRulesAuditChip,
+  formatDeprecatedRulesAuditForExport,
   runDeprecatedRulesAudit
 } from "./deprecatedRulesAuditView";
 
@@ -31,5 +32,13 @@ describe("deprecatedRulesAuditView", () => {
     expect(fanuc!.overThreshold).toBe(true);
     expect(summary.overThresholdCount).toBeGreaterThanOrEqual(1);
     expect(formatDeprecatedRulesAuditChip(summary)).toMatch(/over threshold/);
+  });
+
+  it("formatDeprecatedRulesAuditForExport emits JSON and CSV payloads", () => {
+    const summary = runDeprecatedRulesAudit("informational", FROZEN_NOW);
+    const json = formatDeprecatedRulesAuditForExport(summary, "json");
+    const csv = formatDeprecatedRulesAuditForExport(summary, "csv");
+    expect(JSON.parse(json).rows.length).toBe(summary.deprecatedCount);
+    expect(csv.split("\n")[0]).toContain("pack,ruleId");
   });
 });

@@ -1,6 +1,8 @@
 import {
   AUDIT_DEPRECATED_RULES_POLICY_PRESET_IDS,
   buildDeprecatedRuleAudit,
+  formatDeprecatedRuleAuditAsCsv,
+  formatDeprecatedRuleAuditAsJson,
   resolveAuditDeprecatedRulesPreset,
   parseOlderThanThreshold,
   type AuditDeprecatedRulesPolicyPresetId,
@@ -84,4 +86,15 @@ export function deprecatedRulesAuditPresetLabel(
     case "yearly-strict":
       return labels.yearlyStrict;
   }
+}
+
+export type DeprecatedRulesAuditExportFormat = "json" | "csv";
+
+export function formatDeprecatedRulesAuditForExport(
+  summary: DeprecatedRulesAuditSummary,
+  format: DeprecatedRulesAuditExportFormat
+): string {
+  return format === "json"
+    ? formatDeprecatedRuleAuditAsJson(summary.rows)
+    : formatDeprecatedRuleAuditAsCsv(summary.rows);
 }
