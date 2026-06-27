@@ -24,12 +24,14 @@
 
 import {
   getControllerGrammarFix,
+  getParseDiagnosticFix,
   blockSpanToRange,
   splitProgramIntoBlockSpans,
   splitProgramIntoBlocks,
   type BlockSplitOptions,
   type CliBatchEnvelope,
   type CliBatchLintIssuesByControllerCodeAggregation,
+  type CliBatchParseDiagnosticsByCodeAggregation,
   type CliJobCheckEnvelope,
   type LintIssue
 } from "@cnc/core";
@@ -241,6 +243,105 @@ export function mapBatchControllerCodeAggregatedToFileQuickFixes(
     for (const issue of entry.envelope.controllerLints) {
       if (typeof issue.code !== "string" || issue.code.length === 0) continue;
       if (!byCode.has(issue.code)) byCode.set(issue.code, issue.blockIndex);
+    }
+    blockIndexByInputCode.set(entry.input, byCode);
+  }
+
+  const result = new Map<string, IdeQuickFix[]>();
+  const seenPerInput = new Map<string, Set<string>>();
+  for (const fix of aggregated) {
+    for (const input of fix.inputs) {
+      let seen = seenPerInput.get(input);
+      if (!seen) {
+        seen = new Set<string>();
+        seenPerInput.set(input, seen);
+      }
+      if (seen.has(fix.code)) continue;
+      seen.add(fix.code);
+
+      const out: IdeQuickFix = {
+        code: fix.code,
+        title: fix.title,
+        rationale: fix.rationale
+      };
+      if (fix.replacementTemplate !== undefined) {
+        out.replacementTemplate = fix.replacementTemplate;
+      }
+      const source = sourcesByInput.get(input);
+      const blockIndex = blockIndexByInputCode.get(input)?.get(fix.code);
+      if (source !== undefined && blockIndex !== undefined) {
+        const range = resolveQuickFixRange(source, blockIndex, rangeOptions);
+        if (range) out.range = range;
+      }
+
+      const existing = result.get(input);
+      if (existing) {
+        existing.push(out);
+      } else {
+        result.set(input, [out]);
+      }
+    }
+  }
+  return result;
+}
+
+export type IdeBatchParseDiagAggregatedQuickFix = IdeQuickFix & {
+  count: number;
+  warnings: number;
+  errors: number;
+  inputs: string[];
+};
+
+/**
+ * Map Schema v12 `summary.parseDiagnosticsByCodeAggregated` rows to
+ * catalogue parse-diagnostic fixes without walking per-input attribution.
+ */
+export function mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes(
+  envelope: CliBatchEnvelope
+): IdeBatchParseDiagAggregatedQuickFix[] {
+  const rows = envelope.summary.parseDiagnosticsByCodeAggregated;
+  if (!rows || rows.length === 0) return [];
+  const out: IdeBatchParseDiagAggregatedQuickFix[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.code)) continue;
+    const fix = getParseDiagnosticFix(row.code);
+    if (!fix) continue;
+    seen.add(row.code);
+    out.push({
+      code: row.code,
+      title: fix.title,
+      rationale: fix.rationale,
+      ...(fix.replacementTemplate !== undefined
+        ? { replacementTemplate: fix.replacementTemplate }
+        : {}),
+      count: row.count,
+      warnings: row.warnings,
+      errors: row.errors,
+      inputs: [...row.inputs]
+    });
+  }
+  return out;
+}
+
+/**
+ * Map aggregated parse-diagnostic quick-fixes to per-input fixes with optional
+ * editor ranges when program sources are supplied via `sourcesByInput`.
+ */
+export function mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string>,
+  rangeOptions?: QuickFixRangeOptions
+): Map<string, IdeQuickFix[]> {
+  const aggregated = mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes(envelope);
+  if (aggregated.length === 0) return new Map();
+
+  const blockIndexByInputCode = new Map<string, Map<string, number>>();
+  for (const entry of envelope.results) {
+    const byCode = new Map<string, number>();
+    for (const row of entry.envelope.parseDiagnosticsByCode) {
+      if (row.firstBlockIndex === undefined) continue;
+      if (!byCode.has(row.code)) byCode.set(row.code, row.firstBlockIndex);
     }
     blockIndexByInputCode.set(entry.input, byCode);
   }

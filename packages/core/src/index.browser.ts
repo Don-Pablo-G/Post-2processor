@@ -122,6 +122,12 @@ export {
 } from "./lints/controllerGrammarFixes.js";
 export type { ControllerGrammarFix } from "./lints/controllerGrammarFixes.js";
 
+export {
+  PARSE_DIAGNOSTIC_FIXES,
+  getParseDiagnosticFix
+} from "./parser/parseDiagnosticFixes.js";
+export type { ParseDiagnosticFix } from "./parser/parseDiagnosticFixes.js";
+
 export { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecation.js";
 
 export type {
@@ -134,6 +140,7 @@ export type {
   CliBatchLintIssuesByControllerCodeAggregation,
   CliBatchParseDiagnosticsByCodeAggregation,
   CliBatchStrictControllerCodesGatedAggregation,
+  CliBatchParseDiagnosticsPolicyBreachesAggregation,
   CliBatchLintIssuesBySourceAggregation,
   CliBlockReason,
   CliLintIssuesByControllerCodeEntry,

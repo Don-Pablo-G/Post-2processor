@@ -3611,6 +3611,46 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=13
 ```
 
+## Policy-breach rollup + parse-diag catalogue + ide-bridge parse hints + strict-gate export + Schema v14
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Cross-input `parseDiagnosticsPolicyBreachesAggregated` (Schema v14)
+
+`CLI_SCHEMA_VERSION` bumps `13 → 14`. `CliBatchEnvelope.summary.parseDiagnosticsPolicyBreachesAggregated`
+rolls up per-entry `parseDiagnosticsPolicyBreaches` across the batch: one row per breach
+`key` with contributing `inputs[]`, `totalObserved`, and worst `severity`. Sorted
+`count` desc → `key` asc. Absent when no entry breached policy thresholds.
+
+Per-entry `parseDiagnosticsByCode[]` rows gain optional `firstBlockIndex` for editor
+jump-to-block in downstream tooling.
+
+### Move 2 — Parser `parseDiagnosticFixes` catalogue
+
+`getParseDiagnosticFix(code)` maps every parser `ParseDiagnostic.code` to a stable
+title, rationale, and optional `replacementTemplate` — parallel to controller-grammar fixes.
+
+### Move 3 — `@cnc/ide-bridge` aggregated parse-diag quick-fix maps
+
+`mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes(envelope)` and
+`mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes(envelope, sourcesByInput, rangeOptions?)`
+map Schema v12 aggregated parse-diag rows to catalogue fixes with optional editor `range`.
+
+### Move 4 — Desktop strict-controller-codes gate clipboard export
+
+Job Check strict-gate watch row gains **Copy JSON** and **Copy CSV** buttons mirroring
+the deprecation audit clipboard UX.
+
+### Move 5 — Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # see test run for current count
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=14
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3628,10 +3668,12 @@ next planning wave can pick them up:
   reorder, embedded LTR islands, and bracket/quote preservation ship;
   deeply nested embeddings and multi-script runs still need ICU or a
   full UAX#9 implementation.
-- **ide-bridge parse-diag aggregated quick-fix hints** — controller-code
-  aggregated fixes now resolve editor ranges; parse-diag aggregated rows
-  could gain a parallel `mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes`.
-- **Desktop strict-gate export** — watch chips evaluate locally; JSON/CSV
-  clipboard or file export for strict-gate summaries would close CI parity.
-- **Other CI dashboard rollups** — additional batch summary fields for
-  policy breaches, deprecation audits, or advisor findings as needed.
+- **Simulation/advisor findings batch rollup** — per-entry simulation
+  and advisor findings are not yet in the CLI envelope; a structured
+  batch summary would close the remaining safety-dashboard gap.
+- **Desktop policy-breach batch chip parity** — CLI batch rollups ship;
+  desktop could surface `parseDiagnosticsPolicyBreachesAggregated` when
+  running multi-file checks.
+- **Parse-diag fix template binding heuristics** — catalogue templates
+  ship; IDE hosts may want `deriveParseDiagnosticFixBindings` for codes
+  like `ADDRESS_MISSING_VALUE` that need the observed address letter.

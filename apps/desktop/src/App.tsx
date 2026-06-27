@@ -99,6 +99,7 @@ import { downloadDeprecatedRulesAuditReport } from "./deprecatedRulesAuditDownlo
 import {
   evaluateStrictControllerGate,
   formatStrictControllerGateChip,
+  formatStrictControllerGateForExport,
   STRICT_CONTROLLER_GATE_WATCH_PRESETS,
   strictControllerGatePatternLabel,
   type StrictControllerGateWatchPattern
@@ -272,6 +273,12 @@ const UI_TEXT: Record<
     strictGatePatternNAndO: string;
     strictGatePatternDuplicateO: string;
     strictGatePatternDuplicateAddresses: string;
+    strictGateCopyJson: string;
+    strictGateCopiedJson: string;
+    strictGateCopyJsonFallback: string;
+    strictGateCopyCsv: string;
+    strictGateCopiedCsv: string;
+    strictGateCopyCsvFallback: string;
     deprecatedRulesAuditCopyCsv: string;
     deprecatedRulesAuditCopiedCsv: string;
     deprecatedRulesAuditCopyCsvFallback: string;
@@ -545,6 +552,12 @@ const UI_TEXT: Record<
     strictGatePatternNAndO: "N+O mixed",
     strictGatePatternDuplicateO: "Duplicate O",
     strictGatePatternDuplicateAddresses: "Duplicate addr.*",
+    strictGateCopyJson: "Kopiuj JSON",
+    strictGateCopiedJson: "Skopiowano podsumowanie strażnika CG_*",
+    strictGateCopyJsonFallback: "Kopiuj podsumowanie strażnika ręcznie",
+    strictGateCopyCsv: "Kopiuj CSV",
+    strictGateCopiedCsv: "Skopiowano podsumowanie strażnika CG_* (CSV)",
+    strictGateCopyCsvFallback: "Kopiuj podsumowanie strażnika CSV ręcznie",
     deprecatedRulesAuditCopyCsv: "Kopiuj CSV",
     deprecatedRulesAuditCopiedCsv: "Skopiowano audyt reguł wycofywanych (CSV)",
     deprecatedRulesAuditCopyCsvFallback: "Kopiuj audyt CSV ręcznie",
@@ -819,6 +832,12 @@ const UI_TEXT: Record<
     strictGatePatternNAndO: "N+O mixed",
     strictGatePatternDuplicateO: "Duplicate O",
     strictGatePatternDuplicateAddresses: "Duplicate addr.*",
+    strictGateCopyJson: "Copy JSON",
+    strictGateCopiedJson: "Copied strict CG_* gate summary",
+    strictGateCopyJsonFallback: "Copy strict gate summary manually",
+    strictGateCopyCsv: "Copy CSV",
+    strictGateCopiedCsv: "Copied strict CG_* gate summary (CSV)",
+    strictGateCopyCsvFallback: "Copy strict gate summary CSV manually",
     deprecatedRulesAuditCopyCsv: "Copy CSV",
     deprecatedRulesAuditCopiedCsv: "Copied deprecated rules audit (CSV)",
     deprecatedRulesAuditCopyCsvFallback: "Copy deprecated rules audit CSV manually",
@@ -2186,6 +2205,26 @@ export function App() {
     );
   }
 
+  async function handleCopyStrictControllerGateJson(): Promise<void> {
+    const payload = formatStrictControllerGateForExport(strictGateSummary, "json");
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.strictGateCopiedJson);
+    } catch {
+      setExportStatus(`${t.strictGateCopyJsonFallback}: ${payload}`);
+    }
+  }
+
+  async function handleCopyStrictControllerGateCsv(): Promise<void> {
+    const payload = formatStrictControllerGateForExport(strictGateSummary, "csv");
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.strictGateCopiedCsv);
+    } catch {
+      setExportStatus(`${t.strictGateCopyCsvFallback}: ${payload}`);
+    }
+  }
+
   async function handleCopyDeprecatedRulesAuditCsv(): Promise<void> {
     const payload = formatDeprecatedRulesAuditForExport(deprecatedRulesAuditSummary, "csv");
     try {
@@ -3073,6 +3112,20 @@ export function App() {
             >
               {formatStrictControllerGateChip(strictGateSummary)}
             </span>
+            <button
+              type="button"
+              data-testid="strict-gate-copy-json"
+              onClick={() => void handleCopyStrictControllerGateJson()}
+            >
+              {t.strictGateCopyJson}
+            </button>
+            <button
+              type="button"
+              data-testid="strict-gate-copy-csv"
+              onClick={() => void handleCopyStrictControllerGateCsv()}
+            >
+              {t.strictGateCopyCsv}
+            </button>
           </div>
           <div
             data-testid="deprecated-rules-audit-presets"

@@ -52,7 +52,7 @@ import {
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 13;
+export const CLI_SCHEMA_VERSION = 14;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -805,6 +805,11 @@ export type CliParseDiagnosticsByCodeEntry = {
   count: number;
   warnings: number;
   errors: number;
+  /**
+   * Schema v14: earliest `blockIndex` for this diagnostic code in the
+   * parsed program. Absent when unavailable. Append-only optional field.
+   */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -969,7 +974,14 @@ function buildParseDiagnosticsByCode(
   });
   return entries.map(([code, count]) => {
     const sev = bySeverity[code] ?? { warnings: 0, errors: 0 };
-    return { code, count, warnings: sev.warnings, errors: sev.errors };
+    const firstBlockIndex = result.parseDiagnosticsFirstBlockIndexByCode[code];
+    return {
+      code,
+      count,
+      warnings: sev.warnings,
+      errors: sev.errors,
+      ...(firstBlockIndex !== undefined ? { firstBlockIndex } : {})
+    };
   });
 }
 
@@ -1286,6 +1298,16 @@ export type CliBatchEnvelope = {
      * matched a strict-controller-codes pattern.
      */
     strictControllerCodesGatedAggregated?: CliBatchStrictControllerCodesGatedAggregation[];
+    /**
+     * Schema v14: cross-input aggregation of every entry's
+     * `envelope.parseDiagnosticsPolicyBreaches`. One row per distinct
+     * `key`; `inputs` lists entry inputs that breached the key (sorted
+     * ascending, deduped). `count` is the number of contributing inputs;
+     * `totalObserved` sums every contributing breach's `observed` value;
+     * `severity` is the worst severity across contributors. Sort order:
+     * `count` desc → `key` asc. Absent when no entry has policy breaches.
+     */
+    parseDiagnosticsPolicyBreachesAggregated?: CliBatchParseDiagnosticsPolicyBreachesAggregation[];
   };
 };
 
@@ -1353,6 +1375,17 @@ export type CliBatchStrictControllerCodesGatedAggregation = {
   inputs: string[];
 };
 
+/**
+ * Schema v14: cross-input rollup of per-entry `parseDiagnosticsPolicyBreaches`.
+ */
+export type CliBatchParseDiagnosticsPolicyBreachesAggregation = {
+  key: string;
+  count: number;
+  inputs: string[];
+  totalObserved: number;
+  severity: "warning" | "blocker";
+};
+
 function buildBatchControllerCodeAttribution(
   entries: CliBatchEntry[]
 ): CliBatchControllerCodeAttribution[] {
@@ -1417,6 +1450,10 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const strictGated = buildBatchStrictControllerCodesGatedAggregation(entries);
   if (strictGated.length > 0) {
     summary.strictControllerCodesGatedAggregated = strictGated;
+  }
+  const policyBreaches = buildBatchParseDiagnosticsPolicyBreachesAggregation(entries);
+  if (policyBreaches.length > 0) {
+    summary.parseDiagnosticsPolicyBreachesAggregated = policyBreaches;
   }
   return {
     schemaVersion: CLI_SCHEMA_VERSION,
@@ -1703,6 +1740,63 @@ export function buildBatchStrictControllerCodesGatedAggregation(
   rows.sort((a, b) => {
     if (a.inputs.length !== b.inputs.length) return b.inputs.length - a.inputs.length;
     return a.code.localeCompare(b.code);
+  });
+  return rows;
+}
+
+/**
+ * Schema v14: walk every entry's `envelope.parseDiagnosticsPolicyBreaches`
+ * and group by `key`. Pure function — deterministic given `entries`.
+ */
+export function buildBatchParseDiagnosticsPolicyBreachesAggregation(
+  entries: CliBatchEntry[]
+): CliBatchParseDiagnosticsPolicyBreachesAggregation[] {
+  const byKey = new Map<
+    string,
+    {
+      count: number;
+      inputs: Set<string>;
+      totalObserved: number;
+      severity: "warning" | "blocker";
+    }
+  >();
+  for (const entry of entries) {
+    const breaches = entry.envelope.parseDiagnosticsPolicyBreaches;
+    if (!breaches || breaches.length === 0) continue;
+    const seenKeysForInput = new Set<string>();
+    for (const breach of breaches) {
+      let bucket = byKey.get(breach.key);
+      if (!bucket) {
+        bucket = {
+          count: 0,
+          inputs: new Set<string>(),
+          totalObserved: 0,
+          severity: "warning"
+        };
+        byKey.set(breach.key, bucket);
+      }
+      if (!seenKeysForInput.has(breach.key)) {
+        seenKeysForInput.add(breach.key);
+        bucket.count += 1;
+        bucket.inputs.add(entry.input);
+      }
+      bucket.totalObserved += breach.observed;
+      if (breach.severity === "blocker") bucket.severity = "blocker";
+    }
+  }
+  const rows: CliBatchParseDiagnosticsPolicyBreachesAggregation[] = [];
+  for (const [key, bucket] of byKey) {
+    rows.push({
+      key,
+      count: bucket.count,
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b)),
+      totalObserved: bucket.totalObserved,
+      severity: bucket.severity
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    return a.key.localeCompare(b.key);
   });
   return rows;
 }

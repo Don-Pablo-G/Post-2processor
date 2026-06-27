@@ -17,6 +17,8 @@ import {
   mapBatchAttributionToFileQuickFixes,
   mapBatchControllerCodeAggregatedToFileQuickFixes,
   mapBatchControllerCodeAggregatedToQuickFixes,
+  mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes,
+  mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes,
   mapJobCheckEnvelopeToQuickFixes,
   resolveQuickFixRange,
   splitProgramIntoDisplayBlocks,
@@ -364,6 +366,83 @@ describe("mapBatchControllerCodeAggregatedToFileQuickFixes", () => {
     expect(
       mapBatchControllerCodeAggregatedToFileQuickFixes(makeBatchEnvelope([]), new Map())
     ).toEqual(new Map());
+  });
+});
+
+describe("mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes", () => {
+  it("groups aggregated parse-diag fixes per input and attaches ranges when sources are supplied", () => {
+    const envelope: CliBatchEnvelope = {
+      schemaVersion: 14,
+      results: [
+        {
+          schemaVersion: 14,
+          input: "a.nc",
+          envelope: {
+            ...makeEnvelope([]),
+            parseDiagnosticsByCode: [
+              {
+                code: "UNMATCHED_OPEN_PAREN",
+                count: 1,
+                warnings: 1,
+                errors: 0,
+                firstBlockIndex: 1
+              }
+            ]
+          }
+        }
+      ],
+      summary: {
+        files: 1,
+        blocked: 0,
+        lintIssuesByControllerCodePerInputFile: [],
+        parseDiagnosticsByCodeAggregated: [
+          {
+            code: "UNMATCHED_OPEN_PAREN",
+            count: 1,
+            warnings: 1,
+            errors: 0,
+            inputs: ["a.nc"]
+          }
+        ]
+      }
+    };
+    const sources = new Map([["a.nc", "O1\nG0 X1 (\n"]]);
+    const grouped = mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes(envelope, sources);
+    expect([...grouped.keys()]).toEqual(["a.nc"]);
+    expect(grouped.get("a.nc")?.[0].code).toBe("UNMATCHED_OPEN_PAREN");
+    expect(grouped.get("a.nc")?.[0].title).toMatch(/close/i);
+    expect(grouped.get("a.nc")?.[0].range).toEqual({
+      startLine: 2,
+      startColumn: 1,
+      endLine: 2,
+      endColumn: 7
+    });
+  });
+
+  it("returns an empty Map when aggregated parse-diag rows are absent", () => {
+    expect(
+      mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes(makeBatchEnvelope([]), new Map())
+    ).toEqual(new Map());
+  });
+});
+
+describe("mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes", () => {
+  it("maps aggregated parse-diag rows to catalogue fixes with batch metadata", () => {
+    const envelope = makeBatchEnvelope([], undefined);
+    envelope.summary.parseDiagnosticsByCodeAggregated = [
+      {
+        code: "UNMATCHED_OPEN_PAREN",
+        count: 2,
+        warnings: 2,
+        errors: 0,
+        inputs: ["a.nc", "b.nc"]
+      }
+    ];
+    const fixes = mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes(envelope);
+    expect(fixes).toHaveLength(1);
+    expect(fixes[0].code).toBe("UNMATCHED_OPEN_PAREN");
+    expect(fixes[0].count).toBe(2);
+    expect(fixes[0].inputs).toEqual(["a.nc", "b.nc"]);
   });
 });
 

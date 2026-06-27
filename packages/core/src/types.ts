@@ -667,4 +667,9 @@ export type RunJobCheckResult = {
   parseDiagnosticsPolicyBreaches: ParseDiagnosticsPolicyBreach[];
   lintIssues: LintIssueWithProvenance[];
   lintIssuesSummary: LintIssuesSummary;
+  /**
+   * Min `blockIndex` per parse-diagnostic `code` from the parsed AST.
+   * Empty when the program has no parse diagnostics.
+   */
+  parseDiagnosticsFirstBlockIndexByCode: Record<string, number>;
 };

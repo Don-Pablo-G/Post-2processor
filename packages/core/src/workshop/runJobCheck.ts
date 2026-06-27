@@ -193,7 +193,9 @@ export function evaluateParseDiagnosticsThresholdPolicy(
   return { findings, blockedCodes, breaches };
 }
 
-function computeFirstBlockIndexByCode(diagnostics: ParseDiagnostic[]): Record<string, number> {
+export function computeFirstBlockIndexByCode(
+  diagnostics: ParseDiagnostic[]
+): Record<string, number> {
   const result: Record<string, number> = {};
   for (const diag of diagnostics) {
     const existing = result[diag.code];
@@ -357,7 +359,10 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
     parseDiagnosticsSummary,
     parseDiagnosticsPolicyBreaches: parseDiagnosticsPolicyResult.breaches,
     lintIssues,
-    lintIssuesSummary
+    lintIssuesSummary,
+    parseDiagnosticsFirstBlockIndexByCode: computeFirstBlockIndexByCode(
+      input.ast.parseDiagnostics ?? []
+    )
   };
 }
 

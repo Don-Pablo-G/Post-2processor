@@ -69,3 +69,27 @@ export function strictControllerGatePatternLabel(
       return labels.duplicateAddresses;
   }
 }
+
+export type StrictControllerGateExportFormat = "json" | "csv";
+
+export function formatStrictControllerGateForExport(
+  summary: StrictControllerGateSummary,
+  format: StrictControllerGateExportFormat
+): string {
+  if (format === "json") {
+    return JSON.stringify(
+      {
+        patterns: summary.patterns,
+        matchedCodes: summary.matchedCodes,
+        wouldBlock: summary.wouldBlock
+      },
+      null,
+      2
+    );
+  }
+  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  return [
+    "patterns,matchedCodes,wouldBlock",
+    `${escape(summary.patterns.join("|"))},${escape(summary.matchedCodes.join("|"))},${summary.wouldBlock}`
+  ].join("\n");
+}
