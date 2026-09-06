@@ -2217,6 +2217,122 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns when spindle is still on at program end", () => {
+    const ast = parse("T1 M6\nS1200 M3\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("spindle still on"))
+    ).toBe(true);
+  });
+
+  it("does not warn spindle at end after M5", () => {
+    const ast = parse("T1 M6\nS1200 M3\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("spindle still on"))
+    ).toBe(false);
+  });
+
+  it("warns when coolant is still on at program end", () => {
+    const ast = parse("T1 M6\nS1200 M3\nM8\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("coolant still on"))
+    ).toBe(true);
+  });
+
+  it("does not warn coolant at end after M9", () => {
+    const ast = parse("T1 M6\nS1200 M3\nM8\nM5\nM9\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("coolant still on"))
+    ).toBe(false);
+  });
+
+  it("warns when G43 is still active at program end", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("tool length compensation (G43) still active")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn G43 at end after G49", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("tool length compensation (G43) still active")
+      )
+    ).toBe(false);
+  });
+
+  it("warns when program ends in G91", () => {
+    const ast = parse("T1 M6\nG54\nG91\nG0 X1.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("incremental mode (G91)"))
+    ).toBe(true);
+  });
+
+  it("does not warn G91 at end after G90 restore", () => {
+    const ast = parse("T1 M6\nG54\nG91\nG0 X1.\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("incremental mode (G91)"))
+    ).toBe(false);
+  });
+
+  it("warns M6 while spindle is still on", () => {
+    const ast = parse("T1 M6\nG54\nS1200 M3\nT2 M6\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 while spindle is still on"))
+    ).toBe(true);
+  });
+
+  it("does not warn M6 after M5 stops spindle", () => {
+    const ast = parse("T1 M6\nG54\nS1200 M3\nM5\nT2 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 while spindle is still on"))
+    ).toBe(false);
+  });
+
+  it("warns axis motion before any work offset", () => {
+    const ast = parse("T1 M6\nG0 X0 Y0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("before any work offset"))
+    ).toBe(true);
+  });
+
+  it("does not warn motion after G54", () => {
+    const ast = parse("T1 M6\nG54\nG0 X0 Y0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("before any work offset"))
+    ).toBe(false);
+  });
+
+  it("does not warn G53 machine motion without work offset", () => {
+    const ast = parse("T1 M6\nG53 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("before any work offset"))
+    ).toBe(false);
+  });
+
+  it("warns G53 while G91 is active", () => {
+    const ast = parse("T1 M6\nG54\nG91\nG53 Z0\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G53 with incremental mode"))
+    ).toBe(true);
+  });
+
+  it("warns when program ends in G18/G19 plane", () => {
+    const ast = parse("T1 M6\nG54\nG18\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => /ends in G1[89] plane/.test(i.message))
+    ).toBe(true);
+  });
+
+  it("does not warn plane at end after G17 restore", () => {
+    const ast = parse("T1 M6\nG54\nG18\nG17\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => /ends in G1[89] plane/.test(i.message))
+    ).toBe(false);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

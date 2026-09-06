@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_first_g43_z0_warning_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 3,
+  "lintIssueCount": 4,
   "lintIssues": [
     {
       "severity": "warning",
@@ -14,6 +14,10 @@
     {
       "severity": "warning",
       "message": "First G43 activation has no meaningful Z move — include a safe clearance/retract Z on the same block."
+    },
+    {
+      "severity": "warning",
+      "message": "Program ends with tool length compensation (G43) still active — cancel with G49 before end."
     }
   ],
   "simulation": {

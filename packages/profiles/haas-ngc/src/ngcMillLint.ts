@@ -86,6 +86,73 @@ function hasSpindleOn(block: { words: Word[] }): boolean {
   });
 }
 
+function hasSpindleOff(block: { words: Word[] }): boolean {
+  return hasWordM(block, 5);
+}
+
+function hasCoolantOff(block: { words: Word[] }): boolean {
+  return hasWordM(block, 9);
+}
+
+function hasExactG49(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 49;
+  });
+}
+
+function hasExactG90(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 90;
+  });
+}
+
+function hasExactG91(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 91;
+  });
+}
+
+function hasExactG0(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 0;
+  });
+}
+
+function hasExactG53(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 53;
+  });
+}
+
+const WORK_OFFSET_G_CODES = new Set([54, 55, 56, 57, 58, 59, 154]);
+
+function hasWorkOffset(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return WORK_OFFSET_G_CODES.has(Number.parseFloat(w.value));
+  });
+}
+
+function hasAxisWord(block: { words: Word[] }): boolean {
+  return hasLetter(block, "X") || hasLetter(block, "Y") || hasLetter(block, "Z");
+}
+
+function hasExactPlane(block: { words: Word[] }): 17 | 18 | 19 | undefined {
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 17) return 17;
+    if (v === 18) return 18;
+    if (v === 19) return 19;
+  }
+  return undefined;
+}
+
 function lastWordValue(block: { words: Word[] }, letter: string): string | undefined {
   const w = block.words.filter((x) => x.letter === letter).at(-1);
   return w?.value;
@@ -118,6 +185,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let sawAnyDOffset = false;
   let sawAnyFeedRate = false;
   let sawSpindleOn = false;
+  let spindleActive = false;
+  let coolantActive = false;
+  let toolLengthActive = false;
+  let incrementalActive = false;
+  let sawWorkOffset = false;
+  let warnedMissingWorkOffset = false;
+  let activePlane: 17 | 18 | 19 | undefined;
   let cutterCompActive = false;
   let cannedActive = false;
   let cannedHasZ = false;
@@ -244,6 +318,72 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     if (hasSpindleOn(block)) {
       sawSpindleOn = true;
+      spindleActive = true;
+    }
+    if (hasSpindleOff(block)) {
+      spindleActive = false;
+    }
+
+    if (hasCoolantOn(block)) {
+      coolantActive = true;
+    }
+    if (hasCoolantOff(block)) {
+      coolantActive = false;
+    }
+
+    if (hasG43Classic(block)) {
+      toolLengthActive = true;
+    }
+    if (hasExactG49(block)) {
+      toolLengthActive = false;
+    }
+
+    if (hasExactG91(block)) {
+      incrementalActive = true;
+    }
+    if (hasExactG90(block)) {
+      incrementalActive = false;
+    }
+
+    const plane = hasExactPlane(block);
+    if (plane !== undefined) {
+      activePlane = plane;
+    }
+
+    if (hasWorkOffset(block)) {
+      sawWorkOffset = true;
+    }
+
+    if (
+      !warnedMissingWorkOffset &&
+      (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
+      hasAxisWord(block) &&
+      !sawWorkOffset &&
+      !hasExactG53(block)
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Axis motion before any work offset (G54-G59/G154) — select a work coordinate system first.",
+        blockIndex: index
+      });
+      warnedMissingWorkOffset = true;
+    }
+
+    if (hasExactG53(block) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message: "G53 with incremental mode (G91) active — use G90 with G53 machine coordinates.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && spindleActive) {
+      issues.push({
+        severity: "warning",
+        message: "M6 while spindle is still on — stop spindle with M5 before the tool change.",
+        blockIndex: index
+      });
     }
 
     if (hasExactG41Or42(block) && !hasLetter(block, "D")) {
@@ -360,6 +500,66 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "Program ends with cutter compensation (G41/G42) still active — cancel with G40 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      toolLengthActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with tool length compensation (G43) still active — cancel with G49 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      spindleActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with spindle still on — stop spindle with M5 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      coolantActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with coolant still on — turn coolant off with M9 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      incrementalActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends in incremental mode (G91) — restore G90 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      (activePlane === 18 || activePlane === 19) &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: `Program ends in G${activePlane} plane — restore G17 (XY) before end for mill programs.`,
         blockIndex: index
       });
     }

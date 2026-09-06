@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 3,
+  "lintIssueCount": 4,
   "lintIssues": [
     {
       "severity": "warning",
@@ -10,6 +10,10 @@
     {
       "severity": "warning",
       "message": "Program must end with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any work offset (G54-G59/G154) — select a work coordinate system first."
     },
     {
       "severity": "warning",

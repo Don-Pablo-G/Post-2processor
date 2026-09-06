@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_spindle_without_s_comment_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 3,
+  "lintIssueCount": 4,
   "lintIssues": [
     {
       "severity": "warning",
@@ -14,6 +14,10 @@
     {
       "severity": "warning",
       "message": "Spindle start (M3/M4/M13/M14) without S on the same block — set RPM explicitly."
+    },
+    {
+      "severity": "warning",
+      "message": "Program ends with spindle still on — stop spindle with M5 before end."
     }
   ],
   "simulation": {

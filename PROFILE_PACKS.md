@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 25
+Total rules: 33
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -30,6 +30,14 @@ Total rules: 25
 | `haas.canned-active-at-end` | warning | — | — | Cancel canned cycles with G80 before M02/M30. |
 | `haas.m6-while-canned-active` | warning | — | — | Cancel canned cycles with G80 before a tool change (M6). |
 | `haas.g20-and-g21-mixed` | warning | — | — | Mixing G20 and G21 in one program is ambiguous — pick inch or metric. |
+| `haas.spindle-on-at-end` | warning | — | — | Stop the spindle with M5 before M02/M30. |
+| `haas.coolant-on-at-end` | warning | — | — | Turn coolant off with M9 before M02/M30. |
+| `haas.g43-active-at-end` | warning | — | — | Cancel tool length compensation with G49 before M02/M30. |
+| `haas.g91-active-at-end` | warning | — | — | Restore absolute mode with G90 before M02/M30. |
+| `haas.m6-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a tool change (M6). |
+| `haas.motion-without-work-offset` | warning | — | — | Select G54-G59 or G154 before axis motion (unless using G53). |
+| `haas.g53-in-incremental` | warning | — | — | G53 machine coordinates should be used with G90, not G91. |
+| `haas.non-xy-plane-at-end` | warning | — | — | Restore G17 (XY) before end when a mill program used G18/G19. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -509,6 +517,225 @@ M30
 O0001
 G21
 T1 M6
+M30
+```
+
+### `haas.spindle-on-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with spindle still on/`
+- **Summary:** Stop the spindle with M5 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M5
+M30
+```
+
+### `haas.coolant-on-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with coolant still on/`
+- **Summary:** Turn coolant off with M9 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M5
+M9
+M30
+```
+
+### `haas.g43-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with tool length compensation \(G43\) still active/`
+- **Summary:** Cancel tool length compensation with G49 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G49
+M5
+M30
+```
+
+### `haas.g91-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends in incremental mode \(G91\)/`
+- **Summary:** Restore absolute mode with G90 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G0 X1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G0 X1.
+G90
+M30
+```
+
+### `haas.m6-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+T2 M6
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M5
+T2 M6
+M30
+```
+
+### `haas.motion-without-work-offset`
+
+- **Severity:** warning
+- **Matcher:** `/Axis motion before any work offset \(G54-G59\/G154\)/`
+- **Summary:** Select G54-G59 or G154 before axis motion (unless using G53).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G0 X0 Y0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G0 X0 Y0
+M30
+```
+
+### `haas.g53-in-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G53 with incremental mode \(G91\) active/`
+- **Summary:** G53 machine coordinates should be used with G90, not G91.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G91
+G53 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G90
+G53 Z0
+M30
+```
+
+### `haas.non-xy-plane-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends in G1[89] plane/`
+- **Summary:** Restore G17 (XY) before end when a mill program used G18/G19.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+G17
 M30
 ```
 

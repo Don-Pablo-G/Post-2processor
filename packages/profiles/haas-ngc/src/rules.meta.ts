@@ -155,6 +155,70 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nG21\nT1 M6\nM30\n"
   },
   {
+    id: "haas.spindle-on-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with spindle still on/,
+    summary: "Stop the spindle with M5 before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with coolant still on/,
+    summary: "Turn coolant off with M9 before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM5\nM9\nM30\n"
+  },
+  {
+    id: "haas.g43-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with tool length compensation \(G43\) still active/,
+    summary: "Cancel tool length compensation with G49 before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g91-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends in incremental mode \(G91\)/,
+    summary: "Restore absolute mode with G90 before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG0 X1.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG0 X1.\nG90\nM30\n"
+  },
+  {
+    id: "haas.m6-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /M6 while spindle is still on/,
+    summary: "Stop the spindle with M5 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nT2 M6\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.motion-without-work-offset",
+    severity: "warning",
+    messageMatcher: /Axis motion before any work offset \(G54-G59\/G154\)/,
+    summary: "Select G54-G59 or G154 before axis motion (unless using G53).",
+    positiveSnippet: "O0001\nT1 M6\nG0 X0 Y0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG0 X0 Y0\nM30\n"
+  },
+  {
+    id: "haas.g53-in-incremental",
+    severity: "warning",
+    messageMatcher: /G53 with incremental mode \(G91\) active/,
+    summary: "G53 machine coordinates should be used with G90, not G91.",
+    positiveSnippet: "O0001\nT1 M6\nG91\nG53 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG90\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.non-xy-plane-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends in G1[89] plane/,
+    summary: "Restore G17 (XY) before end when a mill program used G18/G19.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG18\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,
