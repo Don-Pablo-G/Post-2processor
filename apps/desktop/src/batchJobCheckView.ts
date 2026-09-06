@@ -360,6 +360,12 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
   if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);
   if (exp.zipBytes !== undefined) parts.push(`zipBytes=${exp.zipBytes}`);
+  if (exp.totalBytes !== undefined) parts.push(`totalBytes=${exp.totalBytes}`);
+  if (exp.sealedAt) {
+    // Prefer compact `YYYY-MM-DDTHH:MM` when ISO-shaped; else first 16 chars.
+    const compact = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/.exec(exp.sealedAt);
+    parts.push(`sealedAt=${compact ? compact[1] : exp.sealedAt.slice(0, 16)}`);
+  }
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 
@@ -442,11 +448,50 @@ export function buildDesktopBatchExportManifest(
     zipEntryCount?: number;
     zipSha256?: string;
     totalBytes?: number;
+    sealedAt?: string;
   }
 ): BatchExportManifest {
   return buildBatchExportManifest(paths, {
     schemaVersion: CLI_SCHEMA_VERSION,
     ...options
+  });
+}
+
+/**
+ * Schema v33: build a live desktop export manifest from a batch result
+ * (shared by Copy / Download export manifest).
+ */
+export function buildDesktopLiveBatchExportManifest(
+  envelope: CliBatchEnvelope,
+  runResults: ReadonlyArray<{ input: string; result: RunJobCheckResult; source: string }>,
+  sourcesByInput: ReadonlyMap<string, string>
+): BatchExportManifest {
+  const previews = buildDesktopBatchQuickFixPreviews(envelope, sourcesByInput);
+  const envelopeItems = buildDesktopBatchEnvelopeJsonFiles(envelope);
+  const patchedItems = buildDesktopBatchPatchedPrograms(envelope, sourcesByInput);
+  const txtItems = buildDesktopBatchSetupSheetTxts(runResults);
+  const pdfItems = buildDesktopBatchSetupSheetPdfs(runResults);
+  const paths = [
+    ...pdfItems.map((i) => i.filename),
+    ...txtItems.map((i) => i.filename),
+    ...envelopeItems.map((i) => i.filename),
+    ...patchedItems.map((i) => i.filename),
+    ...(previews.length > 0 ? ["batch-fix-previews.json"] : []),
+    "batch-unbound-fixes.sarif.json",
+    "batch-summary.csv",
+    "batch-summary.json",
+    "batch-export-manifest.json",
+    "batch-export.zip"
+  ];
+  const exp = envelope.summary.batchWalk?.export;
+  return buildDesktopBatchExportManifest(paths, {
+    zipEntryCount: paths.length - 1,
+    ...(exp?.writtenFileCount !== undefined
+      ? { writtenFileCount: exp.writtenFileCount }
+      : {}),
+    ...(exp?.zipSha256 ? { zipSha256: exp.zipSha256 } : {}),
+    ...(exp?.totalBytes !== undefined ? { totalBytes: exp.totalBytes } : {}),
+    ...(exp?.sealedAt ? { sealedAt: exp.sealedAt } : {})
   });
 }
 

@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 32;
+export const CLI_SCHEMA_VERSION = 33;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -803,6 +803,16 @@ export type CliBatchWalkExport = {
    * sums known per-entry uncompressed sizes in the inventory.
    */
   zipBytes?: number;
+  /**
+   * Schema v33: ISO-8601 timestamp when the export zip was sealed and the
+   * on-disk summary/manifest were rewritten with integrity metadata.
+   */
+  sealedAt?: string;
+  /**
+   * Schema v33: mirror of the export manifest's `totalBytes` rollup
+   * (sum of known per-entry sizes) for summary consumers.
+   */
+  totalBytes?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -1861,10 +1871,11 @@ export type BatchExportManifestEntry = {
 };
 
 /**
- * Schema v29–v32: machine-readable inventory of `--out-dir` / zip artifacts.
+ * Schema v29–v33: machine-readable inventory of `--out-dir` / zip artifacts.
  * Schema v30 adds `byKind` rollup and optional `zipEntryCount`.
  * Schema v31 adds optional per-entry `bytes` and root `zipSha256`.
  * Schema v32 adds optional root `totalBytes` (sum of known entry bytes).
+ * Schema v33 adds optional root `sealedAt`.
  */
 export type BatchExportManifest = {
   schemaVersion: number;
@@ -1878,6 +1889,8 @@ export type BatchExportManifest = {
    * size (or an explicit override via `buildBatchExportManifest` options).
    */
   totalBytes?: number;
+  /** Schema v33: ISO-8601 seal timestamp when known. */
+  sealedAt?: string;
   entries: BatchExportManifestEntry[];
   byKind: Record<string, number>;
 };
@@ -1898,6 +1911,7 @@ export function buildBatchExportManifest(
     zipEntryCount?: number;
     zipSha256?: string;
     totalBytes?: number;
+    sealedAt?: string;
   }
 ): BatchExportManifest {
   const entries: BatchExportManifestEntry[] = paths.map((input) => {
@@ -1941,6 +1955,7 @@ export function buildBatchExportManifest(
       : {}),
     ...(options?.zipSha256 !== undefined ? { zipSha256: options.zipSha256 } : {}),
     ...(totalBytes !== undefined ? { totalBytes } : {}),
+    ...(options?.sealedAt !== undefined ? { sealedAt: options.sealedAt } : {}),
     entries,
     byKind: orderedByKind
   };

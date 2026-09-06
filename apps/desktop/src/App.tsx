@@ -117,6 +117,7 @@ import {
   buildDesktopBatchArchiveZip,
   buildDesktopBatchEnvelopeJsonFiles,
   buildDesktopBatchExportManifest,
+  buildDesktopLiveBatchExportManifest,
   buildDesktopBatchPatchedPrograms,
   buildDesktopBatchSetupSheetPdfs,
   buildDesktopBatchSetupSheetTxts,
@@ -330,6 +331,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedCsv: string;
     batchJobCheckDownloadManifest: string;
     batchJobCheckDownloadedManifest: string;
+    batchJobCheckCopyManifest: string;
+    batchJobCheckCopiedManifest: string;
     batchJobCheckCopyFixPreview: string;
     batchJobCheckCopiedFixPreview: string;
     batchJobCheckDownloadFixPreview: string;
@@ -657,6 +660,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedCsv: "Pobrano CSV agregacji batch",
     batchJobCheckDownloadManifest: "Pobierz manifest eksportu",
     batchJobCheckDownloadedManifest: "Pobrano manifest eksportu batch",
+    batchJobCheckCopyManifest: "Kopiuj manifest eksportu",
+    batchJobCheckCopiedManifest: "Skopiowano manifest eksportu batch",
     batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
     batchJobCheckCopiedFixPreview: "Skopiowano podgląd fixów batch",
     batchJobCheckDownloadFixPreview: "Pobierz podgląd fixów",
@@ -985,6 +990,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedCsv: "Downloaded batch aggregation CSV",
     batchJobCheckDownloadManifest: "Download export manifest",
     batchJobCheckDownloadedManifest: "Downloaded batch export manifest",
+    batchJobCheckCopyManifest: "Copy export manifest",
+    batchJobCheckCopiedManifest: "Copied batch export manifest",
     batchJobCheckCopyFixPreview: "Copy fix preview",
     batchJobCheckCopiedFixPreview: "Copied batch fix preview",
     batchJobCheckDownloadFixPreview: "Download fix preview",
@@ -2214,37 +2221,11 @@ export function App() {
       const sourcesByInput = new Map(
         batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
       );
-      const previews = buildDesktopBatchQuickFixPreviews(
+      const manifest = buildDesktopLiveBatchExportManifest(
         batchJobCheckResult.envelope,
+        batchJobCheckResult.runResults,
         sourcesByInput
       );
-      const envelopeItems = buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope);
-      const patchedItems = buildDesktopBatchPatchedPrograms(
-        batchJobCheckResult.envelope,
-        sourcesByInput
-      );
-      const txtItems = buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults);
-      const pdfItems = buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults);
-      const paths = [
-        ...pdfItems.map((i) => i.filename),
-        ...txtItems.map((i) => i.filename),
-        ...envelopeItems.map((i) => i.filename),
-        ...patchedItems.map((i) => i.filename),
-        ...(previews.length > 0 ? ["batch-fix-previews.json"] : []),
-        "batch-unbound-fixes.sarif.json",
-        "batch-summary.csv",
-        "batch-summary.json",
-        "batch-export-manifest.json",
-        "batch-export.zip"
-      ];
-      const exp = batchJobCheckResult.envelope.summary.batchWalk?.export;
-      const manifest = buildDesktopBatchExportManifest(paths, {
-        zipEntryCount: paths.length - 1,
-        ...(exp?.writtenFileCount !== undefined
-          ? { writtenFileCount: exp.writtenFileCount }
-          : {}),
-        ...(exp?.zipSha256 ? { zipSha256: exp.zipSha256 } : {})
-      });
       const { downloaded } = await downloadDesktopBatchItems([
         {
           filename: "batch-export-manifest.json",
@@ -2257,6 +2238,26 @@ export function App() {
       setExportStatus(
         error instanceof Error ? error.message : "Batch export manifest download failed."
       );
+    }
+  }
+
+  async function handleCopyBatchExportManifest(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const sourcesByInput = new Map(
+      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+    );
+    const payload = formatDesktopBatchExportManifest(
+      buildDesktopLiveBatchExportManifest(
+        batchJobCheckResult.envelope,
+        batchJobCheckResult.runResults,
+        sourcesByInput
+      )
+    );
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.batchJobCheckCopiedManifest);
+    } catch {
+      setExportStatus(payload);
     }
   }
 
@@ -4220,6 +4221,13 @@ export function App() {
                 onClick={() => void handleDownloadBatchExportManifest()}
               >
                 {t.batchJobCheckDownloadManifest}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-manifest"
+                onClick={() => void handleCopyBatchExportManifest()}
+              >
+                {t.batchJobCheckCopyManifest}
               </button>
               <button
                 type="button"

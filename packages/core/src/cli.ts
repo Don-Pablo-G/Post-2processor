@@ -150,6 +150,7 @@ const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
 export const CLI_USAGE = [
   "Usage: cnc-job-check (--input <path>|--input -|--input-dir <path>) [options]",
   "       cnc-job-check verify-audit-trail --main <file> [...] (run with --help for sub-args)",
+  "       cnc-job-check verify-batch-export --zip <file> --sha256 <file> (run with --help for sub-args)",
   "       cnc-job-check rotate-audit-trail-key --encrypted <file> --old-secret <key> --new-secret <key> (run with --help for sub-args)",
   "       cnc-job-check audit-deprecated-rules [--older-than <N>{mo|d}] [--format json|text] [--strict] (run with --help for sub-args)",
   "",
@@ -179,6 +180,8 @@ export const CLI_USAGE = [
   "Subcommands:",
   "  verify-audit-trail         Verify a previously-downloaded audit trail and any of its sidecars.",
   "                              Run `cnc-job-check verify-audit-trail --help` for sub-args.",
+  "  verify-batch-export        Verify a sealed batch-export.zip against its .sha256 sidecar.",
+  "                              Run `cnc-job-check verify-batch-export --help` for sub-args.",
   "  rotate-audit-trail-key     Re-encrypt an AES-GCM audit-trail blob under a new secret.",
   "                              Run `cnc-job-check rotate-audit-trail-key --help` for sub-args.",
   "  audit-deprecated-rules     List every profile-pack rule that has a deprecatedSince value.",
@@ -273,6 +276,134 @@ export function parseVerifyAuditTrailArgs(argv: readonly string[]): VerifyAuditT
     );
   }
   return result;
+}
+
+export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
+  "Usage: cnc-job-check verify-batch-export --zip <file> --sha256 <file>",
+  "",
+  "Verifies a sealed `batch-export.zip` against its BSD-style",
+  "`batch-export.zip.sha256` sidecar (`<hex>  batch-export.zip`).",
+  "",
+  "Exit codes:",
+  "  0   digest matches",
+  "  1   digest mismatch",
+  "  2   argument or IO error",
+  "",
+  "Options:",
+  "  --zip <file>               Required. Path to batch-export.zip (binary).",
+  "  --sha256 <file>            Required. Path to the .sha256 sidecar (text).",
+  "  --quiet                    Suppress the per-success `OK` line on stdout.",
+  "  --help, -h                 Show this message"
+].join("\n");
+
+export type VerifyBatchExportArgs = {
+  zip?: string;
+  sha256?: string;
+  quiet: boolean;
+  help: boolean;
+};
+
+export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatchExportArgs {
+  const result: VerifyBatchExportArgs = { quiet: false, help: false };
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    switch (arg) {
+      case "--zip":
+        result.zip = requireValue("--zip", argv[++i]);
+        break;
+      case "--sha256":
+        result.sha256 = requireValue("--sha256", argv[++i]);
+        break;
+      case "--quiet":
+        result.quiet = true;
+        break;
+      case "--help":
+      case "-h":
+        result.help = true;
+        break;
+      default:
+        throw new CliArgumentError(`Unknown verify-batch-export flag: ${arg}`);
+    }
+  }
+  if (result.help) return result;
+  if (result.zip === undefined) {
+    throw new CliArgumentError("verify-batch-export requires --zip <file>");
+  }
+  if (result.sha256 === undefined) {
+    throw new CliArgumentError("verify-batch-export requires --sha256 <file>");
+  }
+  return result;
+}
+
+export type VerifyBatchExportIo = {
+  stdout?: (chunk: string) => void;
+  stderr?: (chunk: string) => void;
+  readFileFn?: (filePath: string) => Promise<string>;
+  readFileBytesFn?: (filePath: string) => Promise<Uint8Array>;
+};
+
+export async function runVerifyBatchExport(
+  parsed: VerifyBatchExportArgs,
+  io: VerifyBatchExportIo = {}
+): Promise<number> {
+  const writeOut = io.stdout ?? ((chunk: string) => void process.stdout.write(chunk));
+  const writeErr = io.stderr ?? ((chunk: string) => void process.stderr.write(chunk));
+  const readText = io.readFileFn ?? ((p: string) => readFile(p, "utf8"));
+  const readBytes =
+    io.readFileBytesFn ??
+    (async (p: string) => {
+      const buf = await readFile(p);
+      return new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+    });
+
+  let zipBytes: Uint8Array;
+  try {
+    zipBytes = await readBytes(parsed.zip!);
+  } catch (err) {
+    writeErr(
+      `cnc-job-check verify-batch-export: failed to read --zip ${parsed.zip}: ${(err as Error).message}\n`
+    );
+    return 2;
+  }
+
+  let sidecarBody: string;
+  try {
+    sidecarBody = await readText(parsed.sha256!);
+  } catch (err) {
+    writeErr(
+      `cnc-job-check verify-batch-export: failed to read --sha256 ${parsed.sha256}: ${(err as Error).message}\n`
+    );
+    return 2;
+  }
+
+  const expected = parseSidecarBodyDigest(sidecarBody);
+  if (!expected) {
+    writeErr(
+      `cnc-job-check verify-batch-export: --sha256 ${parsed.sha256} does not contain a hex digest\n`
+    );
+    return 2;
+  }
+
+  let actual: string;
+  try {
+    actual = await computeSha256Bytes(zipBytes);
+  } catch (err) {
+    writeErr(
+      `cnc-job-check verify-batch-export: sha256 compute failed: ${(err as Error).message}\n`
+    );
+    return 2;
+  }
+
+  if (actual !== expected) {
+    writeErr(
+      `cnc-job-check verify-batch-export: sha256 mismatch (expected ${expected}, got ${actual})\n`
+    );
+    return 1;
+  }
+  if (!parsed.quiet) {
+    writeOut(`cnc-job-check verify-batch-export: sha256 OK (${actual})\n`);
+  }
+  return 0;
 }
 
 export const CLI_USAGE_ROTATE_AUDIT_TRAIL_KEY = [
@@ -1650,6 +1781,26 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       readFileBytesFn: io.readFileBytesFn
     });
   }
+  if (argv[0] === "verify-batch-export") {
+    let parsedSub: VerifyBatchExportArgs;
+    try {
+      parsedSub = parseVerifyBatchExportArgs(argv.slice(1));
+    } catch (err) {
+      writeErr(`${(err as Error).message}\n`);
+      writeErr(`${CLI_USAGE_VERIFY_BATCH_EXPORT}\n`);
+      return 2;
+    }
+    if (parsedSub.help) {
+      writeOut(`${CLI_USAGE_VERIFY_BATCH_EXPORT}\n`);
+      return 0;
+    }
+    return runVerifyBatchExport(parsedSub, {
+      stdout: io.stdout,
+      stderr: io.stderr,
+      readFileFn: io.readFileFn,
+      readFileBytesFn: io.readFileBytesFn
+    });
+  }
   if (argv[0] === "rotate-audit-trail-key") {
     let parsedSub: RotateAuditTrailKeyArgs;
     try {
@@ -2023,7 +2174,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v32: summaries + SARIF, then manifest, then zip + sha256.
+      // Schema v18–v33: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
@@ -2136,20 +2287,20 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
 
-      // Schema v31: seal zip integrity sidecar; rewrite disk summary/manifest.
+      // Schema v31–v33: seal zip integrity sidecar; rewrite disk summary/manifest.
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;
         const shaSidecarBody = formatBatchExportZipSha256Sidecar(zipSha256);
         await writeFn(zipSha256Path, shaSidecarBody);
         written += 1;
+        const sealedAt = new Date().toISOString();
         batchWalk.export.zipSha256 = zipSha256;
         batchWalk.export.zipSha256Path = zipSha256Path;
         batchWalk.export.zipBytes = zipBytes.byteLength;
+        batchWalk.export.sealedAt = sealedAt;
 
         // Disk copies are authoritative for integrity metadata; zip stays sealed.
-        const summaryJsonFinal = `${formatBatchJson(entries, { batchWalk })}\n`;
-        await writeFn(summaryPath, summaryJsonFinal);
         const manifestFinal = buildBatchExportManifest(
           [
             ...zipEntries.map((e) => ({
@@ -2167,9 +2318,15 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
             outDir,
             writtenFileCount: batchWalk.export.writtenFileCount,
             zipEntryCount: batchWalk.export.zipEntryCount,
-            zipSha256
+            zipSha256,
+            sealedAt
           }
         );
+        if (manifestFinal.totalBytes !== undefined) {
+          batchWalk.export.totalBytes = manifestFinal.totalBytes;
+        }
+        const summaryJsonFinal = `${formatBatchJson(entries, { batchWalk })}\n`;
+        await writeFn(summaryPath, summaryJsonFinal);
         await writeFn(manifestPath, formatBatchExportManifest(manifestFinal));
       } catch (err) {
         writeErr(

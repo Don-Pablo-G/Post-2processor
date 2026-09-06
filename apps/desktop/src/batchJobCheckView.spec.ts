@@ -338,7 +338,9 @@ describe("batchJobCheckView", () => {
             writtenFileCount: 12,
             zipEntryCount: 10,
             zipSha256: "abcdef0123456789deadbeef",
-            zipBytes: 4096
+            zipBytes: 4096,
+            totalBytes: 8192,
+            sealedAt: "2026-09-06T14:05:30.123Z"
           }
         }
       }
@@ -362,6 +364,10 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipEntries=10/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipBytes=4096/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/totalBytes=8192/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(
+      /sealedAt=2026-09-06T14:05/
+    );
     expect(
       formatDesktopBatchQuickFixPreviewChip(
         buildDesktopBatchQuickFixPreviews(

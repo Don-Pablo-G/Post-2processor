@@ -4331,6 +4331,43 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=32
 ```
 
+## Sealed export metadata + verify-batch-export + Copy manifest + Schema v33
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `sealedAt` + export `totalBytes` (Schema v33)
+
+`CLI_SCHEMA_VERSION` bumps `32 → 33`.
+`batchWalk.export` gains optional `sealedAt` (ISO-8601) and `totalBytes`
+(mirror of the manifest rollup). `BatchExportManifest` gains optional
+`sealedAt`.
+
+### Move 2 — CLI seal + `verify-batch-export`
+
+`--out-dir` stamps `sealedAt` / `totalBytes` when rewriting the disk summary
+and manifest after the zip SHA-256 sidecar is written.
+New subcommand: `cnc-job-check verify-batch-export --zip <file> --sha256 <file>`.
+
+### Move 3 — Desktop Copy export manifest
+
+Folder batch gains **Copy export manifest** (clipboard), sharing
+`buildDesktopLiveBatchExportManifest` with the download path.
+
+### Move 4 — Inventory chip shows `totalBytes` + `sealedAt`
+
+When present, the batch-export inventory chip includes `totalBytes=<n>` and
+`sealedAt=YYYY-MM-DDTHH:MM`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=33
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
