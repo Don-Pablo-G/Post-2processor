@@ -1,6 +1,7 @@
 import {
   BATCH_INPUT_EXTENSIONS,
   buildBatchEnvelope,
+  buildBatchExportManifest,
   buildBatchFixTemplateCandidates,
   buildJobCheckEnvelope,
   buildSetupSheetPdf,
@@ -9,7 +10,9 @@ import {
   createStoreZip,
   createZip,
   formatBatchAggregationsAsCsv,
+  formatBatchExportManifest,
   formatBatchFixCandidatesAsSarifLite,
+  type BatchExportManifest,
   type BatchFixCandidateRow,
   type CliBatchEnvelope,
   type CliBatchWalk,
@@ -352,6 +355,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.patchedNcDir) parts.push("patchedDir");
   if (exp.exportManifestPath) parts.push("manifest");
   if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
+  if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 
@@ -421,6 +425,27 @@ export function buildDesktopBatchEnvelopeJsonFiles(
     body: JSON.stringify(entry.envelope, null, 2),
     mimeType: "application/json;charset=utf-8"
   }));
+}
+
+/**
+ * Schema v30: client-side export manifest for desktop zip parity with CLI.
+ */
+export function buildDesktopBatchExportManifest(
+  paths: ReadonlyArray<string>,
+  options?: {
+    outDir?: string;
+    writtenFileCount?: number;
+    zipEntryCount?: number;
+  }
+): BatchExportManifest {
+  return buildBatchExportManifest(paths, {
+    schemaVersion: CLI_SCHEMA_VERSION,
+    ...options
+  });
+}
+
+export function formatDesktopBatchExportManifest(manifest: BatchExportManifest): string {
+  return formatBatchExportManifest(manifest);
 }
 
 export type BatchPdfDownloadEnvironment = {

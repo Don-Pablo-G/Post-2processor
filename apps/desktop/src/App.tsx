@@ -116,6 +116,7 @@ import {
 import {
   buildDesktopBatchArchiveZip,
   buildDesktopBatchEnvelopeJsonFiles,
+  buildDesktopBatchExportManifest,
   buildDesktopBatchPatchedPrograms,
   buildDesktopBatchSetupSheetPdfs,
   buildDesktopBatchSetupSheetTxts,
@@ -127,6 +128,7 @@ import {
   formatDesktopBatchQuickFixPreviewChip,
   formatDesktopBatchQuickFixPreviewsForExport,
   formatDesktopBatchAggregationsAsCsv,
+  formatDesktopBatchExportManifest,
   formatDesktopBatchPatchedProgramsChip,
   formatDesktopBatchSafetyChip,
   formatDesktopBatchSarifChip,
@@ -304,6 +306,8 @@ const UI_TEXT: Record<
     batchJobCheckCopyJson: string;
     batchJobCheckCopiedJson: string;
     batchJobCheckCopyJsonFallback: string;
+    batchJobCheckDownloadJson: string;
+    batchJobCheckDownloadedJson: string;
     batchJobCheckEmpty: string;
     batchJobCheckRecursive: string;
     batchJobCheckInclude: string;
@@ -627,6 +631,8 @@ const UI_TEXT: Record<
     batchJobCheckCopyJson: "Kopiuj JSON batch",
     batchJobCheckCopiedJson: "Skopiowano envelope batch",
     batchJobCheckCopyJsonFallback: "Kopiuj envelope batch ręcznie",
+    batchJobCheckDownloadJson: "Pobierz JSON batch",
+    batchJobCheckDownloadedJson: "Pobrano JSON batch",
     batchJobCheckEmpty: "Brak plików .nc/.tap/.gcode w folderze",
     batchJobCheckRecursive: "Rekursywnie",
     batchJobCheckInclude: "Include (glob)",
@@ -951,6 +957,8 @@ const UI_TEXT: Record<
     batchJobCheckCopyJson: "Copy batch JSON",
     batchJobCheckCopiedJson: "Copied batch envelope",
     batchJobCheckCopyJsonFallback: "Copy batch envelope manually",
+    batchJobCheckDownloadJson: "Download batch JSON",
+    batchJobCheckDownloadedJson: "Downloaded batch JSON",
     batchJobCheckEmpty: "No .nc/.tap/.gcode files in folder",
     batchJobCheckRecursive: "Recursive",
     batchJobCheckInclude: "Include (glob)",
@@ -2003,6 +2011,23 @@ export function App() {
     }
   }
 
+  async function handleDownloadBatchJobCheckJson(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const payload = formatDesktopBatchSummaryForExport(batchJobCheckResult.envelope);
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-summary.json",
+          body: payload.endsWith("\n") ? payload : `${payload}\n`,
+          mimeType: "application/json;charset=utf-8"
+        }
+      ]);
+      setExportStatus(`${t.batchJobCheckDownloadedJson}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch JSON download failed.");
+    }
+  }
+
   async function handleDownloadBatchPdfs(): Promise<void> {
     if (!batchJobCheckResult) return;
     try {
@@ -2065,28 +2090,63 @@ export function App() {
         batchJobCheckResult.envelope,
         sourcesByInput
       );
+      const summaryJson = formatDesktopBatchSummaryForExport(batchJobCheckResult.envelope);
+      const summaryCsv = formatDesktopBatchAggregationsAsCsv(batchJobCheckResult.envelope);
+      const sarifBody = formatDesktopBatchUnboundFixesAsSarifLite(
+        batchJobCheckResult.envelope,
+        previews
+      );
+      const fixPreviewBody = formatDesktopBatchQuickFixPreviewsForExport(previews);
+      const envelopeItems = buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope);
+      const patchedItems = buildDesktopBatchPatchedPrograms(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
+      const txtItems = buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults);
+      const pdfItems = buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults);
+      const manifestPaths = [
+        ...pdfItems.map((i) => i.filename),
+        ...txtItems.map((i) => i.filename),
+        ...envelopeItems.map((i) => i.filename),
+        ...patchedItems.map((i) => i.filename),
+        "batch-fix-previews.json",
+        "batch-unbound-fixes.sarif.json",
+        "batch-summary.csv",
+        "batch-summary.json",
+        "batch-export-manifest.json"
+      ];
+      const manifest = buildDesktopBatchExportManifest(manifestPaths, {
+        zipEntryCount: manifestPaths.length
+      });
       const items = [
-        ...buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults),
-        ...buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults),
-        ...buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope),
-        ...buildDesktopBatchPatchedPrograms(batchJobCheckResult.envelope, sourcesByInput),
+        ...pdfItems,
+        ...txtItems,
+        ...envelopeItems,
+        ...patchedItems,
         {
           filename: "batch-fix-previews.json",
-          body: formatDesktopBatchQuickFixPreviewsForExport(previews),
+          body: fixPreviewBody,
           mimeType: "application/json;charset=utf-8"
         },
         {
           filename: "batch-unbound-fixes.sarif.json",
-          body: formatDesktopBatchUnboundFixesAsSarifLite(
-            batchJobCheckResult.envelope,
-            previews
-          ),
+          body: sarifBody,
           mimeType: "application/json;charset=utf-8"
         },
         {
           filename: "batch-summary.csv",
-          body: formatDesktopBatchAggregationsAsCsv(batchJobCheckResult.envelope),
+          body: summaryCsv,
           mimeType: "text/csv;charset=utf-8"
+        },
+        {
+          filename: "batch-summary.json",
+          body: summaryJson.endsWith("\n") ? summaryJson : `${summaryJson}\n`,
+          mimeType: "application/json;charset=utf-8"
+        },
+        {
+          filename: "batch-export-manifest.json",
+          body: formatDesktopBatchExportManifest(manifest),
+          mimeType: "application/json;charset=utf-8"
         }
       ];
       const bytes = await buildDesktopBatchArchiveZip(items, { compression: "deflate" });
@@ -4028,6 +4088,13 @@ export function App() {
                 onClick={() => void handleCopyBatchJobCheckJson()}
               >
                 {t.batchJobCheckCopyJson}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-json"
+                onClick={() => void handleDownloadBatchJobCheckJson()}
+              >
+                {t.batchJobCheckDownloadJson}
               </button>
               <button
                 type="button"

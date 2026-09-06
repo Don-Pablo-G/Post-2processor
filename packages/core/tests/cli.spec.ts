@@ -29,6 +29,8 @@ import {
   formatJobCheckJson,
   formatJobCheckText,
   formatBatchAggregationsAsCsv,
+  buildBatchExportManifest,
+  classifyBatchExportPath,
   main,
   parseCliArgs,
   parseAuditDeprecatedRulesArgs,
@@ -1019,7 +1021,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=29\n");
+    expect(stdout).toBe("cnc-job-check schema=30\n");
     expect(stderr).toBe("");
   });
 
@@ -2630,8 +2632,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 29", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(29);
+  it("CLI_SCHEMA_VERSION is 30", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(30);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3880,7 +3882,7 @@ describe("Schema v29: export manifest + writtenFileCount", () => {
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(29);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.exportManifestPath).toMatch(
       /batch-export-manifest\.json$/
     );
@@ -3888,7 +3890,7 @@ describe("Schema v29: export manifest + writtenFileCount", () => {
     const manifest = JSON.parse(
       await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
     );
-    expect(manifest.schemaVersion).toBe(29);
+    expect(manifest.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(Array.isArray(manifest.entries)).toBe(true);
     expect(manifest.entries.some((e: { kind: string }) => e.kind === "zip")).toBe(true);
     expect(manifest.entries.some((e: { kind: string }) => e.kind === "manifest")).toBe(true);
@@ -3897,6 +3899,47 @@ describe("Schema v29: export manifest + writtenFileCount", () => {
       await readFile(path.join(outDir, "batch-export.zip"))
     ).toString("binary");
     expect(zipAscii).toMatch(/batch-export-manifest\.json/);
+  });
+});
+
+describe("Schema v30: shared export manifest + zipEntryCount", () => {
+  it("buildBatchExportManifest classifies paths and rolls up byKind", () => {
+    const manifest = buildBatchExportManifest(
+      [
+        "a.json",
+        "setup-txt/a.setup.txt",
+        "batch-summary.json",
+        "batch-export-manifest.json",
+        "batch-export.zip"
+      ],
+      { schemaVersion: CLI_SCHEMA_VERSION, writtenFileCount: 5, zipEntryCount: 4 }
+    );
+    expect(classifyBatchExportPath("patched-nc/a.patched.nc")).toBe("patched-nc");
+    expect(manifest.byKind.envelope).toBe(1);
+    expect(manifest.byKind["setup-txt"]).toBe(1);
+    expect(manifest.byKind.manifest).toBe(1);
+    expect(manifest.byKind.zip).toBe(1);
+    expect(manifest.zipEntryCount).toBe(4);
+  });
+
+  it("--out-dir records zipEntryCount and manifest.byKind", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(30);
+    expect(summary.summary.batchWalk.export.zipEntryCount).toBeGreaterThan(0);
+    const manifest = JSON.parse(
+      await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
+    );
+    expect(manifest.byKind).toBeDefined();
+    expect(manifest.byKind.manifest).toBe(1);
+    expect(manifest.zipEntryCount).toBe(summary.summary.batchWalk.export.zipEntryCount);
   });
 });
 

@@ -125,6 +125,9 @@ export {
   formatBatchAggregationsAsCsv,
   formatBatchFixCandidatesAsSarifLite,
   buildBatchFixTemplateCandidates,
+  buildBatchExportManifest,
+  classifyBatchExportPath,
+  formatBatchExportManifest,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -154,7 +157,9 @@ export type {
   CliSafetyFindingsByCodeEntry,
   CliSafetyFindingSource,
   BatchFixCandidateRow,
-  BatchFixCandidateKind
+  BatchFixCandidateKind,
+  BatchExportManifest,
+  BatchExportManifestEntry
 } from "./cli/jobCheckEnvelope.js";
 
 export {

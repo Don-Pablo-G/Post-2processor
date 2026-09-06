@@ -54,6 +54,8 @@ import {
   formatBatchAggregationsAsCsv,
   formatBatchFixCandidatesAsSarifLite,
   buildBatchFixTemplateCandidates,
+  buildBatchExportManifest,
+  formatBatchExportManifest,
   formatJobCheckJson,
   formatJobCheckNdjsonLine,
   type CliBatchEntry,
@@ -87,6 +89,9 @@ export {
   formatBatchAggregationsAsCsv,
   formatBatchFixCandidatesAsSarifLite,
   buildBatchFixTemplateCandidates,
+  buildBatchExportManifest,
+  classifyBatchExportPath,
+  formatBatchExportManifest,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -115,7 +120,9 @@ export type {
   CliNdjsonBatchEntry,
   CliParseDiagnosticsByCodeEntry,
   CliSafetyFindingSource,
-  CliSafetyFindingsByCodeEntry
+  CliSafetyFindingsByCodeEntry,
+  BatchExportManifest,
+  BatchExportManifestEntry
 } from "./cli/jobCheckEnvelope.js";
 
 export {
@@ -2012,16 +2019,19 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v29: summaries + SARIF, then manifest, then zip.
-      // Predetermine exportManifestPath / writtenFileCount before summary JSON
-      // so batchWalk.export in the envelope is complete.
+      // Schema v18–v30: summaries + SARIF, then manifest, then zip.
+      // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
+      // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
       const willWriteNdjson = parsed.format === "ndjson";
       // Remaining disk writes: summary.json, csv, sarif, [ndjson], manifest, zip.
       const remainingWrites = 5 + (willWriteNdjson ? 1 : 0);
+      // Remaining zip entries (not including the zip file itself): same without zip.
+      const remainingZipEntries = 4 + (willWriteNdjson ? 1 : 0);
       if (!batchWalk.export) batchWalk.export = { outDir };
       batchWalk.export.exportManifestPath = manifestPath;
       batchWalk.export.writtenFileCount = written + remainingWrites;
+      batchWalk.export.zipEntryCount = zipEntries.length + remainingZipEntries;
 
       const summaryPath = path.join(outDir, "batch-summary.json");
       const batchEnvelope = buildBatchEnvelope(entries, { batchWalk });
@@ -2081,36 +2091,19 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         }
       }
 
-      // Schema v29: export manifest listing zip-bound paths + kinds.
-      const classifyExportPath = (rel: string): string => {
-        if (rel === "batch-summary.json") return "summary-json";
-        if (rel === "batch-summary.csv") return "summary-csv";
-        if (rel === "batch-summary.ndjson") return "summary-ndjson";
-        if (rel === "batch-unbound-fixes.sarif.json") return "sarif";
-        if (rel === "batch-fix-previews.json") return "fix-previews";
-        if (rel === "batch-export-manifest.json") return "manifest";
-        if (rel === "batch-export.zip") return "zip";
-        if (rel.startsWith("setup-txt/")) return "setup-txt";
-        if (rel.startsWith("setup-pdf/")) return "setup-pdf";
-        if (rel.startsWith("patched-nc/")) return "patched-nc";
-        if (/\.(json|ndjson)$/i.test(rel)) return "envelope";
-        return "other";
-      };
-      const manifestEntries = [
-        ...zipEntries.map((e) => ({ path: e.path, kind: classifyExportPath(e.path) })),
-        { path: "batch-export-manifest.json", kind: "manifest" as const },
-        { path: "batch-export.zip", kind: "zip" as const }
+      // Schema v29–v30: export manifest listing zip-bound paths + kinds + byKind.
+      const manifestPaths = [
+        ...zipEntries.map((e) => e.path),
+        "batch-export-manifest.json",
+        "batch-export.zip"
       ];
-      const manifestBody = `${JSON.stringify(
-        {
-          schemaVersion: CLI_SCHEMA_VERSION,
-          outDir,
-          writtenFileCount: batchWalk.export.writtenFileCount,
-          entries: manifestEntries
-        },
-        null,
-        2
-      )}\n`;
+      const manifest = buildBatchExportManifest(manifestPaths, {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        outDir,
+        writtenFileCount: batchWalk.export.writtenFileCount,
+        zipEntryCount: batchWalk.export.zipEntryCount
+      });
+      const manifestBody = formatBatchExportManifest(manifest);
       try {
         await writeFn(manifestPath, manifestBody);
         written += 1;

@@ -4223,6 +4223,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=29
 ```
 
+## Shared export manifest + zipEntryCount + desktop summary download + Schema v30
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `zipEntryCount` + shared manifest builders (Schema v30)
+
+`CLI_SCHEMA_VERSION` bumps `29 → 30`.
+`batchWalk.export` gains optional `zipEntryCount`.
+Core exports `classifyBatchExportPath`, `buildBatchExportManifest`, and
+`formatBatchExportManifest` (with `byKind` rollup).
+
+### Move 2 — CLI uses shared manifest helper
+
+`--out-dir` builds the manifest via the shared helper and records
+`zipEntryCount`.
+
+### Move 3 — Desktop Download batch JSON
+
+Folder batch gains **Download batch JSON** (aggregate `batch-summary.json`).
+
+### Move 4 — Desktop zip includes summary + manifest
+
+Desktop **Download ZIP** packs `batch-summary.json` and
+`batch-export-manifest.json` alongside the v29 artifacts.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=30
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

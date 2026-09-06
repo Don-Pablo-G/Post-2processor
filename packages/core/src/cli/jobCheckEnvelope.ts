@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 29;
+export const CLI_SCHEMA_VERSION = 30;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -783,6 +783,11 @@ export type CliBatchWalkExport = {
    * (per-file envelopes, sidecars, summaries, manifest, and zip).
    */
   writtenFileCount?: number;
+  /**
+   * Schema v30: number of entries packed into `batch-export.zip` (including
+   * the manifest entry itself when present).
+   */
+  zipEntryCount?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -1809,4 +1814,79 @@ export function formatBatchFixCandidatesAsSarifLite(
     ]
   };
   return `${JSON.stringify(doc, null, 2)}\n`;
+}
+
+/**
+ * Schema v29–v30: classify a relative path inside `batch-export.zip` /
+ * `--out-dir` for the export manifest.
+ */
+export function classifyBatchExportPath(rel: string): string {
+  if (rel === "batch-summary.json") return "summary-json";
+  if (rel === "batch-summary.csv") return "summary-csv";
+  if (rel === "batch-summary.ndjson") return "summary-ndjson";
+  if (rel === "batch-unbound-fixes.sarif.json") return "sarif";
+  if (rel === "batch-fix-previews.json") return "fix-previews";
+  if (rel === "batch-export-manifest.json") return "manifest";
+  if (rel === "batch-export.zip") return "zip";
+  if (rel.startsWith("setup-txt/")) return "setup-txt";
+  if (rel.startsWith("setup-pdf/")) return "setup-pdf";
+  if (rel.startsWith("patched-nc/")) return "patched-nc";
+  if (/\.(json|ndjson)$/i.test(rel)) return "envelope";
+  return "other";
+}
+
+export type BatchExportManifestEntry = {
+  path: string;
+  kind: string;
+};
+
+/**
+ * Schema v29–v30: machine-readable inventory of `--out-dir` / zip artifacts.
+ * Schema v30 adds `byKind` rollup and optional `zipEntryCount`.
+ */
+export type BatchExportManifest = {
+  schemaVersion: number;
+  outDir?: string;
+  writtenFileCount?: number;
+  zipEntryCount?: number;
+  entries: BatchExportManifestEntry[];
+  byKind: Record<string, number>;
+};
+
+export function buildBatchExportManifest(
+  paths: ReadonlyArray<string>,
+  options?: {
+    schemaVersion?: number;
+    outDir?: string;
+    writtenFileCount?: number;
+    zipEntryCount?: number;
+  }
+): BatchExportManifest {
+  const entries: BatchExportManifestEntry[] = paths.map((p) => ({
+    path: p,
+    kind: classifyBatchExportPath(p)
+  }));
+  const byKind: Record<string, number> = {};
+  for (const entry of entries) {
+    byKind[entry.kind] = (byKind[entry.kind] ?? 0) + 1;
+  }
+  const sortedKinds = Object.keys(byKind).sort((a, b) => a.localeCompare(b));
+  const orderedByKind: Record<string, number> = {};
+  for (const k of sortedKinds) orderedByKind[k] = byKind[k]!;
+  return {
+    schemaVersion: options?.schemaVersion ?? CLI_SCHEMA_VERSION,
+    ...(options?.outDir !== undefined ? { outDir: options.outDir } : {}),
+    ...(options?.writtenFileCount !== undefined
+      ? { writtenFileCount: options.writtenFileCount }
+      : {}),
+    ...(options?.zipEntryCount !== undefined
+      ? { zipEntryCount: options.zipEntryCount }
+      : {}),
+    entries,
+    byKind: orderedByKind
+  };
+}
+
+export function formatBatchExportManifest(manifest: BatchExportManifest): string {
+  return `${JSON.stringify(manifest, null, 2)}\n`;
 }
