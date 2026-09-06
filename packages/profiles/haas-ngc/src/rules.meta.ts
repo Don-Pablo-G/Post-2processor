@@ -379,6 +379,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n"
   },
   {
+    id: "haas.g43-and-g49-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G49 on the same block/,
+    summary: "Do not apply and cancel tool length compensation on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 G49 Z25.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM30\n"
+  },
+  {
+    id: "haas.missing-distance-mode",
+    severity: "warning",
+    messageMatcher: /Axis motion before G90\/G91/,
+    summary: "Set G90 or G91 before the first axis move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG0 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.unit-change-after-motion",
+    severity: "warning",
+    messageMatcher: /Unit mode changed after axis motion/,
+    summary: "Changing G20/G21 after motion may be unintentional — verify the switch.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG20\nG90\nG0 X0\nG21\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG21\nG90\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.tapping-without-spindle",
+    severity: "warning",
+    messageMatcher: /Tapping cycle \(G74\/G84\) while spindle is off/,
+    summary: "Start the spindle before G74/G84 tapping cycles.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG84 X10. Y10. Z-5. R2. F100.\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nS500 M3\nG84 X10. Y10. Z-5. R2. F100.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.g51-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with scaling \(G51\) still active/,
+    summary: "Cancel scaling with G50 before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

@@ -195,6 +195,28 @@ function hasExactG69(block: { words: Word[] }): boolean {
   });
 }
 
+function hasExactG51(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 51;
+  });
+}
+
+function hasExactG50(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 50;
+  });
+}
+
+function hasExactTappingCycle(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    const v = Number.parseFloat(w.value);
+    return v === 74 || v === 84;
+  });
+}
+
 function hasExactPeckCycle(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;
@@ -308,8 +330,12 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let sawWorkOffset = false;
   let warnedMissingWorkOffset = false;
   let sawAxisMotion = false;
+  let sawDistanceMode = false;
+  let warnedMissingDistanceMode = false;
   let activeWorkOffset: number | undefined;
+  let activeUnitMode: 20 | 21 | undefined;
   let lastToolNumber: number | undefined;
+  let scalingActive = false;
   let activePlane: 17 | 18 | 19 | undefined;
   let cutterCompActive = false;
   let cannedActive = false;
@@ -468,11 +494,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       toolLengthActive = false;
     }
 
+    if (hasG43Classic(block) && hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G43 and G49 on the same block — cancel or apply tool length, not both.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG91(block)) {
       incrementalActive = true;
+      sawDistanceMode = true;
     }
     if (hasExactG90(block)) {
       incrementalActive = false;
+      sawDistanceMode = true;
     }
 
     const plane = hasExactPlane(block);
@@ -516,10 +552,40 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (
+      !warnedMissingDistanceMode &&
+      (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
+      hasAxisWord(block) &&
+      !sawDistanceMode
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Axis motion before G90/G91 — set absolute or incremental distance mode first.",
+        blockIndex: index
+      });
+      warnedMissingDistanceMode = true;
+    }
+
+    if (
       (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
       hasAxisWord(block)
     ) {
       sawAxisMotion = true;
+    }
+
+    const unitModeEarly = hasExactG20Or21(block);
+    if (unitModeEarly !== undefined) {
+      if (
+        sawAxisMotion &&
+        activeUnitMode !== undefined &&
+        activeUnitMode !== unitModeEarly
+      ) {
+        issues.push({
+          severity: "warning",
+          message: "Unit mode changed after axis motion — verify intentional G20/G21 switch mid-program.",
+          blockIndex: index
+        });
+      }
+      activeUnitMode = unitModeEarly;
     }
 
     if (hasExactG53(block) && incrementalActive) {
@@ -542,6 +608,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactTappingCycle(block) && !spindleActive) {
+      issues.push({
+        severity: "warning",
+        message: "Tapping cycle (G74/G84) while spindle is off — start spindle before tapping.",
         blockIndex: index
       });
     }
@@ -788,6 +862,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       rotationActive = false;
     }
 
+    if (hasExactG51(block)) {
+      scalingActive = true;
+    }
+    if (hasExactG50(block)) {
+      scalingActive = false;
+    }
+
     if (hasWordM(block, 6) && cannedActive) {
       issues.push({
         severity: "warning",
@@ -900,6 +981,18 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "Program ends with coordinate rotation (G68) still active — cancel with G69 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      scalingActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with scaling (G51) still active — cancel with G50 before end.",
         blockIndex: index
       });
     }

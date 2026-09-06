@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 53
+Total rules: 58
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -58,6 +58,11 @@ Total rules: 53
 | `haas.g68-active-at-end` | warning | — | — | Cancel coordinate rotation with G69 before M02/M30. |
 | `haas.cutter-side-flip-without-g40` | warning | — | — | Cancel with G40 before switching between G41 and G42. |
 | `haas.g43-without-prior-tool` | warning | — | — | Select a tool (Tn) before applying G43 tool length compensation. |
+| `haas.g43-and-g49-same-block` | warning | — | — | Do not apply and cancel tool length compensation on the same block. |
+| `haas.missing-distance-mode` | warning | — | — | Set G90 or G91 before the first axis move. |
+| `haas.unit-change-after-motion` | warning | — | — | Changing G20/G21 after motion may be unintentional — verify the switch. |
+| `haas.tapping-without-spindle` | warning | — | — | Start the spindle before G74/G84 tapping cycles. |
+| `haas.g51-active-at-end` | warning | — | — | Cancel scaling with G50 before M02/M30. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -1292,6 +1297,150 @@ O0001
 T1 M6
 G54
 G43 H1 Z25.
+M30
+```
+
+### `haas.g43-and-g49-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G49 on the same block/`
+- **Summary:** Do not apply and cancel tool length compensation on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 G49 Z25.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M30
+```
+
+### `haas.missing-distance-mode`
+
+- **Severity:** warning
+- **Matcher:** `/Axis motion before G90\/G91/`
+- **Summary:** Set G90 or G91 before the first axis move.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G0 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G0 X0
+M30
+```
+
+### `haas.unit-change-after-motion`
+
+- **Severity:** warning
+- **Matcher:** `/Unit mode changed after axis motion/`
+- **Summary:** Changing G20/G21 after motion may be unintentional — verify the switch.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G20
+G90
+G0 X0
+G21
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G21
+G90
+G0 X0
+M30
+```
+
+### `haas.tapping-without-spindle`
+
+- **Severity:** warning
+- **Matcher:** `/Tapping cycle \(G74\/G84\) while spindle is off/`
+- **Summary:** Start the spindle before G74/G84 tapping cycles.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G84 X10. Y10. Z-5. R2. F100.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+S500 M3
+G84 X10. Y10. Z-5. R2. F100.
+G80
+M5
+M30
+```
+
+### `haas.g51-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with scaling \(G51\) still active/`
+- **Summary:** Cancel scaling with G50 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G50
 M30
 ```
 

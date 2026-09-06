@@ -2535,6 +2535,55 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G43 and G49 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG43 H1 G49 Z25.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G43 and G49 on the same block"))
+    ).toBe(true);
+  });
+
+  it("warns axis motion before G90/G91", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG0 X0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("before G90/G91"))
+    ).toBe(true);
+  });
+
+  it("does not warn missing distance mode after G90", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG0 X0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("before G90/G91"))
+    ).toBe(false);
+  });
+
+  it("warns unit mode change after axis motion", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG20\nG90\nG0 X0\nG21\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Unit mode changed after axis motion")
+      )
+    ).toBe(true);
+  });
+
+  it("warns tapping cycle while spindle is off", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG90\nG84 X10. Y10. Z-5. R2. F100.\nG80\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Tapping cycle (G74/G84) while spindle is off")
+      )
+    ).toBe(true);
+  });
+
+  it("warns when G51 is still active at program end", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("scaling (G51) still active"))
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(
