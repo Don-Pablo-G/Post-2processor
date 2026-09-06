@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 58
+Total rules: 63
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -63,6 +63,11 @@ Total rules: 58
 | `haas.unit-change-after-motion` | warning | — | — | Changing G20/G21 after motion may be unintentional — verify the switch. |
 | `haas.tapping-without-spindle` | warning | — | — | Start the spindle before G74/G84 tapping cycles. |
 | `haas.g51-active-at-end` | warning | — | — | Cancel scaling with G50 before M02/M30. |
+| `haas.plane-change-after-motion` | warning | — | — | Changing G17/G18/G19 after motion may be unintentional — verify the switch. |
+| `haas.feed-mode-change-after-motion` | warning | — | — | Changing G94/G95 after feed/canned motion may be unintentional — verify the switch. |
+| `haas.g61-and-g64-mixed` | warning | — | — | Mixing G61 and G64 path modes in one program is ambiguous — pick one. |
+| `haas.spindle-on-and-off-same-block` | warning | — | — | Do not combine spindle start (M3/M4) and stop (M5) on one block. |
+| `haas.coolant-on-and-off-same-block` | warning | — | — | Do not combine coolant on (M7/M8) and off (M9) on one block. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -1441,6 +1446,151 @@ T1 M6
 G54
 G51
 G50
+M30
+```
+
+### `haas.plane-change-after-motion`
+
+- **Severity:** warning
+- **Matcher:** `/Plane mode changed after axis motion/`
+- **Summary:** Changing G17/G18/G19 after motion may be unintentional — verify the switch.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G17
+G0 X0
+G18
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G17
+G0 X0
+M30
+```
+
+### `haas.feed-mode-change-after-motion`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode changed after cutting motion/`
+- **Summary:** Changing G94/G95 after feed/canned motion may be unintentional — verify the switch.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G94
+S1200 M3
+G1 X10. F100.
+G95
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G94
+S1200 M3
+G1 X10. F100.
+M5
+M30
+```
+
+### `haas.g61-and-g64-mixed`
+
+- **Severity:** warning
+- **Matcher:** `/Program contains both G61 and G64/`
+- **Summary:** Mixing G61 and G64 path modes in one program is ambiguous — pick one.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G61
+G64
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G64
+T1 M6
+M30
+```
+
+### `haas.spindle-on-and-off-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle start and stop on the same block/`
+- **Summary:** Do not combine spindle start (M3/M4) and stop (M5) on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3 M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M5
+M30
+```
+
+### `haas.coolant-on-and-off-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant on and off on the same block/`
+- **Summary:** Do not combine coolant on (M7/M8) and off (M9) on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8 M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M9
+M5
 M30
 ```
 

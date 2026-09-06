@@ -2584,6 +2584,52 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns plane mode change after axis motion", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG17\nG0 X0\nG18\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Plane mode changed after axis motion")
+      )
+    ).toBe(true);
+  });
+
+  it("warns feed mode change after cutting motion", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG90\nG94\nS1200 M3\nG1 X10. F100.\nG95\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Feed mode changed after cutting motion")
+      )
+    ).toBe(true);
+  });
+
+  it("warns when both G61 and G64 appear", () => {
+    const ast = parse("O1\nG61\nG64\nT1 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("both G61 and G64"))
+    ).toBe(true);
+  });
+
+  it("warns spindle start and stop on the same block", () => {
+    const ast = parse("O1\nT1 M6\nS1200 M3 M5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle start and stop on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant on and off on the same block", () => {
+    const ast = parse("O1\nT1 M6\nS1200 M3\nM8 M9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on and off on the same block")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

@@ -419,6 +419,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nM30\n"
   },
   {
+    id: "haas.plane-change-after-motion",
+    severity: "warning",
+    messageMatcher: /Plane mode changed after axis motion/,
+    summary: "Changing G17/G18/G19 after motion may be unintentional — verify the switch.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG17\nG0 X0\nG18\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG17\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-change-after-motion",
+    severity: "warning",
+    messageMatcher: /Feed mode changed after cutting motion/,
+    summary: "Changing G94/G95 after feed/canned motion may be unintentional — verify the switch.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG94\nS1200 M3\nG1 X10. F100.\nG95\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG94\nS1200 M3\nG1 X10. F100.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g61-and-g64-mixed",
+    severity: "warning",
+    messageMatcher: /Program contains both G61 and G64/,
+    summary: "Mixing G61 and G64 path modes in one program is ambiguous — pick one.",
+    positiveSnippet: "O0001\nG61\nG64\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG64\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.spindle-on-and-off-same-block",
+    severity: "warning",
+    messageMatcher: /Spindle start and stop on the same block/,
+    summary: "Do not combine spindle start (M3/M4) and stop (M5) on one block.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3 M5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-and-off-same-block",
+    severity: "warning",
+    messageMatcher: /Coolant on and off on the same block/,
+    summary: "Do not combine coolant on (M7/M8) and off (M9) on one block.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM8 M9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

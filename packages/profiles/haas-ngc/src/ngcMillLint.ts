@@ -246,6 +246,16 @@ function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
   return undefined;
 }
 
+function hasExactG61Or64(block: { words: Word[] }): 61 | 64 | undefined {
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 61) return 61;
+    if (v === 64) return 64;
+  }
+  return undefined;
+}
+
 function hasSpindleDirectionConflict(block: { words: Word[] }): boolean {
   let cw = false;
   let ccw = false;
@@ -347,6 +357,10 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let firstG21Block = -1;
   let firstG94Block = -1;
   let firstG95Block = -1;
+  let firstG61Block = -1;
+  let firstG64Block = -1;
+  let activeFeedMode: 94 | 95 | undefined;
+  let sawFeedOrCanned = false;
   let sawProgramO = false;
   let activeStopResumeSafety:
     | {
@@ -480,11 +494,27 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       spindleActive = false;
     }
 
+    if (hasSpindleOn(block) && hasSpindleOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "Spindle start and stop on the same block (M3/M4/M13/M14 with M5).",
+        blockIndex: index
+      });
+    }
+
     if (hasCoolantOn(block)) {
       coolantActive = true;
     }
     if (hasCoolantOff(block)) {
       coolantActive = false;
+    }
+
+    if (hasCoolantOn(block) && hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "Coolant on and off on the same block (M7/M8 with M9).",
+        blockIndex: index
+      });
     }
 
     if (hasG43Classic(block)) {
@@ -513,6 +543,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     const plane = hasExactPlane(block);
     if (plane !== undefined) {
+      if (sawAxisMotion && activePlane !== undefined && activePlane !== plane) {
+        issues.push({
+          severity: "warning",
+          message: "Plane mode changed after axis motion — verify intentional G17/G18/G19 switch mid-program.",
+          blockIndex: index
+        });
+      }
       activePlane = plane;
     }
 
@@ -586,6 +623,26 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         });
       }
       activeUnitMode = unitModeEarly;
+    }
+
+    if (hasExactFeedMotion(block) || hasCannedCycle(block)) {
+      sawFeedOrCanned = true;
+    }
+
+    const feedModeEarly = hasExactG94Or95(block);
+    if (feedModeEarly !== undefined) {
+      if (
+        sawFeedOrCanned &&
+        activeFeedMode !== undefined &&
+        activeFeedMode !== feedModeEarly
+      ) {
+        issues.push({
+          severity: "warning",
+          message: "Feed mode changed after cutting motion — verify intentional G94/G95 switch mid-program.",
+          blockIndex: index
+        });
+      }
+      activeFeedMode = feedModeEarly;
     }
 
     if (hasExactG53(block) && incrementalActive) {
@@ -885,6 +942,10 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     if (feedMode === 94 && firstG94Block < 0) firstG94Block = index;
     if (feedMode === 95 && firstG95Block < 0) firstG95Block = index;
 
+    const pathMode = hasExactG61Or64(block);
+    if (pathMode === 61 && firstG61Block < 0) firstG61Block = index;
+    if (pathMode === 64 && firstG64Block < 0) firstG64Block = index;
+
     if (block.words.some((w) => w.letter === "O")) {
       sawProgramO = true;
     }
@@ -1020,6 +1081,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       severity: "warning",
       message: "Program contains both G94 and G95 — pick one feed mode (per-minute or per-revolution).",
       blockIndex: Math.min(firstG94Block, firstG95Block)
+    });
+  }
+
+  if (firstG61Block >= 0 && firstG64Block >= 0) {
+    issues.push({
+      severity: "warning",
+      message: "Program contains both G61 and G64 — pick one path control mode (exact stop or continuous).",
+      blockIndex: Math.min(firstG61Block, firstG64Block)
     });
   }
 
