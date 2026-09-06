@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 42;
+export const CLI_SCHEMA_VERSION = 43;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -1627,6 +1627,14 @@ function csvEscapeCell(value: string): string {
 }
 
 /**
+ * Schema v26–v43: canonical first line of `batch-summary.csv` /
+ * `formatBatchAggregationsAsCsv`. Schema v43 verify-batch-export uses this
+ * for `csvMatched`.
+ */
+export const BATCH_SUMMARY_CSV_HEADER =
+  "kind,key,count,blockers,warnings,inputs,firstBlockIndex";
+
+/**
  * Schema v20–v22: CSV export of safety, policy-breach, controller-code, and
  * parse-diag aggregated dashboard rows. Shared by desktop clipboard and CLI
  * `--out-dir` `batch-summary.csv`.
@@ -1634,7 +1642,7 @@ function csvEscapeCell(value: string): string {
  * the aggregation row has none).
  */
 export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
-  const lines: string[] = ["kind,key,count,blockers,warnings,inputs,firstBlockIndex"];
+  const lines: string[] = [BATCH_SUMMARY_CSV_HEADER];
   for (const row of envelope.summary.safetyFindingsByCodeAggregated ?? []) {
     lines.push(
       [

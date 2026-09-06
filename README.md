@@ -4688,6 +4688,42 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=42
 ```
 
+## Verify CSV match + kindCount + sidecar dir stamps + Schema v43
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `csvMatched` + `kindCount` (Schema v43)
+
+`CLI_SCHEMA_VERSION` bumps `42 → 43`.
+`VerifyBatchExportResult` gains optional `csvMatched` and `kindCount`.
+`BATCH_SUMMARY_CSV_HEADER` is the shared canonical CSV header constant.
+
+### Move 2 — CLI CSV header cross-check
+
+When sibling `batch-summary.csv` is present, its first line must equal
+`BATCH_SUMMARY_CSV_HEADER`. Mismatches fail verify even if digests matched.
+
+### Move 3 — CLI reports match + kind count
+
+JSON emits `csvMatched` / `kindCount`; text reports `csvMatched=true` and
+`kinds=N` (from manifest `byKind`).
+
+### Move 4 — Desktop live sidecar dir stamps
+
+`runDesktopBatchJobCheck` stamps relative logical `setupTxtDir` (`setup-txt`)
+and `patchedNcDir` (`patched-nc`) so inventory chips include `setupTxtDir` and
+`patchedDir`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=43
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

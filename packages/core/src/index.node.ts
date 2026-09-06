@@ -125,6 +125,7 @@ export {
   formatBatchJson,
   formatBatchNdjson,
   formatBatchAggregationsAsCsv,
+  BATCH_SUMMARY_CSV_HEADER,
   formatBatchFixCandidatesAsSarifLite,
   buildBatchFixTemplateCandidates,
   buildBatchExportManifest,
