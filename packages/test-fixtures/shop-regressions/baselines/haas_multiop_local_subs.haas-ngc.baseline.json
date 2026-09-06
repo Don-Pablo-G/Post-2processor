@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_multiop_local_subs.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 5,
+  "lintIssueCount": 7,
   "lintIssues": [
     {
       "severity": "warning",
@@ -10,6 +10,14 @@
     {
       "severity": "warning",
       "message": "Program must end with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "M97 while tool length compensation (G43) is still active — cancel with G49 before the local subprogram call."
+    },
+    {
+      "severity": "warning",
+      "message": "M97 while tool length compensation (G43) is still active — cancel with G49 before the local subprogram call."
     },
     {
       "severity": "warning",

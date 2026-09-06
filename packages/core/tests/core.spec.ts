@@ -3224,6 +3224,99 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns M98 while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nM98 P1000\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nM97 P10\nG49\nN10\nM99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 while rotation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nM98 P1000\nG69\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while rotation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nM97 P10\nG69\nN10\nM99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51 P2.\nM98 P1000\nG50\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51 P2.\nM97 P10\nG50\nN10\nM99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 while cutter compensation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nG65 P1000\nG40\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 while canned cycle is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG65 P1000\nG80\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while a canned cycle is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG65 P1000\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 while rotation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG65 P1000\nG69\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
   it("warns G28 and G92 on the same block", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(

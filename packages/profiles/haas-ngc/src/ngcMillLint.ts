@@ -901,6 +901,94 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 98) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M98 while tool length compensation (G43) is still active — cancel with G49 before the subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 while tool length compensation (G43) is still active — cancel with G49 before the local subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M98 while coordinate rotation (G68) is still active — cancel with G69 before the subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 while coordinate rotation (G68) is still active — cancel with G69 before the local subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M98 while scaling (G51) is still active — cancel with G50 before the subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 while scaling (G51) is still active — cancel with G50 before the local subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G65 while cutter compensation (G41/G42) is still active — cancel with G40 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 while a canned cycle is still active — cancel with G80 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G65 while tool length compensation (G43) is still active — cancel with G49 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G65 while coordinate rotation (G68) is still active — cancel with G69 before the macro call.",
+        blockIndex: index
+      });
+    }
+
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",

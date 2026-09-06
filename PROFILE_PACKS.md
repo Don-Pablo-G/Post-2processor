@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 221 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 231 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -131,6 +131,16 @@ Total rules: 221 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.m98-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M98 subprogram call. |
 | `haas.m97-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M97 local subprogram call. |
 | `haas.m97-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M97 local subprogram call. |
+| `haas.m98-while-tool-length` | warning | — | — | Cancel tool length with G49 before an M98 subprogram call. |
+| `haas.m97-while-tool-length` | warning | — | — | Cancel tool length with G49 before an M97 local subprogram call. |
+| `haas.m98-while-rotation` | warning | — | — | Cancel rotation with G69 before an M98 subprogram call. |
+| `haas.m97-while-rotation` | warning | — | — | Cancel rotation with G69 before an M97 local subprogram call. |
+| `haas.m98-while-scaling` | warning | — | — | Cancel scaling with G50 before an M98 subprogram call. |
+| `haas.m97-while-scaling` | warning | — | — | Cancel scaling with G50 before an M97 local subprogram call. |
+| `haas.g65-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a G65 macro call. |
+| `haas.g65-while-canned` | warning | — | — | Cancel canned cycles with G80 before a G65 macro call. |
+| `haas.g65-while-tool-length` | warning | — | — | Cancel tool length with G49 before a G65 macro call. |
+| `haas.g65-while-rotation` | warning | — | — | Cancel rotation with G69 before a G65 macro call. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -3641,6 +3651,324 @@ M97 P10
 N10
 M99
 M5
+M30
+```
+
+### `haas.m98-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before an M98 subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+M98 P1000
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M98 P1000
+M30
+```
+
+### `haas.m97-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before an M97 local subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+M97 P10
+G49
+N10
+M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M97 P10
+N10
+M99
+M30
+```
+
+### `haas.m98-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before an M98 subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+M98 P1000
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69
+M98 P1000
+M30
+```
+
+### `haas.m97-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before an M97 local subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+M97 P10
+G69
+N10
+M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69
+M97 P10
+N10
+M99
+M30
+```
+
+### `haas.m98-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before an M98 subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+M98 P1000
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G50
+M98 P1000
+M30
+```
+
+### `haas.m97-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before an M97 local subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+M97 P10
+G50
+N10
+M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G50
+M97 P10
+N10
+M99
+M30
+```
+
+### `haas.g65-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G41 D1
+G65 P1000
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G41 D1
+G40
+G65 P1000
+M30
+```
+
+### `haas.g65-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G65 P1000
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G65 P1000
+M5
+M30
+```
+
+### `haas.g65-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G65 P1000
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+G65 P1000
+M30
+```
+
+### `haas.g65-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G65 P1000
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69
+G65 P1000
 M30
 ```
 
