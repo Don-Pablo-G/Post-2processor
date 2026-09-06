@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 37;
+export const CLI_SCHEMA_VERSION = 38;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -1893,11 +1893,12 @@ export type BatchExportManifestEntry = {
 };
 
 /**
- * Schema v29–v33: machine-readable inventory of `--out-dir` / zip artifacts.
+ * Schema v29–v38: machine-readable inventory of `--out-dir` / zip artifacts.
  * Schema v30 adds `byKind` rollup and optional `zipEntryCount`.
  * Schema v31 adds optional per-entry `bytes` and root `zipSha256`.
  * Schema v32 adds optional root `totalBytes` (sum of known entry bytes).
  * Schema v33 adds optional root `sealedAt`.
+ * Schema v38 adds optional root `zipBytes` (compressed archive byte length).
  */
 export type BatchExportManifest = {
   schemaVersion: number;
@@ -1913,6 +1914,11 @@ export type BatchExportManifest = {
   totalBytes?: number;
   /** Schema v33: ISO-8601 seal timestamp when known. */
   sealedAt?: string;
+  /**
+   * Schema v38: compressed on-disk byte length of `batch-export.zip` when
+   * known (mirrors `batchWalk.export.zipBytes`; distinct from `totalBytes`).
+   */
+  zipBytes?: number;
   entries: BatchExportManifestEntry[];
   byKind: Record<string, number>;
 };
@@ -1934,6 +1940,7 @@ export function buildBatchExportManifest(
     zipSha256?: string;
     totalBytes?: number;
     sealedAt?: string;
+    zipBytes?: number;
   }
 ): BatchExportManifest {
   const entries: BatchExportManifestEntry[] = paths.map((input) => {
@@ -1978,6 +1985,7 @@ export function buildBatchExportManifest(
     ...(options?.zipSha256 !== undefined ? { zipSha256: options.zipSha256 } : {}),
     ...(totalBytes !== undefined ? { totalBytes } : {}),
     ...(options?.sealedAt !== undefined ? { sealedAt: options.sealedAt } : {}),
+    ...(options?.zipBytes !== undefined ? { zipBytes: options.zipBytes } : {}),
     entries,
     byKind: orderedByKind
   };

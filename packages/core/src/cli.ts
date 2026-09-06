@@ -279,7 +279,7 @@ export function parseVerifyAuditTrailArgs(argv: readonly string[]): VerifyAuditT
 }
 
 export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
-  "Usage: cnc-job-check verify-batch-export (--zip <file> --sha256 <file>|--out-dir <dir>)",
+  "Usage: cnc-job-check verify-batch-export (--zip <file> --sha256 <file>|--out-dir <dir>) [--format json|text]",
   "",
   "Verifies a sealed `batch-export.zip` against its BSD-style",
   "`batch-export.zip.sha256` sidecar (`<hex>  batch-export.zip`).",
@@ -295,7 +295,11 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "  --out-dir <dir>            Schema v34: resolve zip + sidecar as <dir>/batch-export.zip",
   "                            and <dir>/batch-export.zip.sha256. Mutually exclusive with",
   "                            --zip / --sha256.",
-  "  --quiet                    Suppress the per-success `OK` line on stdout.",
+  "  --format <json|text>       Schema v38: output format (default: text). JSON emits one",
+  "                            object with schemaVersion, ok, zip, sha256Path, zipSha256,",
+  "                            zipBytes (success and mismatch).",
+  "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
+  "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
 ].join("\n");
 
@@ -303,12 +307,24 @@ export type VerifyBatchExportArgs = {
   zip?: string;
   sha256?: string;
   outDir?: string;
+  format: "json" | "text";
   quiet: boolean;
   help: boolean;
 };
 
+/** Schema v38: machine-readable verify-batch-export result (--format json). */
+export type VerifyBatchExportResult = {
+  schemaVersion: number;
+  ok: boolean;
+  zip: string;
+  sha256Path: string;
+  zipSha256: string;
+  zipBytes: number;
+  expectedZipSha256?: string;
+};
+
 export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatchExportArgs {
-  const result: VerifyBatchExportArgs = { quiet: false, help: false };
+  const result: VerifyBatchExportArgs = { quiet: false, help: false, format: "text" };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
     switch (arg) {
@@ -321,6 +337,16 @@ export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatch
       case "--out-dir":
         result.outDir = requireValue("--out-dir", argv[++i]);
         break;
+      case "--format": {
+        const value = requireValue("--format", argv[++i]);
+        if (value !== "json" && value !== "text") {
+          throw new CliArgumentError(
+            `verify-batch-export: invalid --format value: ${value} (expected json | text)`
+          );
+        }
+        result.format = value;
+        break;
+      }
       case "--quiet":
         result.quiet = true;
         break;
@@ -413,7 +439,22 @@ export async function runVerifyBatchExport(
     return 2;
   }
 
-  if (actual !== expected) {
+  const ok = actual === expected;
+  if (parsed.format === "json") {
+    const result: VerifyBatchExportResult = {
+      schemaVersion: CLI_SCHEMA_VERSION,
+      ok,
+      zip: parsed.zip!,
+      sha256Path: parsed.sha256!,
+      zipSha256: actual,
+      zipBytes: zipBytes.byteLength,
+      ...(ok ? {} : { expectedZipSha256: expected })
+    };
+    writeOut(`${JSON.stringify(result)}\n`);
+    return ok ? 0 : 1;
+  }
+
+  if (!ok) {
     writeErr(
       `cnc-job-check verify-batch-export: sha256 mismatch (expected ${expected}, got ${actual})\n`
     );
@@ -2313,7 +2354,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
 
-      // Schema v31–v37: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
+      // Schema v31–v38: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;
@@ -2345,7 +2386,8 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
             writtenFileCount: batchWalk.export.writtenFileCount,
             zipEntryCount: batchWalk.export.zipEntryCount,
             zipSha256,
-            sealedAt
+            sealedAt,
+            zipBytes: zipBytes.byteLength
           }
         );
         if (manifestFinal.totalBytes !== undefined) {

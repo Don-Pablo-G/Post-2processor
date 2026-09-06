@@ -142,8 +142,8 @@ export async function runDesktopBatchJobCheck(
     });
     runResults.push({ input: file.input, source: file.source, result });
   }
-  // Schema v36–v37: stamp logical summary artifact names for live inventory chips
-  // (CLI --out-dir uses absolute paths; desktop uses relative names).
+  // Schema v36–v38: stamp logical summary / sha256 sidecar names for live inventory
+  // chips (CLI --out-dir uses absolute paths; desktop uses relative names).
   const batchWalk = stampDesktopBatchExportSummaryPaths(options?.batchWalk);
   return {
     envelope: buildBatchEnvelope(entries, { batchWalk }),
@@ -152,8 +152,9 @@ export async function runDesktopBatchJobCheck(
 }
 
 /**
- * Schema v36–v37: ensure live desktop batchWalk.export carries relative logical
- * paths for always-on summary sidecars so inventory chips can surface them.
+ * Schema v36–v38: ensure live desktop batchWalk.export carries relative logical
+ * paths for always-on summary sidecars and the zip SHA-256 sidecar so inventory
+ * chips can surface them.
  */
 export function stampDesktopBatchExportSummaryPaths(
   batchWalk: CliBatchWalk | undefined
@@ -165,7 +166,8 @@ export function stampDesktopBatchExportSummaryPaths(
       ...batchWalk.export,
       csvSummaryPath: batchWalk.export?.csvSummaryPath ?? "batch-summary.csv",
       ndjsonSummaryPath: batchWalk.export?.ndjsonSummaryPath ?? "batch-summary.ndjson",
-      jsonSummaryPath: batchWalk.export?.jsonSummaryPath ?? "batch-summary.json"
+      jsonSummaryPath: batchWalk.export?.jsonSummaryPath ?? "batch-summary.json",
+      zipSha256Path: batchWalk.export?.zipSha256Path ?? "batch-export.zip.sha256"
     }
   };
 }
@@ -386,6 +388,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.ndjsonSummaryPath) parts.push("ndjson");
   if (exp.csvSummaryPath) parts.push("csv");
   if (exp.jsonSummaryPath) parts.push("json");
+  if (exp.zipSha256Path) parts.push("sha256");
   if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
   if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
   if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);
@@ -483,6 +486,7 @@ export function buildDesktopBatchExportManifest(
     zipSha256?: string;
     totalBytes?: number;
     sealedAt?: string;
+    zipBytes?: number;
   }
 ): BatchExportManifest {
   return buildBatchExportManifest(paths, {
@@ -526,7 +530,8 @@ export function buildDesktopLiveBatchExportManifest(
       : {}),
     ...(exp?.zipSha256 ? { zipSha256: exp.zipSha256 } : {}),
     ...(exp?.totalBytes !== undefined ? { totalBytes: exp.totalBytes } : {}),
-    ...(exp?.sealedAt ? { sealedAt: exp.sealedAt } : {})
+    ...(exp?.sealedAt ? { sealedAt: exp.sealedAt } : {}),
+    ...(exp?.zipBytes !== undefined ? { zipBytes: exp.zipBytes } : {})
   });
 }
 

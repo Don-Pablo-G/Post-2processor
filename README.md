@@ -4508,6 +4508,43 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=37
 ```
 
+## Manifest zipBytes + verify JSON + desktop sha256 path + Schema v38
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `BatchExportManifest.zipBytes` (Schema v38)
+
+`CLI_SCHEMA_VERSION` bumps `37 → 38`.
+`BatchExportManifest` gains optional root `zipBytes` (compressed archive size;
+mirrors `batchWalk.export.zipBytes`, distinct from inventory `totalBytes`).
+
+### Move 2 — CLI seal records manifest `zipBytes`
+
+`--out-dir` seal rewrite stamps `zipBytes` onto the on-disk
+`batch-export-manifest.json` alongside `zipSha256` / `sealedAt`.
+
+### Move 3 — `verify-batch-export --format json`
+
+`verify-batch-export` accepts `--format json|text` (default text). JSON mode
+emits one object with `schemaVersion`, `ok`, `zip`, `sha256Path`, `zipSha256`,
+`zipBytes` (and `expectedZipSha256` on mismatch) for CI consumers.
+
+### Move 4 — Desktop live `zipSha256Path` + `sha256` chip
+
+`runDesktopBatchJobCheck` stamps relative logical `zipSha256Path`
+(`batch-export.zip.sha256`). Inventory chip includes `sha256` when the path is
+set. Live export manifests forward `zipBytes` when present on export.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=38
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

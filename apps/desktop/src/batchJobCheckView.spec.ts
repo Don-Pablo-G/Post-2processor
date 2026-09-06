@@ -165,6 +165,7 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.csvSummaryPath).toBe("batch-summary.csv");
     expect(exported.summary.batchWalk.export.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(exported.summary.batchWalk.export.jsonSummaryPath).toBe("batch-summary.json");
+    expect(exported.summary.batchWalk.export.zipSha256Path).toBe("batch-export.zip.sha256");
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -172,6 +173,11 @@ describe("batchJobCheckView", () => {
         .replace(/^batch-export:\s*/, "")
         .split(",")
     ).toContain("json");
+    expect(
+      formatDesktopBatchExportInventoryChip(batch.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
+    ).toContain("sha256");
     expect(batch.runResults).toHaveLength(2);
   });
 
@@ -188,6 +194,7 @@ describe("batchJobCheckView", () => {
     expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(stamped?.export?.jsonSummaryPath).toBe("batch-summary.json");
+    expect(stamped?.export?.zipSha256Path).toBe("batch-export.zip.sha256");
   });
 
   it("buildDesktopBatchSetupSheetPdfs emits one PDF per input", () => {
@@ -374,7 +381,8 @@ describe("batchJobCheckView", () => {
             byKind: { zip: 1, manifest: 1, "summary-json": 1 },
             ndjsonSummaryPath: "/out/batch-summary.ndjson",
             csvSummaryPath: "/out/batch-summary.csv",
-            jsonSummaryPath: "/out/batch-summary.json"
+            jsonSummaryPath: "/out/batch-summary.json",
+            zipSha256Path: "/out/batch-export.zip.sha256"
           }
         }
       }
@@ -401,6 +409,11 @@ describe("batchJobCheckView", () => {
         .replace(/^batch-export:\s*/, "")
         .split(",")
     ).toContain("json");
+    expect(
+      formatDesktopBatchExportInventoryChip(withExport.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
+    ).toContain("sha256");
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/written=12/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipEntries=10/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);
