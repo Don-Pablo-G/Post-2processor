@@ -161,6 +161,7 @@ export {
   buildBatchExportManifest,
   classifyBatchExportPath,
   formatBatchExportManifest,
+  formatBatchExportZipSha256Sidecar,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -208,6 +209,8 @@ export type { BuildSetupSheetPdfOptions } from "./workshop/setupSheetPdf.js";
 
 export { createStoreZip, createZip, crc32, deflateRaw } from "./workshop/storeZip.js";
 export type { StoreZipEntry, CreateZipOptions } from "./workshop/storeZip.js";
+
+export { computeSha256, computeSha256Bytes } from "./audit/auditTrailIntegrity.js";
 
 export function isNodeCapable(): boolean {
   return false;

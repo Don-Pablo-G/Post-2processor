@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 31;
+export const CLI_SCHEMA_VERSION = 32;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -797,6 +797,12 @@ export type CliBatchWalkExport = {
   zipSha256?: string;
   /** Schema v31: absolute path of the `batch-export.zip.sha256` sidecar. */
   zipSha256Path?: string;
+  /**
+   * Schema v32: byte length of the sealed `batch-export.zip` archive
+   * (compressed on-disk size). Distinct from manifest `totalBytes`, which
+   * sums known per-entry uncompressed sizes in the inventory.
+   */
+  zipBytes?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -1855,9 +1861,10 @@ export type BatchExportManifestEntry = {
 };
 
 /**
- * Schema v29–v31: machine-readable inventory of `--out-dir` / zip artifacts.
+ * Schema v29–v32: machine-readable inventory of `--out-dir` / zip artifacts.
  * Schema v30 adds `byKind` rollup and optional `zipEntryCount`.
  * Schema v31 adds optional per-entry `bytes` and root `zipSha256`.
+ * Schema v32 adds optional root `totalBytes` (sum of known entry bytes).
  */
 export type BatchExportManifest = {
   schemaVersion: number;
@@ -1866,6 +1873,11 @@ export type BatchExportManifest = {
   zipEntryCount?: number;
   /** Schema v31: SHA-256 of `batch-export.zip` when known. */
   zipSha256?: string;
+  /**
+   * Schema v32: sum of per-entry `bytes` when at least one entry reports a
+   * size (or an explicit override via `buildBatchExportManifest` options).
+   */
+  totalBytes?: number;
   entries: BatchExportManifestEntry[];
   byKind: Record<string, number>;
 };
@@ -1885,6 +1897,7 @@ export function buildBatchExportManifest(
     writtenFileCount?: number;
     zipEntryCount?: number;
     zipSha256?: string;
+    totalBytes?: number;
   }
 ): BatchExportManifest {
   const entries: BatchExportManifestEntry[] = paths.map((input) => {
@@ -1903,6 +1916,20 @@ export function buildBatchExportManifest(
   const sortedKinds = Object.keys(byKind).sort((a, b) => a.localeCompare(b));
   const orderedByKind: Record<string, number> = {};
   for (const k of sortedKinds) orderedByKind[k] = byKind[k]!;
+  let summedBytes = 0;
+  let anyBytes = false;
+  for (const entry of entries) {
+    if (entry.bytes !== undefined) {
+      anyBytes = true;
+      summedBytes += entry.bytes;
+    }
+  }
+  const totalBytes =
+    options?.totalBytes !== undefined
+      ? options.totalBytes
+      : anyBytes
+        ? summedBytes
+        : undefined;
   return {
     schemaVersion: options?.schemaVersion ?? CLI_SCHEMA_VERSION,
     ...(options?.outDir !== undefined ? { outDir: options.outDir } : {}),
@@ -1913,6 +1940,7 @@ export function buildBatchExportManifest(
       ? { zipEntryCount: options.zipEntryCount }
       : {}),
     ...(options?.zipSha256 !== undefined ? { zipSha256: options.zipSha256 } : {}),
+    ...(totalBytes !== undefined ? { totalBytes } : {}),
     entries,
     byKind: orderedByKind
   };
@@ -1920,4 +1948,14 @@ export function buildBatchExportManifest(
 
 export function formatBatchExportManifest(manifest: BatchExportManifest): string {
   return `${JSON.stringify(manifest, null, 2)}\n`;
+}
+
+/**
+ * Schema v31–v32: BSD shasum-compatible body for `batch-export.zip.sha256`.
+ */
+export function formatBatchExportZipSha256Sidecar(
+  zipSha256: string,
+  zipFilename = "batch-export.zip"
+): string {
+  return `${zipSha256}  ${zipFilename}\n`;
 }

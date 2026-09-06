@@ -57,6 +57,7 @@ import {
   buildBatchFixTemplateCandidates,
   buildBatchExportManifest,
   formatBatchExportManifest,
+  formatBatchExportZipSha256Sidecar,
   formatJobCheckJson,
   formatJobCheckNdjsonLine,
   type CliBatchEntry,
@@ -93,6 +94,7 @@ export {
   buildBatchExportManifest,
   classifyBatchExportPath,
   formatBatchExportManifest,
+  formatBatchExportZipSha256Sidecar,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -2021,7 +2023,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v31: summaries + SARIF, then manifest, then zip + sha256.
+      // Schema v18–v32: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
@@ -2138,11 +2140,12 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;
-        const shaSidecarBody = `${zipSha256}  batch-export.zip\n`;
+        const shaSidecarBody = formatBatchExportZipSha256Sidecar(zipSha256);
         await writeFn(zipSha256Path, shaSidecarBody);
         written += 1;
         batchWalk.export.zipSha256 = zipSha256;
         batchWalk.export.zipSha256Path = zipSha256Path;
+        batchWalk.export.zipBytes = zipBytes.byteLength;
 
         // Disk copies are authoritative for integrity metadata; zip stays sealed.
         const summaryJsonFinal = `${formatBatchJson(entries, { batchWalk })}\n`;

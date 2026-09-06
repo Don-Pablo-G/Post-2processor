@@ -4295,6 +4295,42 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=31
 ```
 
+## Zip bytes + manifest totalBytes + desktop ZIP SHA-256 + Schema v32
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `zipBytes` + manifest `totalBytes` (Schema v32)
+
+`CLI_SCHEMA_VERSION` bumps `31 → 32`.
+`batchWalk.export` gains optional `zipBytes` (sealed archive size).
+`BatchExportManifest` gains optional `totalBytes` (sum of known entry bytes).
+Shared `formatBatchExportZipSha256Sidecar` formats the BSD-style sidecar body.
+
+### Move 2 — CLI populates `zipBytes` / `totalBytes`
+
+After sealing `batch-export.zip`, `--out-dir` records `zipBytes` and rewrites
+the on-disk manifest with auto-rolled `totalBytes`.
+
+### Move 3 — Desktop ZIP download includes SHA-256 sidecar
+
+Folder batch **Download ZIP** also downloads `batch-export.zip.sha256`
+(client-side hash via shared `computeSha256Bytes`).
+
+### Move 4 — Inventory chip shows `zipBytes`
+
+When `zipBytes` is present, the batch-export inventory chip includes
+`zipBytes=<n>`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=32
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

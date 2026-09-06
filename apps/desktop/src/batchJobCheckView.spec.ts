@@ -14,6 +14,8 @@ import {
   formatDesktopBatchQuickFixPreviewChip,
   formatDesktopBatchSarifChip,
   formatDesktopBatchExportInventoryChip,
+  formatDesktopBatchExportZipSha256Sidecar,
+  computeDesktopBatchExportZipSha256,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchUnboundFixChip,
@@ -335,7 +337,8 @@ describe("batchJobCheckView", () => {
             exportManifestPath: "/out/batch-export-manifest.json",
             writtenFileCount: 12,
             zipEntryCount: 10,
-            zipSha256: "abcdef0123456789deadbeef"
+            zipSha256: "abcdef0123456789deadbeef",
+            zipBytes: 4096
           }
         }
       }
@@ -358,6 +361,7 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/written=12/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipEntries=10/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipBytes=4096/);
     expect(
       formatDesktopBatchQuickFixPreviewChip(
         buildDesktopBatchQuickFixPreviews(
@@ -374,5 +378,14 @@ describe("batchJobCheckView", () => {
         )
       )
     ).toMatch(/files=1/);
+  });
+
+  it("desktop zip sha256 sidecar helpers match CLI format", async () => {
+    const bytes = new TextEncoder().encode("batch-export-fixture");
+    const digest = await computeDesktopBatchExportZipSha256(bytes);
+    expect(digest).toMatch(/^[0-9a-f]{64}$/);
+    expect(formatDesktopBatchExportZipSha256Sidecar(digest)).toBe(
+      `${digest}  batch-export.zip\n`
+    );
   });
 });

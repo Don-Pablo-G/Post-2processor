@@ -120,6 +120,7 @@ import {
   buildDesktopBatchPatchedPrograms,
   buildDesktopBatchSetupSheetPdfs,
   buildDesktopBatchSetupSheetTxts,
+  computeDesktopBatchExportZipSha256,
   downloadDesktopBatchItems,
   downloadDesktopBatchSetupSheetPdfs,
   filterBatchJobCheckFiles,
@@ -129,6 +130,7 @@ import {
   formatDesktopBatchQuickFixPreviewsForExport,
   formatDesktopBatchAggregationsAsCsv,
   formatDesktopBatchExportManifest,
+  formatDesktopBatchExportZipSha256Sidecar,
   formatDesktopBatchPatchedProgramsChip,
   formatDesktopBatchSafetyChip,
   formatDesktopBatchSarifChip,
@@ -2156,14 +2158,23 @@ export function App() {
         }
       ];
       const bytes = await buildDesktopBatchArchiveZip(items, { compression: "deflate" });
+      const zipSha256 = await computeDesktopBatchExportZipSha256(bytes);
+      const shaSidecarBody = formatDesktopBatchExportZipSha256Sidecar(zipSha256);
       const { downloaded } = await downloadDesktopBatchItems([
         {
           filename: "batch-export.zip",
           body: bytes,
           mimeType: "application/zip"
+        },
+        {
+          filename: "batch-export.zip.sha256",
+          body: shaSidecarBody,
+          mimeType: "text/plain;charset=utf-8"
         }
       ]);
-      setExportStatus(`${t.batchJobCheckDownloadedZip}: ${downloaded} (${items.length} files)`);
+      setExportStatus(
+        `${t.batchJobCheckDownloadedZip}: ${downloaded} (${items.length} files, zipBytes=${bytes.byteLength}, zipSha=${zipSha256.slice(0, 8)})`
+      );
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Batch ZIP download failed.");
     }

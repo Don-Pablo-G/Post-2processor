@@ -31,6 +31,7 @@ import {
   formatBatchAggregationsAsCsv,
   buildBatchExportManifest,
   classifyBatchExportPath,
+  formatBatchExportZipSha256Sidecar,
   main,
   parseCliArgs,
   parseAuditDeprecatedRulesArgs,
@@ -1021,7 +1022,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=31\n");
+    expect(stdout).toBe("cnc-job-check schema=32\n");
     expect(stderr).toBe("");
   });
 
@@ -2632,8 +2633,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 31", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(31);
+  it("CLI_SCHEMA_VERSION is 32", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(32);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3973,7 +3974,7 @@ describe("Schema v31: zipSha256 + manifest entry bytes", () => {
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(31);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.zipSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(summary.summary.batchWalk.export.zipSha256Path).toMatch(/batch-export\.zip\.sha256$/);
     const sidecar = await readFile(path.join(outDir, "batch-export.zip.sha256"), "utf8");
@@ -3993,6 +3994,47 @@ describe("Schema v31: zipSha256 + manifest entry bytes", () => {
     expect(summary.summary.batchWalk.export.writtenFileCount).toBe(
       manifest.writtenFileCount
     );
+  });
+});
+
+describe("Schema v32: zipBytes + manifest totalBytes", () => {
+  it("buildBatchExportManifest rolls up totalBytes and formatBatchExportZipSha256Sidecar", () => {
+    const manifest = buildBatchExportManifest(
+      [
+        { path: "batch-summary.json", bytes: 10 },
+        { path: "batch-export.zip", bytes: 100 },
+        { path: "batch-export.zip.sha256", bytes: 80 }
+      ],
+      { schemaVersion: CLI_SCHEMA_VERSION, zipSha256: "b".repeat(64) }
+    );
+    expect(manifest.totalBytes).toBe(190);
+    expect(formatBatchExportZipSha256Sidecar("abcd", "batch-export.zip")).toBe(
+      "abcd  batch-export.zip\n"
+    );
+  });
+
+  it("--out-dir records zipBytes and manifest.totalBytes", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(32);
+    const zipBytesOnDisk = (await readFile(path.join(outDir, "batch-export.zip"))).byteLength;
+    expect(summary.summary.batchWalk.export.zipBytes).toBe(zipBytesOnDisk);
+    const manifest = JSON.parse(
+      await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
+    );
+    expect(manifest.totalBytes).toBeGreaterThan(0);
+    expect(
+      manifest.entries
+        .filter((e: { bytes?: number }) => typeof e.bytes === "number")
+        .reduce((sum: number, e: { bytes: number }) => sum + e.bytes, 0)
+    ).toBe(manifest.totalBytes);
   });
 });
 

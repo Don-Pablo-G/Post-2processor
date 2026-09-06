@@ -7,10 +7,12 @@ import {
   buildSetupSheetPdf,
   classifyBatchRelativePath,
   CLI_SCHEMA_VERSION,
+  computeSha256Bytes,
   createStoreZip,
   createZip,
   formatBatchAggregationsAsCsv,
   formatBatchExportManifest,
+  formatBatchExportZipSha256Sidecar,
   formatBatchFixCandidatesAsSarifLite,
   type BatchExportManifest,
   type BatchFixCandidateRow,
@@ -357,6 +359,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
   if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
   if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);
+  if (exp.zipBytes !== undefined) parts.push(`zipBytes=${exp.zipBytes}`);
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 
@@ -429,7 +432,7 @@ export function buildDesktopBatchEnvelopeJsonFiles(
 }
 
 /**
- * Schema v30–v31: client-side export manifest for desktop zip parity with CLI.
+ * Schema v30–v32: client-side export manifest for desktop zip parity with CLI.
  */
 export function buildDesktopBatchExportManifest(
   paths: ReadonlyArray<string | { path: string; bytes?: number }>,
@@ -438,6 +441,7 @@ export function buildDesktopBatchExportManifest(
     writtenFileCount?: number;
     zipEntryCount?: number;
     zipSha256?: string;
+    totalBytes?: number;
   }
 ): BatchExportManifest {
   return buildBatchExportManifest(paths, {
@@ -448,6 +452,21 @@ export function buildDesktopBatchExportManifest(
 
 export function formatDesktopBatchExportManifest(manifest: BatchExportManifest): string {
   return formatBatchExportManifest(manifest);
+}
+
+/** Schema v32: BSD-style body for a desktop-built `batch-export.zip.sha256`. */
+export function formatDesktopBatchExportZipSha256Sidecar(
+  zipSha256: string,
+  zipFilename = "batch-export.zip"
+): string {
+  return formatBatchExportZipSha256Sidecar(zipSha256, zipFilename);
+}
+
+/** Schema v32: SHA-256 hex of zip bytes (desktop parity with CLI seal). */
+export async function computeDesktopBatchExportZipSha256(
+  zipBytes: Uint8Array
+): Promise<string> {
+  return computeSha256Bytes(zipBytes);
 }
 
 export type BatchPdfDownloadEnvironment = {
