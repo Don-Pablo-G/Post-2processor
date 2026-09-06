@@ -225,6 +225,13 @@ function hasExactG50(block: { words: Word[] }): boolean {
   });
 }
 
+function hasExactG92(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 92;
+  });
+}
+
 function hasExactTappingCycle(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;
@@ -416,6 +423,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   ast.blocks.forEach((block, index) => {
     const hasM00 = hasWordM(block, 0);
     const hasM01 = hasWordM(block, 1);
+    if (hasM00 && hasM01) {
+      issues.push({
+        severity: "warning",
+        message: "M00 and M01 on the same block — pick one program stop.",
+        blockIndex: index
+      });
+    }
     if (hasM00 || hasM01) {
       const hasRestartSpindleSameBlock = block.words.some((w) => {
         if (w.letter !== "M") return false;
@@ -802,6 +816,23 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 6) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M6 while coordinate rotation (G68) is still active — cancel with G69 before the tool change.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 while scaling (G51) is still active — cancel with G50 before the tool change.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactFeedMotion(block) && !spindleActive) {
       issues.push({
         severity: "warning",
@@ -831,6 +862,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 98) && hasWordM(block, 97)) {
+      issues.push({
+        severity: "warning",
+        message: "M98 and M97 on the same block — pick one subprogram call style.",
+        blockIndex: index
+      });
+    }
+
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",
@@ -847,10 +886,43 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG65(block) && hasWordM(block, 98)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 and M98 on the same block — pick one call style (macro or subprogram).",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && hasWordM(block, 97)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 and M97 on the same block — pick one call style (macro or local subprogram).",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG65(block) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",
         message: "G65 without P — macro call needs an explicit program number.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && (hasWordM(block, 30) || hasWordM(block, 2))) {
+      issues.push({
+        severity: "warning",
+        message: "M99 and M02/M30 on the same block — pick one program-end or return command.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G92 coordinate system shift is uncommon and risky on mill programs — prefer work offsets (G54-G59).",
         blockIndex: index
       });
     }
@@ -867,6 +939,24 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G28 and G30 on the same block — pick one reference-return command.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && !incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G28 while absolute mode (G90) is active — use G91 with G28 intermediate points, then restore G90.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && !incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while absolute mode (G90) is active — use G91 with G30 intermediate points, then restore G90.",
         blockIndex: index
       });
     }

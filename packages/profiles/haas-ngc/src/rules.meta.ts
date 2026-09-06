@@ -579,6 +579,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
   },
   {
+    id: "haas.m98-and-m97-same-block",
+    severity: "warning",
+    messageMatcher: /M98 and M97 on the same block/,
+    summary: "Do not combine M98 and M97 subprogram calls on one block.",
+    positiveSnippet: "O0001\nT1 M6\nM98 P2 M97 P10\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nM98 P2\nM30\n"
+  },
+  {
+    id: "haas.g65-and-m98-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and M98 on the same block/,
+    summary: "Do not combine G65 macro call and M98 subprogram call on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG65 P9010 M98 P2\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG65 P9010\nM30\n"
+  },
+  {
+    id: "haas.m00-and-m01-same-block",
+    severity: "warning",
+    messageMatcher: /M00 and M01 on the same block/,
+    summary: "Do not combine program stop (M00) and optional stop (M01) on one block.",
+    positiveSnippet: "O0001\nT1 M6\nM00 M01\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nM00\nM30\n"
+  },
+  {
+    id: "haas.g28-while-absolute",
+    severity: "warning",
+    messageMatcher: /G28 while absolute mode \(G90\) is active/,
+    summary: "Use G91 with G28 intermediate points, then restore G90.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG28 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g30-while-absolute",
+    severity: "warning",
+    messageMatcher: /G30 while absolute mode \(G90\) is active/,
+    summary: "Use G91 with G30 intermediate points, then restore G90.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG30 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g65-and-m97-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and M97 on the same block/,
+    summary: "Do not combine G65 macro call and M97 local subprogram call on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG65 P9010 M97 P10\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG65 P9010\nM30\n"
+  },
+  {
+    id: "haas.m99-and-m30-same-block",
+    severity: "warning",
+    messageMatcher: /M99 and M02\/M30 on the same block/,
+    summary: "Do not combine M99 return with M02/M30 program end on one block.",
+    positiveSnippet: "O0001\nT1 M6\nM99 M30\n",
+    negativeSnippet: "O0001\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.m6-while-rotation",
+    severity: "warning",
+    messageMatcher: /M6 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68\nT2 M6\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.m6-while-scaling",
+    severity: "warning",
+    messageMatcher: /M6 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51\nT2 M6\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.g92-coordinate-set",
+    severity: "warning",
+    messageMatcher: /G92 coordinate system shift is uncommon and risky/,
+    summary: "Avoid G92 on mill programs — prefer work offsets (G54-G59).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG92 X0 Y0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG0 X0 Y0\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

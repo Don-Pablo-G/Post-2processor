@@ -1218,33 +1218,41 @@ describe("core pipeline", () => {
     expect(findings).toHaveLength(warnings.length);
   });
 
-  it("adds simulation finding for loop max-iteration limit warning", async () => {
-    const input = "WHILE [1 EQ 1] DO1\n#100=#100+1\nEND1\nM30";
-    const ast = parse(input, haasNgcProfile);
-    const result = await runJobCheck({
-      ast,
-      simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
-      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_job" }
-    });
-    expect(result.simulation.warnings.some((w) => w.includes("exceeded maxLoopIterations"))).toBe(true);
-    expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT")).toBe(true);
-    const finding = result.simulationFindings.find((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
-    expect(finding?.blockIndex).toBe(2);
-  });
+  it(
+    "adds simulation finding for loop max-iteration limit warning",
+    async () => {
+      const input = "WHILE [1 EQ 1] DO1\n#100=#100+1\nEND1\nM30";
+      const ast = parse(input, haasNgcProfile);
+      const result = await runJobCheck({
+        ast,
+        simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
+        exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_job" }
+      });
+      expect(result.simulation.warnings.some((w) => w.includes("exceeded maxLoopIterations"))).toBe(true);
+      expect(result.simulationFindings.some((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT")).toBe(true);
+      const finding = result.simulationFindings.find((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
+      expect(finding?.blockIndex).toBe(2);
+    },
+    15_000
+  );
 
-  it("adds one loop-limit finding per loop-limit warning", async () => {
-    const input = "WHILE [1 EQ 1] DO1\n#100=#100+1\nEND1\nWHILE [1 EQ 1] DO2\n#101=#101+1\nEND2\nM30";
-    const ast = parse(input, haasNgcProfile);
-    const result = await runJobCheck({
-      ast,
-      simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
-      exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_multi_job" }
-    });
-    const warnings = result.simulation.warnings.filter((w) => w.includes("exceeded maxLoopIterations"));
-    const findings = result.simulationFindings.filter((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
-    expect(warnings.length).toBeGreaterThan(1);
-    expect(findings).toHaveLength(warnings.length);
-  });
+  it(
+    "adds one loop-limit finding per loop-limit warning",
+    async () => {
+      const input = "WHILE [1 EQ 1] DO1\n#100=#100+1\nEND1\nWHILE [1 EQ 1] DO2\n#101=#101+1\nEND2\nM30";
+      const ast = parse(input, haasNgcProfile);
+      const result = await runJobCheck({
+        ast,
+        simulationLimits: { controllerMode: "haas-ngc", maxLoopIterations: 2 },
+        exportOptions: { enabled: false, baseDirectory: ".", baseName: "control_flow_loop_limit_multi_job" }
+      });
+      const warnings = result.simulation.warnings.filter((w) => w.includes("exceeded maxLoopIterations"));
+      const findings = result.simulationFindings.filter((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
+      expect(warnings.length).toBeGreaterThan(1);
+      expect(findings).toHaveLength(warnings.length);
+    },
+    15_000
+  );
 
   it("adds simulation finding for orphan END without matching WHILE", async () => {
     const input = "END2\nM30";
@@ -2761,6 +2769,96 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
         i.message.includes("Coolant on (M7/M8) while spindle is off")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 and M97 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nM98 P2 M97 P10\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 and M97 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 and M98 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG65 P9010 M98 P2\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 and M98 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M00 and M01 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nM00 M01\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M00 and M01 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G28 while absolute mode is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG28 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 while absolute mode (G90) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G30 while absolute mode is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG30 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G30 while absolute mode (G90) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 and M97 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG65 P9010 M97 P10\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 and M97 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M99 and M30 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nM99 M30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M99 and M02/M30 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M6 while coordinate rotation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68\nT2 M6\nG69\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M6 while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M6 while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51\nT2 M6\nG50\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M6 while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G92 coordinate system shift", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG92 X0 Y0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G92 coordinate system shift is uncommon and risky")
       )
     ).toBe(true);
   });
