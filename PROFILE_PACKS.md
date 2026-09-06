@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 138
+Total rules: 139 (of which 13 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -52,7 +52,7 @@ Total rules: 138
 | `haas.arc-r-and-ijk` | warning | — | — | Arcs should use either R or I/J/K, not both on the same block. |
 | `haas.g94-and-g95-mixed` | warning | — | — | Mixing G94 and G95 feed modes in one program is ambiguous — pick one. |
 | `haas.missing-o-header` | warning | — | — | Haas NGC programs usually begin with an O#### program number. |
-| `haas.spindle-direction-conflict` | warning | — | — | Do not combine M3/M13 with M4/M14 on the same block. |
+| `haas.spindle-direction-conflict` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.canned-without-f` | warning | — | — | Canned cycle activation needs a feed F on the block or earlier in the program. |
 | `haas.peck-without-q` | warning | — | — | G73/G83 peck cycles need an explicit Q peck depth. |
 | `haas.g68-active-at-end` | warning | — | — | Cancel coordinate rotation with G69 before M02/M30. |
@@ -66,8 +66,8 @@ Total rules: 138
 | `haas.plane-change-after-motion` | warning | — | — | Changing G17/G18/G19 after motion may be unintentional — verify the switch. |
 | `haas.feed-mode-change-after-motion` | warning | — | — | Changing G94/G95 after feed/canned motion may be unintentional — verify the switch. |
 | `haas.g61-and-g64-mixed` | warning | — | — | Mixing G61 and G64 path modes in one program is ambiguous — pick one. |
-| `haas.spindle-on-and-off-same-block` | warning | — | — | Do not combine spindle start (M3/M4) and stop (M5) on one block. |
-| `haas.coolant-on-and-off-same-block` | warning | — | — | Do not combine coolant on (M7/M8) and off (M9) on one block. |
+| `haas.spindle-on-and-off-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
+| `haas.coolant-on-and-off-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.distance-mode-change-after-motion` | warning | — | — | Changing G90/G91 after motion may be unintentional — verify the switch. |
 | `haas.g40-and-cutter-comp-same-block` | warning | — | — | Do not cancel and apply cutter compensation on the same block. |
 | `haas.g80-and-canned-same-block` | warning | — | — | Do not cancel and start a canned cycle on the same block. |
@@ -77,23 +77,23 @@ Total rules: 138
 | `haas.g41-and-g42-same-block` | warning | — | — | Do not combine G41 and G42 on one block — pick one cutter side. |
 | `haas.m6-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a tool change (M6). |
 | `haas.g53-with-work-offset` | warning | — | — | Do not combine G53 machine coordinates with a work offset on one block. |
-| `haas.coolant-m7-and-m8-same-block` | warning | — | — | Do not combine mist (M7) and flood (M8) coolant on one block. |
+| `haas.coolant-m7-and-m8-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.g68-and-g69-same-block` | warning | — | — | Do not apply and cancel coordinate rotation on the same block. |
 | `haas.g50-and-g51-same-block` | warning | — | — | Do not apply and cancel scaling on the same block. |
 | `haas.g28-and-g30-same-block` | warning | — | — | Do not combine G28 and G30 reference-return on one block. |
 | `haas.spindle-reverse-without-stop` | warning | — | — | Stop the spindle with M5 before reversing M3/M4 (or M13/M14). |
 | `haas.coolant-while-spindle-off` | warning | — | — | Do not turn coolant on after the spindle has been stopped — restart spindle first. |
-| `haas.m98-and-m97-same-block` | warning | — | — | Do not combine M98 and M97 subprogram calls on one block. |
+| `haas.m98-and-m97-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.g65-and-m98-same-block` | warning | — | — | Do not combine G65 macro call and M98 subprogram call on one block. |
-| `haas.m00-and-m01-same-block` | warning | — | — | Do not combine program stop (M00) and optional stop (M01) on one block. |
+| `haas.m00-and-m01-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.g28-while-absolute` | warning | — | — | Use G91 with G28 intermediate points, then restore G90. |
 | `haas.g30-while-absolute` | warning | — | — | Use G91 with G30 intermediate points, then restore G90. |
 | `haas.g65-and-m97-same-block` | warning | — | — | Do not combine G65 macro call and M97 local subprogram call on one block. |
-| `haas.m99-and-m30-same-block` | warning | — | — | Do not combine M99 return with M02/M30 program end on one block. |
+| `haas.m99-and-m30-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.m6-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before a tool change (M6). |
 | `haas.m6-while-scaling` | warning | — | — | Cancel scaling with G50 before a tool change (M6). |
 | `haas.g92-coordinate-set` | warning | — | — | Avoid G92 on mill programs — prefer work offsets (G54-G59). |
-| `haas.m98-and-m99-same-block` | warning | — | — | Do not combine M98 subprogram call and M99 return on one block. |
+| `haas.m98-and-m99-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.g28-without-axis` | warning | — | — | G28 should include an intermediate axis point (e.g. G91 G28 Z0). |
 | `haas.g30-without-axis` | warning | — | — | G30 should include an intermediate axis point (e.g. G91 G30 Z0). |
 | `haas.g28-and-g53-same-block` | warning | — | — | Do not combine G28 reference return and G53 machine move on one block. |
@@ -101,7 +101,7 @@ Total rules: 138
 | `haas.g30-and-g53-same-block` | warning | — | — | Do not combine G30 reference return and G53 machine move on one block. |
 | `haas.g53-without-axis` | warning | — | — | G53 should include a machine-coordinate axis move (e.g. G53 Z0). |
 | `haas.g53-multi-axis` | warning | — | — | Prefer single-axis G53 moves for safer machine positioning. |
-| `haas.m97-and-m99-same-block` | warning | — | — | Do not combine M97 local subprogram call and M99 return on one block. |
+| `haas.m97-and-m99-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.g4-and-motion-same-block` | warning | — | — | Do not combine G4 dwell with G0/G1/G2/G3 on one block. |
 | `haas.g65-and-m99-same-block` | warning | — | — | Do not combine G65 macro call and M99 return on one block. |
 | `haas.m6-while-incremental` | warning | — | — | Restore absolute mode with G90 before a tool change (M6). |
@@ -134,15 +134,16 @@ Total rules: 138
 | `haas.g4-and-g28-same-block` | warning | — | — | Do not combine G4 dwell with G28 on one block. |
 | `haas.g4-and-g30-same-block` | warning | — | — | Do not combine G4 dwell with G30 on one block. |
 | `haas.g4-and-g53-same-block` | warning | — | — | Do not combine G4 dwell with G53 on one block. |
-| `haas.m6-and-m98-same-block` | warning | — | — | Do not combine a tool change (M6) with M98 on one block. |
-| `haas.m6-and-m97-same-block` | warning | — | — | Do not combine a tool change (M6) with M97 on one block. |
+| `haas.m6-and-m98-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
+| `haas.m6-and-m97-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.m6-and-g65-same-block` | warning | — | — | Do not combine a tool change (M6) with G65 on one block. |
-| `haas.m6-and-m00-same-block` | warning | — | — | Do not combine a tool change (M6) with program stop (M00) on one block. |
-| `haas.m6-and-m01-same-block` | warning | — | — | Do not combine a tool change (M6) with optional stop (M01) on one block. |
+| `haas.m6-and-m00-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
+| `haas.m6-and-m01-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.m98-and-g28-same-block` | warning | — | — | Do not combine M98 with G28 on one block. |
 | `haas.m97-and-g28-same-block` | warning | — | — | Do not combine M97 with G28 on one block. |
 | `haas.g65-and-g28-same-block` | warning | — | — | Do not combine G65 with G28 on one block. |
 | `haas.m98-and-g53-same-block` | warning | — | — | Do not combine M98 with G53 on one block. |
+| `haas.multiple-m-codes-same-block` | warning | — | — | Haas allows only one M function per block — split M codes onto separate blocks. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -1212,8 +1213,10 @@ M30
 ### `haas.spindle-direction-conflict`
 
 - **Severity:** warning
-- **Matcher:** `/Conflicting spindle directions on one block/`
-- **Summary:** Do not combine M3/M13 with M4/M14 on the same block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -1618,8 +1621,10 @@ M30
 ### `haas.spindle-on-and-off-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Spindle start and stop on the same block/`
-- **Summary:** Do not combine spindle start (M3/M4) and stop (M5) on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -1643,8 +1648,10 @@ M30
 ### `haas.coolant-on-and-off-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Coolant on and off on the same block/`
-- **Summary:** Do not combine coolant on (M7/M8) and off (M9) on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -1941,8 +1948,10 @@ M30
 ### `haas.coolant-m7-and-m8-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Coolant mist and flood on the same block/`
-- **Summary:** Do not combine mist (M7) and flood (M8) coolant on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -2112,8 +2121,10 @@ M30
 ### `haas.m98-and-m97-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M98 and M97 on the same block/`
-- **Summary:** Do not combine M98 and M97 subprogram calls on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -2160,8 +2171,10 @@ M30
 ### `haas.m00-and-m01-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M00 and M01 on the same block/`
-- **Summary:** Do not combine program stop (M00) and optional stop (M01) on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -2266,8 +2279,10 @@ M30
 ### `haas.m99-and-m30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M99 and M02\/M30 on the same block/`
-- **Summary:** Do not combine M99 return with M02/M30 program end on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -2374,8 +2389,10 @@ M30
 ### `haas.m98-and-m99-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M98 and M99 on the same block/`
-- **Summary:** Do not combine M98 subprogram call and M99 return on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -2598,8 +2615,10 @@ M30
 ### `haas.m97-and-m99-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M97 and M99 on the same block/`
-- **Summary:** Do not combine M97 local subprogram call and M99 return on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -3606,8 +3625,10 @@ M30
 ### `haas.m6-and-m98-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and M98 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with M98 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -3633,8 +3654,10 @@ M30
 ### `haas.m6-and-m97-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and M97 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with M97 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -3687,8 +3710,10 @@ M30
 ### `haas.m6-and-m00-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and M00 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with program stop (M00) on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -3714,8 +3739,10 @@ M30
 ### `haas.m6-and-m01-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and M01 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with optional stop (M01) on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.multiple-m-codes-same-block (Haas allows only one M function per block).
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.
 
 **Triggers (positive):**
 
@@ -3857,6 +3884,33 @@ G54
 G90
 G53 Z0
 M98 P2
+M30
+```
+
+### `haas.multiple-m-codes-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Multiple M codes on the same block/`
+- **Summary:** Haas allows only one M function per block — split M codes onto separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3 M8
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M5
 M30
 ```
 

@@ -2496,7 +2496,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nS1200 M3 M4\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Conflicting spindle directions")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2624,7 +2624,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nS1200 M3 M5\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Spindle start and stop on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2633,7 +2633,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nS1200 M3\nM8 M9\nM5\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Coolant on and off on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2723,7 +2723,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nS1200 M3\nM7 M8\nM9\nM5\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Coolant mist and flood on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2777,7 +2777,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nM98 P2 M97 P10\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M98 and M97 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2795,7 +2795,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nM00 M01\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M00 and M01 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2831,7 +2831,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nM99 M30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M99 and M02/M30 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2867,7 +2867,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nM98 P2 M99\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M98 and M99 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -2933,7 +2933,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nM97 P10 M99\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M97 and M99 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -3246,7 +3246,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nT2 M6 M98 P2\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and M98 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -3255,7 +3255,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nT2 M6 M97 P10\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and M97 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -3273,7 +3273,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nT2 M6 M00\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and M00 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });
@@ -3282,7 +3282,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nT2 M6 M01\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and M01 on the same block")
+        i.message.includes("Multiple M codes on the same block")
       )
     ).toBe(true);
   });

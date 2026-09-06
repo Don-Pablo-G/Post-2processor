@@ -333,10 +333,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.spindle-direction-conflict",
     severity: "warning",
-    messageMatcher: /Conflicting spindle directions on one block/,
-    summary: "Do not combine M3/M13 with M4/M14 on the same block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nS1200 M3 M4\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.canned-without-f",
@@ -445,18 +447,22 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.spindle-on-and-off-same-block",
     severity: "warning",
-    messageMatcher: /Spindle start and stop on the same block/,
-    summary: "Do not combine spindle start (M3/M4) and stop (M5) on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nS1200 M3 M5\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.coolant-on-and-off-same-block",
     severity: "warning",
-    messageMatcher: /Coolant on and off on the same block/,
-    summary: "Do not combine coolant on (M7/M8) and off (M9) on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM8 M9\nM5\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.distance-mode-change-after-motion",
@@ -533,10 +539,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.coolant-m7-and-m8-same-block",
     severity: "warning",
-    messageMatcher: /Coolant mist and flood on the same block/,
-    summary: "Do not combine mist (M7) and flood (M8) coolant on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM7 M8\nM9\nM5\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.g68-and-g69-same-block",
@@ -581,10 +589,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m98-and-m97-same-block",
     severity: "warning",
-    messageMatcher: /M98 and M97 on the same block/,
-    summary: "Do not combine M98 and M97 subprogram calls on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nM98 P2 M97 P10\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nM98 P2\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nM98 P2\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.g65-and-m98-same-block",
@@ -597,10 +607,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m00-and-m01-same-block",
     severity: "warning",
-    messageMatcher: /M00 and M01 on the same block/,
-    summary: "Do not combine program stop (M00) and optional stop (M01) on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nM00 M01\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nM00\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nM00\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.g28-while-absolute",
@@ -629,10 +641,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m99-and-m30-same-block",
     severity: "warning",
-    messageMatcher: /M99 and M02\/M30 on the same block/,
-    summary: "Do not combine M99 return with M02/M30 program end on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nM99 M30\n",
-    negativeSnippet: "O0001\nT1 M6\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.m6-while-rotation",
@@ -661,10 +675,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m98-and-m99-same-block",
     severity: "warning",
-    messageMatcher: /M98 and M99 on the same block/,
-    summary: "Do not combine M98 subprogram call and M99 return on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nM98 P2 M99\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nM98 P2\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nM98 P2\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.g28-without-axis",
@@ -725,10 +741,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m97-and-m99-same-block",
     severity: "warning",
-    messageMatcher: /M97 and M99 on the same block/,
-    summary: "Do not combine M97 local subprogram call and M99 return on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nM97 P10 M99\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nM97 P10\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nM97 P10\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.g4-and-motion-same-block",
@@ -989,18 +1007,22 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m6-and-m98-same-block",
     severity: "warning",
-    messageMatcher: /M6 and M98 on the same block/,
-    summary: "Do not combine a tool change (M6) with M98 on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nG54\nT2 M6 M98 P2\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM98 P2\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM98 P2\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.m6-and-m97-same-block",
     severity: "warning",
-    messageMatcher: /M6 and M97 on the same block/,
-    summary: "Do not combine a tool change (M6) with M97 on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nG54\nT2 M6 M97 P10\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM97 P10\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM97 P10\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.m6-and-g65-same-block",
@@ -1013,18 +1035,22 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m6-and-m00-same-block",
     severity: "warning",
-    messageMatcher: /M6 and M00 on the same block/,
-    summary: "Do not combine a tool change (M6) with program stop (M00) on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nG54\nT2 M6 M00\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM00\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM00\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.m6-and-m01-same-block",
     severity: "warning",
-    messageMatcher: /M6 and M01 on the same block/,
-    summary: "Do not combine a tool change (M6) with optional stop (M01) on one block.",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block.",
     positiveSnippet: "O0001\nT1 M6\nG54\nT2 M6 M01\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM01\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM01\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.multiple-m-codes-same-block (Haas allows only one M function per block)."
   },
   {
     id: "haas.m98-and-g28-same-block",
@@ -1057,6 +1083,14 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Do not combine M98 with G53 on one block.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM98 P2 G53 Z0\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM98 P2\nM30\n"
+  },
+  {
+    id: "haas.multiple-m-codes-same-block",
+    severity: "warning",
+    messageMatcher: /Multiple M codes on the same block/,
+    summary: "Haas allows only one M function per block — split M codes onto separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3 M8\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM5\nM30\n"
   },
   {
     id: "haas.t0-selected",

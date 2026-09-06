@@ -96,18 +96,6 @@ function hasCoolantOn(block: { words: Word[] }): boolean {
   });
 }
 
-function hasCoolantMistAndFlood(block: { words: Word[] }): boolean {
-  let mist = false;
-  let flood = false;
-  for (const w of block.words) {
-    if (w.letter !== "M") continue;
-    const m = Math.trunc(Number.parseFloat(w.value));
-    if (m === 7) mist = true;
-    if (m === 8) flood = true;
-  }
-  return mist && flood;
-}
-
 function hasSpindleOn(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "M") return false;
@@ -299,16 +287,8 @@ function hasExactG61Or64(block: { words: Word[] }): 61 | 64 | undefined {
   return mode;
 }
 
-function hasSpindleDirectionConflict(block: { words: Word[] }): boolean {
-  let cw = false;
-  let ccw = false;
-  for (const w of block.words) {
-    if (w.letter !== "M") continue;
-    const m = Math.trunc(Number.parseFloat(w.value));
-    if (m === 3 || m === 13) cw = true;
-    if (m === 4 || m === 14) ccw = true;
-  }
-  return cw && ccw;
+function mWordCount(block: { words: Word[] }): number {
+  return block.words.reduce((count, w) => (w.letter === "M" ? count + 1 : count), 0);
 }
 
 function spindleDirectionOf(block: { words: Word[] }): "cw" | "ccw" | undefined {
@@ -428,15 +408,17 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     | undefined;
 
   ast.blocks.forEach((block, index) => {
-    const hasM00 = hasWordM(block, 0);
-    const hasM01 = hasWordM(block, 1);
-    if (hasM00 && hasM01) {
+    if (mWordCount(block) > 1) {
       issues.push({
         severity: "warning",
-        message: "M00 and M01 on the same block — pick one program stop.",
+        message:
+          "Multiple M codes on the same block — Haas allows only one M function per block.",
         blockIndex: index
       });
     }
+
+    const hasM00 = hasWordM(block, 0);
+    const hasM01 = hasWordM(block, 1);
     if (hasM00 || hasM01) {
       const hasRestartSpindleSameBlock = block.words.some((w) => {
         if (w.letter !== "M") return false;
@@ -586,14 +568,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       activeSpindleDirection = undefined;
     }
 
-    if (hasSpindleOn(block) && hasSpindleOff(block)) {
-      issues.push({
-        severity: "warning",
-        message: "Spindle start and stop on the same block (M3/M4/M13/M14 with M5).",
-        blockIndex: index
-      });
-    }
-
     if (hasCoolantOn(block) && sawSpindleOn && !spindleActive && !hasSpindleOn(block)) {
       issues.push({
         severity: "warning",
@@ -607,22 +581,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
     if (hasCoolantOff(block)) {
       coolantActive = false;
-    }
-
-    if (hasCoolantOn(block) && hasCoolantOff(block)) {
-      issues.push({
-        severity: "warning",
-        message: "Coolant on and off on the same block (M7/M8 with M9).",
-        blockIndex: index
-      });
-    }
-
-    if (hasCoolantMistAndFlood(block)) {
-      issues.push({
-        severity: "warning",
-        message: "Coolant mist and flood on the same block (M7 with M8) — pick one coolant mode.",
-        blockIndex: index
-      });
     }
 
     if (hasG43Classic(block)) {
@@ -894,22 +852,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
-    if (hasWordM(block, 98) && hasWordM(block, 97)) {
-      issues.push({
-        severity: "warning",
-        message: "M98 and M97 on the same block — pick one subprogram call style.",
-        blockIndex: index
-      });
-    }
-
-    if (hasWordM(block, 98) && hasWordM(block, 99)) {
-      issues.push({
-        severity: "warning",
-        message: "M98 and M99 on the same block — call and return conflict.",
-        blockIndex: index
-      });
-    }
-
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",
@@ -922,14 +864,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "M97 without P — local subprogram call needs an explicit N-target number.",
-        blockIndex: index
-      });
-    }
-
-    if (hasWordM(block, 97) && hasWordM(block, 99)) {
-      issues.push({
-        severity: "warning",
-        message: "M97 and M99 on the same block — call and return conflict.",
         blockIndex: index
       });
     }
@@ -962,14 +896,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G65 without P — macro call needs an explicit program number.",
-        blockIndex: index
-      });
-    }
-
-    if (hasWordM(block, 99) && (hasWordM(block, 30) || hasWordM(block, 2))) {
-      issues.push({
-        severity: "warning",
-        message: "M99 and M02/M30 on the same block — pick one program-end or return command.",
         blockIndex: index
       });
     }
@@ -1324,42 +1250,10 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
-    if (hasWordM(block, 6) && hasWordM(block, 98)) {
-      issues.push({
-        severity: "warning",
-        message: "M6 and M98 on the same block — tool change and subprogram call separately.",
-        blockIndex: index
-      });
-    }
-
-    if (hasWordM(block, 6) && hasWordM(block, 97)) {
-      issues.push({
-        severity: "warning",
-        message: "M6 and M97 on the same block — tool change and local subprogram call separately.",
-        blockIndex: index
-      });
-    }
-
     if (hasWordM(block, 6) && hasExactG65(block)) {
       issues.push({
         severity: "warning",
         message: "M6 and G65 on the same block — tool change and macro call separately.",
-        blockIndex: index
-      });
-    }
-
-    if (hasWordM(block, 6) && hasWordM(block, 0)) {
-      issues.push({
-        severity: "warning",
-        message: "M6 and M00 on the same block — tool change and program stop separately.",
-        blockIndex: index
-      });
-    }
-
-    if (hasWordM(block, 6) && hasWordM(block, 1)) {
-      issues.push({
-        severity: "warning",
-        message: "M6 and M01 on the same block — tool change and optional stop separately.",
         blockIndex: index
       });
     }
@@ -1393,14 +1287,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "M98 and G53 on the same block — subprogram call and machine move separately.",
-        blockIndex: index
-      });
-    }
-
-    if (hasSpindleDirectionConflict(block)) {
-      issues.push({
-        severity: "warning",
-        message: "Conflicting spindle directions on one block (M3/M13 with M4/M14).",
         blockIndex: index
       });
     }
