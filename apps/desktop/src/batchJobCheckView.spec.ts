@@ -18,6 +18,7 @@ import {
   computeDesktopBatchExportZipSha256,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
+  formatDesktopBatchSummaryAsNdjson,
   formatDesktopBatchUnboundFixChip,
   formatDesktopBatchUnboundFixesAsSarifLite,
   formatDesktopBatchPatchedProgramsForClipboard,
@@ -156,6 +157,9 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchSummaryChip(batch.envelope)).toMatch(/files=2/);
     const exported = JSON.parse(formatDesktopBatchSummaryForExport(batch.envelope));
     expect(exported.schemaVersion).toBe(CLI_SCHEMA_VERSION);
+    const ndjsonLine = formatDesktopBatchSummaryAsNdjson(batch.envelope).trimEnd();
+    expect(JSON.parse(ndjsonLine).schemaVersion).toBe(CLI_SCHEMA_VERSION);
+    expect(formatDesktopBatchSummaryAsNdjson(batch.envelope).endsWith("\n")).toBe(true);
     expect(exported.summary.batchWalk.matched).toBe(2);
     expect(batch.runResults).toHaveLength(2);
   });
@@ -340,7 +344,8 @@ describe("batchJobCheckView", () => {
             zipSha256: "abcdef0123456789deadbeef",
             zipBytes: 4096,
             totalBytes: 8192,
-            sealedAt: "2026-09-06T14:05:30.123Z"
+            sealedAt: "2026-09-06T14:05:30.123Z",
+            byKind: { zip: 1, manifest: 1, "summary-json": 1 }
           }
         }
       }
@@ -365,6 +370,7 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipBytes=4096/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/totalBytes=8192/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/kinds=3/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(
       /sealedAt=2026-09-06T14:05/
     );

@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=33\n");
+    expect(stdout).toBe("cnc-job-check schema=34\n");
     expect(stderr).toBe("");
   });
 
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 33", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(33);
+  it("CLI_SCHEMA_VERSION is 34", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(34);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4059,7 +4059,7 @@ describe("Schema v33: sealedAt + totalBytes on export + verify-batch-export", ()
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(33);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.sealedAt).toMatch(
       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
     );
@@ -4078,6 +4078,16 @@ describe("Schema v33: sealedAt + totalBytes on export + verify-batch-export", ()
     expect(
       parseVerifyBatchExportArgs(["--zip", "a.zip", "--sha256", "a.sha256", "--quiet"])
     ).toEqual({ zip: "a.zip", sha256: "a.sha256", quiet: true, help: false });
+  });
+
+  it("parseVerifyBatchExportArgs --out-dir resolves zip + sha256 paths", () => {
+    const args = parseVerifyBatchExportArgs(["--out-dir", "/exports/run1"]);
+    expect(args.zip).toMatch(/batch-export\.zip$/);
+    expect(args.sha256).toMatch(/batch-export\.zip\.sha256$/);
+    expect(args.outDir).toBe("/exports/run1");
+    expect(() =>
+      parseVerifyBatchExportArgs(["--out-dir", "/x", "--zip", "a.zip"])
+    ).toThrow(/mutually exclusive/);
   });
 
   it("verify-batch-export accepts a matching zip + sidecar", async () => {
@@ -4136,6 +4146,49 @@ describe("Schema v33: sealedAt + totalBytes on export + verify-batch-export", ()
     );
     expect(exit).toBe(1);
     expect(stderr).toMatch(/sha256 mismatch/);
+  });
+});
+
+describe("Schema v34: byKind on export + verify-batch-export --out-dir", () => {
+  it("--out-dir records export.byKind mirroring the manifest", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(34);
+    expect(summary.summary.batchWalk.export.byKind).toBeDefined();
+    expect(summary.summary.batchWalk.export.byKind.manifest).toBe(1);
+    expect(summary.summary.batchWalk.export.byKind.zip).toBe(1);
+    const manifest = JSON.parse(
+      await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
+    );
+    expect(summary.summary.batchWalk.export.byKind).toEqual(manifest.byKind);
+  });
+
+  it("verify-batch-export --out-dir verifies a sealed export directory", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    let stdout = "";
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => {
+        stdout += c;
+      },
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(stdout).toMatch(/verify-batch-export: sha256 OK/);
   });
 });
 

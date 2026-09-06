@@ -138,6 +138,7 @@ import {
   formatDesktopBatchExportInventoryChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
+  formatDesktopBatchSummaryAsNdjson,
   formatDesktopBatchUnboundFixChip,
   formatDesktopBatchUnboundFixesAsSarifLite,
   formatDesktopBatchPatchedProgramsForClipboard,
@@ -311,6 +312,8 @@ const UI_TEXT: Record<
     batchJobCheckCopyJsonFallback: string;
     batchJobCheckDownloadJson: string;
     batchJobCheckDownloadedJson: string;
+    batchJobCheckDownloadNdjson: string;
+    batchJobCheckDownloadedNdjson: string;
     batchJobCheckEmpty: string;
     batchJobCheckRecursive: string;
     batchJobCheckInclude: string;
@@ -640,6 +643,8 @@ const UI_TEXT: Record<
     batchJobCheckCopyJsonFallback: "Kopiuj envelope batch ręcznie",
     batchJobCheckDownloadJson: "Pobierz JSON batch",
     batchJobCheckDownloadedJson: "Pobrano JSON batch",
+    batchJobCheckDownloadNdjson: "Pobierz NDJSON batch",
+    batchJobCheckDownloadedNdjson: "Pobrano NDJSON batch",
     batchJobCheckEmpty: "Brak plików .nc/.tap/.gcode w folderze",
     batchJobCheckRecursive: "Rekursywnie",
     batchJobCheckInclude: "Include (glob)",
@@ -970,6 +975,8 @@ const UI_TEXT: Record<
     batchJobCheckCopyJsonFallback: "Copy batch envelope manually",
     batchJobCheckDownloadJson: "Download batch JSON",
     batchJobCheckDownloadedJson: "Downloaded batch JSON",
+    batchJobCheckDownloadNdjson: "Download batch NDJSON",
+    batchJobCheckDownloadedNdjson: "Downloaded batch NDJSON",
     batchJobCheckEmpty: "No .nc/.tap/.gcode files in folder",
     batchJobCheckRecursive: "Recursive",
     batchJobCheckInclude: "Include (glob)",
@@ -2040,6 +2047,23 @@ export function App() {
       setExportStatus(`${t.batchJobCheckDownloadedJson}: ${downloaded}`);
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Batch JSON download failed.");
+    }
+  }
+
+  async function handleDownloadBatchJobCheckNdjson(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const payload = formatDesktopBatchSummaryAsNdjson(batchJobCheckResult.envelope);
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-summary.ndjson",
+          body: payload,
+          mimeType: "application/x-ndjson;charset=utf-8"
+        }
+      ]);
+      setExportStatus(`${t.batchJobCheckDownloadedNdjson}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch NDJSON download failed.");
     }
   }
 
@@ -4165,6 +4189,13 @@ export function App() {
                 onClick={() => void handleDownloadBatchJobCheckJson()}
               >
                 {t.batchJobCheckDownloadJson}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-ndjson"
+                onClick={() => void handleDownloadBatchJobCheckNdjson()}
+              >
+                {t.batchJobCheckDownloadNdjson}
               </button>
               <button
                 type="button"

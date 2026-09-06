@@ -4368,6 +4368,42 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=33
 ```
 
+## Export byKind + verify --out-dir + desktop NDJSON + Schema v34
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `byKind` on `batchWalk.export` (Schema v34)
+
+`CLI_SCHEMA_VERSION` bumps `33 → 34`.
+`batchWalk.export` gains optional `byKind` (mirror of the export manifest
+kind rollup) for summary / inventory consumers.
+
+### Move 2 — CLI seal + `verify-batch-export --out-dir`
+
+`--out-dir` copies `manifest.byKind` onto `batchWalk.export` when sealing.
+`verify-batch-export` accepts `--out-dir <dir>` as a shorthand that resolves
+`<dir>/batch-export.zip` and `<dir>/batch-export.zip.sha256`.
+
+### Move 3 — Desktop Download batch NDJSON
+
+Folder batch gains **Download batch NDJSON** (`batch-summary.ndjson`, one
+JSON envelope per line).
+
+### Move 4 — Inventory chip shows `kinds=`
+
+When `byKind` is present, the batch-export inventory chip includes
+`kinds=<distinct kind count>`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=34
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

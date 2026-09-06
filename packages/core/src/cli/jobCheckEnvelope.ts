@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 33;
+export const CLI_SCHEMA_VERSION = 34;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -813,6 +813,11 @@ export type CliBatchWalkExport = {
    * (sum of known per-entry sizes) for summary consumers.
    */
   totalBytes?: number;
+  /**
+   * Schema v34: mirror of the export manifest's `byKind` rollup for
+   * summary / inventory-chip consumers that do not open the manifest.
+   */
+  byKind?: Record<string, number>;
 };
 
 export type CliBatchBlockReasonAggregation = {

@@ -279,7 +279,7 @@ export function parseVerifyAuditTrailArgs(argv: readonly string[]): VerifyAuditT
 }
 
 export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
-  "Usage: cnc-job-check verify-batch-export --zip <file> --sha256 <file>",
+  "Usage: cnc-job-check verify-batch-export (--zip <file> --sha256 <file>|--out-dir <dir>)",
   "",
   "Verifies a sealed `batch-export.zip` against its BSD-style",
   "`batch-export.zip.sha256` sidecar (`<hex>  batch-export.zip`).",
@@ -290,8 +290,11 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "  2   argument or IO error",
   "",
   "Options:",
-  "  --zip <file>               Required. Path to batch-export.zip (binary).",
-  "  --sha256 <file>            Required. Path to the .sha256 sidecar (text).",
+  "  --zip <file>               Path to batch-export.zip (binary). Required unless --out-dir.",
+  "  --sha256 <file>            Path to the .sha256 sidecar (text). Required unless --out-dir.",
+  "  --out-dir <dir>            Schema v34: resolve zip + sidecar as <dir>/batch-export.zip",
+  "                            and <dir>/batch-export.zip.sha256. Mutually exclusive with",
+  "                            --zip / --sha256.",
   "  --quiet                    Suppress the per-success `OK` line on stdout.",
   "  --help, -h                 Show this message"
 ].join("\n");
@@ -299,6 +302,7 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
 export type VerifyBatchExportArgs = {
   zip?: string;
   sha256?: string;
+  outDir?: string;
   quiet: boolean;
   help: boolean;
 };
@@ -314,6 +318,9 @@ export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatch
       case "--sha256":
         result.sha256 = requireValue("--sha256", argv[++i]);
         break;
+      case "--out-dir":
+        result.outDir = requireValue("--out-dir", argv[++i]);
+        break;
       case "--quiet":
         result.quiet = true;
         break;
@@ -326,11 +333,23 @@ export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatch
     }
   }
   if (result.help) return result;
+  if (result.outDir !== undefined) {
+    if (result.zip !== undefined || result.sha256 !== undefined) {
+      throw new CliArgumentError(
+        "verify-batch-export --out-dir is mutually exclusive with --zip / --sha256"
+      );
+    }
+    result.zip = path.join(result.outDir, "batch-export.zip");
+    result.sha256 = path.join(result.outDir, "batch-export.zip.sha256");
+    return result;
+  }
   if (result.zip === undefined) {
-    throw new CliArgumentError("verify-batch-export requires --zip <file>");
+    throw new CliArgumentError("verify-batch-export requires --zip <file> (or --out-dir <dir>)");
   }
   if (result.sha256 === undefined) {
-    throw new CliArgumentError("verify-batch-export requires --sha256 <file>");
+    throw new CliArgumentError(
+      "verify-batch-export requires --sha256 <file> (or --out-dir <dir>)"
+    );
   }
   return result;
 }
@@ -2174,7 +2193,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v33: summaries + SARIF, then manifest, then zip + sha256.
+      // Schema v18–v34: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
@@ -2287,7 +2306,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
 
-      // Schema v31–v33: seal zip integrity sidecar; rewrite disk summary/manifest.
+      // Schema v31–v34: seal zip integrity sidecar; rewrite disk summary/manifest.
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;
@@ -2325,6 +2344,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         if (manifestFinal.totalBytes !== undefined) {
           batchWalk.export.totalBytes = manifestFinal.totalBytes;
         }
+        batchWalk.export.byKind = { ...manifestFinal.byKind };
         const summaryJsonFinal = `${formatBatchJson(entries, { batchWalk })}\n`;
         await writeFn(summaryPath, summaryJsonFinal);
         await writeFn(manifestPath, formatBatchExportManifest(manifestFinal));

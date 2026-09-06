@@ -162,6 +162,11 @@ export function formatDesktopBatchSummaryForExport(envelope: CliBatchEnvelope): 
   return JSON.stringify(envelope, null, 2);
 }
 
+/** Schema v34: one-line NDJSON batch summary (CLI `batch-summary.ndjson` parity). */
+export function formatDesktopBatchSummaryAsNdjson(envelope: CliBatchEnvelope): string {
+  return `${JSON.stringify(envelope)}\n`;
+}
+
 export function formatDesktopBatchPolicyBreachChip(
   rows: readonly CliBatchParseDiagnosticsPolicyBreachesAggregation[] | undefined
 ): string {
@@ -361,6 +366,10 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);
   if (exp.zipBytes !== undefined) parts.push(`zipBytes=${exp.zipBytes}`);
   if (exp.totalBytes !== undefined) parts.push(`totalBytes=${exp.totalBytes}`);
+  if (exp.byKind) {
+    const kindCount = Object.keys(exp.byKind).length;
+    parts.push(`kinds=${kindCount}`);
+  }
   if (exp.sealedAt) {
     // Prefer compact `YYYY-MM-DDTHH:MM` when ISO-shaped; else first 16 chars.
     const compact = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/.exec(exp.sealedAt);
