@@ -748,6 +748,38 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Work offset (G54-G59/G154) while cutter compensation (G41/G42) is still active — cancel with G40 before selecting a work offset.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Work offset (G54-G59/G154) while a canned cycle is still active — cancel with G80 before selecting a work offset.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Work offset (G54-G59/G154) while coordinate rotation (G68) is still active — cancel with G69 before selecting a work offset.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Work offset (G54-G59/G154) while scaling (G51) is still active — cancel with G50 before selecting a work offset.",
+          blockIndex: index
+        });
+      }
       sawWorkOffset = true;
       if (nextOffset !== undefined) activeWorkOffset = nextOffset;
     }
@@ -1321,6 +1353,48 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG4(block) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G4 while tool length compensation (G43) is still active — cancel with G49 before dwell.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G4 while coordinate rotation (G68) is still active — cancel with G69 before dwell.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 while scaling (G51) is still active — cancel with G50 before dwell.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 while coolant is still on — turn coolant off with M9 before dwell.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message: "G4 while incremental mode (G91) is active — restore G90 before dwell.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG28(block) && hasExactG30(block)) {
       issues.push({
         severity: "warning",
@@ -1672,6 +1746,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G0 rapid while cutter compensation (G41/G42) is active — cancel with G40 or use feed motion.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG0(block) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G0 rapid while a canned cycle is still active — cancel with G80 before rapid moves.",
         blockIndex: index
       });
     }
