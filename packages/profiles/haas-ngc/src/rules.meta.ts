@@ -1143,6 +1143,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O1000\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM99\n"
   },
   {
+    id: "haas.m99-while-rotation",
+    severity: "warning",
+    messageMatcher: /M99 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before M99 subprogram return.",
+    positiveSnippet: "O1000\nT1 M6\nG54\nG68 X0 Y0 R45.\nM99\n",
+    negativeSnippet: "O1000\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM99\n"
+  },
+  {
+    id: "haas.m99-while-scaling",
+    severity: "warning",
+    messageMatcher: /M99 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before M99 subprogram return.",
+    positiveSnippet: "O1000\nT1 M6\nG54\nG51 P2.\nM99\n",
+    negativeSnippet: "O1000\nT1 M6\nG54\nG51 P2.\nG50\nM99\n"
+  },
+  {
+    id: "haas.m99-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M99 while coolant is still on/,
+    summary: "Turn coolant off with M9 before M99 subprogram return.",
+    positiveSnippet: "O1000\nT1 M6\nG54\nS1200 M3\nM8\nM99\n",
+    negativeSnippet: "O1000\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM99\n"
+  },
+  {
+    id: "haas.m99-while-incremental",
+    severity: "warning",
+    messageMatcher: /M99 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before M99 subprogram return.",
+    positiveSnippet: "O1000\nT1 M6\nG54\nG91\nM99\n",
+    negativeSnippet: "O1000\nT1 M6\nG54\nG91\nG90\nM99\n"
+  },
+  {
+    id: "haas.g28-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G28 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G28 reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG91\nG28 Z0\nG90\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG91\nG28 Z0\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.g30-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G30 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G30 secondary reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG91\nG30 Z0\nG90\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG91\nG30 Z0\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.g53-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G53 while coolant is still on/,
+    summary: "Turn coolant off with M9 before a G53 machine move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG90\nG53 Z0\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG90\nG53 Z0\nM5\nM30\n"
+  },
+  {
+    id: "haas.m5-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M5 while coolant is still on/,
+    summary: "Turn coolant off with M9 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM5\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.m5-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M5 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM5\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM5\nM30\n"
+  },
+  {
+    id: "haas.m5-while-canned",
+    severity: "warning",
+    messageMatcher: /M5 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM5\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

@@ -565,6 +565,28 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       }
     }
     if (hasSpindleOff(block)) {
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "M5 while coolant is still on — turn coolant off with M9 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M5 while cutter compensation (G41/G42) is still active — cancel with G40 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "M5 while a canned cycle is still active — cancel with G80 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
       spindleActive = false;
       activeSpindleDirection = undefined;
     }
@@ -1074,6 +1096,40 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 99) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M99 while coordinate rotation (G68) is still active — cancel with G69 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M99 while scaling (G51) is still active — cancel with G50 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M99 while coolant is still on — turn coolant off with M9 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M99 while incremental mode (G91) is active — restore G90 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",
@@ -1335,6 +1391,31 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         severity: "warning",
         message:
           "G30 while tool length compensation (G43) is still active — cancel with G49 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 while coolant is still on — turn coolant off with M9 before reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while coolant is still on — turn coolant off with M9 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G53 while coolant is still on — turn coolant off with M9 before machine move.",
         blockIndex: index
       });
     }
