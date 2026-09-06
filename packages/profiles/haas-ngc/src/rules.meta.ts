@@ -1165,6 +1165,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM00\nM30\n"
   },
   {
+    id: "haas.m01-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /M01 and G30 on the same block/,
+    summary: "Do not combine optional stop (M01) with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM01 G30 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM01\nM30\n"
+  },
+  {
+    id: "haas.m99-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /M99 and G28 on the same block/,
+    summary: "Do not combine M99 with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM99 G28 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM99\nM30\n"
+  },
+  {
+    id: "haas.m99-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /M99 and G30 on the same block/,
+    summary: "Do not combine M99 with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM99 G30 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM99\nM30\n"
+  },
+  {
+    id: "haas.m99-and-g53-same-block",
+    severity: "warning",
+    messageMatcher: /M99 and G53 on the same block/,
+    summary: "Do not combine M99 with G53 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM99 G53 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM99\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g65-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G65 on the same block/,
+    summary: "Do not combine G4 dwell with G65 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G65 P9010\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nG65 P9010\nM30\n"
+  },
+  {
+    id: "haas.g4-and-m98-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and M98 on the same block/,
+    summary: "Do not combine G4 dwell with M98 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. M98 P2\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM98 P2\nM30\n"
+  },
+  {
+    id: "haas.g4-and-m97-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and M97 on the same block/,
+    summary: "Do not combine G4 dwell with M97 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. M97 P10\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM97 P10\nM30\n"
+  },
+  {
+    id: "haas.g4-and-m00-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and M00 on the same block/,
+    summary: "Do not combine G4 dwell with program stop (M00) on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. M00\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM00\nM30\n"
+  },
+  {
+    id: "haas.g4-and-m01-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and M01 on the same block/,
+    summary: "Do not combine G4 dwell with optional stop (M01) on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. M01\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM01\nM30\n"
+  },
+  {
+    id: "haas.g4-and-m99-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and M99 on the same block/,
+    summary: "Do not combine G4 dwell with M99 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. M99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM99\nM30\n"
+  },
+  {
     id: "haas.multiple-m-codes-same-block",
     severity: "warning",
     messageMatcher: /Multiple M codes on the same block/,

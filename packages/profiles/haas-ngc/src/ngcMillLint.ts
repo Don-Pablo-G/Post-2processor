@@ -1376,6 +1376,88 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 1) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M01 and G30 on the same block — optional stop and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M99 and G28 on the same block — subprogram return and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M99 and G30 on the same block — subprogram return and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M99 and G53 on the same block — subprogram return and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasExactG65(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and G65 on the same block — dwell and macro call separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasWordM(block, 98)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and M98 on the same block — dwell and subprogram call separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasWordM(block, 97)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and M97 on the same block — dwell and local subprogram call separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasWordM(block, 0)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and M00 on the same block — dwell and program stop separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasWordM(block, 1)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and M01 on the same block — dwell and optional stop separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasWordM(block, 99)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and M99 on the same block — dwell and subprogram return separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (
