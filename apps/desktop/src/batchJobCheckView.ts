@@ -10,9 +10,6 @@ import {
   createZip,
   formatBatchAggregationsAsCsv,
   formatBatchFixCandidatesAsSarifLite,
-  getControllerGrammarFix,
-  getParseDiagnosticFix,
-  getSafetyFindingFix,
   type BatchFixCandidateRow,
   type CliBatchEnvelope,
   type CliBatchWalk,
@@ -21,12 +18,9 @@ import {
   type RunJobCheckResult
 } from "@cnc/core/browser";
 import {
-  applyIdeQuickFixEdits,
-  deriveControllerGrammarFixBindings,
-  deriveParseDiagnosticFixBindings,
-  deriveSafetyFindingFixBindings,
-  expandIdeQuickFixTemplate,
-  resolveQuickFixSpan
+  buildIdeBatchPatchedPrograms,
+  buildIdeBatchQuickFixPreviews,
+  type IdeBatchQuickFixPreview
 } from "@cnc/ide-bridge";
 
 export type DesktopBatchFilterOptions = {
@@ -226,183 +220,18 @@ export function formatDesktopBatchAggregationsAsCsv(envelope: CliBatchEnvelope):
   return formatBatchAggregationsAsCsv(envelope);
 }
 
-export type DesktopBatchQuickFixPreview = {
-  input: string;
-  code: string;
-  title: string;
-  /** Schema v22–v23: which catalogue produced this preview. */
-  kind?: "safety" | "controller" | "parse-diag";
-  expanded?: string;
-  unbound?: boolean;
-  firstBlockIndex?: number;
-};
-
-function expandPreviewTemplate(
-  qf: { replacementTemplate?: string; code: string; title: string; rationale: string },
-  bindings: Readonly<Record<string, string>>,
-  options?: { strict?: boolean }
-): { expanded?: string; unbound?: boolean } {
-  if (qf.replacementTemplate === undefined) return {};
-  let expanded: string | undefined;
-  let unbound = false;
-  try {
-    expanded = expandIdeQuickFixTemplate(qf, bindings, { strict: options?.strict });
-  } catch {
-    unbound = true;
-    expanded = expandIdeQuickFixTemplate(qf, bindings);
-  }
-  if (options?.strict !== true && expanded && /\{\{[A-Z0-9_]+\}\}/.test(expanded)) {
-    unbound = true;
-  }
-  return {
-    ...(expanded !== undefined ? { expanded } : {}),
-    ...(unbound ? { unbound: true } : {})
-  };
-}
+export type DesktopBatchQuickFixPreview = IdeBatchQuickFixPreview;
 
 /**
- * Schema v20–v22: preview expanded safety + controller-grammar templates for
- * batch attribution rows, using program-source bindings when sources are supplied.
+ * Schema v20–v25: preview expanded safety + controller + parse-diag templates.
+ * Delegates to `@cnc/ide-bridge` shared builder.
  */
 export function buildDesktopBatchQuickFixPreviews(
   envelope: CliBatchEnvelope,
   sourcesByInput: ReadonlyMap<string, string> = new Map(),
   options?: { strict?: boolean }
 ): DesktopBatchQuickFixPreview[] {
-  const out: DesktopBatchQuickFixPreview[] = [];
-  const seen = new Set<string>();
-
-  for (const row of envelope.summary.safetyFindingsByCodePerInputFile) {
-    const key = `safety::${row.input}::${row.code}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const fix = getSafetyFindingFix(row.code);
-    if (!fix) continue;
-    const qf = {
-      code: fix.code,
-      title: fix.title,
-      rationale: fix.rationale,
-      ...(fix.replacementTemplate !== undefined
-        ? { replacementTemplate: fix.replacementTemplate }
-        : {})
-    };
-    const source = sourcesByInput.get(row.input);
-    const bindings = deriveSafetyFindingFixBindings({
-      code: row.code,
-      source,
-      blockIndex: row.firstBlockIndex
-    });
-    const expanded = expandPreviewTemplate(qf, bindings, options);
-    out.push({
-      input: row.input,
-      code: row.code,
-      title: fix.title,
-      kind: "safety",
-      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {}),
-      ...expanded
-    });
-  }
-
-  for (const row of envelope.summary.lintIssuesByControllerCodePerInputFile) {
-    const key = `controller::${row.input}::${row.code}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const fix = getControllerGrammarFix(row.code);
-    if (!fix) continue;
-    const qf = {
-      code: row.code,
-      title: fix.title,
-      rationale: fix.rationale,
-      ...(fix.replacementTemplate !== undefined
-        ? { replacementTemplate: fix.replacementTemplate }
-        : {})
-    };
-    const source = sourcesByInput.get(row.input);
-    const bindings = deriveControllerGrammarFixBindings({
-      code: row.code,
-      source,
-      blockIndex: row.firstBlockIndex
-    });
-    const expanded = expandPreviewTemplate(qf, bindings, options);
-    out.push({
-      input: row.input,
-      code: row.code,
-      title: fix.title,
-      kind: "controller",
-      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {}),
-      ...expanded
-    });
-  }
-
-  for (const row of envelope.summary.parseDiagnosticsByCodePerInputFile) {
-    const key = `parse-diag::${row.input}::${row.code}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const fix = getParseDiagnosticFix(row.code);
-    if (!fix) continue;
-    const source = sourcesByInput.get(row.input);
-    const bindings = deriveParseDiagnosticFixBindings({
-      code: row.code,
-      source,
-      blockIndex: row.firstBlockIndex
-    });
-    let expanded: { expanded?: string; unbound?: boolean } = {};
-    // Append closers onto the block instead of replacing the block with ")" / "]".
-    if (
-      (row.code === "UNMATCHED_OPEN_PAREN" || row.code === "UNMATCHED_BRACKET") &&
-      bindings.BLOCK
-    ) {
-      const closer =
-        row.code === "UNMATCHED_OPEN_PAREN" ? ")" : (bindings.CLOSER ?? "]");
-      expanded = { expanded: `${bindings.BLOCK}${closer}` };
-    } else if (row.code === "ADDRESS_MISSING_VALUE" && bindings.LETTER && bindings.BLOCK) {
-      const letter = bindings.LETTER;
-      const patched = bindings.BLOCK.replace(
-        new RegExp(`\\b${letter}\\b(?!\\s*-?\\d)`, "i"),
-        `${letter}0`
-      );
-      expanded =
-        patched !== bindings.BLOCK
-          ? { expanded: patched }
-          : expandPreviewTemplate(
-              {
-                code: fix.code,
-                title: fix.title,
-                rationale: fix.rationale,
-                ...(fix.replacementTemplate !== undefined
-                  ? { replacementTemplate: fix.replacementTemplate }
-                  : {})
-              },
-              bindings,
-              options
-            );
-    } else {
-      const qf = {
-        code: fix.code,
-        title: fix.title,
-        rationale: fix.rationale,
-        ...(fix.replacementTemplate !== undefined
-          ? { replacementTemplate: fix.replacementTemplate }
-          : {})
-      };
-      expanded = expandPreviewTemplate(qf, bindings, options);
-    }
-    out.push({
-      input: row.input,
-      code: row.code,
-      title: fix.title,
-      kind: "parse-diag",
-      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {}),
-      ...expanded
-    });
-  }
-
-  out.sort((a, b) => {
-    if (a.input !== b.input) return a.input.localeCompare(b.input);
-    if (a.kind !== b.kind) return (a.kind ?? "").localeCompare(b.kind ?? "");
-    return a.code.localeCompare(b.code);
-  });
-  return out;
+  return buildIdeBatchQuickFixPreviews(envelope, sourcesByInput, options);
 }
 
 export function formatDesktopBatchQuickFixPreviewChip(
@@ -475,51 +304,19 @@ export function formatDesktopBatchQuickFixPreviewsForExport(
 }
 
 /**
- * Schema v21–v22: apply expanded safety + controller-grammar fix templates
- * into program sources (descending offset order). Returns one patched
- * download item per input that received at least one edit.
+ * Schema v21–v25: apply expanded fix templates into program sources.
+ * Delegates to `@cnc/ide-bridge` shared builder.
  */
 export function buildDesktopBatchPatchedPrograms(
   envelope: CliBatchEnvelope,
   sourcesByInput: ReadonlyMap<string, string>,
   options?: { strict?: boolean }
 ): BatchDownloadItem[] {
-  const previews = buildDesktopBatchQuickFixPreviews(envelope, sourcesByInput, options);
-  const byInput = new Map<string, typeof previews>();
-  for (const preview of previews) {
-    if (!preview.expanded || preview.unbound) continue;
-    if (preview.firstBlockIndex === undefined) continue;
-    const list = byInput.get(preview.input) ?? [];
-    list.push(preview);
-    byInput.set(preview.input, list);
-  }
-  const items: BatchDownloadItem[] = [];
-  for (const [input, inputPreviews] of [...byInput.entries()].sort((a, b) =>
-    a[0].localeCompare(b[0])
-  )) {
-    const source = sourcesByInput.get(input);
-    if (source === undefined) continue;
-    const edits = [];
-    for (const preview of inputPreviews) {
-      if (preview.expanded === undefined || preview.firstBlockIndex === undefined) continue;
-      const span = resolveQuickFixSpan(source, preview.firstBlockIndex);
-      if (!span) continue;
-      edits.push({
-        startOffset: span.startOffset,
-        endOffset: span.endOffset,
-        replacement: preview.expanded
-      });
-    }
-    if (edits.length === 0) continue;
-    const patched = applyIdeQuickFixEdits(source, edits);
-    if (patched.applied === 0) continue;
-    items.push({
-      filename: `${stemFromInput(input)}.patched.nc`,
-      body: patched.source,
-      mimeType: "text/plain;charset=utf-8"
-    });
-  }
-  return items;
+  return buildIdeBatchPatchedPrograms(envelope, sourcesByInput, options).map((item) => ({
+    filename: item.filename,
+    body: item.body,
+    mimeType: "text/plain;charset=utf-8"
+  }));
 }
 
 export function formatDesktopBatchPatchedProgramsChip(
@@ -527,6 +324,27 @@ export function formatDesktopBatchPatchedProgramsChip(
 ): string {
   if (items.length === 0) return "batch-patched: none";
   return `batch-patched: files=${items.length}`;
+}
+
+/** Schema v25: chip summarizing SARIF template-candidate / unbound count. */
+export function formatDesktopBatchSarifChip(envelope: CliBatchEnvelope): string {
+  const candidates = buildBatchFixTemplateCandidates(envelope).length;
+  const sarifPath = envelope.summary.batchWalk?.export?.batchUnboundSarif;
+  if (candidates === 0 && !sarifPath) return "batch-sarif: none";
+  return `batch-sarif: candidates=${candidates}${sarifPath ? " written" : ""}`;
+}
+
+/** Schema v25: chip summarizing zip / export artifact inventory. */
+export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope): string {
+  const exp = envelope.summary.batchWalk?.export;
+  if (!exp) return "batch-export: none";
+  const parts: string[] = [];
+  if (exp.outDir) parts.push("outDir");
+  if (exp.setupSheetPdfDir) parts.push("pdf");
+  if (exp.batchExportZip) parts.push("zip");
+  if (exp.batchUnboundSarif) parts.push("sarif");
+  if (exp.patchedNcCount !== undefined) parts.push(`patched=${exp.patchedNcCount}`);
+  return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 
 /**

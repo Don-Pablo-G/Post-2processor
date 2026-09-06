@@ -33,6 +33,9 @@
     "@cnc/profile-fanuc-iso": "*",
     "@cnc/profile-haas-ngc": "*"
   },
+  "optionalDependencies": {
+    "@cnc/ide-bridge": "*"
+  },
   "devDependencies": {
     "tsx": "^4.21.0",
     "vitest": "^3.2.4"

@@ -1018,7 +1018,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=24\n");
+    expect(stdout).toBe("cnc-job-check schema=25\n");
     expect(stderr).toBe("");
   });
 
@@ -2629,8 +2629,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 24", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(24);
+  it("CLI_SCHEMA_VERSION is 25", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(25);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3679,6 +3679,65 @@ describe("Schema v24: parseDiagnostics aggregated firstBlockIndex + SARIF sideca
     expect(summary.summary.batchWalk.export.batchUnboundSarif).toMatch(
       /batch-unbound-fixes\.sarif\.json$/
     );
+  });
+});
+
+describe("Schema v25: safety aggregated firstBlockIndex + patched NC in zip", () => {
+  it("buildBatchSafetyFindingsByCodeAggregation propagates earliest firstBlockIndex", () => {
+    const entries = [
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "a.nc",
+        envelope: {
+          safetyFindingsByCode: [
+            {
+              source: "advisor",
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              count: 1,
+              blockers: 1,
+              warnings: 0,
+              firstBlockIndex: 4
+            }
+          ]
+        }
+      },
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "b.nc",
+        envelope: {
+          safetyFindingsByCode: [
+            {
+              source: "advisor",
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              count: 1,
+              blockers: 1,
+              warnings: 0,
+              firstBlockIndex: 1
+            }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchSafetyFindingsByCodeAggregation>[0];
+    const rows = buildBatchSafetyFindingsByCodeAggregation(entries);
+    expect(rows[0]!.code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
+    expect(rows[0]!.firstBlockIndex).toBe(1);
+    expect(rows[0]!.count).toBe(2);
+  });
+
+  it("--out-dir zip includes patched-nc and records patchedNcCount when fixes apply", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 Z-5\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.summary.batchWalk.export.patchedNcCount).toBe(1);
+    const zipBytes = await readFile(path.join(outDir, "batch-export.zip"));
+    const zipAscii = Buffer.from(zipBytes).toString("binary");
+    expect(zipAscii).toMatch(/patched-nc\/a\.patched\.nc/);
   });
 });
 

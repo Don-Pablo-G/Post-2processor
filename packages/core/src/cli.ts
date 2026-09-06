@@ -1791,6 +1791,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
     const textEntries: { input: string; result: RunJobCheckResult }[] = [];
     const perFileOutputs: { sourcePath: string; rendered: string }[] = [];
     const perFilePdfs: { sourcePath: string; bytes: Uint8Array }[] = [];
+    const sourcesByInputDuringBatch = new Map<string, string>();
     let anyBlocked = 0;
     for (const filePath of files) {
       let source: string;
@@ -1800,6 +1801,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         writeErr(`Failed to read ${filePath}: ${(err as Error).message}\n`);
         return 2;
       }
+      sourcesByInputDuringBatch.set(filePath, source);
       const result = await runOnce(source, parsed.controller, policy, {
         suppressDeprecated: parsed.noDeprecatedRules
       });
@@ -1910,6 +1912,33 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       for (const { sourcePath, bytes } of perFilePdfs) {
         const base = path.basename(sourcePath).replace(/\.(nc|tap|gcode)$/i, "");
         zipEntries.push({ path: `setup-pdf/${base}.pdf`, data: bytes });
+      }
+      // Schema v25: include patched NC when @cnc/ide-bridge is available.
+      let patchedNcCount = 0;
+      try {
+        const bridge = (await import("@cnc/ide-bridge")) as {
+          buildIdeBatchPatchedPrograms?: (
+            envelope: ReturnType<typeof buildBatchEnvelope>,
+            sources: ReadonlyMap<string, string>
+          ) => Array<{ filename: string; body: string }>;
+        };
+        if (typeof bridge.buildIdeBatchPatchedPrograms === "function") {
+          const sourcesByInput = new Map(
+            [...sourcesByInputDuringBatch.entries()].filter(([, src]) => src.length > 0)
+          );
+          const prelimEnvelope = buildBatchEnvelope(entries, { batchWalk });
+          const patched = bridge.buildIdeBatchPatchedPrograms(prelimEnvelope, sourcesByInput);
+          for (const item of patched) {
+            zipEntries.push({ path: `patched-nc/${item.filename}`, data: item.body });
+            patchedNcCount += 1;
+          }
+        }
+      } catch {
+        // Optional peer: monorepo installs ide-bridge; published CLI may omit it.
+      }
+      if (patchedNcCount > 0) {
+        if (!batchWalk.export) batchWalk.export = { outDir };
+        batchWalk.export.patchedNcCount = patchedNcCount;
       }
 
       // Schema v18–v24: always drop a CLI-shaped batch summary beside per-file

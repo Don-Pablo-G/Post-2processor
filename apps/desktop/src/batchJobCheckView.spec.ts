@@ -12,6 +12,8 @@ import {
   formatDesktopBatchBlockReasonsChip,
   formatDesktopBatchPatchedProgramsChip,
   formatDesktopBatchQuickFixPreviewChip,
+  formatDesktopBatchSarifChip,
+  formatDesktopBatchExportInventoryChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchUnboundFixChip,
@@ -278,5 +280,62 @@ describe("batchJobCheckView", () => {
     );
     expect(zip[0]).toBe(0x50);
     expect(zip[1]).toBe(0x4b);
+  });
+
+  it("formatDesktopBatchSarifChip and export inventory chip", async () => {
+    expect(
+      formatDesktopBatchSarifChip({
+        schemaVersion: CLI_SCHEMA_VERSION,
+        results: [],
+        summary: {
+          files: 0,
+          blocked: 0,
+          safetyFindingsByCodePerInputFile: [],
+          lintIssuesByControllerCodePerInputFile: [],
+          parseDiagnosticsByCodePerInputFile: []
+        }
+      } as never)
+    ).toBe("batch-sarif: none");
+    expect(formatDesktopBatchExportInventoryChip({ summary: {} } as never)).toBe(
+      "batch-export: none"
+    );
+    const withExport = await runDesktopBatchJobCheck(
+      [{ input: "a.nc", source: "O1\nG0 Z-5\nM30\n" }],
+      async () =>
+        makeResult({
+          blocked: true,
+          safetyFindings: [
+            {
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              severity: "blocker",
+              message: "Negative Z move appears before G43 length compensation.",
+              blockIndex: 1
+            }
+          ]
+        }),
+      {
+        batchWalk: {
+          recursive: false,
+          include: [],
+          exclude: [],
+          matched: 1,
+          skipped: 0,
+          root: "folder",
+          export: {
+            outDir: "/out",
+            batchExportZip: "/out/batch-export.zip",
+            batchUnboundSarif: "/out/batch-unbound-fixes.sarif.json",
+            patchedNcCount: 1
+          }
+        }
+      }
+    );
+    expect(formatDesktopBatchSarifChip(withExport.envelope)).toMatch(/candidates=/);
+    expect(formatDesktopBatchSarifChip(withExport.envelope)).toMatch(/written/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(
+      /batch-export:.*zip/
+    );
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/sarif/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/patched=1/);
   });
 });

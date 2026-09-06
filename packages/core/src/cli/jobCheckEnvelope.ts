@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 24;
+export const CLI_SCHEMA_VERSION = 25;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -749,6 +749,8 @@ export type CliBatchWalkExport = {
   batchExportZip?: string;
   /** Schema v24: path of SARIF-lite unbound/template-candidate report when written. */
   batchUnboundSarif?: string;
+  /** Schema v25: count of patched NC files packed into `batch-export.zip`. */
+  patchedNcCount?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -841,6 +843,8 @@ export type CliBatchParseDiagnosticsPolicyBreachesAggregation = {
 /**
  * Schema v15–v16: cross-input rollup of per-entry `safetyFindingsByCode` rows.
  * Schema v16 adds `source`.
+ * Schema v25 adds optional `firstBlockIndex` (earliest across contributing
+ * per-entry rows).
  */
 export type CliBatchSafetyFindingsByCodeAggregation = {
   source: CliSafetyFindingSource;
@@ -849,6 +853,8 @@ export type CliBatchSafetyFindingsByCodeAggregation = {
   blockers: number;
   warnings: number;
   inputs: string[];
+  /** Schema v25: earliest `firstBlockIndex` among contributing entry rows. */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -1388,6 +1394,7 @@ export function buildBatchSafetyFindingsByCodeAggregation(
       blockers: number;
       warnings: number;
       inputs: Set<string>;
+      firstBlockIndex?: number;
     }
   >();
   for (const entry of entries) {
@@ -1404,7 +1411,10 @@ export function buildBatchSafetyFindingsByCodeAggregation(
           count: 0,
           blockers: 0,
           warnings: 0,
-          inputs: new Set<string>()
+          inputs: new Set<string>(),
+          ...(row.firstBlockIndex !== undefined
+            ? { firstBlockIndex: row.firstBlockIndex }
+            : {})
         };
         byKey.set(key, bucket);
       }
@@ -1412,6 +1422,14 @@ export function buildBatchSafetyFindingsByCodeAggregation(
       bucket.blockers += row.blockers;
       bucket.warnings += row.warnings;
       bucket.inputs.add(entry.input);
+      if (row.firstBlockIndex !== undefined) {
+        if (
+          bucket.firstBlockIndex === undefined ||
+          row.firstBlockIndex < bucket.firstBlockIndex
+        ) {
+          bucket.firstBlockIndex = row.firstBlockIndex;
+        }
+      }
     }
   }
   const rows: CliBatchSafetyFindingsByCodeAggregation[] = [];
@@ -1422,7 +1440,10 @@ export function buildBatchSafetyFindingsByCodeAggregation(
       count: bucket.count,
       blockers: bucket.blockers,
       warnings: bucket.warnings,
-      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b)),
+      ...(bucket.firstBlockIndex !== undefined
+        ? { firstBlockIndex: bucket.firstBlockIndex }
+        : {})
     });
   }
   rows.sort((a, b) => {
@@ -1618,7 +1639,7 @@ export function buildBatchFixTemplateCandidates(
   const out: BatchFixCandidateRow[] = [];
   const seen = new Set<string>();
 
-  for (const row of envelope.summary.safetyFindingsByCodePerInputFile) {
+  for (const row of envelope.summary.safetyFindingsByCodePerInputFile ?? []) {
     const key = `safety::${row.input}::${row.code}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -1637,7 +1658,7 @@ export function buildBatchFixTemplateCandidates(
     });
   }
 
-  for (const row of envelope.summary.lintIssuesByControllerCodePerInputFile) {
+  for (const row of envelope.summary.lintIssuesByControllerCodePerInputFile ?? []) {
     const key = `controller::${row.input}::${row.code}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -1656,7 +1677,7 @@ export function buildBatchFixTemplateCandidates(
     });
   }
 
-  for (const row of envelope.summary.parseDiagnosticsByCodePerInputFile) {
+  for (const row of envelope.summary.parseDiagnosticsByCodePerInputFile ?? []) {
     const key = `parse-diag::${row.input}::${row.code}`;
     if (seen.has(key)) continue;
     seen.add(key);

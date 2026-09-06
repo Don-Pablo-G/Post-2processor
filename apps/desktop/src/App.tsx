@@ -129,6 +129,8 @@ import {
   formatDesktopBatchAggregationsAsCsv,
   formatDesktopBatchPatchedProgramsChip,
   formatDesktopBatchSafetyChip,
+  formatDesktopBatchSarifChip,
+  formatDesktopBatchExportInventoryChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchUnboundFixChip,
@@ -324,6 +326,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedPatched: string;
     batchJobCheckCopySarif: string;
     batchJobCheckCopiedSarif: string;
+    batchJobCheckDownloadSarif: string;
+    batchJobCheckDownloadedSarif: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -641,6 +645,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedPatched: "Skopiowano patched NC batch",
     batchJobCheckCopySarif: "Kopiuj SARIF unbound",
     batchJobCheckCopiedSarif: "Skopiowano SARIF unbound batch",
+    batchJobCheckDownloadSarif: "Pobierz SARIF unbound",
+    batchJobCheckDownloadedSarif: "Pobrano SARIF unbound batch",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -959,6 +965,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedPatched: "Copied batch patched NC",
     batchJobCheckCopySarif: "Copy unbound SARIF",
     batchJobCheckCopiedSarif: "Copied batch unbound SARIF",
+    batchJobCheckDownloadSarif: "Download unbound SARIF",
+    batchJobCheckDownloadedSarif: "Downloaded batch unbound SARIF",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -2130,6 +2138,35 @@ export function App() {
       setExportStatus(t.batchJobCheckCopiedSarif);
     } catch {
       setExportStatus(payload);
+    }
+  }
+
+  async function handleDownloadBatchUnboundSarif(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const sourcesByInput = new Map(
+        batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+      );
+      const previews = buildDesktopBatchQuickFixPreviews(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
+      const payload = formatDesktopBatchUnboundFixesAsSarifLite(
+        batchJobCheckResult.envelope,
+        previews
+      );
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-unbound-fixes.sarif.json",
+          body: payload,
+          mimeType: "application/json;charset=utf-8"
+        }
+      ]);
+      setExportStatus(
+        `${t.batchJobCheckDownloadedSarif}: ${downloaded} (${formatDesktopBatchSarifChip(batchJobCheckResult.envelope)})`
+      );
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch SARIF download failed.");
     }
   }
 
@@ -3868,6 +3905,18 @@ export function App() {
                   )
                 )}
               </span>
+              <span
+                data-testid="folder-batch-sarif-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchSarifChip(batchJobCheckResult.envelope)}
+              </span>
+              <span
+                data-testid="folder-batch-export-inventory-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchExportInventoryChip(batchJobCheckResult.envelope)}
+              </span>
               <button
                 type="button"
                 data-testid="folder-batch-copy-json"
@@ -3937,6 +3986,13 @@ export function App() {
                 onClick={() => void handleCopyBatchUnboundSarif()}
               >
                 {t.batchJobCheckCopySarif}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-sarif"
+                onClick={() => void handleDownloadBatchUnboundSarif()}
+              >
+                {t.batchJobCheckDownloadSarif}
               </button>
             </>
           )}

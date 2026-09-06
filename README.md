@@ -4055,6 +4055,44 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=24
 ```
 
+## Safety aggregated firstBlockIndex + CLI patched NC zip + desktop SARIF download + Schema v25
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies (`@cnc/ide-bridge` remains an
+optional peer for CLI zip packing).
+
+### Move 1 — Safety aggregated `firstBlockIndex` (Schema v25)
+
+`CLI_SCHEMA_VERSION` bumps `24 → 25`.
+`summary.safetyFindingsByCodeAggregated[]` gains optional `firstBlockIndex`
+(earliest across contributing per-entry rows), matching parse-diag / controller
+parity.
+
+### Move 2 — CLI zip includes patched NC
+
+When `@cnc/ide-bridge` is resolvable, `--out-dir` packs
+`patched-nc/*.patched.nc` into `batch-export.zip` and records
+`batchWalk.export.patchedNcCount`.
+
+### Move 3 — Desktop download unbound SARIF
+
+Folder batch gains **Download unbound SARIF** (same SARIF-lite payload as the
+clipboard action).
+
+### Move 4 — Batch SARIF / export inventory chips
+
+Desktop shows `batch-sarif:` candidate count and `batch-export:` artifact
+inventory (outDir / pdf / zip / sarif / patched).
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=25
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
