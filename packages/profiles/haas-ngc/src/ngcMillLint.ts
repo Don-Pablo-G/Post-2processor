@@ -1458,6 +1458,88 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 30) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M30 and G28 on the same block — program end and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 30) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M30 and G30 on the same block — program end and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 30) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M30 and G53 on the same block — program end and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 2) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M02 and G28 on the same block — program end and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 2) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M02 and G30 on the same block — program end and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 2) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M02 and G53 on the same block — program end and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and G92 on the same block — dwell and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and G52 on the same block — dwell and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and G92 on the same block — tool change and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and G52 on the same block — tool change and local offset separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (
