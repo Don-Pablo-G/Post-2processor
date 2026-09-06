@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 26;
+export const CLI_SCHEMA_VERSION = 27;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -756,6 +756,13 @@ export type CliBatchWalkExport = {
    * written (typically `…/patched-nc`). Absent when no patched files were written.
    */
   patchedNcDir?: string;
+  /**
+   * Schema v27: directory under `--out-dir` where `*.setup.txt` sidecars were
+   * written (typically `…/setup-txt`). Absent when none were written.
+   */
+  setupTxtDir?: string;
+  /** Schema v27: count of setup-sheet TXT sidecars written under `setupTxtDir`. */
+  setupTxtCount?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {

@@ -4126,6 +4126,37 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=26
 ```
 
+## Setup-txt sidecars + fix-preview chip + Schema v27
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `setupTxtDir` / `setupTxtCount` (Schema v27)
+
+`CLI_SCHEMA_VERSION` bumps `26 → 27`.
+`batchWalk.export` gains optional `setupTxtDir` and `setupTxtCount`.
+
+### Move 2 — On-disk `setup-txt/` sidecars
+
+`--out-dir` writes `setup-txt/*.setup.txt` beside the zip (not only inside it).
+
+### Move 3 — Desktop live batch-fix-preview chip
+
+Folder batch shows `batch-fix-preview: fixes=N unbound=M | top=…`.
+
+### Move 4 — Export inventory includes setup TXT
+
+`formatDesktopBatchExportInventoryChip` surfaces `setupTxt=N` and `setupTxtDir`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=27
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -4146,3 +4177,9 @@ next planning wave can pick them up:
 - **IDE-host workspace write from fix preview** — pure apply-edit +
   patched NC download ship; writing expanded templates back into open
   editors remains an IDE-host concern.
+- **On-disk `batch-fix-previews.json` sidecar** — persist expanded fix
+  previews under `--out-dir` (and optional desktop download).
+- **Desktop Download fix preview** — mirror clipboard fix-preview JSON
+  as a downloadable artifact.
+- **`setupPdfCount` / richer PDF export inventory** — when
+  `--export-setup-sheet-pdf-batch` runs, count PDFs on `batchWalk.export`.

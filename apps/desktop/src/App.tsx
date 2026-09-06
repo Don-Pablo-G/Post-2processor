@@ -3906,6 +3906,19 @@ export function App() {
                 )}
               </span>
               <span
+                data-testid="folder-batch-fix-preview-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchQuickFixPreviewChip(
+                  buildDesktopBatchQuickFixPreviews(
+                    batchJobCheckResult.envelope,
+                    new Map(
+                      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+                    )
+                  )
+                )}
+              </span>
+              <span
                 data-testid="folder-batch-sarif-chip"
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >

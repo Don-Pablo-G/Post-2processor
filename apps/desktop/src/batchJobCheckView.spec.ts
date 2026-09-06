@@ -326,7 +326,9 @@ describe("batchJobCheckView", () => {
             batchExportZip: "/out/batch-export.zip",
             batchUnboundSarif: "/out/batch-unbound-fixes.sarif.json",
             patchedNcCount: 1,
-            patchedNcDir: "/out/patched-nc"
+            patchedNcDir: "/out/patched-nc",
+            setupTxtCount: 1,
+            setupTxtDir: "/out/setup-txt"
           }
         }
       }
@@ -339,6 +341,16 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/sarif/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/patched=1/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/patchedDir/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/setupTxt=1/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/setupTxtDir/);
+    expect(
+      formatDesktopBatchQuickFixPreviewChip(
+        buildDesktopBatchQuickFixPreviews(
+          withExport.envelope,
+          new Map([["a.nc", "O1\nG0 Z-5\nM30\n"]])
+        )
+      )
+    ).toMatch(/fixes=/);
     expect(
       formatDesktopBatchPatchedProgramsChip(
         buildDesktopBatchPatchedPrograms(

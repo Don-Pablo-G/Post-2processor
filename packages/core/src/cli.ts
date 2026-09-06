@@ -1902,11 +1902,32 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       batchWalk.export.batchExportZip = zipPath;
       batchWalk.export.batchUnboundSarif = sarifPath;
 
-      // Schema v24: include setup-sheet TXT from each checked file.
+      // Schema v24–v27: include setup-sheet TXT in the zip and write on-disk
+      // sidecars under setup-txt/ (parity with patched-nc).
+      let setupTxtCount = 0;
+      const setupTxtDir = path.join(outDir, "setup-txt");
       for (const { input, result } of textEntries) {
         const base = path.basename(input).replace(/\.(nc|tap|gcode)$/i, "");
-        const rel = `setup-txt/${base}.setup.txt`;
-        zipEntries.push({ path: rel, data: result.setupSheet.exportTxt });
+        const filename = `${base}.setup.txt`;
+        const body = result.setupSheet.exportTxt;
+        zipEntries.push({ path: `setup-txt/${filename}`, data: body });
+        const diskPath = path.join(setupTxtDir, filename);
+        try {
+          await mkdirFn(path.dirname(diskPath));
+          await writeFn(diskPath, body);
+          written += 1;
+        } catch (err) {
+          writeErr(
+            `Failed to write --out-dir setup TXT ${diskPath}: ${(err as Error).message}\n`
+          );
+          return 2;
+        }
+        setupTxtCount += 1;
+      }
+      if (setupTxtCount > 0) {
+        if (!batchWalk.export) batchWalk.export = { outDir };
+        batchWalk.export.setupTxtCount = setupTxtCount;
+        batchWalk.export.setupTxtDir = setupTxtDir;
       }
       // Schema v24: include PDFs when --export-setup-sheet-pdf-batch also ran.
       for (const { sourcePath, bytes } of perFilePdfs) {
