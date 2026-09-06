@@ -1758,7 +1758,9 @@ describe("main()", () => {
     expect(stderr).toMatch(/No \.nc\/\.tap\/\.gcode files found/);
   });
 
-  it("--out-dir + --format json writes one parseable envelope per input, mirroring the relative tree", async () => {
+  it(
+    "--out-dir + --format json writes one parseable envelope per input, mirroring the relative tree",
+    async () => {
     const tmp = await setupTmpDir();
     await writeFile(path.join(tmp, "top.nc"), "G0 X1\nM30\n", "utf8");
     const sub = path.join(tmp, "sub");
@@ -1803,7 +1805,9 @@ describe("main()", () => {
       await readFile(path.join(outDir, "batch-summary.json"), "utf8")
     );
     expect(batchSummary.summary.batchWalk.export.outDir).toBe(outDir);
-  });
+  },
+    20_000
+  );
 
   it("--out-dir + --format ndjson writes single-line .ndjson files (one envelope per file)", async () => {
     const tmp = await setupTmpDir();

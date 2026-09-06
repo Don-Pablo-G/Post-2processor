@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 88
+Total rules: 93
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -93,6 +93,11 @@ Total rules: 88
 | `haas.m6-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before a tool change (M6). |
 | `haas.m6-while-scaling` | warning | — | — | Cancel scaling with G50 before a tool change (M6). |
 | `haas.g92-coordinate-set` | warning | — | — | Avoid G92 on mill programs — prefer work offsets (G54-G59). |
+| `haas.m98-and-m99-same-block` | warning | — | — | Do not combine M98 subprogram call and M99 return on one block. |
+| `haas.g28-without-axis` | warning | — | — | G28 should include an intermediate axis point (e.g. G91 G28 Z0). |
+| `haas.g30-without-axis` | warning | — | — | G30 should include an intermediate axis point (e.g. G91 G30 Z0). |
+| `haas.g28-and-g53-same-block` | warning | — | — | Do not combine G28 reference return and G53 machine move on one block. |
+| `haas.g4-zero-dwell` | warning | — | — | G4 with P0/X0 is a zero-time dwell — verify intentional. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -2318,6 +2323,144 @@ O0001
 T1 M6
 G54
 G0 X0 Y0
+M30
+```
+
+### `haas.m98-and-m99-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and M99 on the same block/`
+- **Summary:** Do not combine M98 subprogram call and M99 return on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+M98 P2 M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+M98 P2
+M30
+```
+
+### `haas.g28-without-axis`
+
+- **Severity:** warning
+- **Matcher:** `/G28 without an axis word/`
+- **Summary:** G28 should include an intermediate axis point (e.g. G91 G28 Z0).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+M30
+```
+
+### `haas.g30-without-axis`
+
+- **Severity:** warning
+- **Matcher:** `/G30 without an axis word/`
+- **Summary:** G30 should include an intermediate axis point (e.g. G91 G30 Z0).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0
+G90
+M30
+```
+
+### `haas.g28-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G28 and G53 on the same block/`
+- **Summary:** Do not combine G28 reference return and G53 machine move on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 G53 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+M30
+```
+
+### `haas.g4-zero-dwell`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell with zero time/`
+- **Summary:** G4 with P0/X0 is a zero-time dwell — verify intentional.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G4 P0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G4 P1.
 M30
 ```
 

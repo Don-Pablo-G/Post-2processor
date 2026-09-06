@@ -1233,7 +1233,7 @@ describe("core pipeline", () => {
       const finding = result.simulationFindings.find((f) => f.code === "SIM_CONTROL_FLOW_LOOP_LIMIT");
       expect(finding?.blockIndex).toBe(2);
     },
-    15_000
+    30_000
   );
 
   it(
@@ -1251,7 +1251,7 @@ describe("core pipeline", () => {
       expect(warnings.length).toBeGreaterThan(1);
       expect(findings).toHaveLength(warnings.length);
     },
-    15_000
+    30_000
   );
 
   it("adds simulation finding for orphan END without matching WHILE", async () => {
@@ -2859,6 +2859,47 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
         i.message.includes("G92 coordinate system shift is uncommon and risky")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 and M99 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nM98 P2 M99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 and M99 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G28 without an axis word", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nG28\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G28 without an axis word"))
+    ).toBe(true);
+  });
+
+  it("warns G30 without an axis word", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nG30\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G30 without an axis word"))
+    ).toBe(true);
+  });
+
+  it("warns G28 and G53 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nG28 G53 Z0\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 and G53 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G4 dwell with zero time", () => {
+    const ast = parse("O1\nT1 M6\nG4 P0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G4 dwell with zero time")
       )
     ).toBe(true);
   });

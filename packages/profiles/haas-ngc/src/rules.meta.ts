@@ -659,6 +659,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG0 X0 Y0\nM30\n"
   },
   {
+    id: "haas.m98-and-m99-same-block",
+    severity: "warning",
+    messageMatcher: /M98 and M99 on the same block/,
+    summary: "Do not combine M98 subprogram call and M99 return on one block.",
+    positiveSnippet: "O0001\nT1 M6\nM98 P2 M99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nM98 P2\nM30\n"
+  },
+  {
+    id: "haas.g28-without-axis",
+    severity: "warning",
+    messageMatcher: /G28 without an axis word/,
+    summary: "G28 should include an intermediate axis point (e.g. G91 G28 Z0).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g30-without-axis",
+    severity: "warning",
+    messageMatcher: /G30 without an axis word/,
+    summary: "G30 should include an intermediate axis point (e.g. G91 G30 Z0).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g28-and-g53-same-block",
+    severity: "warning",
+    messageMatcher: /G28 and G53 on the same block/,
+    summary: "Do not combine G28 reference return and G53 machine move on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 G53 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g4-zero-dwell",
+    severity: "warning",
+    messageMatcher: /G4 dwell with zero time/,
+    summary: "G4 with P0/X0 is a zero-time dwell — verify intentional.",
+    positiveSnippet: "O0001\nT1 M6\nG4 P0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG4 P1.\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

@@ -870,6 +870,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 98) && hasWordM(block, 99)) {
+      issues.push({
+        severity: "warning",
+        message: "M98 and M99 on the same block — call and return conflict.",
+        blockIndex: index
+      });
+    }
+
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",
@@ -935,10 +943,29 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (
+      hasExactG4(block) &&
+      (isZeroOffsetWord(lastWordValue(block, "P")) || isZeroOffsetWord(lastWordValue(block, "X")))
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell with zero time (P0/X0) — verify intentional zero dwell.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG28(block) && hasExactG30(block)) {
       issues.push({
         severity: "warning",
         message: "G28 and G30 on the same block — pick one reference-return command.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 and G53 on the same block — pick one machine-positioning style.",
         blockIndex: index
       });
     }
@@ -957,6 +984,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         severity: "warning",
         message:
           "G30 while absolute mode (G90) is active — use G91 with G30 intermediate points, then restore G90.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && axisWordCount(block) === 0) {
+      issues.push({
+        severity: "warning",
+        message: "G28 without an axis word — specify an intermediate point (e.g. G91 G28 Z0).",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && axisWordCount(block) === 0) {
+      issues.push({
+        severity: "warning",
+        message: "G30 without an axis word — specify an intermediate point (e.g. G91 G30 Z0).",
         blockIndex: index
       });
     }
