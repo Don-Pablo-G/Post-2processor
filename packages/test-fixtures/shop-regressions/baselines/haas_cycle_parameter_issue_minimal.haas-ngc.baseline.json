@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 6,
+  "lintIssueCount": 7,
   "lintIssues": [
     {
       "severity": "warning",
@@ -18,6 +18,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before G90/G91 — set absolute or incremental distance mode first."
+    },
+    {
+      "severity": "warning",
+      "message": "Canned cycle (G73/G76/G81-G83/G85-G89) while spindle is off — start spindle before the cycle."
     },
     {
       "severity": "warning",

@@ -903,6 +903,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nG91\nG30 Z0\nG90\nM30\n"
   },
   {
+    id: "haas.g28-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G28 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before G28 reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG91\nG28 Z0\nG90\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g30-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G30 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before G30 secondary reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG91\nG30 Z0\nG90\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g53-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G53 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before G53 machine move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG53 Z0\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.canned-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /Canned cycle \(G73\/G76\/G81-G83\/G85-G89\) while spindle is off/,
+    summary: "Start the spindle before a non-tapping canned cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-negative-z-without-g43",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 with negative Z while tool length compensation \(G43\) is inactive/,
+    summary: "Apply G43 before feed plunging to a negative Z.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG1 Z-1. F10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG1 Z-1. F10.\nM30\n"
+  },
+  {
+    id: "haas.cutter-comp-without-tool-length",
+    severity: "warning",
+    messageMatcher: /G41\/G42 while tool length compensation \(G43\) is inactive/,
+    summary: "Apply G43 tool length before G41/G42 cutter compensation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nM30\n"
+  },
+  {
+    id: "haas.m98-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M98 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M98 subprogram call.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nM98 P1000\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nG40\nM98 P1000\nM30\n"
+  },
+  {
+    id: "haas.m98-while-canned",
+    severity: "warning",
+    messageMatcher: /M98 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M98 subprogram call.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM98 P1000\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM98 P1000\nM5\nM30\n"
+  },
+  {
+    id: "haas.m97-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M97 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M97 local subprogram call.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nM97 P10\nG40\nN10\nM99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nG40\nM97 P10\nN10\nM99\nM30\n"
+  },
+  {
+    id: "haas.m97-while-canned",
+    severity: "warning",
+    messageMatcher: /M97 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M97 local subprogram call.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM97 P10\nG80\nN10\nM99\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM97 P10\nN10\nM99\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

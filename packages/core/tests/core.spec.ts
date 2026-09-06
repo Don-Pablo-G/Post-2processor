@@ -3125,6 +3125,105 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G28 while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG91\nG28 Z0\nG90\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G30 while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG91\nG30 Z0\nG90\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G30 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G53 while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG53 Z0\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G53 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns non-tapping canned cycle while spindle is off", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Canned cycle (G73/G76/G81-G83/G85-G89) while spindle is off")
+      )
+    ).toBe(true);
+  });
+
+  it("warns feed negative Z without G43", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG1 Z-1. F10.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G1/G2/G3 with negative Z while tool length compensation (G43) is inactive")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G41/G42 without tool length active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG41 D1\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G41/G42 while tool length compensation (G43) is inactive")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 while cutter compensation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nM98 P1000\nG40\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 while canned cycle is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM98 P1000\nG80\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while a canned cycle is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while cutter compensation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nM97 P10\nG40\nN10\nM99\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while canned cycle is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM97 P10\nG80\nN10\nM99\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while a canned cycle is still active")
+      )
+    ).toBe(true);
+  });
+
   it("warns G28 and G92 on the same block", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(

@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_multiop_local_subs.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 5,
   "lintIssues": [
     {
       "severity": "warning",
@@ -18,6 +18,10 @@
     {
       "severity": "warning",
       "message": "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion."
+    },
+    {
+      "severity": "warning",
+      "message": "Canned cycle (G73/G76/G81-G83/G85-G89) while spindle is off — start spindle before the cycle."
     }
   ],
   "simulation": {

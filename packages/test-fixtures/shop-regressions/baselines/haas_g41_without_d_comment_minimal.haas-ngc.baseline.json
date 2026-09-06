@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_g41_without_d_comment_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 5,
   "lintIssues": [
     {
       "severity": "warning",
@@ -14,6 +14,10 @@
     {
       "severity": "warning",
       "message": "G41/G42 without D and no prior D offset active — set D explicitly or confirm carried offset state."
+    },
+    {
+      "severity": "warning",
+      "message": "G41/G42 while tool length compensation (G43) is inactive — apply G43 before cutter compensation."
     },
     {
       "severity": "warning",
