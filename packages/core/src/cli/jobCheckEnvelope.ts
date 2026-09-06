@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 30;
+export const CLI_SCHEMA_VERSION = 31;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -788,6 +788,15 @@ export type CliBatchWalkExport = {
    * the manifest entry itself when present).
    */
   zipEntryCount?: number;
+  /**
+   * Schema v31: lower-case hex SHA-256 of `batch-export.zip` bytes.
+   * Mirrored by the on-disk `batch-export.zip.sha256` sidecar. The copy of
+   * `batch-summary.json` *inside* the zip may omit this field; the rewritten
+   * on-disk summary is authoritative after the zip is sealed.
+   */
+  zipSha256?: string;
+  /** Schema v31: absolute path of the `batch-export.zip.sha256` sidecar. */
+  zipSha256Path?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -1817,7 +1826,7 @@ export function formatBatchFixCandidatesAsSarifLite(
 }
 
 /**
- * Schema v29–v30: classify a relative path inside `batch-export.zip` /
+ * Schema v29–v31: classify a relative path inside `batch-export.zip` /
  * `--out-dir` for the export manifest.
  */
 export function classifyBatchExportPath(rel: string): string {
@@ -1828,6 +1837,9 @@ export function classifyBatchExportPath(rel: string): string {
   if (rel === "batch-fix-previews.json") return "fix-previews";
   if (rel === "batch-export-manifest.json") return "manifest";
   if (rel === "batch-export.zip") return "zip";
+  if (rel === "batch-export.zip.sha256" || rel.endsWith(".zip.sha256")) {
+    return "zip-sha256";
+  }
   if (rel.startsWith("setup-txt/")) return "setup-txt";
   if (rel.startsWith("setup-pdf/")) return "setup-pdf";
   if (rel.startsWith("patched-nc/")) return "patched-nc";
@@ -1838,34 +1850,52 @@ export function classifyBatchExportPath(rel: string): string {
 export type BatchExportManifestEntry = {
   path: string;
   kind: string;
+  /** Schema v31: uncompressed byte length of the artifact when known. */
+  bytes?: number;
 };
 
 /**
- * Schema v29–v30: machine-readable inventory of `--out-dir` / zip artifacts.
+ * Schema v29–v31: machine-readable inventory of `--out-dir` / zip artifacts.
  * Schema v30 adds `byKind` rollup and optional `zipEntryCount`.
+ * Schema v31 adds optional per-entry `bytes` and root `zipSha256`.
  */
 export type BatchExportManifest = {
   schemaVersion: number;
   outDir?: string;
   writtenFileCount?: number;
   zipEntryCount?: number;
+  /** Schema v31: SHA-256 of `batch-export.zip` when known. */
+  zipSha256?: string;
   entries: BatchExportManifestEntry[];
   byKind: Record<string, number>;
 };
 
+export type BatchExportManifestPathInput =
+  | string
+  | {
+      path: string;
+      bytes?: number;
+    };
+
 export function buildBatchExportManifest(
-  paths: ReadonlyArray<string>,
+  paths: ReadonlyArray<BatchExportManifestPathInput>,
   options?: {
     schemaVersion?: number;
     outDir?: string;
     writtenFileCount?: number;
     zipEntryCount?: number;
+    zipSha256?: string;
   }
 ): BatchExportManifest {
-  const entries: BatchExportManifestEntry[] = paths.map((p) => ({
-    path: p,
-    kind: classifyBatchExportPath(p)
-  }));
+  const entries: BatchExportManifestEntry[] = paths.map((input) => {
+    const path = typeof input === "string" ? input : input.path;
+    const bytes = typeof input === "string" ? undefined : input.bytes;
+    return {
+      path,
+      kind: classifyBatchExportPath(path),
+      ...(bytes !== undefined ? { bytes } : {})
+    };
+  });
   const byKind: Record<string, number> = {};
   for (const entry of entries) {
     byKind[entry.kind] = (byKind[entry.kind] ?? 0) + 1;
@@ -1882,6 +1912,7 @@ export function buildBatchExportManifest(
     ...(options?.zipEntryCount !== undefined
       ? { zipEntryCount: options.zipEntryCount }
       : {}),
+    ...(options?.zipSha256 !== undefined ? { zipSha256: options.zipSha256 } : {}),
     entries,
     byKind: orderedByKind
   };

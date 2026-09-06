@@ -326,6 +326,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: string;
     batchJobCheckDownloadCsv: string;
     batchJobCheckDownloadedCsv: string;
+    batchJobCheckDownloadManifest: string;
+    batchJobCheckDownloadedManifest: string;
     batchJobCheckCopyFixPreview: string;
     batchJobCheckCopiedFixPreview: string;
     batchJobCheckDownloadFixPreview: string;
@@ -651,6 +653,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: "Skopiowano CSV agregacji batch",
     batchJobCheckDownloadCsv: "Pobierz CSV agregacji",
     batchJobCheckDownloadedCsv: "Pobrano CSV agregacji batch",
+    batchJobCheckDownloadManifest: "Pobierz manifest eksportu",
+    batchJobCheckDownloadedManifest: "Pobrano manifest eksportu batch",
     batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
     batchJobCheckCopiedFixPreview: "Skopiowano podgląd fixów batch",
     batchJobCheckDownloadFixPreview: "Pobierz podgląd fixów",
@@ -977,6 +981,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: "Copied batch aggregation CSV",
     batchJobCheckDownloadCsv: "Download aggregation CSV",
     batchJobCheckDownloadedCsv: "Downloaded batch aggregation CSV",
+    batchJobCheckDownloadManifest: "Download export manifest",
+    batchJobCheckDownloadedManifest: "Downloaded batch export manifest",
     batchJobCheckCopyFixPreview: "Copy fix preview",
     batchJobCheckCopiedFixPreview: "Copied batch fix preview",
     batchJobCheckDownloadFixPreview: "Download fix preview",
@@ -2188,6 +2194,58 @@ export function App() {
       setExportStatus(`${t.batchJobCheckDownloadedCsv}: ${downloaded}`);
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Batch CSV download failed.");
+    }
+  }
+
+  async function handleDownloadBatchExportManifest(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const sourcesByInput = new Map(
+        batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+      );
+      const previews = buildDesktopBatchQuickFixPreviews(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
+      const envelopeItems = buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope);
+      const patchedItems = buildDesktopBatchPatchedPrograms(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
+      const txtItems = buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults);
+      const pdfItems = buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults);
+      const paths = [
+        ...pdfItems.map((i) => i.filename),
+        ...txtItems.map((i) => i.filename),
+        ...envelopeItems.map((i) => i.filename),
+        ...patchedItems.map((i) => i.filename),
+        ...(previews.length > 0 ? ["batch-fix-previews.json"] : []),
+        "batch-unbound-fixes.sarif.json",
+        "batch-summary.csv",
+        "batch-summary.json",
+        "batch-export-manifest.json",
+        "batch-export.zip"
+      ];
+      const exp = batchJobCheckResult.envelope.summary.batchWalk?.export;
+      const manifest = buildDesktopBatchExportManifest(paths, {
+        zipEntryCount: paths.length - 1,
+        ...(exp?.writtenFileCount !== undefined
+          ? { writtenFileCount: exp.writtenFileCount }
+          : {}),
+        ...(exp?.zipSha256 ? { zipSha256: exp.zipSha256 } : {})
+      });
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-export-manifest.json",
+          body: formatDesktopBatchExportManifest(manifest),
+          mimeType: "application/json;charset=utf-8"
+        }
+      ]);
+      setExportStatus(`${t.batchJobCheckDownloadedManifest}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(
+        error instanceof Error ? error.message : "Batch export manifest download failed."
+      );
     }
   }
 
@@ -4144,6 +4202,13 @@ export function App() {
                 onClick={() => void handleDownloadBatchAggregationsCsv()}
               >
                 {t.batchJobCheckDownloadCsv}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-manifest"
+                onClick={() => void handleDownloadBatchExportManifest()}
+              >
+                {t.batchJobCheckDownloadManifest}
               </button>
               <button
                 type="button"

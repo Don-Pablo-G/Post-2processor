@@ -49,6 +49,17 @@ export async function computeSha256(payload: string): Promise<string> {
   return bytesToHex(new Uint8Array(digest));
 }
 
+/** SHA-256 of raw bytes as a lower-case hex string (e.g. zip archives). */
+export async function computeSha256Bytes(bytes: Uint8Array): Promise<string> {
+  const subtle = requireSubtle();
+  // Copy into a fresh ArrayBuffer so the digest input is BufferSource-compatible
+  // under TypeScript's stricter ArrayBufferView generics.
+  const copy = new Uint8Array(bytes.byteLength);
+  copy.set(bytes);
+  const digest = await subtle.digest("SHA-256", copy);
+  return bytesToHex(new Uint8Array(digest));
+}
+
 /**
  * HMAC-SHA-256 of `payload` with `secretKey`, as a lower-case hex string.
  * Empty / whitespace-only `secretKey` is REJECTED — silently falling back

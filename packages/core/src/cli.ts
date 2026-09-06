@@ -22,6 +22,7 @@ import { createZip } from "./workshop/storeZip.js";
 import {
   computeHmacSha256,
   computeSha256,
+  computeSha256Bytes,
   decryptAesGcm,
   parseSidecarBodyDigest
 } from "./audit/auditTrailIntegrity.js";
@@ -122,7 +123,8 @@ export type {
   CliSafetyFindingSource,
   CliSafetyFindingsByCodeEntry,
   BatchExportManifest,
-  BatchExportManifestEntry
+  BatchExportManifestEntry,
+  BatchExportManifestPathInput
 } from "./cli/jobCheckEnvelope.js";
 
 export {
@@ -2019,14 +2021,14 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v30: summaries + SARIF, then manifest, then zip.
+      // Schema v18–v31: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
       const willWriteNdjson = parsed.format === "ndjson";
-      // Remaining disk writes: summary.json, csv, sarif, [ndjson], manifest, zip.
-      const remainingWrites = 5 + (willWriteNdjson ? 1 : 0);
-      // Remaining zip entries (not including the zip file itself): same without zip.
+      // Remaining disk writes: summary.json, csv, sarif, [ndjson], manifest, zip, sha256.
+      const remainingWrites = 6 + (willWriteNdjson ? 1 : 0);
+      // Remaining zip entries (not including the zip file itself): same without zip/sha256.
       const remainingZipEntries = 4 + (willWriteNdjson ? 1 : 0);
       if (!batchWalk.export) batchWalk.export = { outDir };
       batchWalk.export.exportManifestPath = manifestPath;
@@ -2091,11 +2093,15 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         }
       }
 
-      // Schema v29–v30: export manifest listing zip-bound paths + kinds + byKind.
+      const utf8ByteLength = (data: string | Uint8Array): number =>
+        typeof data === "string" ? new TextEncoder().encode(data).byteLength : data.byteLength;
+
+      // Schema v29–v31: export manifest listing zip-bound paths + kinds + byKind (+ bytes).
       const manifestPaths = [
-        ...zipEntries.map((e) => e.path),
-        "batch-export-manifest.json",
-        "batch-export.zip"
+        ...zipEntries.map((e) => ({ path: e.path, bytes: utf8ByteLength(e.data) })),
+        { path: "batch-export-manifest.json" },
+        { path: "batch-export.zip" },
+        { path: "batch-export.zip.sha256" }
       ];
       const manifest = buildBatchExportManifest(manifestPaths, {
         schemaVersion: CLI_SCHEMA_VERSION,
@@ -2116,13 +2122,55 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       }
 
       // Schema v23: pack per-file outputs + summaries into batch-export.zip.
+      let zipBytes: Uint8Array;
       try {
-        const zipBytes = await createZip(zipEntries, { method: "deflate" });
+        zipBytes = await createZip(zipEntries, { method: "deflate" });
         await writeFn(zipPath, zipBytes);
         written += 1;
       } catch (err) {
         writeErr(
           `Failed to write --out-dir batch export zip ${zipPath}: ${(err as Error).message}\n`
+        );
+        return 2;
+      }
+
+      // Schema v31: seal zip integrity sidecar; rewrite disk summary/manifest.
+      try {
+        const zipSha256 = await computeSha256Bytes(zipBytes);
+        const zipSha256Path = `${zipPath}.sha256`;
+        const shaSidecarBody = `${zipSha256}  batch-export.zip\n`;
+        await writeFn(zipSha256Path, shaSidecarBody);
+        written += 1;
+        batchWalk.export.zipSha256 = zipSha256;
+        batchWalk.export.zipSha256Path = zipSha256Path;
+
+        // Disk copies are authoritative for integrity metadata; zip stays sealed.
+        const summaryJsonFinal = `${formatBatchJson(entries, { batchWalk })}\n`;
+        await writeFn(summaryPath, summaryJsonFinal);
+        const manifestFinal = buildBatchExportManifest(
+          [
+            ...zipEntries.map((e) => ({
+              path: e.path,
+              bytes: utf8ByteLength(e.data)
+            })),
+            { path: "batch-export.zip", bytes: zipBytes.byteLength },
+            {
+              path: "batch-export.zip.sha256",
+              bytes: utf8ByteLength(shaSidecarBody)
+            }
+          ],
+          {
+            schemaVersion: CLI_SCHEMA_VERSION,
+            outDir,
+            writtenFileCount: batchWalk.export.writtenFileCount,
+            zipEntryCount: batchWalk.export.zipEntryCount,
+            zipSha256
+          }
+        );
+        await writeFn(manifestPath, formatBatchExportManifest(manifestFinal));
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir batch export zip sha256 ${zipPath}.sha256: ${(err as Error).message}\n`
         );
         return 2;
       }

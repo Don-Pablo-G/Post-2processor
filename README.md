@@ -4258,6 +4258,43 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=30
 ```
 
+## Zip SHA-256 + manifest bytes + desktop manifest download + Schema v31
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `zipSha256` + per-entry `bytes` (Schema v31)
+
+`CLI_SCHEMA_VERSION` bumps `30 → 31`.
+`batchWalk.export` gains optional `zipSha256` / `zipSha256Path`.
+`BatchExportManifest` / entries gain optional root `zipSha256` and per-entry
+`bytes`. `classifyBatchExportPath` recognizes `batch-export.zip.sha256`.
+
+### Move 2 — CLI writes `batch-export.zip.sha256`
+
+After sealing `batch-export.zip`, `--out-dir` computes SHA-256 (Web Crypto),
+writes a BSD-style sidecar (`<hex>  batch-export.zip`), and rewrites the
+on-disk summary + manifest with integrity metadata. Zip-embedded copies stay
+sealed without the post-hash fields.
+
+### Move 3 — Desktop Download export manifest
+
+Folder batch gains **Download export manifest** (`batch-export-manifest.json`).
+
+### Move 4 — Inventory chip shows `zipSha`
+
+When `zipSha256` is present, the batch-export inventory chip includes
+`zipSha=<first 8 hex chars>`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=31
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

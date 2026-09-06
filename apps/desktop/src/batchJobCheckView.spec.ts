@@ -334,7 +334,8 @@ describe("batchJobCheckView", () => {
             fixPreviewCount: 3,
             exportManifestPath: "/out/batch-export-manifest.json",
             writtenFileCount: 12,
-            zipEntryCount: 10
+            zipEntryCount: 10,
+            zipSha256: "abcdef0123456789deadbeef"
           }
         }
       }
@@ -356,6 +357,7 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/manifest/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/written=12/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipEntries=10/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);
     expect(
       formatDesktopBatchQuickFixPreviewChip(
         buildDesktopBatchQuickFixPreviews(

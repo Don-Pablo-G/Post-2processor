@@ -1021,7 +1021,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=30\n");
+    expect(stdout).toBe("cnc-job-check schema=31\n");
     expect(stderr).toBe("");
   });
 
@@ -1782,7 +1782,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 12 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 13 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -1816,7 +1816,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 11 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 12 files to /);
     const aRaw = await readFile(path.join(outDir, "a.ndjson"), "utf8");
     const aLines = aRaw.split("\n").filter((l) => l.length > 0);
     expect(aLines).toHaveLength(1);
@@ -2000,7 +2000,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 10 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 11 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2632,8 +2632,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 30", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(30);
+  it("CLI_SCHEMA_VERSION is 31", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(31);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3932,7 +3932,7 @@ describe("Schema v30: shared export manifest + zipEntryCount", () => {
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(30);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.zipEntryCount).toBeGreaterThan(0);
     const manifest = JSON.parse(
       await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
@@ -3940,6 +3940,59 @@ describe("Schema v30: shared export manifest + zipEntryCount", () => {
     expect(manifest.byKind).toBeDefined();
     expect(manifest.byKind.manifest).toBe(1);
     expect(manifest.zipEntryCount).toBe(summary.summary.batchWalk.export.zipEntryCount);
+  });
+});
+
+describe("Schema v31: zipSha256 + manifest entry bytes", () => {
+  it("buildBatchExportManifest accepts per-entry bytes and zipSha256", () => {
+    expect(classifyBatchExportPath("batch-export.zip.sha256")).toBe("zip-sha256");
+    const manifest = buildBatchExportManifest(
+      [
+        { path: "batch-summary.json", bytes: 12 },
+        { path: "batch-export.zip", bytes: 100 },
+        { path: "batch-export.zip.sha256", bytes: 80 }
+      ],
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        zipSha256: "a".repeat(64),
+        zipEntryCount: 1
+      }
+    );
+    expect(manifest.zipSha256).toBe("a".repeat(64));
+    expect(manifest.byKind["zip-sha256"]).toBe(1);
+    expect(manifest.entries.find((e) => e.path === "batch-summary.json")?.bytes).toBe(12);
+  });
+
+  it("--out-dir writes batch-export.zip.sha256 and records zipSha256 + entry bytes", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(31);
+    expect(summary.summary.batchWalk.export.zipSha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(summary.summary.batchWalk.export.zipSha256Path).toMatch(/batch-export\.zip\.sha256$/);
+    const sidecar = await readFile(path.join(outDir, "batch-export.zip.sha256"), "utf8");
+    expect(sidecar).toMatch(new RegExp(`^${summary.summary.batchWalk.export.zipSha256}  batch-export\\.zip\\n$`));
+    const zipBytes = await readFile(path.join(outDir, "batch-export.zip"));
+    const { createHash } = await import("node:crypto");
+    const actual = createHash("sha256").update(zipBytes).digest("hex");
+    expect(summary.summary.batchWalk.export.zipSha256).toBe(actual);
+    const manifest = JSON.parse(
+      await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
+    );
+    expect(manifest.zipSha256).toBe(summary.summary.batchWalk.export.zipSha256);
+    expect(manifest.byKind["zip-sha256"]).toBe(1);
+    expect(manifest.entries.some((e: { bytes?: number }) => typeof e.bytes === "number")).toBe(
+      true
+    );
+    expect(summary.summary.batchWalk.export.writtenFileCount).toBe(
+      manifest.writtenFileCount
+    );
   });
 });
 

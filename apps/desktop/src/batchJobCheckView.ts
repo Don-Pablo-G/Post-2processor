@@ -356,6 +356,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.exportManifestPath) parts.push("manifest");
   if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
   if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
+  if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 
@@ -428,14 +429,15 @@ export function buildDesktopBatchEnvelopeJsonFiles(
 }
 
 /**
- * Schema v30: client-side export manifest for desktop zip parity with CLI.
+ * Schema v30–v31: client-side export manifest for desktop zip parity with CLI.
  */
 export function buildDesktopBatchExportManifest(
-  paths: ReadonlyArray<string>,
+  paths: ReadonlyArray<string | { path: string; bytes?: number }>,
   options?: {
     outDir?: string;
     writtenFileCount?: number;
     zipEntryCount?: number;
+    zipSha256?: string;
   }
 ): BatchExportManifest {
   return buildBatchExportManifest(paths, {

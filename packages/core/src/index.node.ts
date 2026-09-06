@@ -159,7 +159,8 @@ export type {
   BatchFixCandidateRow,
   BatchFixCandidateKind,
   BatchExportManifest,
-  BatchExportManifestEntry
+  BatchExportManifestEntry,
+  BatchExportManifestPathInput
 } from "./cli/jobCheckEnvelope.js";
 
 export {
