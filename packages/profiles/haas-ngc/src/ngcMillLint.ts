@@ -1190,6 +1190,48 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG53(block) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G53 while scaling (G51) is still active — cancel with G50 before machine move.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while coordinate rotation (G68) is still active — cancel with G69 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while scaling (G51) is still active — cancel with G50 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 and G92 on the same block — do not mix reference return with a coordinate shift.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G53 and G92 on the same block — do not mix machine move with a coordinate shift.",
+        blockIndex: index
+      });
+    }
+
     if (hasSpindleDirectionConflict(block)) {
       issues.push({
         severity: "warning",

@@ -3098,6 +3098,51 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G53 while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG51\nG53 Z0\nG50\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G53 while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G30 while coordinate rotation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68\nG91\nG30 Z0\nG90\nG69\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G30 while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G30 while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51\nG91\nG30 Z0\nG90\nG50\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G30 while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G28 and G92 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 and G92 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G53 and G92 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG53 Z0 G92 X0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G53 and G92 on the same block")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

@@ -859,6 +859,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nG91\nG28 Z0\nG90\nM30\n"
   },
   {
+    id: "haas.g53-while-scaling",
+    severity: "warning",
+    messageMatcher: /G53 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before a G53 machine move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG51\nG53 Z0\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG51\nG50\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.g30-while-rotation",
+    severity: "warning",
+    messageMatcher: /G30 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before G30 secondary reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68\nG91\nG30 Z0\nG90\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g30-while-scaling",
+    severity: "warning",
+    messageMatcher: /G30 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G30 secondary reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51\nG91\nG30 Z0\nG90\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g28-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G28 and G92 on the same block/,
+    summary: "Do not combine G28 reference return with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g53-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G53 and G92 on the same block/,
+    summary: "Do not combine G53 machine move with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0 G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,
