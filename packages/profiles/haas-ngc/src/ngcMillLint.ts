@@ -1232,6 +1232,48 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG30(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 and G92 on the same block — do not mix secondary reference return with a coordinate shift.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 and G52 on the same block — do not mix reference return with a local offset.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G53 and G52 on the same block — do not mix machine move with a local offset.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 and G52 on the same block — do not mix secondary reference return with a local offset.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG92(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G92 and G52 on the same block — pick one coordinate-shift style.",
+        blockIndex: index
+      });
+    }
+
     if (hasSpindleDirectionConflict(block)) {
       issues.push({
         severity: "warning",

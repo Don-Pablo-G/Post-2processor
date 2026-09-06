@@ -899,6 +899,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
   },
   {
+    id: "haas.g30-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G30 and G92 on the same block/,
+    summary: "Do not combine G30 secondary reference return with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0 G92 X0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g28-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G28 and G52 on the same block/,
+    summary: "Do not combine G28 reference return with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0 G52 X10.\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g53-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G53 and G52 on the same block/,
+    summary: "Do not combine G53 machine move with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0 G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.g30-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G30 and G52 on the same block/,
+    summary: "Do not combine G30 secondary reference return with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0 G52 X10.\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g92-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G92 and G52 on the same block/,
+    summary: "Do not combine G92 and G52 coordinate shifts on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG92 X0 G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG52 X10.\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

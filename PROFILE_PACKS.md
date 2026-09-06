@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 118
+Total rules: 123
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -123,6 +123,11 @@ Total rules: 118
 | `haas.g30-while-scaling` | warning | — | — | Cancel scaling with G50 before G30 secondary reference return. |
 | `haas.g28-and-g92-same-block` | warning | — | — | Do not combine G28 reference return with G92 on one block. |
 | `haas.g53-and-g92-same-block` | warning | — | — | Do not combine G53 machine move with G92 on one block. |
+| `haas.g30-and-g92-same-block` | warning | — | — | Do not combine G30 secondary reference return with G92 on one block. |
+| `haas.g28-and-g52-same-block` | warning | — | — | Do not combine G28 reference return with G52 on one block. |
+| `haas.g53-and-g52-same-block` | warning | — | — | Do not combine G53 machine move with G52 on one block. |
+| `haas.g30-and-g52-same-block` | warning | — | — | Do not combine G30 secondary reference return with G52 on one block. |
+| `haas.g92-and-g52-same-block` | warning | — | — | Do not combine G92 and G52 coordinate shifts on one block. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -3254,6 +3259,150 @@ T1 M6
 G54
 G90
 G53 Z0
+M30
+```
+
+### `haas.g30-and-g92-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G30 and G92 on the same block/`
+- **Summary:** Do not combine G30 secondary reference return with G92 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0 G92 X0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0
+G90
+M30
+```
+
+### `haas.g28-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G28 and G52 on the same block/`
+- **Summary:** Do not combine G28 reference return with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0 G52 X10.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+M30
+```
+
+### `haas.g53-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G53 and G52 on the same block/`
+- **Summary:** Do not combine G53 machine move with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0 G52 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+M30
+```
+
+### `haas.g30-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G30 and G52 on the same block/`
+- **Summary:** Do not combine G30 secondary reference return with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0 G52 X10.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0
+G90
+M30
+```
+
+### `haas.g92-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G92 and G52 on the same block/`
+- **Summary:** Do not combine G92 and G52 coordinate shifts on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G92 X0 G52 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G52 X10.
 M30
 ```
 
