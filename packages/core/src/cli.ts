@@ -2199,12 +2199,13 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v36: summaries + SARIF, then manifest, then zip + sha256.
+      // Schema v18–v37: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
       const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
       const csvSummaryPath = path.join(outDir, "batch-summary.csv");
+      const jsonSummaryPath = path.join(outDir, "batch-summary.json");
       // Remaining disk writes: summary.json, csv, sarif, ndjson, manifest, zip, sha256.
       const remainingWrites = 7;
       // Remaining zip entries (not including the zip file itself): same without zip/sha256.
@@ -2213,10 +2214,11 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       batchWalk.export.exportManifestPath = manifestPath;
       batchWalk.export.ndjsonSummaryPath = ndjsonSummaryPath;
       batchWalk.export.csvSummaryPath = csvSummaryPath;
+      batchWalk.export.jsonSummaryPath = jsonSummaryPath;
       batchWalk.export.writtenFileCount = written + remainingWrites;
       batchWalk.export.zipEntryCount = zipEntries.length + remainingZipEntries;
 
-      const summaryPath = path.join(outDir, "batch-summary.json");
+      const summaryPath = jsonSummaryPath;
       const batchEnvelope = buildBatchEnvelope(entries, { batchWalk });
       const summaryJson = `${formatBatchJson(entries, { batchWalk })}\n`;
       try {
@@ -2311,7 +2313,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
 
-      // Schema v31–v36: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
+      // Schema v31–v37: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;

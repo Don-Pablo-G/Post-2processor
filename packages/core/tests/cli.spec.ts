@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=36\n");
+    expect(stdout).toBe("cnc-job-check schema=37\n");
     expect(stderr).toBe("");
   });
 
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 36", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(36);
+  it("CLI_SCHEMA_VERSION is 37", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(37);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4228,11 +4228,30 @@ describe("Schema v36: csvSummaryPath", () => {
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(36);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.csvSummaryPath).toMatch(/batch-summary\.csv$/);
     const csv = await readFile(path.join(outDir, "batch-summary.csv"), "utf8");
     expect(csv.length).toBeGreaterThan(0);
     expect(summary.summary.batchWalk.export.byKind["summary-csv"]).toBe(1);
+  });
+});
+
+describe("Schema v37: jsonSummaryPath", () => {
+  it("--out-dir records jsonSummaryPath for batch-summary.json", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(37);
+    expect(summary.summary.batchWalk.export.jsonSummaryPath).toMatch(/batch-summary\.json$/);
+    expect(summary.summary.batchWalk.export.csvSummaryPath).toMatch(/batch-summary\.csv$/);
+    expect(summary.summary.batchWalk.export.ndjsonSummaryPath).toMatch(/batch-summary\.ndjson$/);
+    expect(summary.summary.batchWalk.export.byKind["summary-json"]).toBe(1);
   });
 });
 

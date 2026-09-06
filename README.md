@@ -4473,6 +4473,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=36
 ```
 
+## JSON summary path + Schema v37
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `jsonSummaryPath` (Schema v37)
+
+`CLI_SCHEMA_VERSION` bumps `36 → 37`.
+`batchWalk.export` gains optional `jsonSummaryPath`.
+
+### Move 2 — CLI records `jsonSummaryPath`
+
+`--out-dir` predetermines and records the absolute path of `batch-summary.json`
+alongside the CSV and NDJSON summary sidecars (JSON was already always written).
+
+### Move 3 — Desktop live stamp
+
+`runDesktopBatchJobCheck` stamps relative logical `jsonSummaryPath` /
+`csvSummaryPath` / `ndjsonSummaryPath` on live `batchWalk.export` for inventory
+parity with CLI.
+
+### Move 4 — Inventory chip shows `json`
+
+When `jsonSummaryPath` is present, the batch-export inventory chip includes
+`json`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=37
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
