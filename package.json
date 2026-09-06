@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/profile-fanuc-iso build && npm run --workspace @cnc/ide-bridge build && npm run --workspace @cnc/desktop build",
+    "build:workspace-libs": "npm run --workspace @cnc/core build && npm run --workspace @cnc/profile-haas-ngc build && npm run --workspace @cnc/profile-fanuc-iso build && npm run --workspace @cnc/ide-bridge build",
     "checkpoint:burst": "node ./scripts/checkpoint-burst.mjs",
     "checkpoint:catalog": "node ./scripts/checkpoint-catalog.mjs",
     "checkpoint:catalog:md": "node ./scripts/checkpoint-catalog-md.mjs",

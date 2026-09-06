@@ -32,10 +32,11 @@ jobs:
       - name: Guard imports
         run: npm run guard:imports
 
-      - name: Build core + Haas profile packages
-        run: |
-          npm run --workspace @cnc/core build
-          npm run --workspace @cnc/profile-haas-ngc build
+      - name: Build workspace libraries
+        # core + both profile packs + ide-bridge. CI previously built only
+        # core/haas; optional dynamic imports then failed closed and skipped
+        # fanuc profile_lint / patched-NC / fix-preview coverage.
+        run: npm run build:workspace-libs
 
       - name: Core tests
         run: npm run test
@@ -73,10 +74,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build core + Haas profile packages
-        run: |
-          npm run --workspace @cnc/core build
-          npm run --workspace @cnc/profile-haas-ngc build
+      - name: Build workspace libraries
+        # Desktop resolves @cnc/ide-bridge and profile packs via package exports
+        # pointing at dist/; build all libs before Vite/Playwright.
+        run: npm run build:workspace-libs
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
