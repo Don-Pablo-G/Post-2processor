@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 93
+Total rules: 98
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -98,6 +98,11 @@ Total rules: 93
 | `haas.g30-without-axis` | warning | — | — | G30 should include an intermediate axis point (e.g. G91 G30 Z0). |
 | `haas.g28-and-g53-same-block` | warning | — | — | Do not combine G28 reference return and G53 machine move on one block. |
 | `haas.g4-zero-dwell` | warning | — | — | G4 with P0/X0 is a zero-time dwell — verify intentional. |
+| `haas.g30-and-g53-same-block` | warning | — | — | Do not combine G30 reference return and G53 machine move on one block. |
+| `haas.g53-without-axis` | warning | — | — | G53 should include a machine-coordinate axis move (e.g. G53 Z0). |
+| `haas.g53-multi-axis` | warning | — | — | Prefer single-axis G53 moves for safer machine positioning. |
+| `haas.m97-and-m99-same-block` | warning | — | — | Do not combine M97 local subprogram call and M99 return on one block. |
+| `haas.g4-and-motion-same-block` | warning | — | — | Do not combine G4 dwell with G0/G1/G2/G3 on one block. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -2461,6 +2466,145 @@ M30
 O0001
 T1 M6
 G4 P1.
+M30
+```
+
+### `haas.g30-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G30 and G53 on the same block/`
+- **Summary:** Do not combine G30 reference return and G53 machine move on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 G53 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0
+G90
+M30
+```
+
+### `haas.g53-without-axis`
+
+- **Severity:** warning
+- **Matcher:** `/G53 without an axis word/`
+- **Summary:** G53 should include a machine-coordinate axis move (e.g. G53 Z0).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+M30
+```
+
+### `haas.g53-multi-axis`
+
+- **Severity:** warning
+- **Matcher:** `/G53 with multiple axes on one block/`
+- **Summary:** Prefer single-axis G53 moves for safer machine positioning.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 X0 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+M30
+```
+
+### `haas.m97-and-m99-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M97 and M99 on the same block/`
+- **Summary:** Do not combine M97 local subprogram call and M99 return on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+M97 P10 M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+M97 P10
+M30
+```
+
+### `haas.g4-and-motion-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and axis motion on the same block/`
+- **Summary:** Do not combine G4 dwell with G0/G1/G2/G3 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G4 P1. G0 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G4 P1.
+G0 X10.
 M30
 ```
 

@@ -699,6 +699,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG4 P1.\nM30\n"
   },
   {
+    id: "haas.g30-and-g53-same-block",
+    severity: "warning",
+    messageMatcher: /G30 and G53 on the same block/,
+    summary: "Do not combine G30 reference return and G53 machine move on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 G53 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g53-without-axis",
+    severity: "warning",
+    messageMatcher: /G53 without an axis word/,
+    summary: "G53 should include a machine-coordinate axis move (e.g. G53 Z0).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.g53-multi-axis",
+    severity: "warning",
+    messageMatcher: /G53 with multiple axes on one block/,
+    summary: "Prefer single-axis G53 moves for safer machine positioning.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 X0 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.m97-and-m99-same-block",
+    severity: "warning",
+    messageMatcher: /M97 and M99 on the same block/,
+    summary: "Do not combine M97 local subprogram call and M99 return on one block.",
+    positiveSnippet: "O0001\nT1 M6\nM97 P10 M99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nM97 P10\nM30\n"
+  },
+  {
+    id: "haas.g4-and-motion-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and axis motion on the same block/,
+    summary: "Do not combine G4 dwell with G0/G1/G2/G3 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG4 P1. G0 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG4 P1.\nG0 X10.\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

@@ -2904,6 +2904,49 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G30 and G53 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nG30 G53 Z0\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G30 and G53 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G53 without an axis word", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG53\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G53 without an axis word"))
+    ).toBe(true);
+  });
+
+  it("warns G53 with multiple axes on one block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG53 X0 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G53 with multiple axes on one block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 and M99 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nM97 P10 M99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 and M99 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G4 dwell and axis motion on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG4 P1. G0 X10.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G4 dwell and axis motion on the same block")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

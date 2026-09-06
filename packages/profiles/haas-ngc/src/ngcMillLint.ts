@@ -894,6 +894,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 97) && hasWordM(block, 99)) {
+      issues.push({
+        severity: "warning",
+        message: "M97 and M99 on the same block — call and return conflict.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG65(block) && hasWordM(block, 98)) {
       issues.push({
         severity: "warning",
@@ -954,6 +962,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG4(block) && (hasExactG0(block) || hasExactFeedMotion(block))) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and axis motion on the same block — dwell and move separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG28(block) && hasExactG30(block)) {
       issues.push({
         severity: "warning",
@@ -966,6 +982,31 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G28 and G53 on the same block — pick one machine-positioning style.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G30 and G53 on the same block — pick one machine-positioning style.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && axisWordCount(block) === 0) {
+      issues.push({
+        severity: "warning",
+        message: "G53 without an axis word — specify a machine-coordinate move (e.g. G53 Z0).",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && axisWordCount(block) > 1) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G53 with multiple axes on one block — prefer single-axis G53 moves for safer machine positioning.",
         blockIndex: index
       });
     }
