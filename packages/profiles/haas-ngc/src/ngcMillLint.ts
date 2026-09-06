@@ -421,6 +421,29 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     const hasM00 = hasWordM(block, 0);
     const hasM01 = hasWordM(block, 1);
     if (hasM00 || hasM01) {
+      const stopLabel = hasM00 ? "M00" : "M01";
+      const stopKind = hasM00 ? "program stop" : "optional stop";
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while coolant is still on — turn coolant off with M9 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while cutter compensation (G41/G42) is still active — cancel with G40 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while a canned cycle is still active — cancel with G80 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
       const hasRestartSpindleSameBlock = block.words.some((w) => {
         if (w.letter !== "M") return false;
         const m = Math.trunc(Number.parseFloat(w.value));
@@ -584,6 +607,36 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "M5 while a canned cycle is still active — cancel with G80 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M5 while tool length compensation (G43) is still active — cancel with G49 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M5 while coordinate rotation (G68) is still active — cancel with G69 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "M5 while scaling (G51) is still active — cancel with G50 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "M5 while incremental mode (G91) is active — restore G90 when stopping the spindle.",
           blockIndex: index
         });
       }

@@ -1223,6 +1223,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
   },
   {
+    id: "haas.m5-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M5 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM5\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.m5-while-rotation",
+    severity: "warning",
+    messageMatcher: /M5 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nM5\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.m5-while-scaling",
+    severity: "warning",
+    messageMatcher: /M5 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nM5\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.m5-while-incremental",
+    severity: "warning",
+    messageMatcher: /M5 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 when stopping the spindle with M5.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM5\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.m00-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M00 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM00\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m00-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M00 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM00\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m00-while-canned",
+    severity: "warning",
+    messageMatcher: /M00 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM00\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M01 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM01\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM01\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M01 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM01\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM01\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-canned",
+    severity: "warning",
+    messageMatcher: /M01 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM01\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM01\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_comp_spindle_tool_transitions.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 6,
   "lintIssues": [
     {
       "severity": "warning",
@@ -13,7 +13,15 @@
     },
     {
       "severity": "warning",
+      "message": "M5 while tool length compensation (G43) is still active — cancel with G49 when stopping the spindle."
+    },
+    {
+      "severity": "warning",
       "message": "M6 while tool length compensation (G43) is still active — cancel with G49 before the tool change."
+    },
+    {
+      "severity": "warning",
+      "message": "M5 while tool length compensation (G43) is still active — cancel with G49 when stopping the spindle."
     },
     {
       "severity": "warning",
