@@ -1180,10 +1180,16 @@ function resolvePolicyFromArgs(
  */
 export type CliProfileLintLoader = (ast: ProgramAst) => Promise<LintIssue[] | undefined>;
 
+/** Bare package names for optional workspace peers — keep as bindings so `tsc`
+ * does not require their (possibly unbuilt) `dist/*.d.ts` when compiling core. */
+const PROFILE_HAAS_NGC_SPEC = "@cnc/profile-haas-ngc";
+const PROFILE_FANUC_ISO_SPEC = "@cnc/profile-fanuc-iso";
+const IDE_BRIDGE_SPEC = "@cnc/ide-bridge";
+
 const PROFILE_LINT_LOADERS: Partial<Record<CliControllerKey, CliProfileLintLoader>> = {
   "haas-ngc": async (ast) => {
     try {
-      const mod = (await import("@cnc/profile-haas-ngc")) as {
+      const mod = (await import(PROFILE_HAAS_NGC_SPEC)) as {
         haasNgcProfile?: { validateAst?: (ast: ProgramAst) => LintIssue[] };
       };
       return mod.haasNgcProfile?.validateAst?.(ast);
@@ -1193,7 +1199,7 @@ const PROFILE_LINT_LOADERS: Partial<Record<CliControllerKey, CliProfileLintLoade
   },
   fanuc: async (ast) => {
     try {
-      const mod = (await import("@cnc/profile-fanuc-iso")) as {
+      const mod = (await import(PROFILE_FANUC_ISO_SPEC)) as {
         fanucIsoProfile?: { validateAst?: (ast: ProgramAst) => LintIssue[] };
       };
       return mod.fanucIsoProfile?.validateAst?.(ast);
@@ -1270,7 +1276,7 @@ const PROFILE_RULE_DOCS_LOADERS: Partial<
 > = {
   "haas-ngc": async () => {
     try {
-      const mod = (await import("@cnc/profile-haas-ngc")) as {
+      const mod = (await import(PROFILE_HAAS_NGC_SPEC)) as {
         haasNgcRuleDocs?: ProfileRuleDoc[];
       };
       return mod.haasNgcRuleDocs;
@@ -1280,7 +1286,7 @@ const PROFILE_RULE_DOCS_LOADERS: Partial<
   },
   fanuc: async () => {
     try {
-      const mod = (await import("@cnc/profile-fanuc-iso")) as {
+      const mod = (await import(PROFILE_FANUC_ISO_SPEC)) as {
         fanucIsoRuleDocs?: ProfileRuleDoc[];
       };
       return mod.fanucIsoRuleDocs;
@@ -2129,7 +2135,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       let patchedNcCount = 0;
       const patchedNcDir = path.join(outDir, "patched-nc");
       try {
-        const bridge = (await import("@cnc/ide-bridge")) as {
+        const bridge = (await import(IDE_BRIDGE_SPEC)) as {
           buildIdeBatchPatchedPrograms?: (
             envelope: ReturnType<typeof buildBatchEnvelope>,
             sources: ReadonlyMap<string, string>
