@@ -60,6 +60,24 @@ function hasExactG80(block: { words: Word[] }): boolean {
   });
 }
 
+function hasExactG40(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 40;
+  });
+}
+
+function hasExactG90Or91(block: { words: Word[] }): 90 | 91 | undefined {
+  let mode: 90 | 91 | undefined;
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 90) mode = 90;
+    if (v === 91) mode = 91;
+  }
+  return mode;
+}
+
 function hasExactG20Or21(block: { words: Word[] }): 20 | 21 | undefined {
   for (const w of block.words) {
     if (w.letter !== "G") continue;
@@ -98,20 +116,6 @@ function hasExactG49(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;
     return Number.parseFloat(w.value) === 49;
-  });
-}
-
-function hasExactG90(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 90;
-  });
-}
-
-function hasExactG91(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 91;
   });
 }
 
@@ -337,6 +341,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let coolantActive = false;
   let toolLengthActive = false;
   let incrementalActive = false;
+  let activeDistanceMode: 90 | 91 | undefined;
   let sawWorkOffset = false;
   let warnedMissingWorkOffset = false;
   let sawAxisMotion = false;
@@ -532,12 +537,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
-    if (hasExactG91(block)) {
-      incrementalActive = true;
-      sawDistanceMode = true;
-    }
-    if (hasExactG90(block)) {
-      incrementalActive = false;
+    const distanceMode = hasExactG90Or91(block);
+    if (distanceMode !== undefined) {
+      if (
+        sawAxisMotion &&
+        activeDistanceMode !== undefined &&
+        activeDistanceMode !== distanceMode
+      ) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode changed after axis motion — verify intentional G90/G91 switch mid-program.",
+          blockIndex: index
+        });
+      }
+      activeDistanceMode = distanceMode;
+      incrementalActive = distanceMode === 91;
       sawDistanceMode = true;
     }
 
@@ -657,6 +672,24 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "M6 while spindle is still on — stop spindle with M5 before the tool change.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M6 while cutter compensation (G41/G42) is still active — cancel with G40 before the tool change.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M6 while tool length compensation (G43) is still active — cancel with G49 before the tool change.",
         blockIndex: index
       });
     }
@@ -794,10 +827,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       sawAnyDOffset = true;
     }
 
-    const hasG40 = block.words.some((w) => {
-      if (w.letter !== "G") return false;
-      return Number.parseFloat(w.value) === 40;
-    });
+    const hasG40 = hasExactG40(block);
+    if (hasG40 && hasExactG41Or42(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G40 and G41/G42 on the same block — cancel or apply cutter compensation, not both.",
+        blockIndex: index
+      });
+    }
     if (hasG40) {
       cutterCompActive = false;
       cutterSide = undefined;
@@ -866,6 +903,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G2/G3 arc specifies both R and I/J/K — use one arc center style, not both.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block) && hasCannedCycle(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G80 and a canned cycle on the same block — cancel or start a cycle, not both.",
         blockIndex: index
       });
     }

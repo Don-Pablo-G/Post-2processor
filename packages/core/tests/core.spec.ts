@@ -2630,6 +2630,51 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns distance mode change after axis motion", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG0 X0\nG91\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Distance mode changed after axis motion")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G40 and cutter comp on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG40 G41 D1\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G40 and G41/G42 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G80 and canned cycle on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100. G80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G80 and a canned cycle on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M6 while cutter compensation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG41 D1\nT2 M6\nG40\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M6 while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M6 while tool length compensation is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG43 H1 Z25.\nT2 M6\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M6 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

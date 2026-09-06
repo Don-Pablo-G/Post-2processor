@@ -459,6 +459,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
   },
   {
+    id: "haas.distance-mode-change-after-motion",
+    severity: "warning",
+    messageMatcher: /Distance mode changed after axis motion/,
+    summary: "Changing G90/G91 after motion may be unintentional — verify the switch.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG0 X0\nG91\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.g40-and-cutter-comp-same-block",
+    severity: "warning",
+    messageMatcher: /G40 and G41\/G42 on the same block/,
+    summary: "Do not cancel and apply cutter compensation on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG40 G41 D1\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nM30\n"
+  },
+  {
+    id: "haas.g80-and-canned-same-block",
+    severity: "warning",
+    messageMatcher: /G80 and a canned cycle on the same block/,
+    summary: "Do not cancel and start a canned cycle on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100. G80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100.\nG80\nM30\n"
+  },
+  {
+    id: "haas.m6-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M6 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nT2 M6\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nG40\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.m6-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M6 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG43 H1 Z25.\nT2 M6\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG43 H1 Z25.\nG49\nT2 M6\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

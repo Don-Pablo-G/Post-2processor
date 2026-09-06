@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 63
+Total rules: 68
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -68,6 +68,11 @@ Total rules: 63
 | `haas.g61-and-g64-mixed` | warning | — | — | Mixing G61 and G64 path modes in one program is ambiguous — pick one. |
 | `haas.spindle-on-and-off-same-block` | warning | — | — | Do not combine spindle start (M3/M4) and stop (M5) on one block. |
 | `haas.coolant-on-and-off-same-block` | warning | — | — | Do not combine coolant on (M7/M8) and off (M9) on one block. |
+| `haas.distance-mode-change-after-motion` | warning | — | — | Changing G90/G91 after motion may be unintentional — verify the switch. |
+| `haas.g40-and-cutter-comp-same-block` | warning | — | — | Do not cancel and apply cutter compensation on the same block. |
+| `haas.g80-and-canned-same-block` | warning | — | — | Do not cancel and start a canned cycle on the same block. |
+| `haas.m6-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a tool change (M6). |
+| `haas.m6-while-tool-length` | warning | — | — | Cancel tool length with G49 before a tool change (M6). |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -1591,6 +1596,155 @@ S1200 M3
 M8
 M9
 M5
+M30
+```
+
+### `haas.distance-mode-change-after-motion`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode changed after axis motion/`
+- **Summary:** Changing G90/G91 after motion may be unintentional — verify the switch.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G0 X0
+G91
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G0 X0
+M30
+```
+
+### `haas.g40-and-cutter-comp-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G40 and G41\/G42 on the same block/`
+- **Summary:** Do not cancel and apply cutter compensation on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G40 G41 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40
+M30
+```
+
+### `haas.g80-and-canned-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G80 and a canned cycle on the same block/`
+- **Summary:** Do not cancel and start a canned cycle on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G81 Z-5. R2. F100. G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G81 Z-5. R2. F100.
+G80
+M30
+```
+
+### `haas.m6-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G41 D1
+T2 M6
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G41 D1
+G40
+T2 M6
+M30
+```
+
+### `haas.m6-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G43 H1 Z25.
+T2 M6
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G43 H1 Z25.
+G49
+T2 M6
 M30
 ```
 
