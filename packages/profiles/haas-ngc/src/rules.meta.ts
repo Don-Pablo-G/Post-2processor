@@ -1463,6 +1463,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG50\nG55\nM5\nM30\n"
   },
   {
+    id: "haas.work-offset-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Work offset \(G54-G59\/G154\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before selecting a work offset.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG55\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nG55\nM5\nM30\n"
+  },
+  {
+    id: "haas.work-offset-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Work offset \(G54-G59\/G154\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before selecting a work offset.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG55\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG55\nM5\nM30\n"
+  },
+  {
+    id: "haas.work-offset-while-incremental",
+    severity: "warning",
+    messageMatcher: /Work offset \(G54-G59\/G154\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before selecting a work offset.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG55\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG55\nM5\nM30\n"
+  },
+  {
+    id: "haas.g68-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G68 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G68 coordinate rotation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG68 X0 Y0 R45.\nG40\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG68 X0 Y0 R45.\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g68-while-canned",
+    severity: "warning",
+    messageMatcher: /G68 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G68 coordinate rotation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG68 X0 Y0 R45.\nG80\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG68 X0 Y0 R45.\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g51-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G51 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G51 scaling.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG51 P2.\nG40\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG51 P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g51-while-canned",
+    severity: "warning",
+    messageMatcher: /G51 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G51 scaling.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG51 P2.\nG80\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG51 P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g49-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G49 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G49 tool-length cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG49\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g49-while-canned",
+    severity: "warning",
+    messageMatcher: /G49 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G49 tool-length cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG81 Z-1. R0.1 F10.\nG49\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g80-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G80 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G80 canned-cycle cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG81 Z-1. R0.1 F10.\nG80\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG81 Z-1. R0.1 F10.\nG40\nG80\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,
