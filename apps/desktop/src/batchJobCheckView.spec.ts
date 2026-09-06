@@ -184,6 +184,8 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.setupTxtCount).toBe(0);
     expect(exported.summary.batchWalk.export.patchedNcDir).toBe("patched-nc");
     expect(exported.summary.batchWalk.export.patchedNcCount).toBe(0);
+    expect(exported.summary.batchWalk.export.writtenFileCount).toBe(0);
+    expect(exported.summary.batchWalk.export.zipEntryCount).toBe(0);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -215,6 +217,8 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/setupPdf=0/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/setupTxt=0/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/patched=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/written=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/zipEntries=0/);
     expect(
       formatDesktopBatchExportInventoryChip(batch.envelope)
         .replace(/^batch-export:\s*/, "")
@@ -255,7 +259,9 @@ describe("batchJobCheckView", () => {
         setupTxtCount: 3,
         patchedNcDir: "/abs/patched-nc",
         patchedNcCount: 1,
-        fixPreviewCount: 4
+        fixPreviewCount: 4,
+        writtenFileCount: 9,
+        zipEntryCount: 7
       }
     });
     expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
@@ -267,6 +273,8 @@ describe("batchJobCheckView", () => {
     expect(stamped?.export?.patchedNcDir).toBe("/abs/patched-nc");
     expect(stamped?.export?.patchedNcCount).toBe(1);
     expect(stamped?.export?.fixPreviewCount).toBe(4);
+    expect(stamped?.export?.writtenFileCount).toBe(9);
+    expect(stamped?.export?.zipEntryCount).toBe(7);
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(stamped?.export?.jsonSummaryPath).toBe("batch-summary.json");
     expect(stamped?.export?.zipSha256Path).toBe("batch-export.zip.sha256");

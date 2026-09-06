@@ -318,6 +318,9 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "`batch-unbound-fixes.sarif.json` is present, and optional `fixPreviewCount`",
   "from sealed summary export when known.",
   "",
+  "Schema v47: reports optional `setupTxtCount`, `patchedNcCount`, and",
+  "`setupPdfCount` from sealed summary export when known.",
+  "",
   "Exit codes:",
   "  0   digest matches (and summary/manifest/ndjson/csv seal checks pass when present)",
   "  1   digest mismatch or summary/manifest/ndjson zipSha256/zipBytes or CSV header/row mismatch",
@@ -340,7 +343,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            csvMatched and kindCount. Schema v44 adds optional",
   "                            csvRowCount. Schema v45 adds optional expectedCsvRowCount",
   "                            and fixPreviewsPath. Schema v46 adds optional sarifPath",
-  "                            and fixPreviewCount.",
+  "                            and fixPreviewCount. Schema v47 adds optional setupTxtCount,",
+  "                            patchedNcCount, and setupPdfCount.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -366,7 +370,7 @@ export type VerifyBatchExportSealSource =
   | "sarif";
 
 /**
- * Schema v38–v46: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v47: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
  * Schema v40 adds optional sealed-manifest cross-check fields when
@@ -379,6 +383,7 @@ export type VerifyBatchExportSealSource =
  * row totals from the sealed summary when present.
  * Schema v45 adds optional expectedCsvRowCount and fixPreviewsPath.
  * Schema v46 adds optional sarifPath and fixPreviewCount.
+ * Schema v47 adds optional setupTxtCount, patchedNcCount, and setupPdfCount.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -447,6 +452,12 @@ export type VerifyBatchExportResult = {
   fixPreviewCount?: number;
   /** Schema v46: path of `batch-unbound-fixes.sarif.json` when present beside the zip. */
   sarifPath?: string;
+  /** Schema v47: `export.setupTxtCount` from sealed summary when present. */
+  setupTxtCount?: number;
+  /** Schema v47: `export.patchedNcCount` from sealed summary when present. */
+  patchedNcCount?: number;
+  /** Schema v47: `export.setupPdfCount` from sealed summary when present. */
+  setupPdfCount?: number;
   /**
    * Schema v42: which seal artifacts were found/consulted for this verify
    * (always includes `sidecar` on a successful read path).
@@ -530,6 +541,12 @@ type SealedSummaryExportMeta = {
   aggregationRowCount?: number;
   /** Schema v46: export.fixPreviewCount when present. */
   fixPreviewCount?: number;
+  /** Schema v47: export.setupTxtCount when present. */
+  setupTxtCount?: number;
+  /** Schema v47: export.patchedNcCount when present. */
+  patchedNcCount?: number;
+  /** Schema v47: export.setupPdfCount when present. */
+  setupPdfCount?: number;
 };
 
 type SealedManifestMeta = {
@@ -598,6 +615,9 @@ async function tryLoadSealedBatchSummaryExport(
       ...(typeof exp.fixPreviewCount === "number"
         ? { fixPreviewCount: exp.fixPreviewCount }
         : {}),
+      ...(typeof exp.setupTxtCount === "number" ? { setupTxtCount: exp.setupTxtCount } : {}),
+      ...(typeof exp.patchedNcCount === "number" ? { patchedNcCount: exp.patchedNcCount } : {}),
+      ...(typeof exp.setupPdfCount === "number" ? { setupPdfCount: exp.setupPdfCount } : {}),
       ...(aggregationRowCount !== undefined ? { aggregationRowCount } : {})
     };
   } catch {
@@ -866,6 +886,9 @@ export async function runVerifyBatchExport(
     manifestMeta?.byKind !== undefined ? Object.keys(manifestMeta.byKind).length : undefined;
   const expectedCsvRowCount = summaryMeta?.aggregationRowCount;
   const fixPreviewCount = summaryMeta?.fixPreviewCount;
+  const setupTxtCount = summaryMeta?.setupTxtCount;
+  const patchedNcCount = summaryMeta?.patchedNcCount;
+  const setupPdfCount = summaryMeta?.setupPdfCount;
   const sealSources: VerifyBatchExportSealSource[] = ["sidecar"];
   if (summaryMeta) sealSources.push("summary");
   if (manifestMeta) sealSources.push("manifest");
@@ -897,6 +920,9 @@ export async function runVerifyBatchExport(
       ...(kindCount !== undefined ? { kindCount } : {}),
       ...(expectedCsvRowCount !== undefined ? { expectedCsvRowCount } : {}),
       ...(fixPreviewCount !== undefined ? { fixPreviewCount } : {}),
+      ...(setupTxtCount !== undefined ? { setupTxtCount } : {}),
+      ...(patchedNcCount !== undefined ? { patchedNcCount } : {}),
+      ...(setupPdfCount !== undefined ? { setupPdfCount } : {}),
       ...(manifestMeta
         ? {
             manifestPath: manifestMeta.manifestPath,
@@ -994,6 +1020,12 @@ export async function runVerifyBatchExport(
     const fixPreviewsPart = fixPreviewsMeta ? "; fixPreviewsLoaded" : "";
     const fixPreviewCountPart =
       fixPreviewCount !== undefined ? `; fixPreviews=${fixPreviewCount}` : "";
+    const setupTxtPart =
+      setupTxtCount !== undefined ? `; setupTxt=${setupTxtCount}` : "";
+    const patchedPart =
+      patchedNcCount !== undefined ? `; patched=${patchedNcCount}` : "";
+    const setupPdfPart =
+      setupPdfCount !== undefined ? `; setupPdf=${setupPdfCount}` : "";
     const sarifPart = sarifMeta ? "; sarifLoaded" : "";
     const kindsPart = kindCount !== undefined ? `; kinds=${kindCount}` : "";
     const writtenPart =
@@ -1002,7 +1034,7 @@ export async function runVerifyBatchExport(
       zipEntryCount !== undefined ? `; zipEntries=${zipEntryCount}` : "";
     const sourcesPart = `; sources=${sealSources.join("+")}`;
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${fixPreviewsPart}${fixPreviewCountPart}${sarifPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${fixPreviewsPart}${fixPreviewCountPart}${setupTxtPart}${patchedPart}${setupPdfPart}${sarifPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
     );
   }
   return 0;

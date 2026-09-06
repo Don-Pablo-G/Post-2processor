@@ -4831,6 +4831,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=46
 ```
 
+## Verify setup/patched/PDF counts + written/zipEntry stamps + Schema v47
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Sidecar inventory counts (Schema v47)
+
+`CLI_SCHEMA_VERSION` bumps `46 → 47`.
+`VerifyBatchExportResult` gains optional `setupTxtCount`, `patchedNcCount`, and
+`setupPdfCount`.
+
+### Move 2 — Load counts from sealed summary
+
+`verify-batch-export` reads those fields from sealed
+`summary.batchWalk.export` when present.
+
+### Move 3 — JSON/text reporting
+
+JSON emits the counts; text reports `setupTxt=N`, `patched=N`, and `setupPdf=N`
+when known.
+
+### Move 4 — Desktop live written/zipEntry stamps
+
+`runDesktopBatchJobCheck` stamps `writtenFileCount` and `zipEntryCount`
+(default `0`) so inventory chips show `written=0` / `zipEntries=0`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=47
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
