@@ -153,11 +153,11 @@ export async function runDesktopBatchJobCheck(
 }
 
 /**
- * Schema v36–v47: ensure live desktop batchWalk.export carries relative logical
+ * Schema v36–v48: ensure live desktop batchWalk.export carries relative logical
  * paths for always-on summary sidecars, export zip, manifest, unbound SARIF,
  * fix-previews (path + count), outDir, setup-txt / patched-nc / setup-pdf dirs
- * and counts, written/zip entry counts, and the zip SHA-256 sidecar so inventory
- * chips can surface them.
+ * and counts, written/zip entry counts, zip/total byte counts, and the zip
+ * SHA-256 sidecar so inventory chips can surface them.
  */
 export function stampDesktopBatchExportSummaryPaths(
   batchWalk: CliBatchWalk | undefined
@@ -186,7 +186,9 @@ export function stampDesktopBatchExportSummaryPaths(
       fixPreviewsPath: batchWalk.export?.fixPreviewsPath ?? "batch-fix-previews.json",
       fixPreviewCount: batchWalk.export?.fixPreviewCount ?? 0,
       writtenFileCount: batchWalk.export?.writtenFileCount ?? 0,
-      zipEntryCount: batchWalk.export?.zipEntryCount ?? 0
+      zipEntryCount: batchWalk.export?.zipEntryCount ?? 0,
+      zipBytes: batchWalk.export?.zipBytes ?? 0,
+      totalBytes: batchWalk.export?.totalBytes ?? 0
     }
   };
 }

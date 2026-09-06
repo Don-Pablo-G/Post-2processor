@@ -4866,6 +4866,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=47
 ```
 
+## Verify sidecar dir paths + zip/total byte stamps + Schema v48
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Sidecar dir paths (Schema v48)
+
+`CLI_SCHEMA_VERSION` bumps `47 → 48`.
+`VerifyBatchExportResult` gains optional `setupTxtDir`, `patchedNcDir`, and
+`setupSheetPdfDir`.
+
+### Move 2 — Load dirs from sealed summary
+
+`verify-batch-export` reads those paths from sealed
+`summary.batchWalk.export` when present.
+
+### Move 3 — JSON/text reporting
+
+JSON emits the paths; text reports `setupTxtDirLoaded`, `patchedDirLoaded`, and
+`setupPdfDirLoaded` when known.
+
+### Move 4 — Desktop live zip/total byte stamps
+
+`runDesktopBatchJobCheck` stamps `zipBytes` and `totalBytes` (default `0`) so
+inventory chips show `zipBytes=0` / `totalBytes=0`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=48
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

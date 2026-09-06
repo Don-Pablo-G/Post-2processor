@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 47;
+export const CLI_SCHEMA_VERSION = 48;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;

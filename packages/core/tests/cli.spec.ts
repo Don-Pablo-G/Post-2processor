@@ -1026,7 +1026,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=47\n");
+    expect(stdout).toBe("cnc-job-check schema=48\n");
     expect(stderr).toBe("");
   });
 
@@ -2637,8 +2637,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 47", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(47);
+  it("CLI_SCHEMA_VERSION is 48", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(48);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4972,7 +4972,7 @@ describe("Schema v47: setupTxt/patched/setupPdf counts on verify", () => {
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(47);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const exp = summary.summary.batchWalk.export;
     const out: string[] = [];
     const exit = await main(
@@ -4981,7 +4981,7 @@ describe("Schema v47: setupTxt/patched/setupPdf counts on verify", () => {
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(47);
+    expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     if (exp.setupTxtCount !== undefined) {
       expect(result.setupTxtCount).toBe(exp.setupTxtCount);
@@ -5013,6 +5013,59 @@ describe("Schema v47: setupTxt/patched/setupPdf counts on verify", () => {
     });
     expect(exit).toBe(0);
     expect(out.join("")).toMatch(/setupTxt=\d+/);
+  });
+});
+
+describe("Schema v48: setupTxtDir/patchedNcDir/setupSheetPdfDir on verify", () => {
+  it("verify-batch-export --format json includes sidecar dir paths", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(48);
+    const exp = summary.summary.batchWalk.export;
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.schemaVersion).toBe(48);
+    expect(result.ok).toBe(true);
+    expect(result.setupTxtDir).toBe(exp.setupTxtDir);
+    expect(result.setupTxtDir).toMatch(/setup-txt$/);
+    if (exp.patchedNcDir !== undefined) {
+      expect(result.patchedNcDir).toBe(exp.patchedNcDir);
+    }
+    if (exp.setupSheetPdfDir !== undefined) {
+      expect(result.setupSheetPdfDir).toBe(exp.setupSheetPdfDir);
+    }
+  });
+
+  it("verify-batch-export text mode reports setupTxtDirLoaded", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const out: string[] = [];
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(out.join("")).toMatch(/setupTxtDirLoaded/);
   });
 });
 

@@ -186,6 +186,8 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.patchedNcCount).toBe(0);
     expect(exported.summary.batchWalk.export.writtenFileCount).toBe(0);
     expect(exported.summary.batchWalk.export.zipEntryCount).toBe(0);
+    expect(exported.summary.batchWalk.export.zipBytes).toBe(0);
+    expect(exported.summary.batchWalk.export.totalBytes).toBe(0);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -219,6 +221,8 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/patched=0/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/written=0/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/zipEntries=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/zipBytes=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/totalBytes=0/);
     expect(
       formatDesktopBatchExportInventoryChip(batch.envelope)
         .replace(/^batch-export:\s*/, "")
@@ -261,7 +265,9 @@ describe("batchJobCheckView", () => {
         patchedNcCount: 1,
         fixPreviewCount: 4,
         writtenFileCount: 9,
-        zipEntryCount: 7
+        zipEntryCount: 7,
+        zipBytes: 100,
+        totalBytes: 200
       }
     });
     expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
@@ -275,6 +281,8 @@ describe("batchJobCheckView", () => {
     expect(stamped?.export?.fixPreviewCount).toBe(4);
     expect(stamped?.export?.writtenFileCount).toBe(9);
     expect(stamped?.export?.zipEntryCount).toBe(7);
+    expect(stamped?.export?.zipBytes).toBe(100);
+    expect(stamped?.export?.totalBytes).toBe(200);
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(stamped?.export?.jsonSummaryPath).toBe("batch-summary.json");
     expect(stamped?.export?.zipSha256Path).toBe("batch-export.zip.sha256");

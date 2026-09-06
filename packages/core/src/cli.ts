@@ -321,6 +321,9 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "Schema v47: reports optional `setupTxtCount`, `patchedNcCount`, and",
   "`setupPdfCount` from sealed summary export when known.",
   "",
+  "Schema v48: reports optional `setupTxtDir`, `patchedNcDir`, and",
+  "`setupSheetPdfDir` from sealed summary export when known.",
+  "",
   "Exit codes:",
   "  0   digest matches (and summary/manifest/ndjson/csv seal checks pass when present)",
   "  1   digest mismatch or summary/manifest/ndjson zipSha256/zipBytes or CSV header/row mismatch",
@@ -344,7 +347,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            csvRowCount. Schema v45 adds optional expectedCsvRowCount",
   "                            and fixPreviewsPath. Schema v46 adds optional sarifPath",
   "                            and fixPreviewCount. Schema v47 adds optional setupTxtCount,",
-  "                            patchedNcCount, and setupPdfCount.",
+  "                            patchedNcCount, and setupPdfCount. Schema v48 adds optional",
+  "                            setupTxtDir, patchedNcDir, and setupSheetPdfDir.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -370,7 +374,7 @@ export type VerifyBatchExportSealSource =
   | "sarif";
 
 /**
- * Schema v38–v47: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v48: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
  * Schema v40 adds optional sealed-manifest cross-check fields when
@@ -384,6 +388,7 @@ export type VerifyBatchExportSealSource =
  * Schema v45 adds optional expectedCsvRowCount and fixPreviewsPath.
  * Schema v46 adds optional sarifPath and fixPreviewCount.
  * Schema v47 adds optional setupTxtCount, patchedNcCount, and setupPdfCount.
+ * Schema v48 adds optional setupTxtDir, patchedNcDir, and setupSheetPdfDir.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -458,6 +463,12 @@ export type VerifyBatchExportResult = {
   patchedNcCount?: number;
   /** Schema v47: `export.setupPdfCount` from sealed summary when present. */
   setupPdfCount?: number;
+  /** Schema v48: `export.setupTxtDir` from sealed summary when present. */
+  setupTxtDir?: string;
+  /** Schema v48: `export.patchedNcDir` from sealed summary when present. */
+  patchedNcDir?: string;
+  /** Schema v48: `export.setupSheetPdfDir` from sealed summary when present. */
+  setupSheetPdfDir?: string;
   /**
    * Schema v42: which seal artifacts were found/consulted for this verify
    * (always includes `sidecar` on a successful read path).
@@ -547,6 +558,12 @@ type SealedSummaryExportMeta = {
   patchedNcCount?: number;
   /** Schema v47: export.setupPdfCount when present. */
   setupPdfCount?: number;
+  /** Schema v48: export.setupTxtDir when present. */
+  setupTxtDir?: string;
+  /** Schema v48: export.patchedNcDir when present. */
+  patchedNcDir?: string;
+  /** Schema v48: export.setupSheetPdfDir when present. */
+  setupSheetPdfDir?: string;
 };
 
 type SealedManifestMeta = {
@@ -618,6 +635,11 @@ async function tryLoadSealedBatchSummaryExport(
       ...(typeof exp.setupTxtCount === "number" ? { setupTxtCount: exp.setupTxtCount } : {}),
       ...(typeof exp.patchedNcCount === "number" ? { patchedNcCount: exp.patchedNcCount } : {}),
       ...(typeof exp.setupPdfCount === "number" ? { setupPdfCount: exp.setupPdfCount } : {}),
+      ...(typeof exp.setupTxtDir === "string" ? { setupTxtDir: exp.setupTxtDir } : {}),
+      ...(typeof exp.patchedNcDir === "string" ? { patchedNcDir: exp.patchedNcDir } : {}),
+      ...(typeof exp.setupSheetPdfDir === "string"
+        ? { setupSheetPdfDir: exp.setupSheetPdfDir }
+        : {}),
       ...(aggregationRowCount !== undefined ? { aggregationRowCount } : {})
     };
   } catch {
@@ -889,6 +911,9 @@ export async function runVerifyBatchExport(
   const setupTxtCount = summaryMeta?.setupTxtCount;
   const patchedNcCount = summaryMeta?.patchedNcCount;
   const setupPdfCount = summaryMeta?.setupPdfCount;
+  const setupTxtDir = summaryMeta?.setupTxtDir;
+  const patchedNcDir = summaryMeta?.patchedNcDir;
+  const setupSheetPdfDir = summaryMeta?.setupSheetPdfDir;
   const sealSources: VerifyBatchExportSealSource[] = ["sidecar"];
   if (summaryMeta) sealSources.push("summary");
   if (manifestMeta) sealSources.push("manifest");
@@ -923,6 +948,9 @@ export async function runVerifyBatchExport(
       ...(setupTxtCount !== undefined ? { setupTxtCount } : {}),
       ...(patchedNcCount !== undefined ? { patchedNcCount } : {}),
       ...(setupPdfCount !== undefined ? { setupPdfCount } : {}),
+      ...(setupTxtDir !== undefined ? { setupTxtDir } : {}),
+      ...(patchedNcDir !== undefined ? { patchedNcDir } : {}),
+      ...(setupSheetPdfDir !== undefined ? { setupSheetPdfDir } : {}),
       ...(manifestMeta
         ? {
             manifestPath: manifestMeta.manifestPath,
@@ -1026,6 +1054,10 @@ export async function runVerifyBatchExport(
       patchedNcCount !== undefined ? `; patched=${patchedNcCount}` : "";
     const setupPdfPart =
       setupPdfCount !== undefined ? `; setupPdf=${setupPdfCount}` : "";
+    const setupTxtDirPart = setupTxtDir !== undefined ? "; setupTxtDirLoaded" : "";
+    const patchedDirPart = patchedNcDir !== undefined ? "; patchedDirLoaded" : "";
+    const setupPdfDirPart =
+      setupSheetPdfDir !== undefined ? "; setupPdfDirLoaded" : "";
     const sarifPart = sarifMeta ? "; sarifLoaded" : "";
     const kindsPart = kindCount !== undefined ? `; kinds=${kindCount}` : "";
     const writtenPart =
@@ -1034,7 +1066,7 @@ export async function runVerifyBatchExport(
       zipEntryCount !== undefined ? `; zipEntries=${zipEntryCount}` : "";
     const sourcesPart = `; sources=${sealSources.join("+")}`;
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${fixPreviewsPart}${fixPreviewCountPart}${setupTxtPart}${patchedPart}${setupPdfPart}${sarifPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${fixPreviewsPart}${fixPreviewCountPart}${setupTxtPart}${patchedPart}${setupPdfPart}${setupTxtDirPart}${patchedDirPart}${setupPdfDirPart}${sarifPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
     );
   }
   return 0;
