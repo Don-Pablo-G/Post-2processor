@@ -939,6 +939,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG52 X10.\nM30\n"
   },
   {
+    id: "haas.m6-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /M6 and G28 on the same block/,
+    summary: "Do not combine a tool change (M6) with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nT2 M6 G28 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.m6-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /M6 and G30 on the same block/,
+    summary: "Do not combine a tool change (M6) with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nT2 M6 G30 Z0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.m6-and-g53-same-block",
+    severity: "warning",
+    messageMatcher: /M6 and G53 on the same block/,
+    summary: "Do not combine a tool change (M6) with G53 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nT2 M6 G53 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G28 on the same block/,
+    summary: "Do not combine G4 dwell with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0 G4 P1.\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG4 P1.\nG90\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G30 on the same block/,
+    summary: "Do not combine G4 dwell with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0 G4 P1.\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG4 P1.\nG90\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

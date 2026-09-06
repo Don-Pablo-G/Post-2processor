@@ -1274,6 +1274,48 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 6) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and G28 on the same block — tool change and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M6 and G30 on the same block — tool change and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and G53 on the same block — tool change and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and G28 on the same block — dwell and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G4 dwell and G30 on the same block — dwell and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasSpindleDirectionConflict(block)) {
       issues.push({
         severity: "warning",

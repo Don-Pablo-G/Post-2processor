@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 123
+Total rules: 128
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -128,6 +128,11 @@ Total rules: 123
 | `haas.g53-and-g52-same-block` | warning | — | — | Do not combine G53 machine move with G52 on one block. |
 | `haas.g30-and-g52-same-block` | warning | — | — | Do not combine G30 secondary reference return with G52 on one block. |
 | `haas.g92-and-g52-same-block` | warning | — | — | Do not combine G92 and G52 coordinate shifts on one block. |
+| `haas.m6-and-g28-same-block` | warning | — | — | Do not combine a tool change (M6) with G28 on one block. |
+| `haas.m6-and-g30-same-block` | warning | — | — | Do not combine a tool change (M6) with G30 on one block. |
+| `haas.m6-and-g53-same-block` | warning | — | — | Do not combine a tool change (M6) with G53 on one block. |
+| `haas.g4-and-g28-same-block` | warning | — | — | Do not combine G4 dwell with G28 on one block. |
+| `haas.g4-and-g30-same-block` | warning | — | — | Do not combine G4 dwell with G30 on one block. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -3403,6 +3408,159 @@ O0001
 T1 M6
 G54
 G52 X10.
+M30
+```
+
+### `haas.m6-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and G28 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+T2 M6 G28 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+T2 M6
+M30
+```
+
+### `haas.m6-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and G30 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with G30 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+T2 M6 G30 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0
+G90
+T2 M6
+M30
+```
+
+### `haas.m6-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and G53 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+T2 M6 G53 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+T2 M6
+M30
+```
+
+### `haas.g4-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G28 on the same block/`
+- **Summary:** Do not combine G4 dwell with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0 G4 P1.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G4 P1.
+G90
+M30
+```
+
+### `haas.g4-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G30 on the same block/`
+- **Summary:** Do not combine G4 dwell with G30 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0 G4 P1.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G30 Z0
+G4 P1.
+G90
 M30
 ```
 
