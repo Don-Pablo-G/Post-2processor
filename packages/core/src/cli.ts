@@ -284,9 +284,13 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "Verifies a sealed `batch-export.zip` against its BSD-style",
   "`batch-export.zip.sha256` sidecar (`<hex>  batch-export.zip`).",
   "",
+  "Schema v39: when a sibling `batch-summary.json` is present (under --out-dir",
+  "or next to --zip), also cross-checks `summary.batchWalk.export.zipSha256`",
+  "and reports seal metadata (`sealedAt`, `totalBytes`) in JSON output.",
+  "",
   "Exit codes:",
-  "  0   digest matches",
-  "  1   digest mismatch",
+  "  0   digest matches (and summary zipSha256 matches when present)",
+  "  1   digest mismatch or summary zipSha256 mismatch",
   "  2   argument or IO error",
   "",
   "Options:",
@@ -297,7 +301,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            --zip / --sha256.",
   "  --format <json|text>       Schema v38: output format (default: text). JSON emits one",
   "                            object with schemaVersion, ok, zip, sha256Path, zipSha256,",
-  "                            zipBytes (success and mismatch).",
+  "                            zipBytes (success and mismatch). Schema v39 adds optional",
+  "                            summaryPath, summaryMatched, sealedAt, totalBytes.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -312,7 +317,11 @@ export type VerifyBatchExportArgs = {
   help: boolean;
 };
 
-/** Schema v38: machine-readable verify-batch-export result (--format json). */
+/**
+ * Schema v38–v39: machine-readable verify-batch-export result (--format json).
+ * Schema v39 adds optional sealed-summary cross-check fields when
+ * `batch-summary.json` is found beside the zip / under --out-dir.
+ */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
   ok: boolean;
@@ -321,6 +330,17 @@ export type VerifyBatchExportResult = {
   zipSha256: string;
   zipBytes: number;
   expectedZipSha256?: string;
+  /** Schema v39: path of `batch-summary.json` when loaded for cross-check. */
+  summaryPath?: string;
+  /**
+   * Schema v39: true when summary export.zipSha256 matched the computed digest;
+   * false when it disagreed; absent when no summary was loaded.
+   */
+  summaryMatched?: boolean;
+  /** Schema v39: seal timestamp from summary export when present. */
+  sealedAt?: string;
+  /** Schema v39: export.totalBytes from summary when present. */
+  totalBytes?: number;
 };
 
 export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatchExportArgs {
@@ -387,6 +407,47 @@ export type VerifyBatchExportIo = {
   readFileBytesFn?: (filePath: string) => Promise<Uint8Array>;
 };
 
+type SealedSummaryExportMeta = {
+  summaryPath: string;
+  zipSha256?: string;
+  sealedAt?: string;
+  totalBytes?: number;
+};
+
+async function tryLoadSealedBatchSummaryExport(
+  zipPath: string,
+  outDir: string | undefined,
+  readText: (filePath: string) => Promise<string>
+): Promise<SealedSummaryExportMeta | undefined> {
+  const summaryPath =
+    outDir !== undefined
+      ? path.join(outDir, "batch-summary.json")
+      : path.join(path.dirname(zipPath), "batch-summary.json");
+  let raw: string;
+  try {
+    raw = await readText(summaryPath);
+  } catch {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(raw) as {
+      summary?: { batchWalk?: { export?: Record<string, unknown> } };
+    };
+    const exp = parsed.summary?.batchWalk?.export;
+    if (!exp || typeof exp !== "object") {
+      return { summaryPath };
+    }
+    return {
+      summaryPath,
+      ...(typeof exp.zipSha256 === "string" ? { zipSha256: exp.zipSha256 } : {}),
+      ...(typeof exp.sealedAt === "string" ? { sealedAt: exp.sealedAt } : {}),
+      ...(typeof exp.totalBytes === "number" ? { totalBytes: exp.totalBytes } : {})
+    };
+  } catch {
+    return { summaryPath };
+  }
+}
+
 export async function runVerifyBatchExport(
   parsed: VerifyBatchExportArgs,
   io: VerifyBatchExportIo = {}
@@ -439,7 +500,21 @@ export async function runVerifyBatchExport(
     return 2;
   }
 
-  const ok = actual === expected;
+  const sidecarOk = actual === expected;
+  const summaryMeta = await tryLoadSealedBatchSummaryExport(
+    parsed.zip!,
+    parsed.outDir,
+    readText
+  );
+  let summaryMatched: boolean | undefined;
+  let summaryMismatch = false;
+  if (summaryMeta?.zipSha256 !== undefined) {
+    summaryMatched = summaryMeta.zipSha256 === actual;
+    summaryMismatch = !summaryMatched;
+  }
+
+  const ok = sidecarOk && !summaryMismatch;
+
   if (parsed.format === "json") {
     const result: VerifyBatchExportResult = {
       schemaVersion: CLI_SCHEMA_VERSION,
@@ -448,20 +523,42 @@ export async function runVerifyBatchExport(
       sha256Path: parsed.sha256!,
       zipSha256: actual,
       zipBytes: zipBytes.byteLength,
-      ...(ok ? {} : { expectedZipSha256: expected })
+      ...(sidecarOk ? {} : { expectedZipSha256: expected }),
+      ...(summaryMeta
+        ? {
+            summaryPath: summaryMeta.summaryPath,
+            ...(summaryMatched !== undefined ? { summaryMatched } : {}),
+            ...(summaryMeta.sealedAt !== undefined ? { sealedAt: summaryMeta.sealedAt } : {}),
+            ...(summaryMeta.totalBytes !== undefined
+              ? { totalBytes: summaryMeta.totalBytes }
+              : {})
+          }
+        : {})
     };
     writeOut(`${JSON.stringify(result)}\n`);
     return ok ? 0 : 1;
   }
 
-  if (!ok) {
+  if (!sidecarOk) {
     writeErr(
       `cnc-job-check verify-batch-export: sha256 mismatch (expected ${expected}, got ${actual})\n`
     );
     return 1;
   }
+  if (summaryMismatch) {
+    writeErr(
+      `cnc-job-check verify-batch-export: summary zipSha256 mismatch (expected ${summaryMeta!.zipSha256}, got ${actual})\n`
+    );
+    return 1;
+  }
   if (!parsed.quiet) {
-    writeOut(`cnc-job-check verify-batch-export: sha256 OK (${actual})\n`);
+    const sealedPart =
+      summaryMeta?.sealedAt !== undefined ? `; sealedAt=${summaryMeta.sealedAt}` : "";
+    const summaryPart =
+      summaryMatched === true ? "; summaryMatched=true" : summaryMeta ? "; summaryLoaded" : "";
+    writeOut(
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}\n`
+    );
   }
   return 0;
 }

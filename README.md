@@ -4545,6 +4545,43 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=38
 ```
 
+## Verify summary cross-check + desktop zip/manifest stamps + Schema v39
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Verify result seal metadata (Schema v39)
+
+`CLI_SCHEMA_VERSION` bumps `38 → 39`.
+`VerifyBatchExportResult` gains optional `summaryPath`, `summaryMatched`,
+`sealedAt`, and `totalBytes` when a sealed `batch-summary.json` is available.
+
+### Move 2 — CLI summary cross-check
+
+`verify-batch-export` loads sibling `batch-summary.json` (under `--out-dir` or
+next to `--zip`). When `export.zipSha256` is present it must match the computed
+digest; mismatches fail even if the `.sha256` sidecar matched. Text and JSON
+outputs report seal metadata on success.
+
+### Move 3 — Desktop live zip + manifest stamps
+
+`runDesktopBatchJobCheck` stamps relative logical `batchExportZip` /
+`exportManifestPath` alongside the summary and sha256 path stamps.
+
+### Move 4 — Inventory chip shows `zip` + `manifest`
+
+Live folder-batch inventory chips include `zip` and `manifest` from those
+stamps (same tokens CLI `--out-dir` already surfaced).
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=39
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

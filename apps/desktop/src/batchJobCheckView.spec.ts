@@ -166,6 +166,10 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(exported.summary.batchWalk.export.jsonSummaryPath).toBe("batch-summary.json");
     expect(exported.summary.batchWalk.export.zipSha256Path).toBe("batch-export.zip.sha256");
+    expect(exported.summary.batchWalk.export.batchExportZip).toBe("batch-export.zip");
+    expect(exported.summary.batchWalk.export.exportManifestPath).toBe(
+      "batch-export-manifest.json"
+    );
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -178,6 +182,16 @@ describe("batchJobCheckView", () => {
         .replace(/^batch-export:\s*/, "")
         .split(",")
     ).toContain("sha256");
+    expect(
+      formatDesktopBatchExportInventoryChip(batch.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
+    ).toContain("zip");
+    expect(
+      formatDesktopBatchExportInventoryChip(batch.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
+    ).toContain("manifest");
     expect(batch.runResults).toHaveLength(2);
   });
 
@@ -195,6 +209,8 @@ describe("batchJobCheckView", () => {
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(stamped?.export?.jsonSummaryPath).toBe("batch-summary.json");
     expect(stamped?.export?.zipSha256Path).toBe("batch-export.zip.sha256");
+    expect(stamped?.export?.batchExportZip).toBe("batch-export.zip");
+    expect(stamped?.export?.exportManifestPath).toBe("batch-export-manifest.json");
   });
 
   it("buildDesktopBatchSetupSheetPdfs emits one PDF per input", () => {

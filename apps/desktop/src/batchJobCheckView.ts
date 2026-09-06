@@ -142,8 +142,8 @@ export async function runDesktopBatchJobCheck(
     });
     runResults.push({ input: file.input, source: file.source, result });
   }
-  // Schema v36–v38: stamp logical summary / sha256 sidecar names for live inventory
-  // chips (CLI --out-dir uses absolute paths; desktop uses relative names).
+  // Schema v36–v39: stamp logical summary / zip / manifest / sha256 names for live
+  // inventory chips (CLI --out-dir uses absolute paths; desktop uses relative names).
   const batchWalk = stampDesktopBatchExportSummaryPaths(options?.batchWalk);
   return {
     envelope: buildBatchEnvelope(entries, { batchWalk }),
@@ -152,9 +152,9 @@ export async function runDesktopBatchJobCheck(
 }
 
 /**
- * Schema v36–v38: ensure live desktop batchWalk.export carries relative logical
- * paths for always-on summary sidecars and the zip SHA-256 sidecar so inventory
- * chips can surface them.
+ * Schema v36–v39: ensure live desktop batchWalk.export carries relative logical
+ * paths for always-on summary sidecars, export zip, manifest, and the zip
+ * SHA-256 sidecar so inventory chips can surface them.
  */
 export function stampDesktopBatchExportSummaryPaths(
   batchWalk: CliBatchWalk | undefined
@@ -167,7 +167,10 @@ export function stampDesktopBatchExportSummaryPaths(
       csvSummaryPath: batchWalk.export?.csvSummaryPath ?? "batch-summary.csv",
       ndjsonSummaryPath: batchWalk.export?.ndjsonSummaryPath ?? "batch-summary.ndjson",
       jsonSummaryPath: batchWalk.export?.jsonSummaryPath ?? "batch-summary.json",
-      zipSha256Path: batchWalk.export?.zipSha256Path ?? "batch-export.zip.sha256"
+      zipSha256Path: batchWalk.export?.zipSha256Path ?? "batch-export.zip.sha256",
+      batchExportZip: batchWalk.export?.batchExportZip ?? "batch-export.zip",
+      exportManifestPath:
+        batchWalk.export?.exportManifestPath ?? "batch-export-manifest.json"
     }
   };
 }
