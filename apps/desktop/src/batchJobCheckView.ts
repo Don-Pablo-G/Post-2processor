@@ -5,12 +5,17 @@ import {
   buildSetupSheetPdf,
   classifyBatchRelativePath,
   CLI_SCHEMA_VERSION,
+  getSafetyFindingFix,
   type CliBatchEnvelope,
   type CliBatchWalk,
   type CliBatchParseDiagnosticsPolicyBreachesAggregation,
   type CliBatchSafetyFindingsByCodeAggregation,
   type RunJobCheckResult
 } from "@cnc/core/browser";
+import {
+  deriveSafetyFindingFixBindings,
+  expandIdeQuickFixTemplate
+} from "@cnc/ide-bridge";
 
 export type DesktopBatchFilterOptions = {
   recursive?: boolean;
@@ -29,7 +34,7 @@ export type DesktopBatchFilterResult = {
 export type DesktopBatchJobCheckResult = {
   envelope: CliBatchEnvelope;
   /** Parallel to envelope.results — full job-check payloads for PDF download. */
-  runResults: Array<{ input: string; result: RunJobCheckResult }>;
+  runResults: Array<{ input: string; source: string; result: RunJobCheckResult }>;
 };
 
 function parseGlobList(value: ReadonlyArray<string> | string | undefined): string[] {
@@ -115,7 +120,7 @@ export async function runDesktopBatchJobCheck(
   options?: { batchWalk?: CliBatchWalk }
 ): Promise<DesktopBatchJobCheckResult> {
   const entries = [];
-  const runResults: Array<{ input: string; result: RunJobCheckResult }> = [];
+  const runResults: Array<{ input: string; source: string; result: RunJobCheckResult }> = [];
   for (const file of files) {
     const result = await runOne(file.source);
     const envelope = buildJobCheckEnvelope(result);
@@ -124,7 +129,7 @@ export async function runDesktopBatchJobCheck(
       input: file.input,
       envelope
     });
-    runResults.push({ input: file.input, result });
+    runResults.push({ input: file.input, source: file.source, result });
   }
   return {
     envelope: buildBatchEnvelope(entries, { batchWalk: options?.batchWalk }),
@@ -197,6 +202,128 @@ export function formatDesktopBatchBlockReasonsChip(envelope: CliBatchEnvelope): 
       ? ` | safetyCodes=${safetyCodes.slice(0, 3).join(",")}`
       : "";
   return `batch-block-reasons: ${top}${safetyPart}`;
+}
+
+function csvEscape(value: string): string {
+  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+/**
+ * Schema v20: CSV export of safety + policy-breach aggregated dashboard rows.
+ */
+export function formatDesktopBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
+  const lines: string[] = ["kind,key,count,blockers,warnings,inputs"];
+  for (const row of envelope.summary.safetyFindingsByCodeAggregated ?? []) {
+    lines.push(
+      [
+        "safety",
+        `${row.source}:${row.code}`,
+        String(row.count),
+        String(row.blockers),
+        String(row.warnings),
+        csvEscape(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  for (const row of envelope.summary.parseDiagnosticsPolicyBreachesAggregated ?? []) {
+    lines.push(
+      [
+        "policy-breach",
+        row.key,
+        String(row.count),
+        row.severity === "blocker" ? String(row.count) : "0",
+        row.severity === "warning" ? String(row.count) : "0",
+        csvEscape(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+export type DesktopBatchQuickFixPreview = {
+  input: string;
+  code: string;
+  title: string;
+  expanded?: string;
+  unbound?: boolean;
+};
+
+/**
+ * Schema v20: preview expanded safety-finding templates for batch attribution
+ * rows, using program-source bindings when `sourcesByInput` is supplied.
+ */
+export function buildDesktopBatchQuickFixPreviews(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string> = new Map(),
+  options?: { strict?: boolean }
+): DesktopBatchQuickFixPreview[] {
+  const out: DesktopBatchQuickFixPreview[] = [];
+  const seen = new Set<string>();
+  for (const row of envelope.summary.safetyFindingsByCodePerInputFile) {
+    const key = `${row.input}::${row.code}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fix = getSafetyFindingFix(row.code);
+    if (!fix) continue;
+    const qf = {
+      code: fix.code,
+      title: fix.title,
+      rationale: fix.rationale,
+      ...(fix.replacementTemplate !== undefined
+        ? { replacementTemplate: fix.replacementTemplate }
+        : {})
+    };
+    const source = sourcesByInput.get(row.input);
+    const bindings = deriveSafetyFindingFixBindings({
+      code: row.code,
+      source,
+      blockIndex: row.firstBlockIndex
+    });
+    let expanded: string | undefined;
+    let unbound = false;
+    if (qf.replacementTemplate !== undefined) {
+      try {
+        expanded = expandIdeQuickFixTemplate(qf, bindings, { strict: options?.strict });
+      } catch {
+        unbound = true;
+        expanded = expandIdeQuickFixTemplate(qf, bindings);
+      }
+      if (options?.strict !== true && expanded && /\{\{[A-Z0-9_]+\}\}/.test(expanded)) {
+        unbound = true;
+      }
+    }
+    out.push({
+      input: row.input,
+      code: row.code,
+      title: fix.title,
+      ...(expanded !== undefined ? { expanded } : {}),
+      ...(unbound ? { unbound: true } : {})
+    });
+  }
+  out.sort((a, b) => {
+    if (a.input !== b.input) return a.input.localeCompare(b.input);
+    return a.code.localeCompare(b.code);
+  });
+  return out;
+}
+
+export function formatDesktopBatchQuickFixPreviewChip(
+  previews: readonly DesktopBatchQuickFixPreview[]
+): string {
+  if (previews.length === 0) return "batch-fix-preview: none";
+  const unbound = previews.filter((p) => p.unbound).length;
+  const top = previews
+    .slice(0, 2)
+    .map((p) => p.code)
+    .join(",");
+  return `batch-fix-preview: fixes=${previews.length} unbound=${unbound} | top=${top || "n/a"}`;
+}
+
+export function formatDesktopBatchQuickFixPreviewsForExport(
+  previews: readonly DesktopBatchQuickFixPreview[]
+): string {
+  return JSON.stringify(previews, null, 2);
 }
 
 export type BatchDownloadItem = {

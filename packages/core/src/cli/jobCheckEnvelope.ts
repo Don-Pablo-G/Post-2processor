@@ -5,7 +5,7 @@ import type {
 } from "../types.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 19;
+export const CLI_SCHEMA_VERSION = 20;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -52,6 +52,11 @@ export type CliLintIssuesByControllerCodeEntry = {
   count: number;
   blockers: number;
   warnings: number;
+  /**
+   * Schema v20: earliest `blockIndex` among contributing lint issues.
+   * Absent when no issue carried a block index. Append-only optional field.
+   */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -264,6 +269,7 @@ function buildLintIssuesByControllerCode(
       count: number;
       blockers: number;
       warnings: number;
+      firstBlockIndex?: number;
     }
   >();
   for (const issue of result.lintIssues) {
@@ -275,17 +281,33 @@ function buildLintIssuesByControllerCode(
       existing.count += 1;
       if (isBlocker) existing.blockers += 1;
       else existing.warnings += 1;
+      if (issue.blockIndex !== undefined) {
+        if (
+          existing.firstBlockIndex === undefined ||
+          issue.blockIndex < existing.firstBlockIndex
+        ) {
+          existing.firstBlockIndex = issue.blockIndex;
+        }
+      }
     } else {
       buckets.set(key, {
         source: issue.provenance.source,
         code: issue.code,
         count: 1,
         blockers: isBlocker ? 1 : 0,
-        warnings: isBlocker ? 0 : 1
+        warnings: isBlocker ? 0 : 1,
+        ...(issue.blockIndex !== undefined ? { firstBlockIndex: issue.blockIndex } : {})
       });
     }
   }
-  const entries = [...buckets.values()];
+  const entries: CliLintIssuesByControllerCodeEntry[] = [...buckets.values()].map((bucket) => ({
+    source: bucket.source,
+    code: bucket.code,
+    count: bucket.count,
+    blockers: bucket.blockers,
+    warnings: bucket.warnings,
+    ...(bucket.firstBlockIndex !== undefined ? { firstBlockIndex: bucket.firstBlockIndex } : {})
+  }));
   entries.sort((a, b) => {
     if (b.count !== a.count) return b.count - a.count;
     if (a.source !== b.source) return a.source.localeCompare(b.source);
@@ -533,6 +555,8 @@ export type CliBatchControllerCodeAttribution = {
   count: number;
   blockers: number;
   warnings: number;
+  /** Schema v20: earliest block index for this `(input, source, code)`. */
+  firstBlockIndex?: number;
 };
 
 export type CliBatchEnvelope = {
@@ -814,7 +838,10 @@ function buildBatchControllerCodeAttribution(
         code: codeEntry.code,
         count: codeEntry.count,
         blockers: codeEntry.blockers,
-        warnings: codeEntry.warnings
+        warnings: codeEntry.warnings,
+        ...(codeEntry.firstBlockIndex !== undefined
+          ? { firstBlockIndex: codeEntry.firstBlockIndex }
+          : {})
       });
     }
   }

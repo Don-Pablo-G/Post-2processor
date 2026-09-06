@@ -165,7 +165,9 @@ export function mapJobCheckEnvelopeToQuickFixes(
  * the map only contains keys that have at least one resolved fix.
  */
 export function mapBatchAttributionToFileQuickFixes(
-  envelope: CliBatchEnvelope
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string> = new Map(),
+  rangeOptions?: QuickFixRangeOptions
 ): Map<string, IdeQuickFix[]> {
   const result = new Map<string, IdeQuickFix[]>();
   const seenPerInput = new Map<string, Set<string>>();
@@ -180,6 +182,11 @@ export function mapBatchAttributionToFileQuickFixes(
     if (seen.has(row.code)) continue;
     seen.add(row.code);
     const quickFix = toQuickFix(row.code, fix);
+    const source = sourcesByInput.get(row.input);
+    if (source !== undefined && row.firstBlockIndex !== undefined) {
+      const range = resolveQuickFixRange(source, row.firstBlockIndex, rangeOptions);
+      if (range) quickFix.range = range;
+    }
     const existing = result.get(row.input);
     if (existing) {
       existing.push(quickFix);
@@ -789,39 +796,94 @@ export function deriveParseDiagnosticFixBindings(
 export type SafetyFindingBindingInput = {
   code: string;
   message?: string;
+  /** Optional program source for Schema v20 program-source binding pass. */
+  source?: string;
+  /** Block index into `source` (non-empty blocks). */
+  blockIndex?: number;
+  /** Forwarded to {@link splitProgramIntoBlocks} when reading `source`. */
+  rangeOptions?: BlockSplitOptions;
 };
 
+function extractAddressValue(blockText: string, letter: string): string | undefined {
+  const re = new RegExp(`\\b${letter}\\s*(-?\\d+(?:\\.\\d+)?)\\b`, "i");
+  const match = blockText.match(re);
+  return match?.[1];
+}
+
+function blockTextAtIndex(
+  source: string,
+  blockIndex: number,
+  options?: BlockSplitOptions
+): string | undefined {
+  const blocks = splitProgramIntoBlocks(source, options);
+  if (blockIndex < 0 || blockIndex >= blocks.length) return undefined;
+  return blocks[blockIndex];
+}
+
 /**
- * Heuristic bindings for safety-finding catalogue templates. Narrow by
- * design — only values unambiguously extractable from `code` + `message`:
+ * Heuristic bindings for safety-finding catalogue templates.
  *
- *  - `TOOL_H_MISMATCH` / `TOOL_WITHOUT_G43` → `{ TOOL, H }` from T## / tool N
- *  - `G43_WITHOUT_H` → `{ H }` when message mentions H##
- *  - `MISSING_G43_BEFORE_NEGATIVE_Z` → `{ Z }` from Z-## / Z## in message
- *  - `CANNED_CYCLE_NO_R` → `{ R }` from R## in message when present
- *
- * All other codes return an empty object.
+ * Message pass (v19): TOOL/H/Z/R from finding `message` when present.
+ * Program-source pass (v20): when `source` + `blockIndex` are supplied,
+ * fill still-unbound `TOOL`/`H`/`Z`/`R` from the block text. Message
+ * bindings win on conflict so explicit finding text stays authoritative.
  */
 export function deriveSafetyFindingFixBindings(
   input: SafetyFindingBindingInput
 ): IdeQuickFixBindings {
   const code = typeof input.code === "string" ? input.code : "";
   const message = typeof input.message === "string" ? input.message : "";
+  const bindings: Record<string, string> = {};
+
   if (code === "TOOL_H_MISMATCH" || code === "TOOL_WITHOUT_G43") {
     const match = message.match(/\bT\s*(\d+)\b/i) ?? message.match(/tool\s+(\d+)/i);
-    if (match?.[1]) return Object.freeze({ TOOL: match[1], H: match[1] });
+    if (match?.[1]) {
+      bindings.TOOL = match[1];
+      bindings.H = match[1];
+    }
   }
   if (code === "G43_WITHOUT_H") {
     const match = message.match(/\bH\s*(\d+)\b/i);
-    if (match?.[1]) return Object.freeze({ H: match[1] });
+    if (match?.[1]) bindings.H = match[1];
   }
   if (code === "MISSING_G43_BEFORE_NEGATIVE_Z") {
     const match = message.match(/\bZ\s*(-?\d+(?:\.\d+)?)\b/i);
-    if (match?.[1]) return Object.freeze({ Z: match[1] });
+    if (match?.[1]) bindings.Z = match[1];
   }
   if (code === "CANNED_CYCLE_NO_R") {
     const match = message.match(/\bR\s*(-?\d+(?:\.\d+)?)\b/i);
-    if (match?.[1]) return Object.freeze({ R: match[1] });
+    if (match?.[1]) bindings.R = match[1];
   }
-  return Object.freeze({});
+
+  if (
+    input.source !== undefined &&
+    input.blockIndex !== undefined &&
+    (code === "TOOL_H_MISMATCH" ||
+      code === "TOOL_WITHOUT_G43" ||
+      code === "G43_WITHOUT_H" ||
+      code === "MISSING_G43_BEFORE_NEGATIVE_Z" ||
+      code === "CANNED_CYCLE_NO_R")
+  ) {
+    const block = blockTextAtIndex(input.source, input.blockIndex, input.rangeOptions);
+    if (block) {
+      if (bindings.TOOL === undefined) {
+        const t = extractAddressValue(block, "T");
+        if (t) bindings.TOOL = t;
+      }
+      if (bindings.H === undefined) {
+        const h = extractAddressValue(block, "H") ?? bindings.TOOL;
+        if (h) bindings.H = h;
+      }
+      if (bindings.Z === undefined && code === "MISSING_G43_BEFORE_NEGATIVE_Z") {
+        const z = extractAddressValue(block, "Z");
+        if (z) bindings.Z = z;
+      }
+      if (bindings.R === undefined && code === "CANNED_CYCLE_NO_R") {
+        const r = extractAddressValue(block, "R");
+        if (r) bindings.R = r;
+      }
+    }
+  }
+
+  return Object.freeze(bindings);
 }

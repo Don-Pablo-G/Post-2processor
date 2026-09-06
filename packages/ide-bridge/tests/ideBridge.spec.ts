@@ -97,7 +97,7 @@ function makeBatchEnvelope(
   aggregated?: CliBatchLintIssuesByControllerCodeAggregation[]
 ): CliBatchEnvelope {
   return {
-    schemaVersion: 19,
+    schemaVersion: 20,
     results: [],
     summary: {
       files: 0,
@@ -704,6 +704,28 @@ describe("deriveSafetyFindingFixBindings", () => {
       })
     ).toEqual({});
   });
+
+  it("program-source pass fills Z from block text when message has no Z value", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+        message: "Negative Z move appears before G43 length compensation.",
+        source: "O1\nG0 Z-7.5\nM30\n",
+        blockIndex: 1
+      })
+    ).toEqual({ Z: "-7.5" });
+  });
+
+  it("message bindings win over program-source on conflict", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+        message: "Negative Z-1.0 move",
+        source: "O1\nG0 Z-9\nM30\n",
+        blockIndex: 1
+      })
+    ).toEqual({ Z: "-1.0" });
+  });
 });
 
 describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
@@ -728,10 +750,10 @@ describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
 
   it("attaches ranges for file quick-fixes when sources are supplied", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 19,
+      schemaVersion: 20,
       results: [
         {
-          schemaVersion: 19,
+          schemaVersion: 20,
           input: "a.nc",
           envelope: {
             ...makeEnvelope([]),
@@ -825,7 +847,7 @@ describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
 
   it("mapBatchSafetyFindingsAttributionToFileQuickFixes uses v18 firstBlockIndex", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 19,
+      schemaVersion: 20,
       results: [],
       summary: {
         files: 1,
@@ -859,7 +881,7 @@ describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
 
   it("mapBatchParseDiagnosticsAttributionToFileQuickFixes uses firstBlockIndex", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 19,
+      schemaVersion: 20,
       results: [],
       summary: {
         files: 1,
@@ -888,7 +910,7 @@ describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
 
   it("formatBatchWalkStatus summarizes walk + export", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 19,
+      schemaVersion: 20,
       results: [],
       summary: {
         files: 0,

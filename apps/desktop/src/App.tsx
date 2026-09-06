@@ -120,12 +120,16 @@ import {
   downloadDesktopBatchItems,
   downloadDesktopBatchSetupSheetPdfs,
   filterBatchJobCheckFiles,
+  formatDesktopBatchBlockReasonsChip,
   formatDesktopBatchPolicyBreachChip,
+  formatDesktopBatchQuickFixPreviewChip,
+  formatDesktopBatchQuickFixPreviewsForExport,
+  formatDesktopBatchAggregationsAsCsv,
   formatDesktopBatchSafetyChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchWalkChip,
-  formatDesktopBatchBlockReasonsChip,
+  buildDesktopBatchQuickFixPreviews,
   runDesktopBatchJobCheck,
   type DesktopBatchJobCheckResult
 } from "./batchJobCheckView";
@@ -302,6 +306,10 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedTxts: string;
     batchJobCheckDownloadEnvelopes: string;
     batchJobCheckDownloadedEnvelopes: string;
+    batchJobCheckCopyCsv: string;
+    batchJobCheckCopiedCsv: string;
+    batchJobCheckCopyFixPreview: string;
+    batchJobCheckCopiedFixPreview: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -607,6 +615,10 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedTxts: "Pobrano TXT setup batch",
     batchJobCheckDownloadEnvelopes: "Pobierz JSON envelope",
     batchJobCheckDownloadedEnvelopes: "Pobrano JSON envelope batch",
+    batchJobCheckCopyCsv: "Kopiuj CSV agregacji",
+    batchJobCheckCopiedCsv: "Skopiowano CSV agregacji batch",
+    batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
+    batchJobCheckCopiedFixPreview: "Skopiowano podgląd fixów batch",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -913,6 +925,10 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedTxts: "Downloaded batch setup TXT",
     batchJobCheckDownloadEnvelopes: "Download envelope JSON",
     batchJobCheckDownloadedEnvelopes: "Downloaded batch envelopes",
+    batchJobCheckCopyCsv: "Copy aggregation CSV",
+    batchJobCheckCopiedCsv: "Copied batch aggregation CSV",
+    batchJobCheckCopyFixPreview: "Copy fix preview",
+    batchJobCheckCopiedFixPreview: "Copied batch fix preview",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -1967,6 +1983,37 @@ export function App() {
       setExportStatus(`${t.batchJobCheckDownloadedEnvelopes}: ${downloaded}`);
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Batch envelope download failed.");
+    }
+  }
+
+  async function handleCopyBatchAggregationsCsv(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const payload = formatDesktopBatchAggregationsAsCsv(batchJobCheckResult.envelope);
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.batchJobCheckCopiedCsv);
+    } catch {
+      setExportStatus(payload);
+    }
+  }
+
+  async function handleCopyBatchFixPreview(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const sourcesByInput = new Map(
+      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+    );
+    const previews = buildDesktopBatchQuickFixPreviews(
+      batchJobCheckResult.envelope,
+      sourcesByInput
+    );
+    const payload = formatDesktopBatchQuickFixPreviewsForExport(previews);
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(
+        `${t.batchJobCheckCopiedFixPreview}: ${formatDesktopBatchQuickFixPreviewChip(previews)}`
+      );
+    } catch {
+      setExportStatus(payload);
     }
   }
 
@@ -3719,6 +3766,20 @@ export function App() {
                 onClick={() => void handleDownloadBatchEnvelopes()}
               >
                 {t.batchJobCheckDownloadEnvelopes}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-csv"
+                onClick={() => void handleCopyBatchAggregationsCsv()}
+              >
+                {t.batchJobCheckCopyCsv}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-fix-preview"
+                onClick={() => void handleCopyBatchFixPreview()}
+              >
+                {t.batchJobCheckCopyFixPreview}
               </button>
             </>
           )}

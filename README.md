@@ -3863,6 +3863,48 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=19
 ```
 
+## Program-source bindings + quick-fix preview + controller firstBlockIndex + Schema v20
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies (desktop gains a workspace
+`@cnc/ide-bridge` dependency only).
+
+### Move 1 — Program-source binding pass
+
+`deriveSafetyFindingFixBindings` accepts optional `source` + `blockIndex` and
+fills unbound `TOOL`/`H`/`Z`/`R` from the block text. Message bindings still win
+on conflict.
+
+### Move 2 — Desktop quick-fix preview
+
+Folder batch gains **Copy fix preview** (JSON of expanded safety templates via
+program-source bindings) plus a preview chip helper.
+
+### Move 3 — Controller-code `firstBlockIndex` (Schema v20)
+
+`CLI_SCHEMA_VERSION` bumps `19 → 20`. `lintIssuesByControllerCode[]` and
+`lintIssuesByControllerCodePerInputFile[]` gain optional `firstBlockIndex`.
+`mapBatchAttributionToFileQuickFixes` attaches ranges when sources are supplied.
+
+### Move 4 — NDJSON `--out-dir` batch-summary sidecar
+
+`--out-dir` always writes `batch-summary.json`; when `--format ndjson` it also
+writes one-line `batch-summary.ndjson` (same `CliBatchEnvelope` body).
+
+### Move 5 — Aggregation CSV export
+
+**Copy aggregation CSV** exports safety + policy-breach rollup rows for
+dashboard paste.
+
+### Move 6 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=20
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3883,6 +3925,6 @@ next planning wave can pick them up:
 - **True zip / single-archive batch export** — desktop ships multi-download
   for PDF / TXT / envelope JSON; a single zip archive would need a new
   dependency or native API.
-- **Program-source binding pass** — message heuristics ship for Z/R/H;
-  extracting values from the open program buffer (vs message text) remains
-  an IDE-host concern.
+- **Apply-edit / workspace write from fix preview** — preview + clipboard
+  ship; writing expanded templates back into open editors remains an
+  IDE-host concern.

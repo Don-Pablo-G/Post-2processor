@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildDesktopBatchEnvelopeJsonFiles,
+  buildDesktopBatchQuickFixPreviews,
   buildDesktopBatchSetupSheetPdfs,
   buildDesktopBatchSetupSheetTxts,
   filterBatchJobCheckFiles,
+  formatDesktopBatchAggregationsAsCsv,
   formatDesktopBatchBlockReasonsChip,
+  formatDesktopBatchQuickFixPreviewChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchWalkChip,
@@ -131,7 +134,7 @@ describe("batchJobCheckView", () => {
       }
     );
     expect(batch.envelope.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(batch.envelope.schemaVersion).toBe(19);
+    expect(batch.envelope.schemaVersion).toBe(20);
     expect(batch.envelope.summary.files).toBe(2);
     expect(batch.envelope.summary.blocked).toBe(1);
     expect(batch.envelope.summary.batchWalk?.root).toBe("folder");
@@ -142,7 +145,7 @@ describe("batchJobCheckView", () => {
     expect(batch.envelope.summary.parseDiagnosticsPolicyBreachesAggregated?.[0].key).toBe("TOTAL");
     expect(formatDesktopBatchSummaryChip(batch.envelope)).toMatch(/files=2/);
     const exported = JSON.parse(formatDesktopBatchSummaryForExport(batch.envelope));
-    expect(exported.schemaVersion).toBe(19);
+    expect(exported.schemaVersion).toBe(20);
     expect(exported.summary.batchWalk.matched).toBe(2);
     expect(batch.runResults).toHaveLength(2);
   });
@@ -185,7 +188,7 @@ describe("batchJobCheckView", () => {
     const envelopes = buildDesktopBatchEnvelopeJsonFiles(batch.envelope);
     expect(envelopes).toHaveLength(1);
     expect(envelopes[0]!.filename).toBe("a.job-check.json");
-    expect(JSON.parse(envelopes[0]!.body as string).schemaVersion).toBe(19);
+    expect(JSON.parse(envelopes[0]!.body as string).schemaVersion).toBe(20);
     expect(formatDesktopBatchWalkChip(batch.envelope)).toMatch(/matched=1/);
     expect(formatDesktopBatchBlockReasonsChip(batch.envelope)).toMatch(/batch-block-reasons/);
   });
@@ -208,5 +211,48 @@ describe("batchJobCheckView", () => {
     );
     expect(formatDesktopBatchWalkChip(batch.envelope)).toMatch(/export outDir=\/out/);
     expect(formatDesktopBatchWalkChip(batch.envelope)).toMatch(/pdf=\/pdf/);
+  });
+
+  it("formatDesktopBatchAggregationsAsCsv and quick-fix previews", async () => {
+    const batch = await runDesktopBatchJobCheck(
+      [{ input: "a.nc", source: "O1\nG0 Z-5\nM30\n" }],
+      async () =>
+        makeResult({
+          blocked: true,
+          safetyFindings: [
+            {
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              severity: "blocker",
+              message: "Negative Z move appears before G43 length compensation.",
+              blockIndex: 1
+            }
+          ],
+          parseDiagnosticsPolicyBreaches: [
+            { key: "TOTAL", observed: 1, threshold: 0, severity: "blocker" }
+          ]
+        }),
+      {
+        batchWalk: {
+          recursive: false,
+          include: [],
+          exclude: [],
+          matched: 1,
+          skipped: 0,
+          root: "folder"
+        }
+      }
+    );
+    const csv = formatDesktopBatchAggregationsAsCsv(batch.envelope);
+    expect(csv).toMatch(/^kind,key,count/);
+    expect(csv).toMatch(/safety,/);
+    expect(csv).toMatch(/policy-breach,/);
+    const previews = buildDesktopBatchQuickFixPreviews(
+      batch.envelope,
+      new Map([["a.nc", "O1\nG0 Z-5\nM30\n"]])
+    );
+    expect(previews.length).toBeGreaterThan(0);
+    expect(previews[0]!.code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
+    expect(previews[0]!.expanded).toMatch(/Z-5/);
+    expect(formatDesktopBatchQuickFixPreviewChip(previews)).toMatch(/fixes=/);
   });
 });

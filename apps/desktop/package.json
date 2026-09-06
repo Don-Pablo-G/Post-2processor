@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@cnc/core": "*",
+    "@cnc/ide-bridge": "*",
     "@cnc/profile-fanuc-iso": "*",
     "@cnc/profile-haas-ngc": "*",
     "react": "^19.2.0",
