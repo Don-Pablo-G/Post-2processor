@@ -4582,6 +4582,42 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=39
 ```
 
+## Verify manifest cross-check + SARIF path stamp + Schema v40
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Verify result manifest fields (Schema v40)
+
+`CLI_SCHEMA_VERSION` bumps `39 → 40`.
+`VerifyBatchExportResult` gains optional `manifestPath`, `manifestMatched`, and
+`byKind` when a sealed `batch-export-manifest.json` is available.
+
+### Move 2 — CLI manifest cross-check
+
+`verify-batch-export` loads sibling `batch-export-manifest.json` (under
+`--out-dir` or next to `--zip`). When `zipSha256` / `zipBytes` are present they
+must match the computed digest and compressed size. JSON and text outputs report
+`manifestMatched` and `kinds=<n>` on success.
+
+### Move 3 — Desktop live SARIF stamp
+
+`runDesktopBatchJobCheck` stamps relative logical `batchUnboundSarif`
+(`batch-unbound-fixes.sarif.json`) alongside zip/manifest/summary path stamps.
+
+### Move 4 — Inventory chip shows `sarif`
+
+Live folder-batch inventory chips include `sarif` from that stamp.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=40
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

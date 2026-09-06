@@ -288,9 +288,12 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "or next to --zip), also cross-checks `summary.batchWalk.export.zipSha256`",
   "and reports seal metadata (`sealedAt`, `totalBytes`) in JSON output.",
   "",
+  "Schema v40: when a sibling `batch-export-manifest.json` is present, also",
+  "cross-checks manifest `zipSha256` / optional `zipBytes` and reports `byKind`.",
+  "",
   "Exit codes:",
-  "  0   digest matches (and summary zipSha256 matches when present)",
-  "  1   digest mismatch or summary zipSha256 mismatch",
+  "  0   digest matches (and summary/manifest zipSha256 match when present)",
+  "  1   digest mismatch or summary/manifest zipSha256 (or zipBytes) mismatch",
   "  2   argument or IO error",
   "",
   "Options:",
@@ -303,6 +306,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            object with schemaVersion, ok, zip, sha256Path, zipSha256,",
   "                            zipBytes (success and mismatch). Schema v39 adds optional",
   "                            summaryPath, summaryMatched, sealedAt, totalBytes.",
+  "                            Schema v40 adds optional manifestPath, manifestMatched,",
+  "                            byKind.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -318,9 +323,11 @@ export type VerifyBatchExportArgs = {
 };
 
 /**
- * Schema v38–v39: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v40: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
+ * Schema v40 adds optional sealed-manifest cross-check fields when
+ * `batch-export-manifest.json` is found.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -334,13 +341,22 @@ export type VerifyBatchExportResult = {
   summaryPath?: string;
   /**
    * Schema v39: true when summary export.zipSha256 matched the computed digest;
-   * false when it disagreed; absent when no summary was loaded.
+   * false when it disagreed; absent when no summary was loaded / no digest field.
    */
   summaryMatched?: boolean;
   /** Schema v39: seal timestamp from summary export when present. */
   sealedAt?: string;
   /** Schema v39: export.totalBytes from summary when present. */
   totalBytes?: number;
+  /** Schema v40: path of `batch-export-manifest.json` when loaded. */
+  manifestPath?: string;
+  /**
+   * Schema v40: true when manifest zipSha256 (and zipBytes when present) matched;
+   * false when they disagreed; absent when no manifest was loaded / no digest.
+   */
+  manifestMatched?: boolean;
+  /** Schema v40: manifest `byKind` rollup when present. */
+  byKind?: Record<string, number>;
 };
 
 export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatchExportArgs {
@@ -414,6 +430,15 @@ type SealedSummaryExportMeta = {
   totalBytes?: number;
 };
 
+type SealedManifestMeta = {
+  manifestPath: string;
+  zipSha256?: string;
+  zipBytes?: number;
+  sealedAt?: string;
+  totalBytes?: number;
+  byKind?: Record<string, number>;
+};
+
 async function tryLoadSealedBatchSummaryExport(
   zipPath: string,
   outDir: string | undefined,
@@ -445,6 +470,40 @@ async function tryLoadSealedBatchSummaryExport(
     };
   } catch {
     return { summaryPath };
+  }
+}
+
+async function tryLoadSealedBatchExportManifest(
+  zipPath: string,
+  outDir: string | undefined,
+  readText: (filePath: string) => Promise<string>
+): Promise<SealedManifestMeta | undefined> {
+  const manifestPath =
+    outDir !== undefined
+      ? path.join(outDir, "batch-export-manifest.json")
+      : path.join(path.dirname(zipPath), "batch-export-manifest.json");
+  let raw: string;
+  try {
+    raw = await readText(manifestPath);
+  } catch {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const byKind =
+      parsed.byKind && typeof parsed.byKind === "object" && !Array.isArray(parsed.byKind)
+        ? (parsed.byKind as Record<string, number>)
+        : undefined;
+    return {
+      manifestPath,
+      ...(typeof parsed.zipSha256 === "string" ? { zipSha256: parsed.zipSha256 } : {}),
+      ...(typeof parsed.zipBytes === "number" ? { zipBytes: parsed.zipBytes } : {}),
+      ...(typeof parsed.sealedAt === "string" ? { sealedAt: parsed.sealedAt } : {}),
+      ...(typeof parsed.totalBytes === "number" ? { totalBytes: parsed.totalBytes } : {}),
+      ...(byKind !== undefined ? { byKind } : {})
+    };
+  } catch {
+    return { manifestPath };
   }
 }
 
@@ -506,6 +565,12 @@ export async function runVerifyBatchExport(
     parsed.outDir,
     readText
   );
+  const manifestMeta = await tryLoadSealedBatchExportManifest(
+    parsed.zip!,
+    parsed.outDir,
+    readText
+  );
+
   let summaryMatched: boolean | undefined;
   let summaryMismatch = false;
   if (summaryMeta?.zipSha256 !== undefined) {
@@ -513,7 +578,22 @@ export async function runVerifyBatchExport(
     summaryMismatch = !summaryMatched;
   }
 
-  const ok = sidecarOk && !summaryMismatch;
+  let manifestMatched: boolean | undefined;
+  let manifestMismatch = false;
+  if (manifestMeta?.zipSha256 !== undefined || manifestMeta?.zipBytes !== undefined) {
+    const shaOk =
+      manifestMeta.zipSha256 === undefined ? true : manifestMeta.zipSha256 === actual;
+    const bytesOk =
+      manifestMeta.zipBytes === undefined
+        ? true
+        : manifestMeta.zipBytes === zipBytes.byteLength;
+    manifestMatched = shaOk && bytesOk;
+    manifestMismatch = !manifestMatched;
+  }
+
+  const ok = sidecarOk && !summaryMismatch && !manifestMismatch;
+  const sealedAt = summaryMeta?.sealedAt ?? manifestMeta?.sealedAt;
+  const totalBytes = summaryMeta?.totalBytes ?? manifestMeta?.totalBytes;
 
   if (parsed.format === "json") {
     const result: VerifyBatchExportResult = {
@@ -527,11 +607,16 @@ export async function runVerifyBatchExport(
       ...(summaryMeta
         ? {
             summaryPath: summaryMeta.summaryPath,
-            ...(summaryMatched !== undefined ? { summaryMatched } : {}),
-            ...(summaryMeta.sealedAt !== undefined ? { sealedAt: summaryMeta.sealedAt } : {}),
-            ...(summaryMeta.totalBytes !== undefined
-              ? { totalBytes: summaryMeta.totalBytes }
-              : {})
+            ...(summaryMatched !== undefined ? { summaryMatched } : {})
+          }
+        : {}),
+      ...(sealedAt !== undefined ? { sealedAt } : {}),
+      ...(totalBytes !== undefined ? { totalBytes } : {}),
+      ...(manifestMeta
+        ? {
+            manifestPath: manifestMeta.manifestPath,
+            ...(manifestMatched !== undefined ? { manifestMatched } : {}),
+            ...(manifestMeta.byKind !== undefined ? { byKind: manifestMeta.byKind } : {})
           }
         : {})
     };
@@ -551,13 +636,34 @@ export async function runVerifyBatchExport(
     );
     return 1;
   }
+  if (manifestMismatch) {
+    if (manifestMeta?.zipSha256 !== undefined && manifestMeta.zipSha256 !== actual) {
+      writeErr(
+        `cnc-job-check verify-batch-export: manifest zipSha256 mismatch (expected ${manifestMeta.zipSha256}, got ${actual})\n`
+      );
+    } else {
+      writeErr(
+        `cnc-job-check verify-batch-export: manifest zipBytes mismatch (expected ${manifestMeta!.zipBytes}, got ${zipBytes.byteLength})\n`
+      );
+    }
+    return 1;
+  }
   if (!parsed.quiet) {
-    const sealedPart =
-      summaryMeta?.sealedAt !== undefined ? `; sealedAt=${summaryMeta.sealedAt}` : "";
+    const sealedPart = sealedAt !== undefined ? `; sealedAt=${sealedAt}` : "";
     const summaryPart =
       summaryMatched === true ? "; summaryMatched=true" : summaryMeta ? "; summaryLoaded" : "";
+    const manifestPart =
+      manifestMatched === true
+        ? "; manifestMatched=true"
+        : manifestMeta
+          ? "; manifestLoaded"
+          : "";
+    const kindsPart =
+      manifestMeta?.byKind !== undefined
+        ? `; kinds=${Object.keys(manifestMeta.byKind).length}`
+        : "";
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${kindsPart}\n`
     );
   }
   return 0;

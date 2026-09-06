@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=39\n");
+    expect(stdout).toBe("cnc-job-check schema=40\n");
     expect(stderr).toBe("");
   });
 
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 39", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(39);
+  it("CLI_SCHEMA_VERSION is 40", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(40);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4342,7 +4342,7 @@ describe("Schema v39: verify summary cross-check + sealedAt in verify JSON", () 
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(39);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const out: string[] = [];
     const exit = await main(
       ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
@@ -4350,7 +4350,7 @@ describe("Schema v39: verify summary cross-check + sealedAt in verify JSON", () 
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(39);
+    expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     expect(result.summaryMatched).toBe(true);
     expect(result.summaryPath).toMatch(/batch-summary\.json$/);
@@ -4404,6 +4404,115 @@ describe("Schema v39: verify summary cross-check + sealedAt in verify JSON", () 
     expect(result.ok).toBe(false);
     expect(result.summaryMatched).toBe(false);
     expect(result.expectedZipSha256).toBeUndefined();
+  });
+});
+
+describe("Schema v40: verify manifest cross-check + byKind + desktop sarif stamp", () => {
+  it("verify-batch-export --format json includes manifestMatched, byKind from --out-dir", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(40);
+    const manifest = JSON.parse(
+      await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
+    );
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.schemaVersion).toBe(40);
+    expect(result.ok).toBe(true);
+    expect(result.manifestMatched).toBe(true);
+    expect(result.manifestPath).toMatch(/batch-export-manifest\.json$/);
+    expect(result.summaryMatched).toBe(true);
+    expect(result.byKind).toEqual(manifest.byKind);
+    expect(result.zipSha256).toBe(manifest.zipSha256);
+  });
+
+  it("verify-batch-export text mode reports manifestMatched and kinds", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const out: string[] = [];
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(out.join("")).toMatch(/manifestMatched=true/);
+    expect(out.join("")).toMatch(/kinds=\d+/);
+  });
+
+  it("verify-batch-export fails when manifest zipSha256 disagrees with the zip", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const manifestPath = path.join(outDir, "batch-export-manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    manifest.zipSha256 = "e".repeat(64);
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+    // Keep summary in sync so summary check does not fail first.
+    const summaryPath = path.join(outDir, "batch-summary.json");
+    const summary = JSON.parse(await readFile(summaryPath, "utf8"));
+    summary.summary.batchWalk.export.zipSha256 = manifest.zipSha256;
+    await writeFile(summaryPath, `${JSON.stringify(summary)}\n`, "utf8");
+    const out: string[] = [];
+    const err: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: (c) => err.push(c) }
+    );
+    expect(exit).toBe(1);
+    const result = JSON.parse(out.join(""));
+    expect(result.ok).toBe(false);
+    expect(result.manifestMatched).toBe(false);
+  });
+
+  it("verify-batch-export fails when manifest zipBytes disagrees", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const manifestPath = path.join(outDir, "batch-export-manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    manifest.zipBytes = (manifest.zipBytes ?? 1) + 999;
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(1);
+    const result = JSON.parse(out.join(""));
+    expect(result.ok).toBe(false);
+    expect(result.manifestMatched).toBe(false);
   });
 });
 
