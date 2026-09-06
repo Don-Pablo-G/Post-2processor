@@ -1291,6 +1291,91 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 97) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 and G53 on the same block — local subprogram call and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 and G53 on the same block — macro call and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M98 and G30 on the same block — subprogram call and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 and G30 on the same block — local subprogram call and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G65 and G30 on the same block — macro call and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 0) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M00 and G28 on the same block — program stop and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 1) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M01 and G28 on the same block — optional stop and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 0) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M00 and G53 on the same block — program stop and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 1) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M01 and G53 on the same block — optional stop and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 0) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M00 and G30 on the same block — program stop and secondary reference return separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (
