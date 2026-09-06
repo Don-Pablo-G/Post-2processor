@@ -2714,7 +2714,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nG53 G54 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G53 and a work offset (G54-G59/G154) on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3129,7 +3129,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G28 and G92 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3138,7 +3138,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nG53 Z0 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G53 and G92 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3147,7 +3147,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG30 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G30 and G92 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3156,7 +3156,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G52 X10.\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G28 and G52 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3165,7 +3165,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nG53 Z0 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G53 and G52 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3174,7 +3174,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG30 Z0 G52 X10.\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G30 and G52 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3192,7 +3192,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nT2 M6 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3201,7 +3201,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nT2 M6 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3210,7 +3210,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nT2 M6 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3219,7 +3219,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G4 P1.\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G4 dwell and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3228,7 +3228,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG30 Z0 G4 P1.\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G4 dwell and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3237,7 +3237,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nG53 Z0 G4 P1.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G4 dwell and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3291,7 +3291,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM98 P2 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M98 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3300,7 +3300,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM97 P10 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M97 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3309,7 +3309,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG65 P9010 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G65 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3318,7 +3318,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM98 P2 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M98 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3327,7 +3327,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM97 P10 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M97 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3336,7 +3336,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nG65 P9010 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G65 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3345,7 +3345,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM98 P2 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M98 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3354,7 +3354,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM97 P10 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M97 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3363,7 +3363,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG65 P9010 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G65 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3372,7 +3372,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM00 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M00 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3381,7 +3381,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM01 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M01 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3390,7 +3390,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM00 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M00 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3399,7 +3399,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM01 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M01 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3408,7 +3408,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM00 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M00 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3417,7 +3417,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM01 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M01 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3426,7 +3426,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM99 G28 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M99 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3435,7 +3435,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM99 G30 Z0\nG90\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M99 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3444,7 +3444,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM99 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M99 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3507,7 +3507,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM30 G28 Z0", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M30 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3516,7 +3516,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM30 G30 Z0", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M30 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3525,7 +3525,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM30 G53 Z0", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M30 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3534,7 +3534,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM02 G28 Z0", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M02 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3543,7 +3543,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nM02 G30 Z0", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M02 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3552,7 +3552,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG90\nM02 G53 Z0", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M02 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3561,7 +3561,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG4 P1. G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G4 dwell and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3570,7 +3570,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG4 P1. G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G4 dwell and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3579,7 +3579,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nT2 M6 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3588,7 +3588,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nT2 M6 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("M6 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3597,7 +3597,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54 G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Work offset (G54-G59/G154) and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3606,7 +3606,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54 G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Work offset (G54-G59/G154) and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3615,7 +3615,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25. G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G43 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3624,7 +3624,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25. G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G43 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3633,7 +3633,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG49 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G49 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3642,7 +3642,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG49 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G49 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3651,7 +3651,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG40 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G40 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3660,7 +3660,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG40 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G40 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3669,7 +3669,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G80 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3678,7 +3678,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G80 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3687,7 +3687,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Work offset (G54-G59/G154) and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3696,7 +3696,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("Work offset (G54-G59/G154) and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3705,7 +3705,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G41/G42 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3714,7 +3714,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G41/G42 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3723,7 +3723,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45. G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G68 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3732,7 +3732,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45. G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G68 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3741,7 +3741,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G69 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3750,7 +3750,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G69 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3759,7 +3759,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG51 P2. G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G51 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3768,7 +3768,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG51 P2. G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G51 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3777,7 +3777,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG51 P2.\nG50 G92 X0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G50 and G92 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3786,7 +3786,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG51 P2.\nG50 G52 X10.\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G50 and G52 on the same block")
+        i.message.includes("Coordinate shift conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3795,7 +3795,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25. G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G43 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3804,7 +3804,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25. G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G43 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3813,7 +3813,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG49 G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G49 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3822,7 +3822,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG49 G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G49 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3831,7 +3831,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG40 G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G40 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3840,7 +3840,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG40 G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G40 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3849,7 +3849,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G80 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3858,7 +3858,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G80 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3867,7 +3867,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25. G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G43 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3876,7 +3876,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG49 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G49 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3885,7 +3885,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG40 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G40 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3894,7 +3894,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G53 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G80 and G53 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3903,7 +3903,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1 G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G41/G42 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3912,7 +3912,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG41 D1 G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G41/G42 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3921,7 +3921,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45. G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G68 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3930,7 +3930,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45. G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G68 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3939,7 +3939,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G28 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G69 and G28 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });
@@ -3948,7 +3948,7 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G30 Z0\nM30", haasNgcProfilePackaged);
     expect(
       lint(ast, haasNgcProfilePackaged).some((i) =>
-        i.message.includes("G69 and G30 on the same block")
+        i.message.includes("Machine positioning conflict on the same block")
       )
     ).toBe(true);
   });

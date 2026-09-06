@@ -531,10 +531,12 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.g53-with-work-offset",
     severity: "warning",
-    messageMatcher: /G53 and a work offset \(G54-G59\/G154\) on the same block/,
-    summary: "Do not combine G53 machine coordinates with a work offset on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 G54 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.coolant-m7-and-m8-same-block",
@@ -903,50 +905,62 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G28 and G92 on the same block/,
-    summary: "Do not combine G28 reference return with G92 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g53-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G53 and G92 on the same block/,
-    summary: "Do not combine G53 machine move with G92 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g30-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G30 and G92 on the same block/,
-    summary: "Do not combine G30 secondary reference return with G92 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0 G92 X0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g28-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G28 and G52 on the same block/,
-    summary: "Do not combine G28 reference return with G52 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0 G52 X10.\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g53-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G53 and G52 on the same block/,
-    summary: "Do not combine G53 machine move with G52 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g30-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G30 and G52 on the same block/,
-    summary: "Do not combine G30 secondary reference return with G52 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0 G52 X10.\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g92-and-g52-same-block",
@@ -959,50 +973,62 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m6-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M6 and G28 on the same block/,
-    summary: "Do not combine a tool change (M6) with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nT2 M6 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nT2 M6\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nT2 M6\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m6-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M6 and G30 on the same block/,
-    summary: "Do not combine a tool change (M6) with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nT2 M6 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nT2 M6\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nT2 M6\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m6-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M6 and G53 on the same block/,
-    summary: "Do not combine a tool change (M6) with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nT2 M6 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nT2 M6\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nT2 M6\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g4-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G4 dwell and G28 on the same block/,
-    summary: "Do not combine G4 dwell with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0 G4 P1.\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG4 P1.\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG4 P1.\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g4-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G4 dwell and G30 on the same block/,
-    summary: "Do not combine G4 dwell with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0 G4 P1.\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG4 P1.\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG4 P1.\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g4-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /G4 dwell and G53 on the same block/,
-    summary: "Do not combine G4 dwell with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0 G4 P1.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nG4 P1.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nG4 P1.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m6-and-m98-same-block",
@@ -1055,146 +1081,182 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m98-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M98 and G28 on the same block/,
-    summary: "Do not combine M98 with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM98 P2 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM98 P2\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM98 P2\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m97-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M97 and G28 on the same block/,
-    summary: "Do not combine M97 with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM97 P10 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM97 P10\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM97 P10\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g65-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G65 and G28 on the same block/,
-    summary: "Do not combine G65 with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG65 P9010 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nG65 P9010\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nG65 P9010\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m98-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M98 and G53 on the same block/,
-    summary: "Do not combine M98 with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM98 P2 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM98 P2\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM98 P2\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m97-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M97 and G53 on the same block/,
-    summary: "Do not combine M97 with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM97 P10 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM97 P10\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM97 P10\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g65-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /G65 and G53 on the same block/,
-    summary: "Do not combine G65 with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG65 P9010 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nG65 P9010\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nG65 P9010\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m98-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M98 and G30 on the same block/,
-    summary: "Do not combine M98 with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM98 P2 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM98 P2\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM98 P2\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m97-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M97 and G30 on the same block/,
-    summary: "Do not combine M97 with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM97 P10 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM97 P10\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM97 P10\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g65-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G65 and G30 on the same block/,
-    summary: "Do not combine G65 with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG65 P9010 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nG65 P9010\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nG65 P9010\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m00-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M00 and G28 on the same block/,
-    summary: "Do not combine program stop (M00) with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM00 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM00\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM00\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m01-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M01 and G28 on the same block/,
-    summary: "Do not combine optional stop (M01) with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM01 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM01\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM01\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m00-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M00 and G53 on the same block/,
-    summary: "Do not combine program stop (M00) with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM00 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM00\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM00\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m01-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M01 and G53 on the same block/,
-    summary: "Do not combine optional stop (M01) with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM01 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM01\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM01\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m00-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M00 and G30 on the same block/,
-    summary: "Do not combine program stop (M00) with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM00 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM00\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM00\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m01-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M01 and G30 on the same block/,
-    summary: "Do not combine optional stop (M01) with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM01 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM01\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM01\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m99-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M99 and G28 on the same block/,
-    summary: "Do not combine M99 with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM99 G28 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM99\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM99\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m99-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M99 and G30 on the same block/,
-    summary: "Do not combine M99 with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM99 G30 Z0\nG90\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM99\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM99\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m99-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M99 and G53 on the same block/,
-    summary: "Do not combine M99 with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM99 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM99\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM99\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g4-and-g65-same-block",
@@ -1247,402 +1309,518 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
   {
     id: "haas.m30-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M30 and G28 on the same block/,
-    summary: "Do not combine program end (M30) with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM30 G28 Z0\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m30-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M30 and G30 on the same block/,
-    summary: "Do not combine program end (M30) with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM30 G30 Z0\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m30-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M30 and G53 on the same block/,
-    summary: "Do not combine program end (M30) with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM30 G53 Z0\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m02-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /M02 and G28 on the same block/,
-    summary: "Do not combine program end (M02) with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM02 G28 Z0\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM02\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG28 Z0\nG90\nM02\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m02-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /M02 and G30 on the same block/,
-    summary: "Do not combine program end (M02) with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM02 G30 Z0\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM02\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG30 Z0\nG90\nM02\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.m02-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /M02 and G53 on the same block/,
-    summary: "Do not combine program end (M02) with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nM02 G53 Z0\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM02\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM02\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g4-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G4 dwell and G92 on the same block/,
-    summary: "Do not combine G4 dwell with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g4-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G4 dwell and G52 on the same block/,
-    summary: "Do not combine G4 dwell with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.m6-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /M6 and G92 on the same block/,
-    summary: "Do not combine a tool change (M6) with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nT2 M6 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.m6-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /M6 and G52 on the same block/,
-    summary: "Do not combine a tool change (M6) with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nT2 M6 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.work-offset-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /Work offset \(G54-G59\/G154\) and G28 on the same block/,
-    summary: "Do not select a work offset and G28 on the same block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54 G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.work-offset-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /Work offset \(G54-G59\/G154\) and G30 on the same block/,
-    summary: "Do not select a work offset and G30 on the same block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54 G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g43-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G43 and G92 on the same block/,
-    summary: "Do not combine G43 length compensation with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g43-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G43 and G52 on the same block/,
-    summary: "Do not combine G43 length compensation with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g49-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G49 and G92 on the same block/,
-    summary: "Do not combine G49 cancel length compensation with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g49-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G49 and G52 on the same block/,
-    summary: "Do not combine G49 cancel length compensation with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g40-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G40 and G92 on the same block/,
-    summary: "Do not combine G40 cancel cutter compensation with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g40-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G40 and G52 on the same block/,
-    summary: "Do not combine G40 cancel cutter compensation with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g80-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G80 and G92 on the same block/,
-    summary: "Do not combine G80 cancel canned cycle with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g80-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G80 and G52 on the same block/,
-    summary: "Do not combine G80 cancel canned cycle with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.work-offset-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /Work offset \(G54-G59\/G154\) and G92 on the same block/,
-    summary: "Do not select a work offset and G92 on the same block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG92 X0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG92 X0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.work-offset-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /Work offset \(G54-G59\/G154\) and G52 on the same block/,
-    summary: "Do not select a work offset and G52 on the same block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG52 X10.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG52 X10.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.cutter-comp-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G41\/G42 and G92 on the same block/,
-    summary: "Do not combine G41/G42 cutter compensation with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.cutter-comp-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G41\/G42 and G52 on the same block/,
-    summary: "Do not combine G41/G42 cutter compensation with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g68-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G68 and G92 on the same block/,
-    summary: "Do not combine G68 coordinate rotation with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g68-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G68 and G52 on the same block/,
-    summary: "Do not combine G68 coordinate rotation with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g69-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G69 and G92 on the same block/,
-    summary: "Do not combine G69 cancel rotation with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g69-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G69 and G52 on the same block/,
-    summary: "Do not combine G69 cancel rotation with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g51-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G51 and G92 on the same block/,
-    summary: "Do not combine G51 scaling with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2. G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g51-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G51 and G52 on the same block/,
-    summary: "Do not combine G51 scaling with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2. G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g50-and-g92-same-block",
     severity: "warning",
-    messageMatcher: /G50 and G92 on the same block/,
-    summary: "Do not combine G50 cancel scaling with G92 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50 G92 X0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g50-and-g52-same-block",
     severity: "warning",
-    messageMatcher: /G50 and G52 on the same block/,
-    summary: "Do not combine G50 cancel scaling with G52 on one block.",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50 G52 X10.\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.coord-shift-conflict-same-block."
   },
   {
     id: "haas.g43-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G43 and G28 on the same block/,
-    summary: "Do not combine G43 length compensation with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g43-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G43 and G30 on the same block/,
-    summary: "Do not combine G43 length compensation with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g49-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G49 and G28 on the same block/,
-    summary: "Do not combine G49 cancel length compensation with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g49-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G49 and G30 on the same block/,
-    summary: "Do not combine G49 cancel length compensation with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g40-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G40 and G28 on the same block/,
-    summary: "Do not combine G40 cancel cutter compensation with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g40-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G40 and G30 on the same block/,
-    summary: "Do not combine G40 cancel cutter compensation with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g80-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G80 and G28 on the same block/,
-    summary: "Do not combine G80 cancel canned cycle with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g80-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G80 and G30 on the same block/,
-    summary: "Do not combine G80 cancel canned cycle with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g43-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /G43 and G53 on the same block/,
-    summary: "Do not combine G43 length compensation with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g49-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /G49 and G53 on the same block/,
-    summary: "Do not combine G49 cancel length compensation with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g40-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /G40 and G53 on the same block/,
-    summary: "Do not combine G40 cancel cutter compensation with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g80-and-g53-same-block",
     severity: "warning",
-    messageMatcher: /G80 and G53 on the same block/,
-    summary: "Do not combine G80 cancel canned cycle with G53 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G53 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG53 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG53 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.cutter-comp-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G41\/G42 and G28 on the same block/,
-    summary: "Do not combine G41/G42 cutter compensation with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.cutter-comp-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G41\/G42 and G30 on the same block/,
-    summary: "Do not combine G41/G42 cutter compensation with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g68-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G68 and G28 on the same block/,
-    summary: "Do not combine G68 coordinate rotation with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g68-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G68 and G30 on the same block/,
-    summary: "Do not combine G68 coordinate rotation with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g69-and-g28-same-block",
     severity: "warning",
-    messageMatcher: /G69 and G28 on the same block/,
-    summary: "Do not combine G69 cancel rotation with G28 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G28 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nG28 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nG28 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
   },
   {
     id: "haas.g69-and-g30-same-block",
     severity: "warning",
-    messageMatcher: /G69 and G30 on the same block/,
-    summary: "Do not combine G69 cancel rotation with G30 on one block.",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G30 Z0\nM30\n",
-    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nG30 Z0\nM30\n"
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nG30 Z0\nM30\n",
+    deprecatedSince: "2026-09",
+    replacementSuggestion: "Use haas.machine-position-conflict-same-block."
+  },
+  {
+    id: "haas.machine-position-conflict-same-block",
+    severity: "warning",
+    messageMatcher: /Machine positioning conflict on the same block/,
+    summary: "Do not combine G28/G30/G53 with other modes, calls, or stops on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G28 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG28 Z0\nM30\n"
+  },
+  {
+    id: "haas.coord-shift-conflict-same-block",
+    severity: "warning",
+    messageMatcher: /Coordinate shift conflict on the same block/,
+    summary: "Do not combine G92/G52 with other setup modes on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n"
   },
   {
     id: "haas.multiple-m-codes-same-block",

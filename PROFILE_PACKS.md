@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 209 (of which 13 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 211 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -76,7 +76,7 @@ Total rules: 209 (of which 13 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.path-mode-change-after-motion` | warning | — | — | Changing G61/G64 after motion may be unintentional — verify the switch. |
 | `haas.g41-and-g42-same-block` | warning | — | — | Do not combine G41 and G42 on one block — pick one cutter side. |
 | `haas.m6-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a tool change (M6). |
-| `haas.g53-with-work-offset` | warning | — | — | Do not combine G53 machine coordinates with a work offset on one block. |
+| `haas.g53-with-work-offset` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.coolant-m7-and-m8-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.g68-and-g69-same-block` | warning | — | — | Do not apply and cancel coordinate rotation on the same block. |
 | `haas.g50-and-g51-same-block` | warning | — | — | Do not apply and cancel scaling on the same block. |
@@ -121,98 +121,100 @@ Total rules: 209 (of which 13 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g53-while-scaling` | warning | — | — | Cancel scaling with G50 before a G53 machine move. |
 | `haas.g30-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before G30 secondary reference return. |
 | `haas.g30-while-scaling` | warning | — | — | Cancel scaling with G50 before G30 secondary reference return. |
-| `haas.g28-and-g92-same-block` | warning | — | — | Do not combine G28 reference return with G92 on one block. |
-| `haas.g53-and-g92-same-block` | warning | — | — | Do not combine G53 machine move with G92 on one block. |
-| `haas.g30-and-g92-same-block` | warning | — | — | Do not combine G30 secondary reference return with G92 on one block. |
-| `haas.g28-and-g52-same-block` | warning | — | — | Do not combine G28 reference return with G52 on one block. |
-| `haas.g53-and-g52-same-block` | warning | — | — | Do not combine G53 machine move with G52 on one block. |
-| `haas.g30-and-g52-same-block` | warning | — | — | Do not combine G30 secondary reference return with G52 on one block. |
+| `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g28-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g53-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g30-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g92-and-g52-same-block` | warning | — | — | Do not combine G92 and G52 coordinate shifts on one block. |
-| `haas.m6-and-g28-same-block` | warning | — | — | Do not combine a tool change (M6) with G28 on one block. |
-| `haas.m6-and-g30-same-block` | warning | — | — | Do not combine a tool change (M6) with G30 on one block. |
-| `haas.m6-and-g53-same-block` | warning | — | — | Do not combine a tool change (M6) with G53 on one block. |
-| `haas.g4-and-g28-same-block` | warning | — | — | Do not combine G4 dwell with G28 on one block. |
-| `haas.g4-and-g30-same-block` | warning | — | — | Do not combine G4 dwell with G30 on one block. |
-| `haas.g4-and-g53-same-block` | warning | — | — | Do not combine G4 dwell with G53 on one block. |
+| `haas.m6-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m6-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m6-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g4-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g4-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g4-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.m6-and-m98-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.m6-and-m97-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.m6-and-g65-same-block` | warning | — | — | Do not combine a tool change (M6) with G65 on one block. |
 | `haas.m6-and-m00-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
 | `haas.m6-and-m01-same-block` (deprecated) | warning | 2026-09 | Use haas.multiple-m-codes-same-block (Haas allows only one M function per block). | Superseded by haas.multiple-m-codes-same-block — Haas allows only one M function per block. |
-| `haas.m98-and-g28-same-block` | warning | — | — | Do not combine M98 with G28 on one block. |
-| `haas.m97-and-g28-same-block` | warning | — | — | Do not combine M97 with G28 on one block. |
-| `haas.g65-and-g28-same-block` | warning | — | — | Do not combine G65 with G28 on one block. |
-| `haas.m98-and-g53-same-block` | warning | — | — | Do not combine M98 with G53 on one block. |
-| `haas.m97-and-g53-same-block` | warning | — | — | Do not combine M97 with G53 on one block. |
-| `haas.g65-and-g53-same-block` | warning | — | — | Do not combine G65 with G53 on one block. |
-| `haas.m98-and-g30-same-block` | warning | — | — | Do not combine M98 with G30 on one block. |
-| `haas.m97-and-g30-same-block` | warning | — | — | Do not combine M97 with G30 on one block. |
-| `haas.g65-and-g30-same-block` | warning | — | — | Do not combine G65 with G30 on one block. |
-| `haas.m00-and-g28-same-block` | warning | — | — | Do not combine program stop (M00) with G28 on one block. |
-| `haas.m01-and-g28-same-block` | warning | — | — | Do not combine optional stop (M01) with G28 on one block. |
-| `haas.m00-and-g53-same-block` | warning | — | — | Do not combine program stop (M00) with G53 on one block. |
-| `haas.m01-and-g53-same-block` | warning | — | — | Do not combine optional stop (M01) with G53 on one block. |
-| `haas.m00-and-g30-same-block` | warning | — | — | Do not combine program stop (M00) with G30 on one block. |
-| `haas.m01-and-g30-same-block` | warning | — | — | Do not combine optional stop (M01) with G30 on one block. |
-| `haas.m99-and-g28-same-block` | warning | — | — | Do not combine M99 with G28 on one block. |
-| `haas.m99-and-g30-same-block` | warning | — | — | Do not combine M99 with G30 on one block. |
-| `haas.m99-and-g53-same-block` | warning | — | — | Do not combine M99 with G53 on one block. |
+| `haas.m98-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m97-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g65-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m98-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m97-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g65-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m98-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m97-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g65-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m00-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m01-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m00-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m01-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m00-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m01-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m99-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m99-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m99-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g4-and-g65-same-block` | warning | — | — | Do not combine G4 dwell with G65 on one block. |
 | `haas.g4-and-m98-same-block` | warning | — | — | Do not combine G4 dwell with M98 on one block. |
 | `haas.g4-and-m97-same-block` | warning | — | — | Do not combine G4 dwell with M97 on one block. |
 | `haas.g4-and-m00-same-block` | warning | — | — | Do not combine G4 dwell with program stop (M00) on one block. |
 | `haas.g4-and-m01-same-block` | warning | — | — | Do not combine G4 dwell with optional stop (M01) on one block. |
 | `haas.g4-and-m99-same-block` | warning | — | — | Do not combine G4 dwell with M99 on one block. |
-| `haas.m30-and-g28-same-block` | warning | — | — | Do not combine program end (M30) with G28 on one block. |
-| `haas.m30-and-g30-same-block` | warning | — | — | Do not combine program end (M30) with G30 on one block. |
-| `haas.m30-and-g53-same-block` | warning | — | — | Do not combine program end (M30) with G53 on one block. |
-| `haas.m02-and-g28-same-block` | warning | — | — | Do not combine program end (M02) with G28 on one block. |
-| `haas.m02-and-g30-same-block` | warning | — | — | Do not combine program end (M02) with G30 on one block. |
-| `haas.m02-and-g53-same-block` | warning | — | — | Do not combine program end (M02) with G53 on one block. |
-| `haas.g4-and-g92-same-block` | warning | — | — | Do not combine G4 dwell with G92 on one block. |
-| `haas.g4-and-g52-same-block` | warning | — | — | Do not combine G4 dwell with G52 on one block. |
-| `haas.m6-and-g92-same-block` | warning | — | — | Do not combine a tool change (M6) with G92 on one block. |
-| `haas.m6-and-g52-same-block` | warning | — | — | Do not combine a tool change (M6) with G52 on one block. |
-| `haas.work-offset-and-g28-same-block` | warning | — | — | Do not select a work offset and G28 on the same block. |
-| `haas.work-offset-and-g30-same-block` | warning | — | — | Do not select a work offset and G30 on the same block. |
-| `haas.g43-and-g92-same-block` | warning | — | — | Do not combine G43 length compensation with G92 on one block. |
-| `haas.g43-and-g52-same-block` | warning | — | — | Do not combine G43 length compensation with G52 on one block. |
-| `haas.g49-and-g92-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G92 on one block. |
-| `haas.g49-and-g52-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G52 on one block. |
-| `haas.g40-and-g92-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G92 on one block. |
-| `haas.g40-and-g52-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G52 on one block. |
-| `haas.g80-and-g92-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G92 on one block. |
-| `haas.g80-and-g52-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G52 on one block. |
-| `haas.work-offset-and-g92-same-block` | warning | — | — | Do not select a work offset and G92 on the same block. |
-| `haas.work-offset-and-g52-same-block` | warning | — | — | Do not select a work offset and G52 on the same block. |
-| `haas.cutter-comp-and-g92-same-block` | warning | — | — | Do not combine G41/G42 cutter compensation with G92 on one block. |
-| `haas.cutter-comp-and-g52-same-block` | warning | — | — | Do not combine G41/G42 cutter compensation with G52 on one block. |
-| `haas.g68-and-g92-same-block` | warning | — | — | Do not combine G68 coordinate rotation with G92 on one block. |
-| `haas.g68-and-g52-same-block` | warning | — | — | Do not combine G68 coordinate rotation with G52 on one block. |
-| `haas.g69-and-g92-same-block` | warning | — | — | Do not combine G69 cancel rotation with G92 on one block. |
-| `haas.g69-and-g52-same-block` | warning | — | — | Do not combine G69 cancel rotation with G52 on one block. |
-| `haas.g51-and-g92-same-block` | warning | — | — | Do not combine G51 scaling with G92 on one block. |
-| `haas.g51-and-g52-same-block` | warning | — | — | Do not combine G51 scaling with G52 on one block. |
-| `haas.g50-and-g92-same-block` | warning | — | — | Do not combine G50 cancel scaling with G92 on one block. |
-| `haas.g50-and-g52-same-block` | warning | — | — | Do not combine G50 cancel scaling with G52 on one block. |
-| `haas.g43-and-g28-same-block` | warning | — | — | Do not combine G43 length compensation with G28 on one block. |
-| `haas.g43-and-g30-same-block` | warning | — | — | Do not combine G43 length compensation with G30 on one block. |
-| `haas.g49-and-g28-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G28 on one block. |
-| `haas.g49-and-g30-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G30 on one block. |
-| `haas.g40-and-g28-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G28 on one block. |
-| `haas.g40-and-g30-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G30 on one block. |
-| `haas.g80-and-g28-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G28 on one block. |
-| `haas.g80-and-g30-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G30 on one block. |
-| `haas.g43-and-g53-same-block` | warning | — | — | Do not combine G43 length compensation with G53 on one block. |
-| `haas.g49-and-g53-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G53 on one block. |
-| `haas.g40-and-g53-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G53 on one block. |
-| `haas.g80-and-g53-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G53 on one block. |
-| `haas.cutter-comp-and-g28-same-block` | warning | — | — | Do not combine G41/G42 cutter compensation with G28 on one block. |
-| `haas.cutter-comp-and-g30-same-block` | warning | — | — | Do not combine G41/G42 cutter compensation with G30 on one block. |
-| `haas.g68-and-g28-same-block` | warning | — | — | Do not combine G68 coordinate rotation with G28 on one block. |
-| `haas.g68-and-g30-same-block` | warning | — | — | Do not combine G68 coordinate rotation with G30 on one block. |
-| `haas.g69-and-g28-same-block` | warning | — | — | Do not combine G69 cancel rotation with G28 on one block. |
-| `haas.g69-and-g30-same-block` | warning | — | — | Do not combine G69 cancel rotation with G30 on one block. |
+| `haas.m30-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m30-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m30-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m02-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m02-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.m02-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g4-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g4-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.m6-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.m6-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.work-offset-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.work-offset-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g43-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g43-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g49-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g49-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g40-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g40-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g80-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g80-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.work-offset-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.work-offset-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.cutter-comp-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.cutter-comp-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g68-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g68-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g69-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g69-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g51-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g51-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g50-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g50-and-g52-same-block` (deprecated) | warning | 2026-09 | Use haas.coord-shift-conflict-same-block. | Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes. |
+| `haas.g43-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g43-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g49-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g49-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g40-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g40-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g80-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g80-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g43-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g49-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g40-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g80-and-g53-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.cutter-comp-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.cutter-comp-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g68-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g68-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g69-and-g28-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.g69-and-g30-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
+| `haas.machine-position-conflict-same-block` | warning | — | — | Do not combine G28/G30/G53 with other modes, calls, or stops on one block. |
+| `haas.coord-shift-conflict-same-block` | warning | — | — | Do not combine G92/G52 with other setup modes on one block. |
 | `haas.multiple-m-codes-same-block` | warning | — | — | Haas allows only one M function per block — split M codes onto separate blocks. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
@@ -1990,8 +1992,10 @@ M30
 ### `haas.g53-with-work-offset`
 
 - **Severity:** warning
-- **Matcher:** `/G53 and a work offset \(G54-G59\/G154\) on the same block/`
-- **Summary:** Do not combine G53 machine coordinates with a work offset on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3311,8 +3315,10 @@ M30
 ### `haas.g28-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G28 and G92 on the same block/`
-- **Summary:** Do not combine G28 reference return with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3341,8 +3347,10 @@ M30
 ### `haas.g53-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G53 and G92 on the same block/`
-- **Summary:** Do not combine G53 machine move with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3369,8 +3377,10 @@ M30
 ### `haas.g30-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G30 and G92 on the same block/`
-- **Summary:** Do not combine G30 secondary reference return with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3399,8 +3409,10 @@ M30
 ### `haas.g28-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G28 and G52 on the same block/`
-- **Summary:** Do not combine G28 reference return with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3429,8 +3441,10 @@ M30
 ### `haas.g53-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G53 and G52 on the same block/`
-- **Summary:** Do not combine G53 machine move with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3457,8 +3471,10 @@ M30
 ### `haas.g30-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G30 and G52 on the same block/`
-- **Summary:** Do not combine G30 secondary reference return with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3513,8 +3529,10 @@ M30
 ### `haas.m6-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and G28 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3544,8 +3562,10 @@ M30
 ### `haas.m6-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and G30 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3575,8 +3595,10 @@ M30
 ### `haas.m6-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and G53 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3604,8 +3626,10 @@ M30
 ### `haas.g4-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G4 dwell and G28 on the same block/`
-- **Summary:** Do not combine G4 dwell with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3635,8 +3659,10 @@ M30
 ### `haas.g4-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G4 dwell and G30 on the same block/`
-- **Summary:** Do not combine G4 dwell with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3666,8 +3692,10 @@ M30
 ### `haas.g4-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G4 dwell and G53 on the same block/`
-- **Summary:** Do not combine G4 dwell with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3838,8 +3866,10 @@ M30
 ### `haas.m98-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M98 and G28 on the same block/`
-- **Summary:** Do not combine M98 with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3869,8 +3899,10 @@ M30
 ### `haas.m97-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M97 and G28 on the same block/`
-- **Summary:** Do not combine M97 with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3900,8 +3932,10 @@ M30
 ### `haas.g65-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G65 and G28 on the same block/`
-- **Summary:** Do not combine G65 with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3931,8 +3965,10 @@ M30
 ### `haas.m98-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M98 and G53 on the same block/`
-- **Summary:** Do not combine M98 with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3960,8 +3996,10 @@ M30
 ### `haas.m97-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M97 and G53 on the same block/`
-- **Summary:** Do not combine M97 with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -3989,8 +4027,10 @@ M30
 ### `haas.g65-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G65 and G53 on the same block/`
-- **Summary:** Do not combine G65 with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4018,8 +4058,10 @@ M30
 ### `haas.m98-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M98 and G30 on the same block/`
-- **Summary:** Do not combine M98 with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4049,8 +4091,10 @@ M30
 ### `haas.m97-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M97 and G30 on the same block/`
-- **Summary:** Do not combine M97 with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4080,8 +4124,10 @@ M30
 ### `haas.g65-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G65 and G30 on the same block/`
-- **Summary:** Do not combine G65 with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4111,8 +4157,10 @@ M30
 ### `haas.m00-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M00 and G28 on the same block/`
-- **Summary:** Do not combine program stop (M00) with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4142,8 +4190,10 @@ M30
 ### `haas.m01-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M01 and G28 on the same block/`
-- **Summary:** Do not combine optional stop (M01) with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4173,8 +4223,10 @@ M30
 ### `haas.m00-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M00 and G53 on the same block/`
-- **Summary:** Do not combine program stop (M00) with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4202,8 +4254,10 @@ M30
 ### `haas.m01-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M01 and G53 on the same block/`
-- **Summary:** Do not combine optional stop (M01) with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4231,8 +4285,10 @@ M30
 ### `haas.m00-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M00 and G30 on the same block/`
-- **Summary:** Do not combine program stop (M00) with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4262,8 +4318,10 @@ M30
 ### `haas.m01-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M01 and G30 on the same block/`
-- **Summary:** Do not combine optional stop (M01) with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4293,8 +4351,10 @@ M30
 ### `haas.m99-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M99 and G28 on the same block/`
-- **Summary:** Do not combine M99 with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4324,8 +4384,10 @@ M30
 ### `haas.m99-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M99 and G30 on the same block/`
-- **Summary:** Do not combine M99 with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4355,8 +4417,10 @@ M30
 ### `haas.m99-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M99 and G53 on the same block/`
-- **Summary:** Do not combine M99 with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4546,8 +4610,10 @@ M30
 ### `haas.m30-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M30 and G28 on the same block/`
-- **Summary:** Do not combine program end (M30) with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4574,8 +4640,10 @@ M30
 ### `haas.m30-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M30 and G30 on the same block/`
-- **Summary:** Do not combine program end (M30) with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4602,8 +4670,10 @@ M30
 ### `haas.m30-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M30 and G53 on the same block/`
-- **Summary:** Do not combine program end (M30) with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4629,8 +4699,10 @@ M30
 ### `haas.m02-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M02 and G28 on the same block/`
-- **Summary:** Do not combine program end (M02) with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4657,8 +4729,10 @@ M02
 ### `haas.m02-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M02 and G30 on the same block/`
-- **Summary:** Do not combine program end (M02) with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4685,8 +4759,10 @@ M02
 ### `haas.m02-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M02 and G53 on the same block/`
-- **Summary:** Do not combine program end (M02) with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4712,8 +4788,10 @@ M02
 ### `haas.g4-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G4 dwell and G92 on the same block/`
-- **Summary:** Do not combine G4 dwell with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4738,8 +4816,10 @@ M30
 ### `haas.g4-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G4 dwell and G52 on the same block/`
-- **Summary:** Do not combine G4 dwell with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4764,8 +4844,10 @@ M30
 ### `haas.m6-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and G92 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4790,8 +4872,10 @@ M30
 ### `haas.m6-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/M6 and G52 on the same block/`
-- **Summary:** Do not combine a tool change (M6) with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4816,8 +4900,10 @@ M30
 ### `haas.work-offset-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Work offset \(G54-G59\/G154\) and G28 on the same block/`
-- **Summary:** Do not select a work offset and G28 on the same block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4841,8 +4927,10 @@ M30
 ### `haas.work-offset-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Work offset \(G54-G59\/G154\) and G30 on the same block/`
-- **Summary:** Do not select a work offset and G30 on the same block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -4866,8 +4954,10 @@ M30
 ### `haas.g43-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G43 and G92 on the same block/`
-- **Summary:** Do not combine G43 length compensation with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4892,8 +4982,10 @@ M30
 ### `haas.g43-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G43 and G52 on the same block/`
-- **Summary:** Do not combine G43 length compensation with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4918,8 +5010,10 @@ M30
 ### `haas.g49-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G49 and G92 on the same block/`
-- **Summary:** Do not combine G49 cancel length compensation with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4946,8 +5040,10 @@ M30
 ### `haas.g49-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G49 and G52 on the same block/`
-- **Summary:** Do not combine G49 cancel length compensation with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -4974,8 +5070,10 @@ M30
 ### `haas.g40-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G40 and G92 on the same block/`
-- **Summary:** Do not combine G40 cancel cutter compensation with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5002,8 +5100,10 @@ M30
 ### `haas.g40-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G40 and G52 on the same block/`
-- **Summary:** Do not combine G40 cancel cutter compensation with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5030,8 +5130,10 @@ M30
 ### `haas.g80-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G80 and G92 on the same block/`
-- **Summary:** Do not combine G80 cancel canned cycle with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5058,8 +5160,10 @@ M30
 ### `haas.g80-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G80 and G52 on the same block/`
-- **Summary:** Do not combine G80 cancel canned cycle with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5086,8 +5190,10 @@ M30
 ### `haas.work-offset-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Work offset \(G54-G59\/G154\) and G92 on the same block/`
-- **Summary:** Do not select a work offset and G92 on the same block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5111,8 +5217,10 @@ M30
 ### `haas.work-offset-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/Work offset \(G54-G59\/G154\) and G52 on the same block/`
-- **Summary:** Do not select a work offset and G52 on the same block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5136,8 +5244,10 @@ M30
 ### `haas.cutter-comp-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G41\/G42 and G92 on the same block/`
-- **Summary:** Do not combine G41/G42 cutter compensation with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5162,8 +5272,10 @@ M30
 ### `haas.cutter-comp-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G41\/G42 and G52 on the same block/`
-- **Summary:** Do not combine G41/G42 cutter compensation with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5188,8 +5300,10 @@ M30
 ### `haas.g68-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G68 and G92 on the same block/`
-- **Summary:** Do not combine G68 coordinate rotation with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5214,8 +5328,10 @@ M30
 ### `haas.g68-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G68 and G52 on the same block/`
-- **Summary:** Do not combine G68 coordinate rotation with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5240,8 +5356,10 @@ M30
 ### `haas.g69-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G69 and G92 on the same block/`
-- **Summary:** Do not combine G69 cancel rotation with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5268,8 +5386,10 @@ M30
 ### `haas.g69-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G69 and G52 on the same block/`
-- **Summary:** Do not combine G69 cancel rotation with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5296,8 +5416,10 @@ M30
 ### `haas.g51-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G51 and G92 on the same block/`
-- **Summary:** Do not combine G51 scaling with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5322,8 +5444,10 @@ M30
 ### `haas.g51-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G51 and G52 on the same block/`
-- **Summary:** Do not combine G51 scaling with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5348,8 +5472,10 @@ M30
 ### `haas.g50-and-g92-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G50 and G92 on the same block/`
-- **Summary:** Do not combine G50 cancel scaling with G92 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5376,8 +5502,10 @@ M30
 ### `haas.g50-and-g52-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G50 and G52 on the same block/`
-- **Summary:** Do not combine G50 cancel scaling with G52 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.coord-shift-conflict-same-block.
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Superseded by haas.coord-shift-conflict-same-block — split G92/G52 from other modes.
 
 **Triggers (positive):**
 
@@ -5404,8 +5532,10 @@ M30
 ### `haas.g43-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G43 and G28 on the same block/`
-- **Summary:** Do not combine G43 length compensation with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5431,8 +5561,10 @@ M30
 ### `haas.g43-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G43 and G30 on the same block/`
-- **Summary:** Do not combine G43 length compensation with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5458,8 +5590,10 @@ M30
 ### `haas.g49-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G49 and G28 on the same block/`
-- **Summary:** Do not combine G49 cancel length compensation with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5487,8 +5621,10 @@ M30
 ### `haas.g49-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G49 and G30 on the same block/`
-- **Summary:** Do not combine G49 cancel length compensation with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5516,8 +5652,10 @@ M30
 ### `haas.g40-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G40 and G28 on the same block/`
-- **Summary:** Do not combine G40 cancel cutter compensation with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5545,8 +5683,10 @@ M30
 ### `haas.g40-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G40 and G30 on the same block/`
-- **Summary:** Do not combine G40 cancel cutter compensation with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5574,8 +5714,10 @@ M30
 ### `haas.g80-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G80 and G28 on the same block/`
-- **Summary:** Do not combine G80 cancel canned cycle with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5603,8 +5745,10 @@ M30
 ### `haas.g80-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G80 and G30 on the same block/`
-- **Summary:** Do not combine G80 cancel canned cycle with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5632,8 +5776,10 @@ M30
 ### `haas.g43-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G43 and G53 on the same block/`
-- **Summary:** Do not combine G43 length compensation with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5659,8 +5805,10 @@ M30
 ### `haas.g49-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G49 and G53 on the same block/`
-- **Summary:** Do not combine G49 cancel length compensation with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5688,8 +5836,10 @@ M30
 ### `haas.g40-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G40 and G53 on the same block/`
-- **Summary:** Do not combine G40 cancel cutter compensation with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5717,8 +5867,10 @@ M30
 ### `haas.g80-and-g53-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G80 and G53 on the same block/`
-- **Summary:** Do not combine G80 cancel canned cycle with G53 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5746,8 +5898,10 @@ M30
 ### `haas.cutter-comp-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G41\/G42 and G28 on the same block/`
-- **Summary:** Do not combine G41/G42 cutter compensation with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5773,8 +5927,10 @@ M30
 ### `haas.cutter-comp-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G41\/G42 and G30 on the same block/`
-- **Summary:** Do not combine G41/G42 cutter compensation with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5800,8 +5956,10 @@ M30
 ### `haas.g68-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G68 and G28 on the same block/`
-- **Summary:** Do not combine G68 coordinate rotation with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5827,8 +5985,10 @@ M30
 ### `haas.g68-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G68 and G30 on the same block/`
-- **Summary:** Do not combine G68 coordinate rotation with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5854,8 +6014,10 @@ M30
 ### `haas.g69-and-g28-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G69 and G28 on the same block/`
-- **Summary:** Do not combine G69 cancel rotation with G28 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5883,8 +6045,10 @@ M30
 ### `haas.g69-and-g30-same-block`
 
 - **Severity:** warning
-- **Matcher:** `/G69 and G30 on the same block/`
-- **Summary:** Do not combine G69 cancel rotation with G30 on one block.
+- **Deprecated since:** 2026-09 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Use haas.machine-position-conflict-same-block.
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops.
 
 **Triggers (positive):**
 
@@ -5906,6 +6070,59 @@ G54
 G68 X0 Y0 R45.
 G69
 G30 Z0
+M30
+```
+
+### `haas.machine-position-conflict-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Machine positioning conflict on the same block/`
+- **Summary:** Do not combine G28/G30/G53 with other modes, calls, or stops on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G28 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G28 Z0
+M30
+```
+
+### `haas.coord-shift-conflict-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Coordinate shift conflict on the same block/`
+- **Summary:** Do not combine G92/G52 with other setup modes on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G92 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
 M30
 ```
 

@@ -747,15 +747,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
-    if (hasExactG53(block) && hasWorkOffset(block)) {
-      issues.push({
-        severity: "warning",
-        message:
-          "G53 and a work offset (G54-G59/G154) on the same block — machine and work coordinates conflict.",
-        blockIndex: index
-      });
-    }
-
     if (hasWordM(block, 6) && spindleActive) {
       issues.push({
         severity: "warning",
