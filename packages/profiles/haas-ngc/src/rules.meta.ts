@@ -1405,6 +1405,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nM30\n"
   },
   {
+    id: "haas.work-offset-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /Work offset \(G54-G59\/G154\) and G92 on the same block/,
+    summary: "Do not select a work offset and G92 on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54 G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG92 X0\nM30\n"
+  },
+  {
+    id: "haas.work-offset-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /Work offset \(G54-G59\/G154\) and G52 on the same block/,
+    summary: "Do not select a work offset and G52 on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54 G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG52 X10.\nM30\n"
+  },
+  {
+    id: "haas.cutter-comp-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G41\/G42 and G92 on the same block/,
+    summary: "Do not combine G41/G42 cutter compensation with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n"
+  },
+  {
+    id: "haas.cutter-comp-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G41\/G42 and G52 on the same block/,
+    summary: "Do not combine G41/G42 cutter compensation with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nM30\n"
+  },
+  {
+    id: "haas.g68-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G92 on the same block/,
+    summary: "Do not combine G68 coordinate rotation with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nM30\n"
+  },
+  {
+    id: "haas.g68-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G52 on the same block/,
+    summary: "Do not combine G68 coordinate rotation with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nM30\n"
+  },
+  {
+    id: "haas.g69-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G69 and G92 on the same block/,
+    summary: "Do not combine G69 cancel rotation with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM30\n"
+  },
+  {
+    id: "haas.g69-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G69 and G52 on the same block/,
+    summary: "Do not combine G69 cancel rotation with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69\nM30\n"
+  },
+  {
+    id: "haas.g51-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G92 on the same block/,
+    summary: "Do not combine G51 scaling with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2. G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n"
+  },
+  {
+    id: "haas.g51-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G52 on the same block/,
+    summary: "Do not combine G51 scaling with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2. G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n"
+  },
+  {
     id: "haas.multiple-m-codes-same-block",
     severity: "warning",
     messageMatcher: /Multiple M codes on the same block/,

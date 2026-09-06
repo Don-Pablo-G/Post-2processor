@@ -1622,6 +1622,88 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWorkOffset(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Work offset (G54-G59/G154) and G92 on the same block — select offset and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWorkOffset(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Work offset (G54-G59/G154) and G52 on the same block — select offset and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG41Or42(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G41/G42 and G92 on the same block — cutter compensation and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG41Or42(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G41/G42 and G52 on the same block — cutter compensation and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG68(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G68 and G92 on the same block — coordinate rotation and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG68(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G68 and G52 on the same block — coordinate rotation and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG69(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G69 and G92 on the same block — cancel rotation and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG69(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G69 and G52 on the same block — cancel rotation and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG51(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G51 and G92 on the same block — scaling and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG51(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G51 and G52 on the same block — scaling and local offset separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (
