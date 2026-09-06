@@ -153,6 +153,52 @@ function hasExactPlane(block: { words: Word[] }): 17 | 18 | 19 | undefined {
   return undefined;
 }
 
+function hasExactG65(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 65;
+  });
+}
+
+function hasExactG4(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 4;
+  });
+}
+
+function hasExactG28(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 28;
+  });
+}
+
+function workOffsetCode(block: { words: Word[] }): number | undefined {
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (WORK_OFFSET_G_CODES.has(v)) return v;
+  }
+  return undefined;
+}
+
+function axisWordCount(block: { words: Word[] }): number {
+  let n = 0;
+  if (hasLetter(block, "X")) n += 1;
+  if (hasLetter(block, "Y")) n += 1;
+  if (hasLetter(block, "Z")) n += 1;
+  return n;
+}
+
+function literalToolNumber(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  const t = raw.trim().toUpperCase();
+  if (t.includes("#") || t.includes("[")) return undefined;
+  const n = Math.trunc(Number.parseFloat(t));
+  return Number.isFinite(n) ? n : undefined;
+}
+
 function lastWordValue(block: { words: Word[] }, letter: string): string | undefined {
   const w = block.words.filter((x) => x.letter === letter).at(-1);
   return w?.value;
@@ -164,6 +210,14 @@ function isZeroOffsetWord(raw: string | undefined): boolean {
   if (t.includes("#") || t.includes("[")) return false;
   const n = Number.parseFloat(t);
   return Number.isFinite(n) && n === 0;
+}
+
+function isLiteralNegativeAxis(raw: string | undefined): boolean {
+  if (raw === undefined) return false;
+  const t = raw.trim().toUpperCase();
+  if (t.includes("#") || t.includes("[")) return false;
+  const n = Number.parseFloat(t);
+  return Number.isFinite(n) && n < 0;
 }
 
 function isMeaningfulFirstG43Z(zWordRaw: string | undefined): boolean {
@@ -191,6 +245,9 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let incrementalActive = false;
   let sawWorkOffset = false;
   let warnedMissingWorkOffset = false;
+  let sawAxisMotion = false;
+  let activeWorkOffset: number | undefined;
+  let lastToolNumber: number | undefined;
   let activePlane: 17 | 18 | 19 | undefined;
   let cutterCompActive = false;
   let cannedActive = false;
@@ -316,6 +373,12 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    const tWordEarly = block.words.filter((w) => w.letter === "T").at(-1);
+    const tNumEarly = literalToolNumber(tWordEarly?.value);
+    if (tNumEarly !== undefined && tNumEarly > 0) {
+      lastToolNumber = tNumEarly;
+    }
+
     if (hasSpindleOn(block)) {
       sawSpindleOn = true;
       spindleActive = true;
@@ -351,7 +414,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasWorkOffset(block)) {
+      const nextOffset = workOffsetCode(block);
+      if (
+        sawAxisMotion &&
+        activeWorkOffset !== undefined &&
+        nextOffset !== undefined &&
+        nextOffset !== activeWorkOffset
+      ) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Work offset changed after axis motion — verify intentional G54-G59/G154 switch mid-program.",
+          blockIndex: index
+        });
+      }
       sawWorkOffset = true;
+      if (nextOffset !== undefined) activeWorkOffset = nextOffset;
     }
 
     if (
@@ -370,6 +448,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       warnedMissingWorkOffset = true;
     }
 
+    if (
+      (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
+      hasAxisWord(block)
+    ) {
+      sawAxisMotion = true;
+    }
+
     if (hasExactG53(block) && incrementalActive) {
       issues.push({
         severity: "warning",
@@ -384,6 +469,85 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         message: "M6 while spindle is still on — stop spindle with M5 before the tool change.",
         blockIndex: index
       });
+    }
+
+    if (hasExactFeedMotion(block) && !spindleActive) {
+      issues.push({
+        severity: "warning",
+        message: "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      hasExactG0(block) &&
+      isLiteralNegativeAxis(lastWordValue(block, "Z")) &&
+      !toolLengthActive
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G0 with negative Z while tool length compensation (G43) is inactive — verify clearance before plunging.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && !hasLetter(block, "P")) {
+      issues.push({
+        severity: "warning",
+        message: "M98 without P — subprogram call needs an explicit program number.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && !hasLetter(block, "P")) {
+      issues.push({
+        severity: "warning",
+        message: "M97 without P — local subprogram call needs an explicit N-target number.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && !hasLetter(block, "P")) {
+      issues.push({
+        severity: "warning",
+        message: "G65 without P — macro call needs an explicit program number.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && !hasLetter(block, "P") && !hasLetter(block, "X")) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell without P or X — specify dwell time explicitly.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && axisWordCount(block) > 1) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G28 with multiple axes on one block — prefer single-axis G28 moves for safer homing.",
+        blockIndex: index
+      });
+    }
+
+    if (hasG43Classic(block)) {
+      const hNum = literalToolNumber(lastWordValue(block, "H"));
+      if (
+        hNum !== undefined &&
+        hNum > 0 &&
+        lastToolNumber !== undefined &&
+        lastToolNumber > 0 &&
+        hNum !== lastToolNumber
+      ) {
+        issues.push({
+          severity: "warning",
+          message: `G43 H${hNum} does not match last tool T${lastToolNumber} — verify H offset pairing.`,
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactG41Or42(block) && !hasLetter(block, "D")) {
@@ -418,6 +582,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       })
     ) {
       cutterCompActive = false;
+    }
+
+    if (hasExactG0(block) && cutterCompActive) {
+      issues.push({
+        severity: "warning",
+        message: "G0 rapid while cutter compensation (G41/G42) is active — cancel with G40 or use feed motion.",
+        blockIndex: index
+      });
     }
 
     if (hasExactFeedMotion(block) && !hasLetter(block, "F") && !sawAnyFeedRate) {

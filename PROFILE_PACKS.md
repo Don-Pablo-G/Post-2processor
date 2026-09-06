@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 33
+Total rules: 43
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -38,6 +38,16 @@ Total rules: 33
 | `haas.motion-without-work-offset` | warning | — | — | Select G54-G59 or G154 before axis motion (unless using G53). |
 | `haas.g53-in-incremental` | warning | — | — | G53 machine coordinates should be used with G90, not G91. |
 | `haas.non-xy-plane-at-end` | warning | — | — | Restore G17 (XY) before end when a mill program used G18/G19. |
+| `haas.feed-while-spindle-off` | warning | — | — | Start the spindle before G1/G2/G3 feed motion. |
+| `haas.rapid-negative-z-without-g43` | warning | — | — | Avoid G0 plunges to negative Z without G43 tool length active. |
+| `haas.cutter-comp-during-rapid` | warning | — | — | Do not rapid (G0) with G41/G42 active — cancel with G40 first. |
+| `haas.m98-without-p` | warning | — | — | M98 subprogram calls require an explicit P program number. |
+| `haas.m97-without-p` | warning | — | — | M97 local subprogram calls require an explicit P (N-target). |
+| `haas.g65-without-p` | warning | — | — | G65 macro calls require an explicit P program number. |
+| `haas.dwell-without-time` | warning | — | — | G4 dwell needs an explicit P or X time value. |
+| `haas.g43-h-mismatched-t` | warning | — | — | G43 H offset should usually match the active tool number T. |
+| `haas.work-offset-change-after-motion` | warning | — | — | Changing G54-G59/G154 after motion may be unintentional — verify the switch. |
+| `haas.g28-multi-axis` | warning | — | — | Prefer single-axis G28 moves instead of combined XYZ home returns. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -736,6 +746,269 @@ T1 M6
 G54
 G18
 G17
+M30
+```
+
+### `haas.feed-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G1\/G2\/G3 while spindle is off/`
+- **Summary:** Start the spindle before G1/G2/G3 feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G1 X10. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G1 X10. F100.
+M5
+M30
+```
+
+### `haas.rapid-negative-z-without-g43`
+
+- **Severity:** warning
+- **Matcher:** `/G0 with negative Z while tool length compensation \(G43\) is inactive/`
+- **Summary:** Avoid G0 plunges to negative Z without G43 tool length active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G0 Z-1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G0 Z-1.
+G49
+M30
+```
+
+### `haas.cutter-comp-during-rapid`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while cutter compensation \(G41\/G42\) is active/`
+- **Summary:** Do not rapid (G0) with G41/G42 active — cancel with G40 first.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G0 X10.
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G41 D1
+G1 X10. F100.
+G40
+M5
+M30
+```
+
+### `haas.m98-without-p`
+
+- **Severity:** warning
+- **Matcher:** `/M98 without P/`
+- **Summary:** M98 subprogram calls require an explicit P program number.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M98
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M98 P1000
+M30
+O1000
+M99
+```
+
+### `haas.m97-without-p`
+
+- **Severity:** warning
+- **Matcher:** `/M97 without P/`
+- **Summary:** M97 local subprogram calls require an explicit P (N-target).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M97
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M97 P100
+M30
+N100
+M99
+```
+
+### `haas.g65-without-p`
+
+- **Severity:** warning
+- **Matcher:** `/G65 without P/`
+- **Summary:** G65 macro calls require an explicit P program number.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G65
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G65 P9010
+M30
+```
+
+### `haas.dwell-without-time`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell without P or X/`
+- **Summary:** G4 dwell needs an explicit P or X time value.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G4
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G4 P1000
+M30
+```
+
+### `haas.g43-h-mismatched-t`
+
+- **Severity:** warning
+- **Matcher:** `/G43 H\d+ does not match last tool T\d+/`
+- **Summary:** G43 H offset should usually match the active tool number T.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H2 Z25.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+M5
+M30
+```
+
+### `haas.work-offset-change-after-motion`
+
+- **Severity:** warning
+- **Matcher:** `/Work offset changed after axis motion/`
+- **Summary:** Changing G54-G59/G154 after motion may be unintentional — verify the switch.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G0 X0
+G55
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G0 X0
+M30
+```
+
+### `haas.g28-multi-axis`
+
+- **Severity:** warning
+- **Matcher:** `/G28 with multiple axes on one block/`
+- **Summary:** Prefer single-axis G28 moves instead of combined XYZ home returns.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G28 X0 Y0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G28 Z0
 M30
 ```
 

@@ -86,7 +86,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 ## Recent Updates
 
 - Expanded Haas NGC mill lint coverage with warnings for spindle start without same-block `S`, `S0` spindle starts, plain `G41/G42` without same-block `D`, `T0`, duplicate `N`/`O` labels, and `G1/G2/G3` without feed `F` (and no prior `F`).
-- Haas mill lint batches: `H0`/`D0` offsets, coolant before spindle, `F0`, arcs without `R`/`IJK`, cutter comp left on at end; canned cycle Z/R/`G80`/M6 safety and mixed `G20`/`G21`; end-of-program cleanup for spindle/`M5`, coolant/`M9`, `G43`/`G49`, and `G91`/`G90`; work-offset/G53/`M6`+spindle/plane hygiene; plus rules.meta coverage for first-G43 Z, early `M30`, and duplicate `N`.
+- Haas mill lint batches: `H0`/`D0` offsets, coolant before spindle, `F0`, arcs without `R`/`IJK`, cutter comp left on at end; canned cycle Z/R/`G80`/M6 safety and mixed `G20`/`G21`; end-of-program cleanup for spindle/`M5`, coolant/`M9`, `G43`/`G49`, and `G91`/`G90`; work-offset/G53/`M6`+spindle/plane hygiene; feed-with-spindle-off, rapid `-Z` without `G43`, cutter-comp+`G0`, and `M98`/`M97` without `P`; `G65`/`G4`, H≠T pairing, mid-program offset switches, and multi-axis `G28`; plus rules.meta coverage for first-G43 Z, early `M30`, and duplicate `N`.
 - Soft seal/verify schema track frozen at **schema 48**; hard Known Gaps are demand-gated (PGP, full UAX#9, IDE-host write).
 - Added Haas NGC simulator behavior for single-line `IF [cond] THEN #n = expr` execution and tested true/false paths.
 - Added Haas NGC rapid safety warning for significant `G0` Z-down moves to catch potential clearance/retract issues during simulation review.

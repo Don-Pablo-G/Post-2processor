@@ -219,6 +219,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17\nM30\n"
   },
   {
+    id: "haas.feed-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 while spindle is off/,
+    summary: "Start the spindle before G1/G2/G3 feed motion.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG1 X10. F100.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG1 X10. F100.\nM5\nM30\n"
+  },
+  {
+    id: "haas.rapid-negative-z-without-g43",
+    severity: "warning",
+    messageMatcher: /G0 with negative Z while tool length compensation \(G43\) is inactive/,
+    summary: "Avoid G0 plunges to negative Z without G43 tool length active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG0 Z-1.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG0 Z-1.\nG49\nM30\n"
+  },
+  {
+    id: "haas.cutter-comp-during-rapid",
+    severity: "warning",
+    messageMatcher: /G0 rapid while cutter compensation \(G41\/G42\) is active/,
+    summary: "Do not rapid (G0) with G41/G42 active — cancel with G40 first.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG0 X10.\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG41 D1\nG1 X10. F100.\nG40\nM5\nM30\n"
+  },
+  {
+    id: "haas.m98-without-p",
+    severity: "warning",
+    messageMatcher: /M98 without P/,
+    summary: "M98 subprogram calls require an explicit P program number.",
+    positiveSnippet: "O0001\nM98\nM30\n",
+    negativeSnippet: "O0001\nM98 P1000\nM30\nO1000\nM99\n"
+  },
+  {
+    id: "haas.m97-without-p",
+    severity: "warning",
+    messageMatcher: /M97 without P/,
+    summary: "M97 local subprogram calls require an explicit P (N-target).",
+    positiveSnippet: "O0001\nM97\nM30\n",
+    negativeSnippet: "O0001\nM97 P100\nM30\nN100\nM99\n"
+  },
+  {
+    id: "haas.g65-without-p",
+    severity: "warning",
+    messageMatcher: /G65 without P/,
+    summary: "G65 macro calls require an explicit P program number.",
+    positiveSnippet: "O0001\nG65\nM30\n",
+    negativeSnippet: "O0001\nG65 P9010\nM30\n"
+  },
+  {
+    id: "haas.dwell-without-time",
+    severity: "warning",
+    messageMatcher: /G4 dwell without P or X/,
+    summary: "G4 dwell needs an explicit P or X time value.",
+    positiveSnippet: "O0001\nG4\nM30\n",
+    negativeSnippet: "O0001\nG4 P1000\nM30\n"
+  },
+  {
+    id: "haas.g43-h-mismatched-t",
+    severity: "warning",
+    messageMatcher: /G43 H\d+ does not match last tool T\d+/,
+    summary: "G43 H offset should usually match the active tool number T.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H2 Z25.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nM5\nM30\n"
+  },
+  {
+    id: "haas.work-offset-change-after-motion",
+    severity: "warning",
+    messageMatcher: /Work offset changed after axis motion/,
+    summary: "Changing G54-G59/G154 after motion may be unintentional — verify the switch.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG0 X0\nG55\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.g28-multi-axis",
+    severity: "warning",
+    messageMatcher: /G28 with multiple axes on one block/,
+    summary: "Prefer single-axis G28 moves instead of combined XYZ home returns.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG28 X0 Y0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG28 Z0\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

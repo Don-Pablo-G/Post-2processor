@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_subprogram_repeat_safe.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 5,
   "lintIssues": [
     {
       "severity": "warning",
@@ -18,6 +18,10 @@
     {
       "severity": "warning",
       "message": "M30 appears before the last block."
+    },
+    {
+      "severity": "warning",
+      "message": "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion."
     }
   ],
   "simulation": {

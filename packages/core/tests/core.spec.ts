@@ -2333,6 +2333,120 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(false);
   });
 
+  it("warns G1/G2/G3 while spindle is off", () => {
+    const ast = parse("T1 M6\nG54\nG1 X10. F100.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("while spindle is off"))
+    ).toBe(true);
+  });
+
+  it("does not warn feed motion after spindle start", () => {
+    const ast = parse("T1 M6\nG54\nS1200 M3\nG1 X10. F100.\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("while spindle is off"))
+    ).toBe(false);
+  });
+
+  it("warns G0 negative Z without G43", () => {
+    const ast = parse("T1 M6\nG54\nG0 Z-1.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("negative Z while tool length compensation")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn G0 negative Z when G43 is active", () => {
+    const ast = parse("T1 M6\nG54\nG43 H1 Z25.\nG0 Z-1.\nG49\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("negative Z while tool length compensation")
+      )
+    ).toBe(false);
+  });
+
+  it("warns G0 while cutter compensation is active", () => {
+    const ast = parse("T1 M6\nG54\nG41 D1\nG0 X10.\nG40\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G0 rapid while cutter compensation")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 without P", () => {
+    const ast = parse("M98\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M98 without P"))).toBe(
+      true
+    );
+  });
+
+  it("warns M97 without P", () => {
+    const ast = parse("M97\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M97 without P"))).toBe(
+      true
+    );
+  });
+
+  it("warns G65 without P", () => {
+    const ast = parse("G65\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G65 without P"))).toBe(
+      true
+    );
+  });
+
+  it("warns G4 dwell without P or X", () => {
+    const ast = parse("G4\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G4 dwell without P or X"))
+    ).toBe(true);
+  });
+
+  it("warns when G43 H does not match last T", () => {
+    const ast = parse("T1 M6\nG54\nS1200 M3\nG43 H2 Z25.\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("does not match last tool T")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn when G43 H matches last T", () => {
+    const ast = parse("T1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("does not match last tool T")
+      )
+    ).toBe(false);
+  });
+
+  it("warns when work offset changes after axis motion", () => {
+    const ast = parse("T1 M6\nG54\nG0 X0\nG55\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Work offset changed after axis motion")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G28 with multiple axes on one block", () => {
+    const ast = parse("T1 M6\nG54\nG28 X0 Y0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 with multiple axes on one block")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn single-axis G28", () => {
+    const ast = parse("T1 M6\nG54\nG28 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 with multiple axes on one block")
+      )
+    ).toBe(false);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_m97_not_supported.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 5,
   "lintIssues": [
     {
       "severity": "warning",
@@ -18,6 +18,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before any work offset (G54-G59/G154) — select a work coordinate system first."
+    },
+    {
+      "severity": "warning",
+      "message": "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion."
     }
   ],
   "simulation": {
