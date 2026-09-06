@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=35\n");
+    expect(stdout).toBe("cnc-job-check schema=36\n");
     expect(stderr).toBe("");
   });
 
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 35", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(35);
+  it("CLI_SCHEMA_VERSION is 36", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(36);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4203,17 +4203,36 @@ describe("Schema v35: always-on batch-summary.ndjson + ndjsonSummaryPath", () =>
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(35);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.ndjsonSummaryPath).toMatch(/batch-summary\.ndjson$/);
     const ndjsonRaw = await readFile(path.join(outDir, "batch-summary.ndjson"), "utf8");
     const ndjsonLines = ndjsonRaw.split("\n").filter((l) => l.length > 0);
     expect(ndjsonLines).toHaveLength(1);
     const ndjsonEnv = JSON.parse(ndjsonLines[0]!);
-    expect(ndjsonEnv.schemaVersion).toBe(35);
+    expect(ndjsonEnv.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(ndjsonEnv.summary.batchWalk.export.sealedAt).toBe(
       summary.summary.batchWalk.export.sealedAt
     );
     expect(summary.summary.batchWalk.export.byKind["summary-ndjson"]).toBe(1);
+  });
+});
+
+describe("Schema v36: csvSummaryPath", () => {
+  it("--out-dir records csvSummaryPath for batch-summary.csv", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(36);
+    expect(summary.summary.batchWalk.export.csvSummaryPath).toMatch(/batch-summary\.csv$/);
+    const csv = await readFile(path.join(outDir, "batch-summary.csv"), "utf8");
+    expect(csv.length).toBeGreaterThan(0);
+    expect(summary.summary.batchWalk.export.byKind["summary-csv"]).toBe(1);
   });
 });
 

@@ -2199,11 +2199,12 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v35: summaries + SARIF, then manifest, then zip + sha256.
+      // Schema v18–v36: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
       const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
+      const csvSummaryPath = path.join(outDir, "batch-summary.csv");
       // Remaining disk writes: summary.json, csv, sarif, ndjson, manifest, zip, sha256.
       const remainingWrites = 7;
       // Remaining zip entries (not including the zip file itself): same without zip/sha256.
@@ -2211,6 +2212,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       if (!batchWalk.export) batchWalk.export = { outDir };
       batchWalk.export.exportManifestPath = manifestPath;
       batchWalk.export.ndjsonSummaryPath = ndjsonSummaryPath;
+      batchWalk.export.csvSummaryPath = csvSummaryPath;
       batchWalk.export.writtenFileCount = written + remainingWrites;
       batchWalk.export.zipEntryCount = zipEntries.length + remainingZipEntries;
 
@@ -2228,7 +2230,6 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
       // Schema v21: dashboard CSV of aggregations.
-      const csvSummaryPath = path.join(outDir, "batch-summary.csv");
       const summaryCsv = formatBatchAggregationsAsCsv(batchEnvelope);
       try {
         await writeFn(csvSummaryPath, summaryCsv);
@@ -2310,7 +2311,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
 
-      // Schema v31–v35: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
+      // Schema v31–v36: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;

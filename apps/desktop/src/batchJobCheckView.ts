@@ -142,9 +142,30 @@ export async function runDesktopBatchJobCheck(
     });
     runResults.push({ input: file.input, source: file.source, result });
   }
+  // Schema v36: stamp logical summary artifact names for live inventory chips
+  // (CLI --out-dir uses absolute paths; desktop uses relative names).
+  const batchWalk = stampDesktopBatchExportSummaryPaths(options?.batchWalk);
   return {
-    envelope: buildBatchEnvelope(entries, { batchWalk: options?.batchWalk }),
+    envelope: buildBatchEnvelope(entries, { batchWalk }),
     runResults
+  };
+}
+
+/**
+ * Schema v36: ensure live desktop batchWalk.export carries relative logical
+ * paths for always-on summary sidecars so inventory chips can surface them.
+ */
+export function stampDesktopBatchExportSummaryPaths(
+  batchWalk: CliBatchWalk | undefined
+): CliBatchWalk | undefined {
+  if (!batchWalk) return undefined;
+  return {
+    ...batchWalk,
+    export: {
+      ...batchWalk.export,
+      csvSummaryPath: batchWalk.export?.csvSummaryPath ?? "batch-summary.csv",
+      ndjsonSummaryPath: batchWalk.export?.ndjsonSummaryPath ?? "batch-summary.ndjson"
+    }
   };
 }
 
@@ -362,6 +383,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.patchedNcDir) parts.push("patchedDir");
   if (exp.exportManifestPath) parts.push("manifest");
   if (exp.ndjsonSummaryPath) parts.push("ndjson");
+  if (exp.csvSummaryPath) parts.push("csv");
   if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
   if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
   if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);

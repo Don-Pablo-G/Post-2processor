@@ -19,6 +19,7 @@ import {
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchSummaryAsNdjson,
+  stampDesktopBatchExportSummaryPaths,
   formatDesktopBatchUnboundFixChip,
   formatDesktopBatchUnboundFixesAsSarifLite,
   formatDesktopBatchPatchedProgramsForClipboard,
@@ -161,7 +162,25 @@ describe("batchJobCheckView", () => {
     expect(JSON.parse(ndjsonLine).schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(formatDesktopBatchSummaryAsNdjson(batch.envelope).endsWith("\n")).toBe(true);
     expect(exported.summary.batchWalk.matched).toBe(2);
+    expect(exported.summary.batchWalk.export.csvSummaryPath).toBe("batch-summary.csv");
+    expect(exported.summary.batchWalk.export.ndjsonSummaryPath).toBe("batch-summary.ndjson");
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(batch.runResults).toHaveLength(2);
+  });
+
+  it("stampDesktopBatchExportSummaryPaths preserves existing absolute paths", () => {
+    const stamped = stampDesktopBatchExportSummaryPaths({
+      recursive: false,
+      include: [],
+      exclude: [],
+      matched: 1,
+      skipped: 0,
+      root: "x",
+      export: { csvSummaryPath: "/abs/batch-summary.csv" }
+    });
+    expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
+    expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
   });
 
   it("buildDesktopBatchSetupSheetPdfs emits one PDF per input", () => {
@@ -346,7 +365,8 @@ describe("batchJobCheckView", () => {
             totalBytes: 8192,
             sealedAt: "2026-09-06T14:05:30.123Z",
             byKind: { zip: 1, manifest: 1, "summary-json": 1 },
-            ndjsonSummaryPath: "/out/batch-summary.ndjson"
+            ndjsonSummaryPath: "/out/batch-summary.ndjson",
+            csvSummaryPath: "/out/batch-summary.csv"
           }
         }
       }
@@ -367,6 +387,7 @@ describe("batchJobCheckView", () => {
     );
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/manifest/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/ndjson/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/written=12/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipEntries=10/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);

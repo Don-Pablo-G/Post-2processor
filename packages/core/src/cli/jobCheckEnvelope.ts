@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 35;
+export const CLI_SCHEMA_VERSION = 36;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -823,6 +823,12 @@ export type CliBatchWalkExport = {
    * (always written for batch `--out-dir` exports from schema v35 onward).
    */
   ndjsonSummaryPath?: string;
+  /**
+   * Schema v36: path of `batch-summary.csv` under `--out-dir` when written
+   * (always written for batch `--out-dir` exports). Desktop live runs may
+   * stamp the relative logical name `batch-summary.csv`.
+   */
+  csvSummaryPath?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {
