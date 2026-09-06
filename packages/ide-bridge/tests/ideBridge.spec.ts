@@ -22,6 +22,7 @@ import {
   mapBatchControllerCodeAggregatedToQuickFixes,
   mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes,
   mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes,
+  mapBatchParseDiagnosticsAttributionToFileQuickFixes,
   mapBatchSafetyFindingsAttributionToFileQuickFixes,
   mapBatchSafetyFindingsByCodeAggregatedToFileQuickFixes,
   mapBatchSafetyFindingsByCodeAggregatedToQuickFixes,
@@ -96,13 +97,14 @@ function makeBatchEnvelope(
   aggregated?: CliBatchLintIssuesByControllerCodeAggregation[]
 ): CliBatchEnvelope {
   return {
-    schemaVersion: 18,
+    schemaVersion: 19,
     results: [],
     summary: {
       files: 0,
       blocked: 0,
       lintIssuesByControllerCodePerInputFile: rows,
       safetyFindingsByCodePerInputFile: [],
+      parseDiagnosticsByCodePerInputFile: [],
       ...(aggregated && aggregated.length > 0
         ? { lintIssuesByControllerCodeAggregated: aggregated }
         : {})
@@ -342,6 +344,7 @@ describe("mapBatchControllerCodeAggregatedToFileQuickFixes", () => {
         blocked: 0,
         lintIssuesByControllerCodePerInputFile: [],
         safetyFindingsByCodePerInputFile: [],
+        parseDiagnosticsByCodePerInputFile: [],
         lintIssuesByControllerCodeAggregated: [
           {
             source: "controller_grammar",
@@ -408,6 +411,7 @@ describe("mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes", () => {
         blocked: 0,
         lintIssuesByControllerCodePerInputFile: [],
         safetyFindingsByCodePerInputFile: [],
+        parseDiagnosticsByCodePerInputFile: [],
         parseDiagnosticsByCodeAggregated: [
           {
             code: "UNMATCHED_OPEN_PAREN",
@@ -495,6 +499,30 @@ describe("expandIdeQuickFixTemplate", () => {
   it("returns undefined when the quick-fix has no replacementTemplate", () => {
     const fix: IdeQuickFix = { code: "CG_TEST", title: "t", rationale: "r" };
     expect(expandIdeQuickFixTemplate(fix, { LETTER: "X" })).toBeUndefined();
+  });
+
+  it("strict mode throws when any template token is unbound", () => {
+    const fix: IdeQuickFix = {
+      code: "CG_TEST",
+      title: "t",
+      rationale: "r",
+      replacementTemplate: "G43 H{{H}} Z{{Z}}"
+    };
+    expect(() => expandIdeQuickFixTemplate(fix, { H: "1" }, { strict: true })).toThrow(
+      /Unbound template tokens: Z/
+    );
+  });
+
+  it("strict mode succeeds when every token is bound", () => {
+    const fix: IdeQuickFix = {
+      code: "CG_TEST",
+      title: "t",
+      rationale: "r",
+      replacementTemplate: "G43 H{{H}} Z{{Z}}"
+    };
+    expect(expandIdeQuickFixTemplate(fix, { H: "1", Z: "-5" }, { strict: true })).toBe(
+      "G43 H1 Z-5"
+    );
   });
 
   it("ignores unknown {{name}} tokens that don't match the [A-Z0-9_]+ grammar", () => {
@@ -641,6 +669,33 @@ describe("deriveSafetyFindingFixBindings", () => {
     ).toEqual({ TOOL: "3", H: "3" });
   });
 
+  it("derives Z from MISSING_G43_BEFORE_NEGATIVE_Z message", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+        message: "Negative Z-12.5 move appears before G43"
+      })
+    ).toEqual({ Z: "-12.5" });
+  });
+
+  it("derives R from CANNED_CYCLE_NO_R message when present", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "CANNED_CYCLE_NO_R",
+        message: "G81 used without R1.0 level"
+      })
+    ).toEqual({ R: "1.0" });
+  });
+
+  it("derives H from G43_WITHOUT_H message", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "G43_WITHOUT_H",
+        message: "G43 without H02 offset"
+      })
+    ).toEqual({ H: "02" });
+  });
+
   it("returns empty for codes without heuristics", () => {
     expect(
       deriveSafetyFindingFixBindings({
@@ -673,10 +728,10 @@ describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
 
   it("attaches ranges for file quick-fixes when sources are supplied", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 18,
+      schemaVersion: 19,
       results: [
         {
-          schemaVersion: 18,
+          schemaVersion: 19,
           input: "a.nc",
           envelope: {
             ...makeEnvelope([]),
@@ -698,6 +753,7 @@ describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
         blocked: 0,
         lintIssuesByControllerCodePerInputFile: [],
         safetyFindingsByCodePerInputFile: [],
+        parseDiagnosticsByCodePerInputFile: [],
         safetyFindingsByCodeAggregated: [
           {
             source: "advisor",
@@ -769,7 +825,7 @@ describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
 
   it("mapBatchSafetyFindingsAttributionToFileQuickFixes uses v18 firstBlockIndex", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 18,
+      schemaVersion: 19,
       results: [],
       summary: {
         files: 1,
@@ -785,7 +841,8 @@ describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
             warnings: 0,
             firstBlockIndex: 1
           }
-        ]
+        ],
+      parseDiagnosticsByCodePerInputFile: []
       }
     };
     const grouped = mapBatchSafetyFindingsAttributionToFileQuickFixes(
@@ -800,15 +857,45 @@ describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
     });
   });
 
+  it("mapBatchParseDiagnosticsAttributionToFileQuickFixes uses firstBlockIndex", () => {
+    const envelope: CliBatchEnvelope = {
+      schemaVersion: 19,
+      results: [],
+      summary: {
+        files: 1,
+        blocked: 0,
+        lintIssuesByControllerCodePerInputFile: [],
+        safetyFindingsByCodePerInputFile: [],
+        parseDiagnosticsByCodePerInputFile: [
+          {
+            input: "a.nc",
+            code: "UNMATCHED_OPEN_PAREN",
+            count: 1,
+            warnings: 1,
+            errors: 0,
+            firstBlockIndex: 0
+          }
+        ]
+      }
+    };
+    const grouped = mapBatchParseDiagnosticsAttributionToFileQuickFixes(
+      envelope,
+      new Map([["a.nc", "G0 X1 (unclosed\n"]])
+    );
+    expect(grouped.get("a.nc")?.[0].code).toBe("UNMATCHED_OPEN_PAREN");
+    expect(grouped.get("a.nc")?.[0].range).toBeDefined();
+  });
+
   it("formatBatchWalkStatus summarizes walk + export", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 18,
+      schemaVersion: 19,
       results: [],
       summary: {
         files: 0,
         blocked: 0,
         lintIssuesByControllerCodePerInputFile: [],
         safetyFindingsByCodePerInputFile: [],
+        parseDiagnosticsByCodePerInputFile: [],
         batchWalk: {
           recursive: true,
           include: [],

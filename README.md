@@ -3821,6 +3821,48 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=18
 ```
 
+## Safety bindings + parse-diag attribution + walk export chips + Schema v19
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Broader safety-finding binding heuristics
+
+`deriveSafetyFindingFixBindings` gains `{{Z}}` / `{{R}}` / `{{H}}` extraction for
+`MISSING_G43_BEFORE_NEGATIVE_Z`, `CANNED_CYCLE_NO_R`, and `G43_WITHOUT_H`.
+
+### Move 2 — `parseDiagnosticsByCodePerInputFile` (Schema v19)
+
+`CLI_SCHEMA_VERSION` bumps `18 → 19`. Batch summary gains required
+`parseDiagnosticsByCodePerInputFile[]` (mirrors safety attribution) with optional
+`firstBlockIndex`. ide-bridge:
+`mapBatchParseDiagnosticsAttributionToFileQuickFixes`.
+
+### Move 3 — Desktop `batchWalk.export` + block-reasons chips
+
+Walk chip surfaces `export outDir=` / `pdf=` when present. New
+`batch-block-reasons` chip shows top aggregated reasons and
+`safetyBlockerCodesAggregated`.
+
+### Move 4 — `safety_blocker` rollup polish (Schema v19)
+
+`summary.safetyBlockerCodesAggregated` unions `safety_blocker` matched codes
+across the batch. `buildBatchBlockReasonAggregation` is exported for browser/CI.
+
+### Move 5 — `expandIdeQuickFixTemplate({ strict })`
+
+Opt-in `strict: true` throws `Error("Unbound template tokens: …")` when any
+`{{NAME}}` remains unbound; default stays lenient.
+
+### Move 6 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=19
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3841,5 +3883,6 @@ next planning wave can pick them up:
 - **True zip / single-archive batch export** — desktop ships multi-download
   for PDF / TXT / envelope JSON; a single zip archive would need a new
   dependency or native API.
-- **Broader safety-finding binding heuristics** — TOOL/H heuristics ship;
-  `{{Z}}` / `{{R}}` / richer message extraction remain incremental.
+- **Program-source binding pass** — message heuristics ship for Z/R/H;
+  extracting values from the open program buffer (vs message text) remains
+  an IDE-host concern.

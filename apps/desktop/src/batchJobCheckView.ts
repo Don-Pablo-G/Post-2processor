@@ -171,9 +171,32 @@ export function formatDesktopBatchSafetyChip(
 export function formatDesktopBatchWalkChip(envelope: CliBatchEnvelope): string {
   const walk = envelope.summary.batchWalk;
   if (!walk) return "batch-walk: none";
+  const exportPart =
+    walk.export?.outDir || walk.export?.setupSheetPdfDir
+      ? ` export outDir=${walk.export.outDir ?? "-"} pdf=${walk.export.setupSheetPdfDir ?? "-"}`
+      : "";
   return `batch-walk: matched=${walk.matched} skipped=${walk.skipped}${
     walk.recursive ? " recursive" : ""
-  }`;
+  }${exportPart}`;
+}
+
+export function formatDesktopBatchBlockReasonsChip(envelope: CliBatchEnvelope): string {
+  const rows = envelope.summary.blockReasonsAggregated ?? [];
+  if (rows.length === 0) return "batch-block-reasons: none";
+  const top = rows
+    .slice(0, 3)
+    .map((r) => {
+      const codes =
+        r.matchedCodes && r.matchedCodes.length > 0 ? `[${r.matchedCodes.slice(0, 2).join(",")}]` : "";
+      return `${r.reason}${codes}×${r.count}`;
+    })
+    .join(", ");
+  const safetyCodes = envelope.summary.safetyBlockerCodesAggregated;
+  const safetyPart =
+    safetyCodes && safetyCodes.length > 0
+      ? ` | safetyCodes=${safetyCodes.slice(0, 3).join(",")}`
+      : "";
+  return `batch-block-reasons: ${top}${safetyPart}`;
 }
 
 export type BatchDownloadItem = {

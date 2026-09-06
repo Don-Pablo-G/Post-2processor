@@ -5,7 +5,7 @@ import type {
 } from "../types.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 18;
+export const CLI_SCHEMA_VERSION = 19;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -640,6 +640,18 @@ export type CliBatchEnvelope = {
      */
     safetyFindingsByCodePerInputFile: CliBatchSafetyFindingsAttribution[];
     /**
+     * Schema v19: per-input attribution of `parseDiagnosticsByCode` rows.
+     * One row per `(input, code)`. Sorted by `input` asc → `count` desc →
+     * `code` asc. Empty array when none. Append-only required field.
+     */
+    parseDiagnosticsByCodePerInputFile: CliBatchParseDiagnosticsAttribution[];
+    /**
+     * Schema v19: union of every `safety_blocker` `matchedCodes` across the
+     * batch (sorted ascending, deduped). Absent when no entry emitted a
+     * `safety_blocker` reason. Append-only optional field.
+     */
+    safetyBlockerCodesAggregated?: string[];
+    /**
      * Schema v17: how the batch input-dir walk was performed. Absent for
      * single-file runs. Append-only optional field.
      */
@@ -778,6 +790,18 @@ export type CliBatchSafetyFindingsAttribution = {
   firstBlockIndex?: number;
 };
 
+/**
+ * Schema v19: per-input attribution of parse diagnostics by `code`.
+ */
+export type CliBatchParseDiagnosticsAttribution = {
+  input: string;
+  code: string;
+  count: number;
+  warnings: number;
+  errors: number;
+  firstBlockIndex?: number;
+};
+
 function buildBatchControllerCodeAttribution(
   entries: CliBatchEntry[]
 ): CliBatchControllerCodeAttribution[] {
@@ -818,7 +842,8 @@ export function buildBatchEnvelope(
     files: entries.length,
     blocked,
     lintIssuesByControllerCodePerInputFile: buildBatchControllerCodeAttribution(entries),
-    safetyFindingsByCodePerInputFile: buildBatchSafetyFindingsAttribution(entries)
+    safetyFindingsByCodePerInputFile: buildBatchSafetyFindingsAttribution(entries),
+    parseDiagnosticsByCodePerInputFile: buildBatchParseDiagnosticsAttribution(entries)
   };
   if (options?.batchWalk) {
     summary.batchWalk = options.batchWalk;
@@ -829,6 +854,10 @@ export function buildBatchEnvelope(
   const aggregated = buildBatchBlockReasonAggregation(entries);
   if (aggregated.length > 0) {
     summary.blockReasonsAggregated = aggregated;
+  }
+  const safetyBlockerCodes = buildBatchSafetyBlockerCodesAggregation(entries);
+  if (safetyBlockerCodes.length > 0) {
+    summary.safetyBlockerCodesAggregated = safetyBlockerCodes;
   }
   const lintBySource = buildBatchLintIssuesBySourceAggregation(entries);
   if (lintBySource.length > 0) {
@@ -875,7 +904,7 @@ export function buildBatchEnvelope(
  * same `entries`. Sorts rows by `count` desc → `reason` asc, and each
  * row's `inputs` / `matchedCodes` arrays ascending + deduped.
  */
-function buildBatchBlockReasonAggregation(
+export function buildBatchBlockReasonAggregation(
   entries: CliBatchEntry[]
 ): CliBatchBlockReasonAggregation[] {
   const byReason = new Map<
@@ -1294,6 +1323,51 @@ export function buildBatchSafetyFindingsAttribution(
     return a.code.localeCompare(b.code);
   });
   return rows;
+}
+
+/**
+ * Schema v19: per-input attribution of `parseDiagnosticsByCode`.
+ */
+export function buildBatchParseDiagnosticsAttribution(
+  entries: CliBatchEntry[]
+): CliBatchParseDiagnosticsAttribution[] {
+  const rows: CliBatchParseDiagnosticsAttribution[] = [];
+  for (const entry of entries) {
+    for (const codeEntry of entry.envelope.parseDiagnosticsByCode ?? []) {
+      rows.push({
+        input: entry.input,
+        code: codeEntry.code,
+        count: codeEntry.count,
+        warnings: codeEntry.warnings,
+        errors: codeEntry.errors,
+        ...(codeEntry.firstBlockIndex !== undefined
+          ? { firstBlockIndex: codeEntry.firstBlockIndex }
+          : {})
+      });
+    }
+  }
+  rows.sort((a, b) => {
+    if (a.input !== b.input) return a.input < b.input ? -1 : 1;
+    if (a.count !== b.count) return b.count - a.count;
+    return a.code.localeCompare(b.code);
+  });
+  return rows;
+}
+
+/**
+ * Schema v19: union of `safety_blocker` matched codes across the batch.
+ */
+export function buildBatchSafetyBlockerCodesAggregation(
+  entries: CliBatchEntry[]
+): string[] {
+  const codes = new Set<string>();
+  for (const entry of entries) {
+    for (const reason of entry.envelope.blockReasons ?? []) {
+      if (reason.reason !== "safety_blocker") continue;
+      for (const code of reason.matchedCodes ?? []) codes.add(code);
+    }
+  }
+  return [...codes].sort((a, b) => a.localeCompare(b));
 }
 
 export function formatBatchJson(

@@ -125,6 +125,7 @@ import {
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchWalkChip,
+  formatDesktopBatchBlockReasonsChip,
   runDesktopBatchJobCheck,
   type DesktopBatchJobCheckResult
 } from "./batchJobCheckView";
@@ -3668,6 +3669,12 @@ export function App() {
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >
                 {formatDesktopBatchWalkChip(batchJobCheckResult.envelope)}
+              </span>
+              <span
+                data-testid="folder-batch-block-reasons-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchBlockReasonsChip(batchJobCheckResult.envelope)}
               </span>
               <span
                 data-testid="folder-batch-safety-chip"

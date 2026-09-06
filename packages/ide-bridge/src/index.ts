@@ -593,6 +593,40 @@ export function mapBatchSafetyFindingsAttributionToFileQuickFixes(
 }
 
 /**
+ * Map Schema v19 `summary.parseDiagnosticsByCodePerInputFile` attribution
+ * rows to per-input parse-diagnostic quick-fixes.
+ */
+export function mapBatchParseDiagnosticsAttributionToFileQuickFixes(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string> = new Map(),
+  rangeOptions?: QuickFixRangeOptions
+): Map<string, IdeQuickFix[]> {
+  const result = new Map<string, IdeQuickFix[]>();
+  const seenPerInput = new Map<string, Set<string>>();
+  for (const row of envelope.summary.parseDiagnosticsByCodePerInputFile ?? []) {
+    const fix = getParseDiagnosticFix(row.code);
+    if (!fix) continue;
+    let seen = seenPerInput.get(row.input);
+    if (!seen) {
+      seen = new Set<string>();
+      seenPerInput.set(row.input, seen);
+    }
+    if (seen.has(row.code)) continue;
+    seen.add(row.code);
+    const out: IdeQuickFix = toQuickFix(row.code, fix);
+    const source = sourcesByInput.get(row.input);
+    if (source !== undefined && row.firstBlockIndex !== undefined) {
+      const range = resolveQuickFixRange(source, row.firstBlockIndex, rangeOptions);
+      if (range) out.range = range;
+    }
+    const existing = result.get(row.input);
+    if (existing) existing.push(out);
+    else result.set(row.input, [out]);
+  }
+  return result;
+}
+
+/**
  * Thin status helper for Schema v17+ `summary.batchWalk` (no schema change).
  */
 export function formatBatchWalkStatus(
@@ -645,24 +679,40 @@ const DUPLICATE_ADDRESSES_PREFIX = "CG_DUPLICATE_ADDRESSES_";
  * `replacementTemplate` placeholder grammar) and substitutes each
  * occurrence with `bindings[NAME]`.
  *
- * Lenient by design: tokens missing from `bindings` are left in place
- * verbatim so callers can compose multiple binding passes (e.g. a
- * heuristic pass via {@link deriveQuickFixBindings} followed by a
- * user-input pass for the still-unbound names). A `strict` opt-in that
- * throws on unbound tokens may be added in a follow-up wave.
+ * Default (lenient): tokens missing from `bindings` are left in place
+ * verbatim so callers can compose multiple binding passes.
+ *
+ * Strict mode (`options.strict === true`): throws
+ * `Error("Unbound template tokens: …")` when any `{{NAME}}` remains
+ * unbound after substitution.
  *
  * Returns `undefined` when `fix.replacementTemplate` is absent — no
  * template to expand. The original `fix` object is never mutated.
  */
 export function expandIdeQuickFixTemplate(
   fix: IdeQuickFix,
-  bindings: IdeQuickFixBindings
+  bindings: IdeQuickFixBindings,
+  options?: { strict?: boolean }
 ): string | undefined {
   if (fix.replacementTemplate === undefined) return undefined;
-  return fix.replacementTemplate.replace(TEMPLATE_TOKEN_PATTERN, (match, name: string) => {
-    const value = bindings[name];
-    return value !== undefined ? value : match;
-  });
+  const unbound = new Set<string>();
+  const expanded = fix.replacementTemplate.replace(
+    TEMPLATE_TOKEN_PATTERN,
+    (match, name: string) => {
+      const value = bindings[name];
+      if (value === undefined) {
+        unbound.add(name);
+        return match;
+      }
+      return value;
+    }
+  );
+  if (options?.strict && unbound.size > 0) {
+    throw new Error(
+      `Unbound template tokens: ${[...unbound].sort((a, b) => a.localeCompare(b)).join(", ")}`
+    );
+  }
+  return expanded;
 }
 
 /**
@@ -742,8 +792,15 @@ export type SafetyFindingBindingInput = {
 };
 
 /**
- * Narrow heuristic bindings for safety-finding catalogue templates.
- * Today: TOOL_H_MISMATCH / TOOL_WITHOUT_G43 → `{ TOOL }` when message has T##.
+ * Heuristic bindings for safety-finding catalogue templates. Narrow by
+ * design — only values unambiguously extractable from `code` + `message`:
+ *
+ *  - `TOOL_H_MISMATCH` / `TOOL_WITHOUT_G43` → `{ TOOL, H }` from T## / tool N
+ *  - `G43_WITHOUT_H` → `{ H }` when message mentions H##
+ *  - `MISSING_G43_BEFORE_NEGATIVE_Z` → `{ Z }` from Z-## / Z## in message
+ *  - `CANNED_CYCLE_NO_R` → `{ R }` from R## in message when present
+ *
+ * All other codes return an empty object.
  */
 export function deriveSafetyFindingFixBindings(
   input: SafetyFindingBindingInput
@@ -753,6 +810,18 @@ export function deriveSafetyFindingFixBindings(
   if (code === "TOOL_H_MISMATCH" || code === "TOOL_WITHOUT_G43") {
     const match = message.match(/\bT\s*(\d+)\b/i) ?? message.match(/tool\s+(\d+)/i);
     if (match?.[1]) return Object.freeze({ TOOL: match[1], H: match[1] });
+  }
+  if (code === "G43_WITHOUT_H") {
+    const match = message.match(/\bH\s*(\d+)\b/i);
+    if (match?.[1]) return Object.freeze({ H: match[1] });
+  }
+  if (code === "MISSING_G43_BEFORE_NEGATIVE_Z") {
+    const match = message.match(/\bZ\s*(-?\d+(?:\.\d+)?)\b/i);
+    if (match?.[1]) return Object.freeze({ Z: match[1] });
+  }
+  if (code === "CANNED_CYCLE_NO_R") {
+    const match = message.match(/\bR\s*(-?\d+(?:\.\d+)?)\b/i);
+    if (match?.[1]) return Object.freeze({ R: match[1] });
   }
   return Object.freeze({});
 }
