@@ -827,6 +827,8 @@ function blockTextAtIndex(
  * Program-source pass (v20): when `source` + `blockIndex` are supplied,
  * fill still-unbound `TOOL`/`H`/`Z`/`R` from the block text. Message
  * bindings win on conflict so explicit finding text stays authoritative.
+ * Schema v21: when H is still unbound for G43-related codes after the
+ * source pass, default `H` to `"1"` so templates expand for apply-edit.
  */
 export function deriveSafetyFindingFixBindings(
   input: SafetyFindingBindingInput
@@ -874,6 +876,14 @@ export function deriveSafetyFindingFixBindings(
         const h = extractAddressValue(block, "H") ?? bindings.TOOL;
         if (h) bindings.H = h;
       }
+      if (
+        bindings.H === undefined &&
+        (code === "MISSING_G43_BEFORE_NEGATIVE_Z" ||
+          code === "TOOL_WITHOUT_G43" ||
+          code === "G43_WITHOUT_H")
+      ) {
+        bindings.H = "1";
+      }
       if (bindings.Z === undefined && code === "MISSING_G43_BEFORE_NEGATIVE_Z") {
         const z = extractAddressValue(block, "Z");
         if (z) bindings.Z = z;
@@ -886,4 +896,74 @@ export function deriveSafetyFindingFixBindings(
   }
 
   return Object.freeze(bindings);
+}
+
+/**
+ * Offset-based edit for applying an expanded quick-fix template into
+ * program source. Prefer this over line/column when splicing text.
+ */
+export type IdeQuickFixEdit = {
+  startOffset: number;
+  endOffset: number;
+  replacement: string;
+};
+
+/**
+ * Resolve a parser `blockIndex` to character offsets in `source`.
+ */
+export function resolveQuickFixSpan(
+  source: string,
+  blockIndex: number,
+  options?: QuickFixRangeOptions
+): { startOffset: number; endOffset: number } | undefined {
+  if (!Number.isFinite(blockIndex) || blockIndex < 0) return undefined;
+  const spans = splitProgramIntoBlockSpans(source, options);
+  const span = spans[blockIndex];
+  if (!span) return undefined;
+  return { startOffset: span.startOffset, endOffset: span.endOffset };
+}
+
+/**
+ * Apply a single offset-based edit. Returns `applied: false` when the
+ * range is invalid (out of bounds or inverted).
+ */
+export function applyIdeQuickFixEdit(
+  source: string,
+  edit: IdeQuickFixEdit
+): { source: string; applied: boolean } {
+  if (
+    !Number.isFinite(edit.startOffset) ||
+    !Number.isFinite(edit.endOffset) ||
+    edit.startOffset < 0 ||
+    edit.endOffset < edit.startOffset ||
+    edit.endOffset > source.length
+  ) {
+    return { source, applied: false };
+  }
+  return {
+    source:
+      source.slice(0, edit.startOffset) + edit.replacement + source.slice(edit.endOffset),
+    applied: true
+  };
+}
+
+/**
+ * Apply multiple edits in descending `startOffset` order so earlier
+ * ranges stay valid. Invalid edits are skipped.
+ */
+export function applyIdeQuickFixEdits(
+  source: string,
+  edits: ReadonlyArray<IdeQuickFixEdit>
+): { source: string; applied: number } {
+  const ordered = [...edits].sort((a, b) => b.startOffset - a.startOffset);
+  let next = source;
+  let applied = 0;
+  for (const edit of ordered) {
+    const result = applyIdeQuickFixEdit(next, edit);
+    if (result.applied) {
+      next = result.source;
+      applied += 1;
+    }
+  }
+  return { source: next, applied };
 }

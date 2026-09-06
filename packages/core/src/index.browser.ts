@@ -155,6 +155,7 @@ export {
   buildSafetyFindingsByCode,
   formatBatchJson,
   formatBatchNdjson,
+  formatBatchAggregationsAsCsv,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -194,6 +195,9 @@ export {
 
 export { buildSetupSheetPdf } from "./workshop/setupSheetPdf.js";
 export type { BuildSetupSheetPdfOptions } from "./workshop/setupSheetPdf.js";
+
+export { createStoreZip, crc32 } from "./workshop/storeZip.js";
+export type { StoreZipEntry } from "./workshop/storeZip.js";
 
 export function isNodeCapable(): boolean {
   return false;

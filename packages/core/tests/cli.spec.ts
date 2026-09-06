@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -776,7 +776,7 @@ describe("main()", () => {
       const parsed = JSON.parse(stdout);
       expect(parsed.lintIssuesSummary.bySource.profile_lint ?? 0).toBeGreaterThanOrEqual(1);
       // The synthetic discovery loader was invoked exactly once (one program,
-      // one lint pass) — proves the fallback path actually wired up our IO.
+      // one lint pass) â€” proves the fallback path actually wired up our IO.
       expect(seenAsts.length).toBe(1);
     } finally {
       setDiscoveredProfilePackLoadersForTesting(undefined);
@@ -785,7 +785,7 @@ describe("main()", () => {
 
   it("hand-wired loader wins over auto-discovered loader for the same controllerKey (haas-ngc)", async () => {
     // If the discovery cache also returns a loader for haas-ngc, the
-    // hand-wired one must be invoked instead — the synthetic discovery
+    // hand-wired one must be invoked instead â€” the synthetic discovery
     // loader below would emit a marker message that we then assert is
     // ABSENT from the rendered setup sheet.
     let discoveredInvoked = false;
@@ -1018,7 +1018,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=20\n");
+    expect(stdout).toBe("cnc-job-check schema=21\n");
     expect(stderr).toBe("");
   });
 
@@ -1098,7 +1098,7 @@ describe("main()", () => {
   it("envelope.parseDiagnosticsByCode is an array consistent with parseDiagnosticsSummary.byCode (schema v3)", async () => {
     const tmp = await setupTmpDir();
     const inputPath = path.join(tmp, "diag.nc");
-    // Mix of unmatched paren + bracket → multiple parse-diag codes
+    // Mix of unmatched paren + bracket â†’ multiple parse-diag codes
     await writeFile(inputPath, "G0 X1 (unclosed\nG1 Y[1+2 X3.\nM30\n", "utf8");
 
     let stdout = "";
@@ -1234,7 +1234,7 @@ describe("main()", () => {
     }
     // Sum of counts is bounded by total lintIssues (a single issue can
     // contribute to several codes if its provenance lists several distinct
-    // related diagnostics; the bound is total * number_of_distinct_codes — we
+    // related diagnostics; the bound is total * number_of_distinct_codes â€” we
     // only need the weaker bound that no entry's count exceeds total).
     const totalLints = parsed.lintIssuesSummary.total as number;
     for (const entry of cross) {
@@ -1297,7 +1297,7 @@ describe("main()", () => {
     expect(parsed.lintIssuesByControllerCode).toEqual([]);
   });
 
-  it("envelope.lintIssuesByControllerCode is populated for malformed Fanuc programs (≥2 distinct CG_* codes, uniqueness invariant) [schema v5]", async () => {
+  it("envelope.lintIssuesByControllerCode is populated for malformed Fanuc programs (â‰Ą2 distinct CG_* codes, uniqueness invariant) [schema v5]", async () => {
     const tmp = await setupTmpDir();
     const inputPath = path.join(tmp, "malformed.nc");
     // Trigger BOTH CG_N_AND_O_MIXED (N+O on same block) and CG_DUPLICATE_O_HEADER
@@ -1340,7 +1340,7 @@ describe("main()", () => {
   it("envelope.lintIssuesByControllerCode entries are ordered by count desc, then source asc, then code asc [schema v5]", async () => {
     const tmp = await setupTmpDir();
     const inputPath = path.join(tmp, "ordered-codes.nc");
-    // Multiple duplicate-address violations across blocks → multiple
+    // Multiple duplicate-address violations across blocks â†’ multiple
     // CG_DUPLICATE_ADDRESSES_<L> codes; CG_N_AND_O_MIXED appears once.
     await writeFile(
       inputPath,
@@ -1390,7 +1390,7 @@ describe("main()", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(20);
+    expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(parsed.summary).toMatchObject({
       files: 2,
       blocked: 0,
@@ -1779,7 +1779,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 4 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 5 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -1813,7 +1813,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 4 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 5 files to /);
     const aRaw = await readFile(path.join(outDir, "a.ndjson"), "utf8");
     const aLines = aRaw.split("\n").filter((l) => l.length > 0);
     expect(aLines).toHaveLength(1);
@@ -1822,7 +1822,7 @@ describe("main()", () => {
     const bLines = bRaw.split("\n").filter((l) => l.length > 0);
     expect(bLines).toHaveLength(1);
     const summaryJson = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summaryJson.schemaVersion).toBe(20);
+    expect(summaryJson.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const summaryNdjson = (
       await readFile(path.join(outDir, "batch-summary.ndjson"), "utf8")
     )
@@ -1997,7 +1997,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 3 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 4 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2373,7 +2373,7 @@ describe("profile-pack hot-reload (clearDiscoveredProfilePackLoadersCache + --re
       );
       expect(exitCodeB).toBe(0);
       expect(secondInvoked).toBe(1);
-      // The first loader's invocation count MUST stay at 1 — cache was flushed.
+      // The first loader's invocation count MUST stay at 1 â€” cache was flushed.
       expect(firstInvoked).toBe(1);
     } finally {
       setDiscoveredProfilePackLoadersForTesting(undefined);
@@ -2428,7 +2428,7 @@ describe("profile-pack hot-reload (clearDiscoveredProfilePackLoadersCache + --re
         { stdout: () => {}, stderr: () => {} }
       );
       expect(exitRediscover).toBe(0);
-      // invokedCount MUST remain at 1 — the cache flush wiped the seed before
+      // invokedCount MUST remain at 1 â€” the cache flush wiped the seed before
       // the loader could be queried again.
       expect(invokedCount).toBe(1);
     } finally {
@@ -2629,8 +2629,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 20", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(20);
+  it("CLI_SCHEMA_VERSION is 21", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(21);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -2899,7 +2899,7 @@ describe("Schema v13: summary.strictControllerCodesGatedAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.strictControllerCodesGatedAggregated).toBeUndefined();
   });
 
@@ -2985,7 +2985,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.parseDiagnosticsPolicyBreachesAggregated).toBeUndefined();
   });
 
@@ -3090,7 +3090,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(20);
+    expect(env.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(Array.isArray(env.safetyFindingsByCode)).toBe(true);
   });
 
@@ -3104,7 +3104,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.safetyFindingsByCodeAggregated).toBeUndefined();
   });
 
@@ -3244,7 +3244,7 @@ describe("Schema v17: summary.batchWalk", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.batchWalk).toEqual({
       recursive: false,
       include: [],
@@ -3267,7 +3267,7 @@ describe("Schema v17: summary.batchWalk", () => {
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(20);
+    expect(env.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(env.summary?.batchWalk).toBeUndefined();
   });
 
@@ -3282,7 +3282,7 @@ describe("Schema v17: summary.batchWalk", () => {
         root: "/jobs"
       }
     });
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.batchWalk?.recursive).toBe(true);
     expect(batch.summary.batchWalk?.skipped).toBe(2);
     expect(batch.summary.batchWalk?.root).toBe("/jobs");
@@ -3315,7 +3315,7 @@ describe("Schema v18: safety attribution firstBlockIndex + batchWalk.export + sa
   it("envelope.blockReasons includes safety_blocker with matchedCodes", async () => {
     const tmp = await setupTmpDir();
     const inputPath = path.join(tmp, "unsafe.nc");
-    // Negative Z without G43 → MISSING_G43_BEFORE_NEGATIVE_Z blocker via advisor.
+    // Negative Z without G43 â†’ MISSING_G43_BEFORE_NEGATIVE_Z blocker via advisor.
     await writeFile(inputPath, "%\nO0001\nG90 G17\nG0 Z-5\nM30\n%\n", "utf8");
     const out: string[] = [];
     const exit = await main(
@@ -3324,7 +3324,7 @@ describe("Schema v18: safety attribution firstBlockIndex + batchWalk.export + sa
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(20);
+    expect(env.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const safety = (env.blockReasons ?? []).find(
       (r: { reason: string }) => r.reason === "safety_blocker"
     );
@@ -3353,7 +3353,7 @@ describe("Schema v18: safety attribution firstBlockIndex + batchWalk.export + sa
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(20);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export).toEqual({ outDir });
   });
 
@@ -3394,7 +3394,7 @@ describe("Schema v19: parseDiagnosticsByCodePerInputFile + safetyBlockerCodesAgg
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(Array.isArray(batch.summary.parseDiagnosticsByCodePerInputFile)).toBe(true);
   });
 
@@ -3469,7 +3469,7 @@ describe("Schema v20: lintIssuesByControllerCode firstBlockIndex", () => {
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(20);
+    expect(env.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const coded = (env.lintIssuesByControllerCode as Array<{
       code: string;
       firstBlockIndex?: number;
@@ -3492,6 +3492,44 @@ describe("Schema v20: lintIssuesByControllerCode firstBlockIndex", () => {
       firstBlockIndex?: number;
     }>;
     expect(rows.some((r) => r.firstBlockIndex !== undefined)).toBe(true);
+  });
+});
+
+describe("Schema v21: lintIssuesByParseDiagCode firstBlockIndex + batch-summary.csv", () => {
+  it("envelope.lintIssuesByParseDiagCode includes firstBlockIndex when related lints exist", async () => {
+    const tmp = await setupTmpDir();
+    const inputPath = path.join(tmp, "paren.nc");
+    await writeFile(inputPath, "G0 X1 (unclosed\nM30\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(["--input", inputPath, "--format", "json"], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    const env = JSON.parse(out.join(""));
+    expect(env.schemaVersion).toBe(CLI_SCHEMA_VERSION);
+    const rows = env.lintIssuesByParseDiagCode as Array<{
+      code: string;
+      firstBlockIndex?: number;
+    }>;
+    if (rows.length > 0) {
+      expect(rows.some((r) => r.firstBlockIndex !== undefined)).toBe(true);
+    }
+  });
+
+  it("--out-dir writes batch-summary.csv beside batch-summary.json", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 Z-5\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const csv = await readFile(path.join(outDir, "batch-summary.csv"), "utf8");
+    expect(csv).toMatch(/^kind,key,count/);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
   });
 });
 
@@ -3617,7 +3655,7 @@ describe("Schema v8: blockReasons + summary.blockReasonsAggregated", () => {
     expect(strictRow).toBeDefined();
     expect(strictRow.count).toBe(3);
     expect(strictRow.inputs.length).toBe(3);
-    // Inputs sorted ascending — paths are absolute on disk; just assert
+    // Inputs sorted ascending â€” paths are absolute on disk; just assert
     // the array is sorted, not its concrete contents.
     const sortedInputs = [...strictRow.inputs].sort((a: string, b: string) =>
       a.localeCompare(b)
@@ -3628,7 +3666,7 @@ describe("Schema v8: blockReasons + summary.blockReasonsAggregated", () => {
 
   it("batch summary.blockReasonsAggregated sorts rows by count desc then reason asc", async () => {
     // Use 3 inputs: 2 trigger strict-gate, 1 triggers a parse-policy
-    // breach (synthetic — empty string content) so blockReasonsAggregated
+    // breach (synthetic â€” empty string content) so blockReasonsAggregated
     // contains both reasons. We then assert the sort: count desc puts
     // strict_controller_codes first (count=2) ahead of any single-count
     // reason like parse_diagnostics_policy_breach (count=1).
@@ -3805,7 +3843,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.lintIssuesByParseDiagCodeAggregated).toBeUndefined();
   });
 
@@ -3883,7 +3921,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.lintIssuesByControllerCodeAggregated).toBeUndefined();
   });
 
@@ -3985,7 +4023,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(20);
+    expect(batch.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.summary.parseDiagnosticsByCodeAggregated).toBeUndefined();
   });
 
@@ -4287,8 +4325,8 @@ describe("rotate-audit-trail-key subcommand (end-to-end via main())", () => {
     // The renameFn defaults to fs/promises.rename, which would touch real
     // disk; we don't pass an injection here, so the test plays it safe by
     // confirming the WRITE happened to <input>.rotating and exit code is
-    // either 0 (rename succeeded — extremely unlikely on a fake path) or
-    // 3 (rename failed → Schema-v8 stranded-temp surface). The previous
+    // either 0 (rename succeeded â€” extremely unlikely on a fake path) or
+    // 3 (rename failed â†’ Schema-v8 stranded-temp surface). The previous
     // exit-2 outcome is no longer reachable: a post-write rename failure
     // now throws AuditTrailRotationStrandedTempError which the dispatcher
     // converts to exit 3 with a canonical recovery hint.
@@ -4550,7 +4588,7 @@ describe("rotate-audit-trail-key --recover-temp arm (Schema v8 stranded-temp sur
         }
       } as Parameters<typeof main>[1] & { renameFn?: unknown }
     );
-    // Default renameFn is node:fs/promises.rename — when it tries to
+    // Default renameFn is node:fs/promises.rename â€” when it tries to
     // rename a non-existent temp file (we mocked writeFileBytesFn so
     // nothing was actually written) onto an existing real path, it
     // fails with ENOENT. The dispatcher must catch the resulting
@@ -4827,7 +4865,7 @@ describe("audit-deprecated-rules subcommand (end-to-end via main())", () => {
     setDiscoveredProfilePackRuleDocsForTesting(undefined);
     // Built-in packs may still emit deprecated rules (the fanuc pilot is
     // shipped today). The smoke we care about: exit 0 and either an empty
-    // line OR the actual fanuc pilot row — neither outcome should produce
+    // line OR the actual fanuc pilot row â€” neither outcome should produce
     // stderr noise.
     expect(exit).toBe(0);
     expect(stderr).toBe("");

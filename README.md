@@ -3905,6 +3905,47 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=20
 ```
 
+## Apply-edit + store ZIP + parse-diag firstBlockIndex + Schema v21
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `applyIdeQuickFixEdit` (ide-bridge)
+
+Pure offset-based apply helpers (`resolveQuickFixSpan`, `applyIdeQuickFixEdit`,
+`applyIdeQuickFixEdits`) splice expanded templates into program source without
+an IDE host write path.
+
+### Move 2 — Desktop patched NC download
+
+Folder batch gains **Download patched NC** (applies expanded safety templates via
+program-source bindings) plus a patched-programs chip helper.
+
+### Move 3 — Parse-diag `firstBlockIndex` (Schema v21)
+
+`CLI_SCHEMA_VERSION` bumps `20 → 21`. `lintIssuesByParseDiagCode[]` gains optional
+`firstBlockIndex` (earliest lint `blockIndex` among issues referencing that
+parse-diagnostic code).
+
+### Move 4 — `batch-summary.csv` on `--out-dir`
+
+`--out-dir` always writes `batch-summary.csv` beside `batch-summary.json` using
+shared `formatBatchAggregationsAsCsv` (same shape as desktop Copy aggregation CSV).
+
+### Move 5 — Store-only ZIP batch archive
+
+`createStoreZip` (CRC-32, method 0 / STORE) packs PDF / TXT / envelope / patched
+downloads into one archive. Desktop gains **Download ZIP** with no zip dependency.
+
+### Move 6 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=21
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3922,9 +3963,8 @@ next planning wave can pick them up:
   reorder, embedded LTR islands, and bracket/quote preservation ship;
   deeply nested embeddings and multi-script runs still need ICU or a
   full UAX#9 implementation.
-- **True zip / single-archive batch export** — desktop ships multi-download
-  for PDF / TXT / envelope JSON; a single zip archive would need a new
-  dependency or native API.
-- **Apply-edit / workspace write from fix preview** — preview + clipboard
-  ship; writing expanded templates back into open editors remains an
-  IDE-host concern.
+- **IDE-host workspace write from fix preview** — pure apply-edit +
+  patched NC download ship; writing expanded templates back into open
+  editors remains an IDE-host concern.
+- **Deflate / compressed ZIP** — STORE archives ship; DEFLATE would need
+  a compression dependency or native CompressionStream wiring.

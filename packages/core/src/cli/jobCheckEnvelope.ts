@@ -5,7 +5,7 @@ import type {
 } from "../types.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 20;
+export const CLI_SCHEMA_VERSION = 21;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -36,6 +36,12 @@ export type CliLintIssuesByParseDiagCodeEntry = {
   source: LintIssueProvenanceSource;
   code: string;
   count: number;
+  /**
+   * Schema v21: earliest `blockIndex` among lint issues that reference this
+   * parse-diagnostic `code` via `provenance.relatedDiagnostics`. Absent when
+   * no contributing issue carried a block index. Append-only optional field.
+   */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -230,7 +236,15 @@ function buildParseDiagnosticsByCode(
 function buildLintIssuesByParseDiagCode(
   result: RunJobCheckResult
 ): CliLintIssuesByParseDiagCodeEntry[] {
-  const counts = new Map<string, { source: LintIssueProvenanceSource; code: string; count: number }>();
+  const counts = new Map<
+    string,
+    {
+      source: LintIssueProvenanceSource;
+      code: string;
+      count: number;
+      firstBlockIndex?: number;
+    }
+  >();
   for (const issue of result.lintIssues) {
     const related = issue.provenance.relatedDiagnostics ?? [];
     if (related.length === 0) continue;
@@ -244,12 +258,30 @@ function buildLintIssuesByParseDiagCode(
       const existing = counts.get(key);
       if (existing) {
         existing.count += 1;
+        if (issue.blockIndex !== undefined) {
+          if (
+            existing.firstBlockIndex === undefined ||
+            issue.blockIndex < existing.firstBlockIndex
+          ) {
+            existing.firstBlockIndex = issue.blockIndex;
+          }
+        }
       } else {
-        counts.set(key, { source: issue.provenance.source, code: diag.code, count: 1 });
+        counts.set(key, {
+          source: issue.provenance.source,
+          code: diag.code,
+          count: 1,
+          ...(issue.blockIndex !== undefined ? { firstBlockIndex: issue.blockIndex } : {})
+        });
       }
     }
   }
-  const entries = [...counts.values()];
+  const entries: CliLintIssuesByParseDiagCodeEntry[] = [...counts.values()].map((bucket) => ({
+    source: bucket.source,
+    code: bucket.code,
+    count: bucket.count,
+    ...(bucket.firstBlockIndex !== undefined ? { firstBlockIndex: bucket.firstBlockIndex } : {})
+  }));
   entries.sort((a, b) => {
     if (b.count !== a.count) return b.count - a.count;
     if (a.source !== b.source) return a.source.localeCompare(b.source);
@@ -1402,4 +1434,42 @@ export function formatBatchJson(
   options?: { batchWalk?: CliBatchWalk }
 ): string {
   return JSON.stringify(buildBatchEnvelope(entries, options), null, 2);
+}
+
+function csvEscapeCell(value: string): string {
+  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
+  return value;
+}
+
+/**
+ * Schema v20–v21: CSV export of safety + policy-breach aggregated dashboard
+ * rows. Shared by desktop clipboard and CLI `--out-dir` `batch-summary.csv`.
+ */
+export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
+  const lines: string[] = ["kind,key,count,blockers,warnings,inputs"];
+  for (const row of envelope.summary.safetyFindingsByCodeAggregated ?? []) {
+    lines.push(
+      [
+        "safety",
+        `${row.source}:${row.code}`,
+        String(row.count),
+        String(row.blockers),
+        String(row.warnings),
+        csvEscapeCell(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  for (const row of envelope.summary.parseDiagnosticsPolicyBreachesAggregated ?? []) {
+    lines.push(
+      [
+        "policy-breach",
+        row.key,
+        String(row.count),
+        row.severity === "blocker" ? String(row.count) : "0",
+        row.severity === "warning" ? String(row.count) : "0",
+        csvEscapeCell(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  return `${lines.join("\n")}\n`;
 }

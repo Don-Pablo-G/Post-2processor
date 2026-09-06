@@ -114,7 +114,9 @@ import {
   formatSafetyFindingsForExport
 } from "./safetyFindingsView";
 import {
+  buildDesktopBatchArchiveZip,
   buildDesktopBatchEnvelopeJsonFiles,
+  buildDesktopBatchPatchedPrograms,
   buildDesktopBatchSetupSheetPdfs,
   buildDesktopBatchSetupSheetTxts,
   downloadDesktopBatchItems,
@@ -125,6 +127,7 @@ import {
   formatDesktopBatchQuickFixPreviewChip,
   formatDesktopBatchQuickFixPreviewsForExport,
   formatDesktopBatchAggregationsAsCsv,
+  formatDesktopBatchPatchedProgramsChip,
   formatDesktopBatchSafetyChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
@@ -306,6 +309,10 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedTxts: string;
     batchJobCheckDownloadEnvelopes: string;
     batchJobCheckDownloadedEnvelopes: string;
+    batchJobCheckDownloadPatched: string;
+    batchJobCheckDownloadedPatched: string;
+    batchJobCheckDownloadZip: string;
+    batchJobCheckDownloadedZip: string;
     batchJobCheckCopyCsv: string;
     batchJobCheckCopiedCsv: string;
     batchJobCheckCopyFixPreview: string;
@@ -615,6 +622,10 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedTxts: "Pobrano TXT setup batch",
     batchJobCheckDownloadEnvelopes: "Pobierz JSON envelope",
     batchJobCheckDownloadedEnvelopes: "Pobrano JSON envelope batch",
+    batchJobCheckDownloadPatched: "Pobierz patched NC",
+    batchJobCheckDownloadedPatched: "Pobrano patched NC batch",
+    batchJobCheckDownloadZip: "Pobierz ZIP",
+    batchJobCheckDownloadedZip: "Pobrano ZIP batch",
     batchJobCheckCopyCsv: "Kopiuj CSV agregacji",
     batchJobCheckCopiedCsv: "Skopiowano CSV agregacji batch",
     batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
@@ -925,6 +936,10 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedTxts: "Downloaded batch setup TXT",
     batchJobCheckDownloadEnvelopes: "Download envelope JSON",
     batchJobCheckDownloadedEnvelopes: "Downloaded batch envelopes",
+    batchJobCheckDownloadPatched: "Download patched NC",
+    batchJobCheckDownloadedPatched: "Downloaded batch patched NC",
+    batchJobCheckDownloadZip: "Download ZIP",
+    batchJobCheckDownloadedZip: "Downloaded batch ZIP",
     batchJobCheckCopyCsv: "Copy aggregation CSV",
     batchJobCheckCopiedCsv: "Copied batch aggregation CSV",
     batchJobCheckCopyFixPreview: "Copy fix preview",
@@ -1983,6 +1998,51 @@ export function App() {
       setExportStatus(`${t.batchJobCheckDownloadedEnvelopes}: ${downloaded}`);
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Batch envelope download failed.");
+    }
+  }
+
+  async function handleDownloadBatchPatched(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const sourcesByInput = new Map(
+        batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+      );
+      const items = buildDesktopBatchPatchedPrograms(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
+      const { downloaded } = await downloadDesktopBatchItems(items);
+      setExportStatus(
+        `${t.batchJobCheckDownloadedPatched}: ${downloaded} (${formatDesktopBatchPatchedProgramsChip(items)})`
+      );
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch patched download failed.");
+    }
+  }
+
+  async function handleDownloadBatchZip(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const sourcesByInput = new Map(
+        batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+      );
+      const items = [
+        ...buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults),
+        ...buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults),
+        ...buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope),
+        ...buildDesktopBatchPatchedPrograms(batchJobCheckResult.envelope, sourcesByInput)
+      ];
+      const bytes = buildDesktopBatchArchiveZip(items);
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-export.zip",
+          body: bytes,
+          mimeType: "application/zip"
+        }
+      ]);
+      setExportStatus(`${t.batchJobCheckDownloadedZip}: ${downloaded} (${items.length} files)`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch ZIP download failed.");
     }
   }
 
@@ -3766,6 +3826,20 @@ export function App() {
                 onClick={() => void handleDownloadBatchEnvelopes()}
               >
                 {t.batchJobCheckDownloadEnvelopes}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-patched"
+                onClick={() => void handleDownloadBatchPatched()}
+              >
+                {t.batchJobCheckDownloadPatched}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-zip"
+                onClick={() => void handleDownloadBatchZip()}
+              >
+                {t.batchJobCheckDownloadZip}
               </button>
               <button
                 type="button"

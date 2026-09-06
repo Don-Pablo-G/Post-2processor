@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDesktopBatchArchiveZip,
   buildDesktopBatchEnvelopeJsonFiles,
+  buildDesktopBatchPatchedPrograms,
   buildDesktopBatchQuickFixPreviews,
   buildDesktopBatchSetupSheetPdfs,
   buildDesktopBatchSetupSheetTxts,
   filterBatchJobCheckFiles,
   formatDesktopBatchAggregationsAsCsv,
   formatDesktopBatchBlockReasonsChip,
+  formatDesktopBatchPatchedProgramsChip,
   formatDesktopBatchQuickFixPreviewChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
@@ -134,7 +137,7 @@ describe("batchJobCheckView", () => {
       }
     );
     expect(batch.envelope.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(batch.envelope.schemaVersion).toBe(20);
+    expect(batch.envelope.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(batch.envelope.summary.files).toBe(2);
     expect(batch.envelope.summary.blocked).toBe(1);
     expect(batch.envelope.summary.batchWalk?.root).toBe("folder");
@@ -145,7 +148,7 @@ describe("batchJobCheckView", () => {
     expect(batch.envelope.summary.parseDiagnosticsPolicyBreachesAggregated?.[0].key).toBe("TOTAL");
     expect(formatDesktopBatchSummaryChip(batch.envelope)).toMatch(/files=2/);
     const exported = JSON.parse(formatDesktopBatchSummaryForExport(batch.envelope));
-    expect(exported.schemaVersion).toBe(20);
+    expect(exported.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(exported.summary.batchWalk.matched).toBe(2);
     expect(batch.runResults).toHaveLength(2);
   });
@@ -188,7 +191,7 @@ describe("batchJobCheckView", () => {
     const envelopes = buildDesktopBatchEnvelopeJsonFiles(batch.envelope);
     expect(envelopes).toHaveLength(1);
     expect(envelopes[0]!.filename).toBe("a.job-check.json");
-    expect(JSON.parse(envelopes[0]!.body as string).schemaVersion).toBe(20);
+    expect(JSON.parse(envelopes[0]!.body as string).schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(formatDesktopBatchWalkChip(batch.envelope)).toMatch(/matched=1/);
     expect(formatDesktopBatchBlockReasonsChip(batch.envelope)).toMatch(/batch-block-reasons/);
   });
@@ -254,5 +257,19 @@ describe("batchJobCheckView", () => {
     expect(previews[0]!.code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
     expect(previews[0]!.expanded).toMatch(/Z-5/);
     expect(formatDesktopBatchQuickFixPreviewChip(previews)).toMatch(/fixes=/);
+    const patched = buildDesktopBatchPatchedPrograms(
+      batch.envelope,
+      new Map([["a.nc", "O1\nG0 Z-5\nM30\n"]])
+    );
+    expect(patched).toHaveLength(1);
+    expect(patched[0]!.filename).toBe("a.patched.nc");
+    expect(String(patched[0]!.body)).toMatch(/G43/);
+    expect(formatDesktopBatchPatchedProgramsChip(patched)).toMatch(/files=1/);
+    const zip = buildDesktopBatchArchiveZip([
+      ...buildDesktopBatchSetupSheetTxts(batch.runResults),
+      ...patched
+    ]);
+    expect(zip[0]).toBe(0x50);
+    expect(zip[1]).toBe(0x4b);
   });
 });

@@ -50,6 +50,7 @@ import {
   buildJobCheckEnvelope,
   formatBatchJson,
   formatBatchNdjson,
+  formatBatchAggregationsAsCsv,
   formatJobCheckJson,
   formatJobCheckNdjsonLine,
   type CliBatchEntry,
@@ -80,6 +81,7 @@ export {
   buildSafetyFindingsByCode,
   formatBatchJson,
   formatBatchNdjson,
+  formatBatchAggregationsAsCsv,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -1883,7 +1885,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           return 2;
         }
       }
-      // Schema v18–v20: always drop a CLI-shaped batch summary beside per-file
+      // Schema v18–v21: always drop a CLI-shaped batch summary beside per-file
       // outputs so `batchWalk.export.outDir` is inspectable without stdout.
       // JSON envelope summary ships for every --format (including ndjson).
       const summaryPath = path.join(outDir, "batch-summary.json");
@@ -1893,6 +1895,20 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       } catch (err) {
         writeErr(
           `Failed to write --out-dir batch summary ${summaryPath}: ${(err as Error).message}\n`
+        );
+        return 2;
+      }
+      // Schema v21: dashboard CSV of safety + policy-breach aggregations.
+      const csvSummaryPath = path.join(outDir, "batch-summary.csv");
+      try {
+        await writeFn(
+          csvSummaryPath,
+          formatBatchAggregationsAsCsv(buildBatchEnvelope(entries, { batchWalk }))
+        );
+        written += 1;
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir batch summary ${csvSummaryPath}: ${(err as Error).message}\n`
         );
         return 2;
       }

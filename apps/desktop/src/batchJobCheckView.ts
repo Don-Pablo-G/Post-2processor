@@ -5,6 +5,8 @@ import {
   buildSetupSheetPdf,
   classifyBatchRelativePath,
   CLI_SCHEMA_VERSION,
+  createStoreZip,
+  formatBatchAggregationsAsCsv,
   getSafetyFindingFix,
   type CliBatchEnvelope,
   type CliBatchWalk,
@@ -13,8 +15,10 @@ import {
   type RunJobCheckResult
 } from "@cnc/core/browser";
 import {
+  applyIdeQuickFixEdits,
   deriveSafetyFindingFixBindings,
-  expandIdeQuickFixTemplate
+  expandIdeQuickFixTemplate,
+  resolveQuickFixSpan
 } from "@cnc/ide-bridge";
 
 export type DesktopBatchFilterOptions = {
@@ -204,41 +208,12 @@ export function formatDesktopBatchBlockReasonsChip(envelope: CliBatchEnvelope): 
   return `batch-block-reasons: ${top}${safetyPart}`;
 }
 
-function csvEscape(value: string): string {
-  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
-}
-
 /**
- * Schema v20: CSV export of safety + policy-breach aggregated dashboard rows.
+ * Schema v20–v21: CSV export of safety + policy-breach aggregated dashboard rows.
+ * Delegates to shared `@cnc/core` formatter (also used for CLI batch-summary.csv).
  */
 export function formatDesktopBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
-  const lines: string[] = ["kind,key,count,blockers,warnings,inputs"];
-  for (const row of envelope.summary.safetyFindingsByCodeAggregated ?? []) {
-    lines.push(
-      [
-        "safety",
-        `${row.source}:${row.code}`,
-        String(row.count),
-        String(row.blockers),
-        String(row.warnings),
-        csvEscape(row.inputs.join("|"))
-      ].join(",")
-    );
-  }
-  for (const row of envelope.summary.parseDiagnosticsPolicyBreachesAggregated ?? []) {
-    lines.push(
-      [
-        "policy-breach",
-        row.key,
-        String(row.count),
-        row.severity === "blocker" ? String(row.count) : "0",
-        row.severity === "warning" ? String(row.count) : "0",
-        csvEscape(row.inputs.join("|"))
-      ].join(",")
-    );
-  }
-  return `${lines.join("\n")}\n`;
+  return formatBatchAggregationsAsCsv(envelope);
 }
 
 export type DesktopBatchQuickFixPreview = {
@@ -324,6 +299,79 @@ export function formatDesktopBatchQuickFixPreviewsForExport(
   previews: readonly DesktopBatchQuickFixPreview[]
 ): string {
   return JSON.stringify(previews, null, 2);
+}
+
+/**
+ * Schema v21: apply expanded safety fix templates into program sources
+ * (descending offset order). Returns one patched download item per input
+ * that received at least one edit.
+ */
+export function buildDesktopBatchPatchedPrograms(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string>,
+  options?: { strict?: boolean }
+): BatchDownloadItem[] {
+  const previews = buildDesktopBatchQuickFixPreviews(envelope, sourcesByInput, options);
+  const byInput = new Map<string, typeof previews>();
+  for (const preview of previews) {
+    if (!preview.expanded || preview.unbound) continue;
+    const list = byInput.get(preview.input) ?? [];
+    list.push(preview);
+    byInput.set(preview.input, list);
+  }
+  const items: BatchDownloadItem[] = [];
+  for (const [input, inputPreviews] of [...byInput.entries()].sort((a, b) =>
+    a[0].localeCompare(b[0])
+  )) {
+    const source = sourcesByInput.get(input);
+    if (source === undefined) continue;
+    const attribution = envelope.summary.safetyFindingsByCodePerInputFile.filter(
+      (row) => row.input === input
+    );
+    const edits = [];
+    for (const preview of inputPreviews) {
+      if (preview.expanded === undefined) continue;
+      const row = attribution.find((r) => r.code === preview.code);
+      if (row?.firstBlockIndex === undefined) continue;
+      const span = resolveQuickFixSpan(source, row.firstBlockIndex);
+      if (!span) continue;
+      edits.push({
+        startOffset: span.startOffset,
+        endOffset: span.endOffset,
+        replacement: preview.expanded
+      });
+    }
+    if (edits.length === 0) continue;
+    const patched = applyIdeQuickFixEdits(source, edits);
+    if (patched.applied === 0) continue;
+    items.push({
+      filename: `${stemFromInput(input)}.patched.nc`,
+      body: patched.source,
+      mimeType: "text/plain;charset=utf-8"
+    });
+  }
+  return items;
+}
+
+export function formatDesktopBatchPatchedProgramsChip(
+  items: readonly BatchDownloadItem[]
+): string {
+  if (items.length === 0) return "batch-patched: none";
+  return `batch-patched: files=${items.length}`;
+}
+
+/**
+ * Schema v21: pack PDF / TXT / envelope / patched items into one STORE zip.
+ */
+export function buildDesktopBatchArchiveZip(
+  items: ReadonlyArray<BatchDownloadItem | BatchPdfDownloadItem>
+): Uint8Array {
+  return createStoreZip(
+    items.map((item) => ({
+      path: item.filename,
+      data: "bytes" in item ? item.bytes : item.body
+    }))
+  );
 }
 
 export type BatchDownloadItem = {

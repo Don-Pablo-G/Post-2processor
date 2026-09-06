@@ -77,6 +77,9 @@ export type { BlockSplitOptions, ProgramBlockSpan } from "./parser/blockSplit.js
 export { buildSetupSheetPdf } from "./workshop/setupSheetPdf.js";
 export type { BuildSetupSheetPdfOptions } from "./workshop/setupSheetPdf.js";
 
+export { createStoreZip, crc32 } from "./workshop/storeZip.js";
+export type { StoreZipEntry } from "./workshop/storeZip.js";
+
 export type { ParseDiagnosticsPolicyPresetId } from "./workshop/parseDiagnosticsPresets.js";
 
 export {
@@ -119,6 +122,7 @@ export {
   buildSafetyFindingsByCode,
   formatBatchJson,
   formatBatchNdjson,
+  formatBatchAggregationsAsCsv,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";

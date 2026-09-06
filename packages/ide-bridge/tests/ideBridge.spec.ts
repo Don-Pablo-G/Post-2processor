@@ -17,6 +17,9 @@ import {
   expandIdeQuickFixTemplate,
   formatBatchWalkStatus,
   getQuickFixForLintIssue,
+  applyIdeQuickFixEdit,
+  applyIdeQuickFixEdits,
+  resolveQuickFixSpan,
   mapBatchAttributionToFileQuickFixes,
   mapBatchControllerCodeAggregatedToFileQuickFixes,
   mapBatchControllerCodeAggregatedToQuickFixes,
@@ -713,7 +716,7 @@ describe("deriveSafetyFindingFixBindings", () => {
         source: "O1\nG0 Z-7.5\nM30\n",
         blockIndex: 1
       })
-    ).toEqual({ Z: "-7.5" });
+    ).toEqual({ H: "1", Z: "-7.5" });
   });
 
   it("message bindings win over program-source on conflict", () => {
@@ -724,7 +727,7 @@ describe("deriveSafetyFindingFixBindings", () => {
         source: "O1\nG0 Z-9\nM30\n",
         blockIndex: 1
       })
-    ).toEqual({ Z: "-1.0" });
+    ).toEqual({ H: "1", Z: "-1.0" });
   });
 });
 
@@ -995,5 +998,37 @@ describe("getQuickFixForLintIssue with source", () => {
     const issue = makeIssue({ code: "CG_N_AND_O_MIXED", blockIndex: 1 });
     const fix = getQuickFixForLintIssue(issue);
     expect(fix?.range).toBeUndefined();
+  });
+});
+
+describe("applyIdeQuickFixEdit", () => {
+  it("replaces a resolved block span", () => {
+    const source = "O1\nG0 Z-5\nM30\n";
+    const span = resolveQuickFixSpan(source, 1);
+    expect(span).toEqual({ startOffset: 3, endOffset: 9 });
+    const result = applyIdeQuickFixEdit(source, {
+      ...span!,
+      replacement: "G43 H1 Z-5"
+    });
+    expect(result.applied).toBe(true);
+    expect(result.source).toBe("O1\nG43 H1 Z-5\nM30\n");
+  });
+
+  it("applyIdeQuickFixEdits applies from the end so earlier offsets stay valid", () => {
+    const source = "AAA\nBBB\nCCC\n";
+    const a = resolveQuickFixSpan(source, 0)!;
+    const c = resolveQuickFixSpan(source, 2)!;
+    const result = applyIdeQuickFixEdits(source, [
+      { ...a, replacement: "X" },
+      { ...c, replacement: "Z" }
+    ]);
+    expect(result.applied).toBe(2);
+    expect(result.source).toBe("X\nBBB\nZ\n");
+  });
+
+  it("rejects inverted or out-of-range edits", () => {
+    expect(applyIdeQuickFixEdit("abc", { startOffset: 2, endOffset: 1, replacement: "x" }).applied).toBe(
+      false
+    );
   });
 });
