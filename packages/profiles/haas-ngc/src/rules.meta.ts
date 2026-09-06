@@ -1623,6 +1623,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG51 P2.\nG40\nG50\nM5\nM30\n"
   },
   {
+    id: "haas.g49-while-rotation",
+    severity: "warning",
+    messageMatcher: /G49 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before G49 tool-length cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG68 X0 Y0 R45.\nG49\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g49-while-scaling",
+    severity: "warning",
+    messageMatcher: /G49 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G49 tool-length cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG51 P2.\nG49\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG51 P2.\nG50\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g50-while-canned",
+    severity: "warning",
+    messageMatcher: /G50 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G50 scaling cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG51 P2.\nG50\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG51 P2.\nG80\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g50-while-rotation",
+    severity: "warning",
+    messageMatcher: /G50 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before G50 scaling cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG51 P2.\nG50\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG51 P2.\nG69\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g50-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G50 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before G50 scaling cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG51 P2.\nG50\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG51 P2.\nG49\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g69-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G69 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before G69 rotation cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG68 X0 Y0 R45.\nG49\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g69-while-scaling",
+    severity: "warning",
+    messageMatcher: /G69 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G69 rotation cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG68 X0 Y0 R45.\nG50\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g80-while-rotation",
+    severity: "warning",
+    messageMatcher: /G80 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before G80 canned-cycle cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG81 Z-1. R0.1 F10.\nG80\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG81 Z-1. R0.1 F10.\nG69\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.g80-while-scaling",
+    severity: "warning",
+    messageMatcher: /G80 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G80 canned-cycle cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG81 Z-1. R0.1 F10.\nG80\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG81 Z-1. R0.1 F10.\nG50\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.g68-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G68 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G68 coordinate rotation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG68 X0 Y0 R45.\nM9\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG68 X0 Y0 R45.\nG69\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

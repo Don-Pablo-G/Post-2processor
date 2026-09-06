@@ -706,6 +706,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G49 while coordinate rotation (G68) is still active — cancel with G69 before canceling tool length.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G49 while scaling (G51) is still active — cancel with G50 before canceling tool length.",
+          blockIndex: index
+        });
+      }
       toolLengthActive = false;
     }
 
@@ -1889,6 +1904,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G80 while coordinate rotation (G68) is still active — cancel with G69 before canceling the canned cycle.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G80 while scaling (G51) is still active — cancel with G50 before canceling the canned cycle.",
+          blockIndex: index
+        });
+      }
       cannedActive = false;
       cannedHasZ = false;
       cannedHasR = false;
@@ -1969,6 +1999,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G68 while coolant is still on — turn coolant off with M9 before coordinate rotation.",
+          blockIndex: index
+        });
+      }
       rotationActive = true;
     }
     if (hasExactG69(block)) {
@@ -1985,6 +2022,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "G69 while a canned cycle is still active — cancel with G80 before canceling coordinate rotation.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G69 while tool length compensation (G43) is still active — cancel with G49 before canceling coordinate rotation.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G69 while scaling (G51) is still active — cancel with G50 before canceling coordinate rotation.",
           blockIndex: index
         });
       }
@@ -2039,6 +2091,29 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "G50 while cutter compensation (G41/G42) is still active — cancel with G40 before canceling scaling.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G50 while a canned cycle is still active — cancel with G80 before canceling scaling.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G50 while tool length compensation (G43) is still active — cancel with G49 before canceling scaling.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G50 while coordinate rotation (G68) is still active — cancel with G69 before canceling scaling.",
           blockIndex: index
         });
       }
