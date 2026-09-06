@@ -3946,6 +3946,44 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=21
 ```
 
+## Expanded CSV + controller apply-edit + DEFLATE zip + Schema v22
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Expanded aggregation CSV
+
+`formatBatchAggregationsAsCsv` (desktop clipboard + CLI `batch-summary.csv`) now
+also emits `controller`, `parse-diag`, and `lint-by-parse-diag` rows beside
+safety and policy-breach.
+
+### Move 2 — Parse-diag aggregated `firstBlockIndex` (Schema v22)
+
+`CLI_SCHEMA_VERSION` bumps `21 → 22`.
+`summary.lintIssuesByParseDiagCodeAggregated[]` gains optional `firstBlockIndex`
+(earliest across contributing per-entry rows).
+
+### Move 3 — Controller-grammar patched NC
+
+`deriveControllerGrammarFixBindings` fills duplicate-address and N/O-mixed
+templates from program source. Desktop fix preview + patched NC cover safety
+and controller-grammar catalogues.
+
+### Move 4 — Native DEFLATE ZIP
+
+`createZip(..., { method: "deflate" })` uses `CompressionStream("deflate-raw")`
+when available and falls back to STORE per entry. Desktop **Download ZIP**
+requests DEFLATE by default.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=22
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3966,5 +4004,7 @@ next planning wave can pick them up:
 - **IDE-host workspace write from fix preview** — pure apply-edit +
   patched NC download ship; writing expanded templates back into open
   editors remains an IDE-host concern.
-- **Deflate / compressed ZIP** — STORE archives ship; DEFLATE would need
-  a compression dependency or native CompressionStream wiring.
+- **Remaining controller-grammar template bindings** — N/O-mixed and
+  duplicate-address program-source heuristics ship; other CG templates
+  (`PROG`/`IJK`, envelope reorder, unique O) still need richer context
+  or operator input.

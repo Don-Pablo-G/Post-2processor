@@ -196,8 +196,8 @@ export {
 export { buildSetupSheetPdf } from "./workshop/setupSheetPdf.js";
 export type { BuildSetupSheetPdfOptions } from "./workshop/setupSheetPdf.js";
 
-export { createStoreZip, crc32 } from "./workshop/storeZip.js";
-export type { StoreZipEntry } from "./workshop/storeZip.js";
+export { createStoreZip, createZip, crc32, deflateRaw } from "./workshop/storeZip.js";
+export type { StoreZipEntry, CreateZipOptions } from "./workshop/storeZip.js";
 
 export function isNodeCapable(): boolean {
   return false;

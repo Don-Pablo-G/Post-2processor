@@ -1018,7 +1018,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=21\n");
+    expect(stdout).toBe("cnc-job-check schema=22\n");
     expect(stderr).toBe("");
   });
 
@@ -2629,8 +2629,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 21", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(21);
+  it("CLI_SCHEMA_VERSION is 22", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(22);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3530,6 +3530,48 @@ describe("Schema v21: lintIssuesByParseDiagCode firstBlockIndex + batch-summary.
     expect(csv).toMatch(/^kind,key,count/);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
     expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
+  });
+});
+
+describe("Schema v22: parse-diag aggregated firstBlockIndex + expanded CSV", () => {
+  it("buildBatchLintIssuesByParseDiagCodeAggregation propagates firstBlockIndex", () => {
+    const entries = [
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "a.nc",
+        envelope: {
+          lintIssuesByParseDiagCode: [
+            { source: "common_lint", code: "UNMATCHED_OPEN_PAREN", count: 1, firstBlockIndex: 2 }
+          ]
+        }
+      },
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "b.nc",
+        envelope: {
+          lintIssuesByParseDiagCode: [
+            { source: "common_lint", code: "UNMATCHED_OPEN_PAREN", count: 1, firstBlockIndex: 0 }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchLintIssuesByParseDiagCodeAggregation>[0];
+    const rows = buildBatchLintIssuesByParseDiagCodeAggregation(entries);
+    expect(rows[0]!.code).toBe("UNMATCHED_OPEN_PAREN");
+    expect(rows[0]!.firstBlockIndex).toBe(0);
+    expect(rows[0]!.count).toBe(2);
+  });
+
+  it("formatBatchAggregationsAsCsv includes controller kinds on fanuc batch --out-dir", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "%\nO0001\nN10 O0001\nM30\n%\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--controller", "fanuc", "--out-dir", outDir, "--format", "json"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const csv = await readFile(path.join(outDir, "batch-summary.csv"), "utf8");
+    expect(csv).toMatch(/controller,/);
   });
 });
 

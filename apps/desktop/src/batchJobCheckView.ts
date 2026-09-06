@@ -6,7 +6,9 @@ import {
   classifyBatchRelativePath,
   CLI_SCHEMA_VERSION,
   createStoreZip,
+  createZip,
   formatBatchAggregationsAsCsv,
+  getControllerGrammarFix,
   getSafetyFindingFix,
   type CliBatchEnvelope,
   type CliBatchWalk,
@@ -16,6 +18,7 @@ import {
 } from "@cnc/core/browser";
 import {
   applyIdeQuickFixEdits,
+  deriveControllerGrammarFixBindings,
   deriveSafetyFindingFixBindings,
   expandIdeQuickFixTemplate,
   resolveQuickFixSpan
@@ -209,8 +212,8 @@ export function formatDesktopBatchBlockReasonsChip(envelope: CliBatchEnvelope): 
 }
 
 /**
- * Schema v20–v21: CSV export of safety + policy-breach aggregated dashboard rows.
- * Delegates to shared `@cnc/core` formatter (also used for CLI batch-summary.csv).
+ * Schema v20–v22: CSV export of safety + policy-breach + controller + parse-diag
+ * aggregated dashboard rows. Delegates to shared `@cnc/core` formatter.
  */
 export function formatDesktopBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
   return formatBatchAggregationsAsCsv(envelope);
@@ -220,13 +223,39 @@ export type DesktopBatchQuickFixPreview = {
   input: string;
   code: string;
   title: string;
+  /** Schema v22: which catalogue produced this preview. */
+  kind?: "safety" | "controller";
   expanded?: string;
   unbound?: boolean;
+  firstBlockIndex?: number;
 };
 
+function expandPreviewTemplate(
+  qf: { replacementTemplate?: string; code: string; title: string; rationale: string },
+  bindings: Readonly<Record<string, string>>,
+  options?: { strict?: boolean }
+): { expanded?: string; unbound?: boolean } {
+  if (qf.replacementTemplate === undefined) return {};
+  let expanded: string | undefined;
+  let unbound = false;
+  try {
+    expanded = expandIdeQuickFixTemplate(qf, bindings, { strict: options?.strict });
+  } catch {
+    unbound = true;
+    expanded = expandIdeQuickFixTemplate(qf, bindings);
+  }
+  if (options?.strict !== true && expanded && /\{\{[A-Z0-9_]+\}\}/.test(expanded)) {
+    unbound = true;
+  }
+  return {
+    ...(expanded !== undefined ? { expanded } : {}),
+    ...(unbound ? { unbound: true } : {})
+  };
+}
+
 /**
- * Schema v20: preview expanded safety-finding templates for batch attribution
- * rows, using program-source bindings when `sourcesByInput` is supplied.
+ * Schema v20–v22: preview expanded safety + controller-grammar templates for
+ * batch attribution rows, using program-source bindings when sources are supplied.
  */
 export function buildDesktopBatchQuickFixPreviews(
   envelope: CliBatchEnvelope,
@@ -235,8 +264,9 @@ export function buildDesktopBatchQuickFixPreviews(
 ): DesktopBatchQuickFixPreview[] {
   const out: DesktopBatchQuickFixPreview[] = [];
   const seen = new Set<string>();
+
   for (const row of envelope.summary.safetyFindingsByCodePerInputFile) {
-    const key = `${row.input}::${row.code}`;
+    const key = `safety::${row.input}::${row.code}`;
     if (seen.has(key)) continue;
     seen.add(key);
     const fix = getSafetyFindingFix(row.code);
@@ -255,29 +285,51 @@ export function buildDesktopBatchQuickFixPreviews(
       source,
       blockIndex: row.firstBlockIndex
     });
-    let expanded: string | undefined;
-    let unbound = false;
-    if (qf.replacementTemplate !== undefined) {
-      try {
-        expanded = expandIdeQuickFixTemplate(qf, bindings, { strict: options?.strict });
-      } catch {
-        unbound = true;
-        expanded = expandIdeQuickFixTemplate(qf, bindings);
-      }
-      if (options?.strict !== true && expanded && /\{\{[A-Z0-9_]+\}\}/.test(expanded)) {
-        unbound = true;
-      }
-    }
+    const expanded = expandPreviewTemplate(qf, bindings, options);
     out.push({
       input: row.input,
       code: row.code,
       title: fix.title,
-      ...(expanded !== undefined ? { expanded } : {}),
-      ...(unbound ? { unbound: true } : {})
+      kind: "safety",
+      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {}),
+      ...expanded
     });
   }
+
+  for (const row of envelope.summary.lintIssuesByControllerCodePerInputFile) {
+    const key = `controller::${row.input}::${row.code}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fix = getControllerGrammarFix(row.code);
+    if (!fix) continue;
+    const qf = {
+      code: row.code,
+      title: fix.title,
+      rationale: fix.rationale,
+      ...(fix.replacementTemplate !== undefined
+        ? { replacementTemplate: fix.replacementTemplate }
+        : {})
+    };
+    const source = sourcesByInput.get(row.input);
+    const bindings = deriveControllerGrammarFixBindings({
+      code: row.code,
+      source,
+      blockIndex: row.firstBlockIndex
+    });
+    const expanded = expandPreviewTemplate(qf, bindings, options);
+    out.push({
+      input: row.input,
+      code: row.code,
+      title: fix.title,
+      kind: "controller",
+      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {}),
+      ...expanded
+    });
+  }
+
   out.sort((a, b) => {
     if (a.input !== b.input) return a.input.localeCompare(b.input);
+    if (a.kind !== b.kind) return (a.kind ?? "").localeCompare(b.kind ?? "");
     return a.code.localeCompare(b.code);
   });
   return out;
@@ -302,9 +354,9 @@ export function formatDesktopBatchQuickFixPreviewsForExport(
 }
 
 /**
- * Schema v21: apply expanded safety fix templates into program sources
- * (descending offset order). Returns one patched download item per input
- * that received at least one edit.
+ * Schema v21–v22: apply expanded safety + controller-grammar fix templates
+ * into program sources (descending offset order). Returns one patched
+ * download item per input that received at least one edit.
  */
 export function buildDesktopBatchPatchedPrograms(
   envelope: CliBatchEnvelope,
@@ -315,6 +367,7 @@ export function buildDesktopBatchPatchedPrograms(
   const byInput = new Map<string, typeof previews>();
   for (const preview of previews) {
     if (!preview.expanded || preview.unbound) continue;
+    if (preview.firstBlockIndex === undefined) continue;
     const list = byInput.get(preview.input) ?? [];
     list.push(preview);
     byInput.set(preview.input, list);
@@ -325,15 +378,10 @@ export function buildDesktopBatchPatchedPrograms(
   )) {
     const source = sourcesByInput.get(input);
     if (source === undefined) continue;
-    const attribution = envelope.summary.safetyFindingsByCodePerInputFile.filter(
-      (row) => row.input === input
-    );
     const edits = [];
     for (const preview of inputPreviews) {
-      if (preview.expanded === undefined) continue;
-      const row = attribution.find((r) => r.code === preview.code);
-      if (row?.firstBlockIndex === undefined) continue;
-      const span = resolveQuickFixSpan(source, row.firstBlockIndex);
+      if (preview.expanded === undefined || preview.firstBlockIndex === undefined) continue;
+      const span = resolveQuickFixSpan(source, preview.firstBlockIndex);
       if (!span) continue;
       edits.push({
         startOffset: span.startOffset,
@@ -361,17 +409,22 @@ export function formatDesktopBatchPatchedProgramsChip(
 }
 
 /**
- * Schema v21: pack PDF / TXT / envelope / patched items into one STORE zip.
+ * Schema v21–v22: pack PDF / TXT / envelope / patched items into one ZIP.
+ * Defaults to STORE; pass `compression: "deflate"` for native DEFLATE when
+ * available (falls back to STORE per entry).
  */
-export function buildDesktopBatchArchiveZip(
-  items: ReadonlyArray<BatchDownloadItem | BatchPdfDownloadItem>
-): Uint8Array {
-  return createStoreZip(
-    items.map((item) => ({
-      path: item.filename,
-      data: "bytes" in item ? item.bytes : item.body
-    }))
-  );
+export async function buildDesktopBatchArchiveZip(
+  items: ReadonlyArray<BatchDownloadItem | BatchPdfDownloadItem>,
+  options?: { compression?: "store" | "deflate" }
+): Promise<Uint8Array> {
+  const entries = items.map((item) => ({
+    path: item.filename,
+    data: "bytes" in item ? item.bytes : item.body
+  }));
+  if (options?.compression === "deflate") {
+    return createZip(entries, { method: "deflate" });
+  }
+  return createStoreZip(entries);
 }
 
 export type BatchDownloadItem = {

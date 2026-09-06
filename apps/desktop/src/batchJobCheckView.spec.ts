@@ -265,10 +265,10 @@ describe("batchJobCheckView", () => {
     expect(patched[0]!.filename).toBe("a.patched.nc");
     expect(String(patched[0]!.body)).toMatch(/G43/);
     expect(formatDesktopBatchPatchedProgramsChip(patched)).toMatch(/files=1/);
-    const zip = buildDesktopBatchArchiveZip([
-      ...buildDesktopBatchSetupSheetTxts(batch.runResults),
-      ...patched
-    ]);
+    const zip = await buildDesktopBatchArchiveZip(
+      [...buildDesktopBatchSetupSheetTxts(batch.runResults), ...patched],
+      { compression: "deflate" }
+    );
     expect(zip[0]).toBe(0x50);
     expect(zip[1]).toBe(0x4b);
   });

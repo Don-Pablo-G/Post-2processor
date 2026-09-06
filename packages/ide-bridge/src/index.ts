@@ -745,13 +745,75 @@ export function expandIdeQuickFixTemplate(
 export function deriveQuickFixBindings(issue: LintIssue): IdeQuickFixBindings {
   const code = typeof issue.code === "string" ? issue.code : "";
   if (code.length === 0) return Object.freeze({});
+  return deriveControllerGrammarFixBindings({ code });
+}
+
+export type ControllerGrammarBindingInput = {
+  code: string;
+  /** Optional program source for Schema v22 program-source binding pass. */
+  source?: string;
+  blockIndex?: number;
+  rangeOptions?: BlockSplitOptions;
+};
+
+function splitDuplicateAddressBlock(
+  block: string,
+  letter: string
+): { first?: string; second?: string } {
+  const re = new RegExp(`\\b${letter}\\s*(-?\\d+(?:\\.\\d+)?)\\b`, "gi");
+  const matches = [...block.matchAll(re)];
+  if (matches.length < 2) return {};
+  const without = block.replace(re, " ").replace(/\s+/g, " ").trim();
+  const firstWord = `${letter.toUpperCase()}${matches[0]![1]}`;
+  const secondWord = `${letter.toUpperCase()}${matches[1]![1]}`;
+  return {
+    first: without.length > 0 ? `${without} ${firstWord}` : firstWord,
+    second: without.length > 0 ? `${without} ${secondWord}` : secondWord
+  };
+}
+
+/**
+ * Heuristic bindings for controller-grammar catalogue templates.
+ *
+ * Code pass: `LETTER` from `CG_DUPLICATE_ADDRESSES_*`.
+ * Program-source pass (v22): when `source` + `blockIndex` are supplied,
+ * fill `FIRST_BLOCK_WITH_LETTER` / `SECOND_BLOCK_WITH_LETTER` for duplicate
+ * addresses and `N_BLOCK` / `O_BLOCK` for `CG_N_AND_O_MIXED`.
+ */
+export function deriveControllerGrammarFixBindings(
+  input: ControllerGrammarBindingInput
+): IdeQuickFixBindings {
+  const code = typeof input.code === "string" ? input.code : "";
+  if (code.length === 0) return Object.freeze({});
+  const bindings: Record<string, string> = {};
+
   if (code.startsWith(DUPLICATE_ADDRESSES_PREFIX)) {
     const letter = code.slice(DUPLICATE_ADDRESSES_PREFIX.length);
-    if (letter.length > 0) {
-      return Object.freeze({ LETTER: letter });
+    if (letter.length > 0) bindings.LETTER = letter;
+  }
+
+  if (
+    input.source !== undefined &&
+    input.blockIndex !== undefined &&
+    (code.startsWith(DUPLICATE_ADDRESSES_PREFIX) || code === "CG_N_AND_O_MIXED")
+  ) {
+    const block = blockTextAtIndex(input.source, input.blockIndex, input.rangeOptions);
+    if (block) {
+      if (code.startsWith(DUPLICATE_ADDRESSES_PREFIX) && bindings.LETTER) {
+        const split = splitDuplicateAddressBlock(block, bindings.LETTER);
+        if (split.first) bindings.FIRST_BLOCK_WITH_LETTER = split.first;
+        if (split.second) bindings.SECOND_BLOCK_WITH_LETTER = split.second;
+      }
+      if (code === "CG_N_AND_O_MIXED") {
+        const n = block.match(/\bN\s*\d+\b/i);
+        const o = block.match(/\bO\s*\d+\b/i);
+        if (n) bindings.N_BLOCK = n[0]!.replace(/\s+/g, "");
+        if (o) bindings.O_BLOCK = o[0]!.replace(/\s+/g, "");
+      }
     }
   }
-  return Object.freeze({});
+
+  return Object.freeze(bindings);
 }
 
 export type ParseDiagnosticBindingInput = {

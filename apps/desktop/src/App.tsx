@@ -2032,7 +2032,7 @@ export function App() {
         ...buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope),
         ...buildDesktopBatchPatchedPrograms(batchJobCheckResult.envelope, sourcesByInput)
       ];
-      const bytes = buildDesktopBatchArchiveZip(items);
+      const bytes = await buildDesktopBatchArchiveZip(items, { compression: "deflate" });
       const { downloaded } = await downloadDesktopBatchItems([
         {
           filename: "batch-export.zip",

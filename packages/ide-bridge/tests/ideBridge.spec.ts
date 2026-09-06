@@ -14,6 +14,7 @@ import {
   deriveQuickFixBindings,
   deriveParseDiagnosticFixBindings,
   deriveSafetyFindingFixBindings,
+  deriveControllerGrammarFixBindings,
   expandIdeQuickFixTemplate,
   formatBatchWalkStatus,
   getQuickFixForLintIssue,
@@ -612,6 +613,35 @@ describe("deriveQuickFixBindings", () => {
     // its block tokens — IDE hosts derive the per-letter snippet locally).
     expect(expanded).toContain("{{FIRST_BLOCK_WITH_LETTER}}");
     expect(expanded).toContain("{{SECOND_BLOCK_WITH_LETTER}}");
+  });
+});
+
+describe("deriveControllerGrammarFixBindings", () => {
+  it("fills FIRST/SECOND blocks from program source for duplicate addresses", () => {
+    expect(
+      deriveControllerGrammarFixBindings({
+        code: "CG_DUPLICATE_ADDRESSES_X",
+        source: "O1\nG0 X1 X2\nM30\n",
+        blockIndex: 1
+      })
+    ).toEqual({
+      LETTER: "X",
+      FIRST_BLOCK_WITH_LETTER: "G0 X1",
+      SECOND_BLOCK_WITH_LETTER: "G0 X2"
+    });
+  });
+
+  it("fills N_BLOCK/O_BLOCK for CG_N_AND_O_MIXED from source", () => {
+    expect(
+      deriveControllerGrammarFixBindings({
+        code: "CG_N_AND_O_MIXED",
+        source: "%\nO0001\nN10 O0001\nM30\n",
+        blockIndex: 2
+      })
+    ).toEqual({
+      N_BLOCK: "N10",
+      O_BLOCK: "O0001"
+    });
   });
 });
 

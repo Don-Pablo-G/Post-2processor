@@ -5,7 +5,7 @@ import type {
 } from "../types.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 21;
+export const CLI_SCHEMA_VERSION = 22;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -766,12 +766,16 @@ export type CliBatchLintIssuesBySourceAggregation = {
 /**
  * Schema v10: cross-input rollup of per-entry `lintIssuesByParseDiagCode`
  * rows. One row per distinct `(source, code)` pair.
+ * Schema v22 adds optional `firstBlockIndex` (earliest across contributing
+ * per-entry rows).
  */
 export type CliBatchLintIssuesByParseDiagCodeAggregation = {
   source: LintIssueProvenanceSource;
   code: string;
   count: number;
   inputs: string[];
+  /** Schema v22: earliest `firstBlockIndex` among contributing entry rows. */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -1060,7 +1064,13 @@ export function buildBatchLintIssuesByParseDiagCodeAggregation(
 ): CliBatchLintIssuesByParseDiagCodeAggregation[] {
   const byKey = new Map<
     string,
-    { source: LintIssueProvenanceSource; code: string; count: number; inputs: Set<string> }
+    {
+      source: LintIssueProvenanceSource;
+      code: string;
+      count: number;
+      inputs: Set<string>;
+      firstBlockIndex?: number;
+    }
   >();
   for (const entry of entries) {
     const rows = entry.envelope.lintIssuesByParseDiagCode;
@@ -1073,12 +1083,23 @@ export function buildBatchLintIssuesByParseDiagCodeAggregation(
           source: row.source,
           code: row.code,
           count: 0,
-          inputs: new Set<string>()
+          inputs: new Set<string>(),
+          ...(row.firstBlockIndex !== undefined
+            ? { firstBlockIndex: row.firstBlockIndex }
+            : {})
         };
         byKey.set(key, bucket);
       }
       bucket.count += row.count;
       bucket.inputs.add(entry.input);
+      if (row.firstBlockIndex !== undefined) {
+        if (
+          bucket.firstBlockIndex === undefined ||
+          row.firstBlockIndex < bucket.firstBlockIndex
+        ) {
+          bucket.firstBlockIndex = row.firstBlockIndex;
+        }
+      }
     }
   }
   const rows: CliBatchLintIssuesByParseDiagCodeAggregation[] = [];
@@ -1087,7 +1108,10 @@ export function buildBatchLintIssuesByParseDiagCodeAggregation(
       source: bucket.source,
       code: bucket.code,
       count: bucket.count,
-      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b)),
+      ...(bucket.firstBlockIndex !== undefined
+        ? { firstBlockIndex: bucket.firstBlockIndex }
+        : {})
     });
   }
   rows.sort((a, b) => {
@@ -1442,8 +1466,9 @@ function csvEscapeCell(value: string): string {
 }
 
 /**
- * Schema v20–v21: CSV export of safety + policy-breach aggregated dashboard
- * rows. Shared by desktop clipboard and CLI `--out-dir` `batch-summary.csv`.
+ * Schema v20–v22: CSV export of safety, policy-breach, controller-code, and
+ * parse-diag aggregated dashboard rows. Shared by desktop clipboard and CLI
+ * `--out-dir` `batch-summary.csv`.
  */
 export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
   const lines: string[] = ["kind,key,count,blockers,warnings,inputs"];
@@ -1467,6 +1492,42 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
         String(row.count),
         row.severity === "blocker" ? String(row.count) : "0",
         row.severity === "warning" ? String(row.count) : "0",
+        csvEscapeCell(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  for (const row of envelope.summary.lintIssuesByControllerCodeAggregated ?? []) {
+    lines.push(
+      [
+        "controller",
+        `${row.source}:${row.code}`,
+        String(row.count),
+        String(row.blockers),
+        String(row.warnings),
+        csvEscapeCell(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  for (const row of envelope.summary.parseDiagnosticsByCodeAggregated ?? []) {
+    lines.push(
+      [
+        "parse-diag",
+        row.code,
+        String(row.count),
+        String(row.errors),
+        String(row.warnings),
+        csvEscapeCell(row.inputs.join("|"))
+      ].join(",")
+    );
+  }
+  for (const row of envelope.summary.lintIssuesByParseDiagCodeAggregated ?? []) {
+    lines.push(
+      [
+        "lint-by-parse-diag",
+        `${row.source}:${row.code}`,
+        String(row.count),
+        "0",
+        "0",
         csvEscapeCell(row.inputs.join("|"))
       ].join(",")
     );
