@@ -51,6 +51,14 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG41 D1 X10. Y10.\nM30\n"
   },
   {
+    id: "haas.feed-motion-without-f",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 without F and no prior F/,
+    summary: "G1/G2/G3 feed motion needs an explicit F (on the block or earlier in the program).",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nG1 X10. Y10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG1 X10. Y10. F200.\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

@@ -2074,6 +2074,33 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     expect(issues.some((i) => i.message.includes("G43 without H"))).toBe(false);
   });
 
+  it("warns G1/G2/G3 without F when no prior F exists", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG1 X10. Y10.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G1/G2/G3 without F and no prior F")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn G1 when F is on the same block", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG1 X10. Y10. F200.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G1/G2/G3 without F and no prior F")
+      )
+    ).toBe(false);
+  });
+
+  it("does not warn G1 when a prior F exists in the program", () => {
+    const ast = parse("T1 M6\nS1200 M3\nF150.\nG1 X10. Y10.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G1/G2/G3 without F and no prior F")
+      )
+    ).toBe(false);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

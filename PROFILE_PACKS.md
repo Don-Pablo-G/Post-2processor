@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 10
+Total rules: 11
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -17,6 +17,7 @@ Total rules: 10
 | `haas.spindle-on-with-s0` | warning | — | — | Spindle start with S0 — verify intentional stop or missing speed. |
 | `haas.g43-without-h` | warning | — | — | G43 (tool length comp) requires an H offset on the same block. |
 | `haas.g41-g42-without-d` | warning | — | — | G41/G42 (cutter comp) requires a D offset (or a prior D in scope). |
+| `haas.feed-motion-without-f` | warning | — | — | G1/G2/G3 feed motion needs an explicit F (on the block or earlier in the program). |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
 | `haas.m02-and-m30-mixed` | warning | — | — | Mixing M02 and M30 program-end commands is ambiguous — pick one. |
@@ -147,6 +148,32 @@ G41 D1 X10. Y10.
 M30
 ```
 
+### `haas.feed-motion-without-f`
+
+- **Severity:** warning
+- **Matcher:** `/G1\/G2\/G3 without F and no prior F/`
+- **Summary:** G1/G2/G3 feed motion needs an explicit F (on the block or earlier in the program).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G1 X10. Y10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G1 X10. Y10. F200.
+M30
+```
+
 ### `haas.t0-selected`
 
 - **Severity:** warning
@@ -270,7 +297,7 @@ Total rules: 4 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`
 | `fanuc.missing-o-header` | warning | — | — | Fanuc programs must open with an O#### header before the first motion block. |
 | `fanuc.g65-missing-p` | warning | — | — | G65 macro calls require an explicit P (program number) — controllers alarm without it. |
 | `fanuc.g65-non-integer-l` | warning | — | — | G65 L (loop count) must be a non-negative integer; fractional/negative values alarm. |
-| `fanuc.t0-before-real-tool` (deprecated) | warning | 2026-05 | — | T0 (tool cancel) before any real Tn (n>0) trips the Fanuc tool-life manager. |
+| `fanuc.t0-before-real-tool` (deprecated) | warning | 2026-05 | Rely on the Fanuc tool-life manager alarm instead of linting T0-before-Tn locally. | T0 (tool cancel) before any real Tn (n>0) trips the Fanuc tool-life manager. |
 
 ### `fanuc.missing-o-header`
 
@@ -343,6 +370,7 @@ M30
 
 - **Severity:** warning
 - **Deprecated since:** 2026-05 (suppressed by `--no-deprecated-rules`)
+- **Replacement suggestion:** Rely on the Fanuc tool-life manager alarm instead of linting T0-before-Tn locally.
 - **Matcher:** `/T0 \(tool cancel\) issued before any real tool selection/`
 - **Summary:** T0 (tool cancel) before any real Tn (n>0) trips the Fanuc tool-life manager.
 

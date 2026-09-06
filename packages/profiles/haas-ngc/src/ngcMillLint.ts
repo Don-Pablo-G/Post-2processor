@@ -25,6 +25,15 @@ function hasExactG41Or42(block: { words: Word[] }): boolean {
   });
 }
 
+/** True for plain G1 / G2 / G3 feed motion (not G10/G11/G21/…). */
+function hasExactFeedMotion(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    const v = Number.parseFloat(w.value);
+    return v === 1 || v === 2 || v === 3;
+  });
+}
+
 function hasSpindleOn(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "M") return false;
@@ -55,6 +64,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
   let sawFirstG43Activation = false;
   let sawAnyDOffset = false;
+  let sawAnyFeedRate = false;
   let activeStopResumeSafety:
     | {
         stopBlockIndex: number;
@@ -170,6 +180,19 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     if (hasLetter(block, "D")) {
       sawAnyDOffset = true;
+    }
+
+    if (hasExactFeedMotion(block) && !hasLetter(block, "F") && !sawAnyFeedRate) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G1/G2/G3 without F and no prior F in the program — set feed explicitly on the block or earlier.",
+        blockIndex: index
+      });
+    }
+
+    if (hasLetter(block, "F")) {
+      sawAnyFeedRate = true;
     }
 
     const tWord = block.words.filter((w) => w.letter === "T").at(-1);

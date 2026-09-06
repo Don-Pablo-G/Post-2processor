@@ -21,6 +21,29 @@ npm run verify
 npm run dev
 ```
 
+## Operator loop (batch export + verify)
+
+Seal/verify inventory through **schema 48** is complete. Soft mirror-only schema
+bumps are frozen — see [Known Gaps / Next Increments](#known-gaps--next-increments).
+
+Typical operator path:
+
+1. Batch job-check (CLI or desktop) with `--out-dir <dir>` (or desktop export).
+2. Confirm the export zip + sidecars under that directory (`batch-summary.json`,
+   manifest, CSV/NDJSON, setup/patched dirs as stamped).
+3. Verify seal: `node packages/core/dist/cli.js verify-batch-export --out-dir <dir>`
+   (optional `--format json`). For audit sidecars:
+   `node packages/core/dist/cli.js verify-audit-trail --…`.
+4. Desktop inventory chips surface the same stamped export fields for a quick
+   visual check.
+
+Schema stamp:
+
+```bash
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=48
+```
+
 ## Core Runtime Entry Points
 
 `@cnc/core` now exposes explicit runtime-targeted entry points:
@@ -62,7 +85,8 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
-- Expanded Haas NGC mill lint coverage with warnings for spindle start without same-block `S`, `S0` spindle starts, plain `G41/G42` without same-block `D`, `T0`, and duplicate `N`/`O` labels.
+- Expanded Haas NGC mill lint coverage with warnings for spindle start without same-block `S`, `S0` spindle starts, plain `G41/G42` without same-block `D`, `T0`, duplicate `N`/`O` labels, and `G1/G2/G3` without feed `F` (and no prior `F`).
+- Soft seal/verify schema track frozen at **schema 48**; hard Known Gaps are demand-gated (PGP, full UAX#9, IDE-host write).
 - Added Haas NGC simulator behavior for single-line `IF [cond] THEN #n = expr` execution and tested true/false paths.
 - Added Haas NGC rapid safety warning for significant `G0` Z-down moves to catch potential clearance/retract issues during simulation review.
 - Added regression tests in `packages/core/tests/core.spec.ts` for the new NGC lint and simulation behaviors.
@@ -4903,8 +4927,17 @@ node packages/core/dist/cli.js --schema-version
 
 ## Known Gaps / Next Increments
 
-The following deferred items are intentionally tracked here so the
-next planning wave can pick them up:
+### Soft schema freeze (post-v48)
+
+CLI envelope **schema 48** closes the soft verify/inventory symmetry track
+(`batchWalk.export` stamps ↔ `verify-batch-export` / desktop chips). Do **not**
+schedule Schema v49+ solely to echo leftover stamp fields. Future schema bumps
+require a **new seal check or runtime behavior**, not mechanical field mirroring.
+
+### Hard gaps (demand-gated)
+
+The following deferred items stay tracked here but are **not** scheduled unless
+a shop requirement forces one:
 
 - **Audit-trail PGP-signed export variant** — pair the
   SHA-256 + HMAC + AES-GCM sidecars with a detached PGP signature
@@ -4921,3 +4954,6 @@ next planning wave can pick them up:
 - **IDE-host workspace write from fix preview** — pure apply-edit +
   patched NC download ship; writing expanded templates back into open
   editors remains an IDE-host concern.
+
+Primary product track after the freeze: Haas NGC / Fanuc lint and simulation
+depth (vertical slices with fixtures + tests), not seal polish.
