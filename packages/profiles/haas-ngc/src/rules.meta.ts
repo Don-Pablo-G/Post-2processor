@@ -1303,6 +1303,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM01\nM5\nM30\n"
   },
   {
+    id: "haas.m00-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M00 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM00\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m00-while-rotation",
+    severity: "warning",
+    messageMatcher: /M00 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nM00\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG69\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m00-while-scaling",
+    severity: "warning",
+    messageMatcher: /M00 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nM00\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG50\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m00-while-incremental",
+    severity: "warning",
+    messageMatcher: /M00 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM00\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nM00\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M01 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM01\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nM01\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-rotation",
+    severity: "warning",
+    messageMatcher: /M01 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nM01\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG69\nM01\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-scaling",
+    severity: "warning",
+    messageMatcher: /M01 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nM01\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG50\nM01\nM5\nM30\n"
+  },
+  {
+    id: "haas.m01-while-incremental",
+    severity: "warning",
+    messageMatcher: /M01 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM01\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nM01\nM5\nM30\n"
+  },
+  {
+    id: "haas.g4-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G4 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before a G4 dwell.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG4 P1.\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG4 P1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g4-while-canned",
+    severity: "warning",
+    messageMatcher: /G4 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before a G4 dwell.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG4 P1.\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG4 P1.\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

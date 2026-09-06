@@ -444,6 +444,34 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while tool length compensation (G43) is still active — cancel with G49 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while coordinate rotation (G68) is still active — cancel with G69 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while scaling (G51) is still active — cancel with G50 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: `${stopLabel} while incremental mode (G91) is active — restore G90 before ${stopKind}.`,
+          blockIndex: index
+        });
+      }
       const hasRestartSpindleSameBlock = block.words.some((w) => {
         if (w.letter !== "M") return false;
         const m = Math.trunc(Number.parseFloat(w.value));
@@ -1272,6 +1300,23 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G4 dwell and axis motion on the same block — dwell and move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G4 while cutter compensation (G41/G42) is still active — cancel with G40 before dwell.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG4(block) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 while a canned cycle is still active — cancel with G80 before dwell.",
         blockIndex: index
       });
     }

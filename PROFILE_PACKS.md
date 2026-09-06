@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 261 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 271 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -171,6 +171,16 @@ Total rules: 261 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.m01-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M01 optional stop. |
 | `haas.m01-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M01 optional stop. |
 | `haas.m01-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M01 optional stop. |
+| `haas.m00-while-tool-length` | warning | — | — | Cancel tool length with G49 before an M00 program stop. |
+| `haas.m00-while-rotation` | warning | — | — | Cancel rotation with G69 before an M00 program stop. |
+| `haas.m00-while-scaling` | warning | — | — | Cancel scaling with G50 before an M00 program stop. |
+| `haas.m00-while-incremental` | warning | — | — | Restore G90 before an M00 program stop. |
+| `haas.m01-while-tool-length` | warning | — | — | Cancel tool length with G49 before an M01 optional stop. |
+| `haas.m01-while-rotation` | warning | — | — | Cancel rotation with G69 before an M01 optional stop. |
+| `haas.m01-while-scaling` | warning | — | — | Cancel scaling with G50 before an M01 optional stop. |
+| `haas.m01-while-incremental` | warning | — | — | Restore G90 before an M01 optional stop. |
+| `haas.g4-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a G4 dwell. |
+| `haas.g4-while-canned` | warning | — | — | Cancel canned cycles with G80 before a G4 dwell. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -4969,6 +4979,348 @@ S1200 M3
 G81 Z-1. R0.1 F10.
 G80
 M01
+M5
+M30
+```
+
+### `haas.m00-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M00
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+M00
+M5
+M30
+```
+
+### `haas.m00-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+M00
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+G69
+M00
+M5
+M30
+```
+
+### `haas.m00-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+S1200 M3
+M00
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+S1200 M3
+G50
+M00
+M5
+M30
+```
+
+### `haas.m00-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+M00
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+M00
+M5
+M30
+```
+
+### `haas.m01-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before an M01 optional stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M01
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+M01
+M5
+M30
+```
+
+### `haas.m01-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before an M01 optional stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+M01
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+G69
+M01
+M5
+M30
+```
+
+### `haas.m01-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before an M01 optional stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+S1200 M3
+M01
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+S1200 M3
+G50
+M01
+M5
+M30
+```
+
+### `haas.m01-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an M01 optional stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+M01
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+M01
+M5
+M30
+```
+
+### `haas.g4-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G4 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a G4 dwell.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G4 P1.
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+G4 P1.
+M5
+M30
+```
+
+### `haas.g4-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G4 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before a G4 dwell.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G4 P1.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G4 P1.
 M5
 M30
 ```
