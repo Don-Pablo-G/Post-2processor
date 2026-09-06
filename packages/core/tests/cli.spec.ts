@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=41\n");
+    expect(stdout).toBe("cnc-job-check schema=42\n");
     expect(stderr).toBe("");
   });
 
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 41", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(41);
+  it("CLI_SCHEMA_VERSION is 42", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(42);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4528,7 +4528,7 @@ describe("Schema v41: verify NDJSON cross-check + inventory counts", () => {
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(41);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const out: string[] = [];
     const exit = await main(
       ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
@@ -4536,7 +4536,7 @@ describe("Schema v41: verify NDJSON cross-check + inventory counts", () => {
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(41);
+    expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     expect(result.ndjsonMatched).toBe(true);
     expect(result.ndjsonPath).toMatch(/batch-summary\.ndjson$/);
@@ -4593,6 +4593,83 @@ describe("Schema v41: verify NDJSON cross-check + inventory counts", () => {
     expect(result.ndjsonMatched).toBe(false);
     expect(result.summaryMatched).toBe(true);
     expect(result.manifestMatched).toBe(true);
+  });
+});
+
+describe("Schema v42: csvPath + sealSources + summary zipBytes match", () => {
+  it("verify-batch-export --format json includes csvPath and sealSources", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(42);
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.schemaVersion).toBe(42);
+    expect(result.ok).toBe(true);
+    expect(result.csvPath).toMatch(/batch-summary\.csv$/);
+    expect(result.sealSources).toEqual(["sidecar", "summary", "manifest", "ndjson", "csv"]);
+    expect(result.summaryMatched).toBe(true);
+  });
+
+  it("verify-batch-export text mode reports csvLoaded and sources=", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const out: string[] = [];
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(out.join("")).toMatch(/csvLoaded/);
+    expect(out.join("")).toMatch(/sources=sidecar\+summary\+manifest\+ndjson\+csv/);
+  });
+
+  it("verify-batch-export fails when summary zipBytes disagrees", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summaryPath = path.join(outDir, "batch-summary.json");
+    const summary = JSON.parse(await readFile(summaryPath, "utf8"));
+    summary.summary.batchWalk.export.zipBytes =
+      (summary.summary.batchWalk.export.zipBytes ?? 1) + 999;
+    await writeFile(summaryPath, `${JSON.stringify(summary)}\n`, "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(1);
+    const result = JSON.parse(out.join(""));
+    expect(result.ok).toBe(false);
+    expect(result.summaryMatched).toBe(false);
+    expect(result.manifestMatched).toBe(true);
+    expect(result.ndjsonMatched).toBe(true);
+    expect(result.sealSources).toContain("csv");
   });
 });
 

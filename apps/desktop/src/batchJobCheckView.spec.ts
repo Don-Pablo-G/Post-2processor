@@ -176,6 +176,7 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.fixPreviewsPath).toBe(
       "batch-fix-previews.json"
     );
+    expect(exported.summary.batchWalk.export.outDir).toBe(".");
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -208,6 +209,11 @@ describe("batchJobCheckView", () => {
         .replace(/^batch-export:\s*/, "")
         .split(",")
     ).toContain("fixPreviews");
+    expect(
+      formatDesktopBatchExportInventoryChip(batch.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
+    ).toContain("outDir");
     expect(batch.runResults).toHaveLength(2);
   });
 
@@ -219,9 +225,10 @@ describe("batchJobCheckView", () => {
       matched: 1,
       skipped: 0,
       root: "x",
-      export: { csvSummaryPath: "/abs/batch-summary.csv" }
+      export: { csvSummaryPath: "/abs/batch-summary.csv", outDir: "/abs/out" }
     });
     expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
+    expect(stamped?.export?.outDir).toBe("/abs/out");
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(stamped?.export?.jsonSummaryPath).toBe("batch-summary.json");
     expect(stamped?.export?.zipSha256Path).toBe("batch-export.zip.sha256");

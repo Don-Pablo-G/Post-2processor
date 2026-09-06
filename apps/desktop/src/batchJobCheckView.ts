@@ -142,9 +142,9 @@ export async function runDesktopBatchJobCheck(
     });
     runResults.push({ input: file.input, source: file.source, result });
   }
-  // Schema v36–v41: stamp logical summary / zip / manifest / sarif / fix-preview /
-  // sha256 names for live inventory chips (CLI --out-dir uses absolute paths;
-  // desktop uses relative names).
+  // Schema v36–v42: stamp logical summary / zip / manifest / sarif / fix-preview /
+  // sha256 / outDir names for live inventory chips (CLI --out-dir uses absolute
+  // paths; desktop uses relative names).
   const batchWalk = stampDesktopBatchExportSummaryPaths(options?.batchWalk);
   return {
     envelope: buildBatchEnvelope(entries, { batchWalk }),
@@ -153,9 +153,10 @@ export async function runDesktopBatchJobCheck(
 }
 
 /**
- * Schema v36–v41: ensure live desktop batchWalk.export carries relative logical
+ * Schema v36–v42: ensure live desktop batchWalk.export carries relative logical
  * paths for always-on summary sidecars, export zip, manifest, unbound SARIF,
- * fix-previews, and the zip SHA-256 sidecar so inventory chips can surface them.
+ * fix-previews, outDir, and the zip SHA-256 sidecar so inventory chips can
+ * surface them.
  */
 export function stampDesktopBatchExportSummaryPaths(
   batchWalk: CliBatchWalk | undefined
@@ -165,6 +166,7 @@ export function stampDesktopBatchExportSummaryPaths(
     ...batchWalk,
     export: {
       ...batchWalk.export,
+      outDir: batchWalk.export?.outDir ?? ".",
       csvSummaryPath: batchWalk.export?.csvSummaryPath ?? "batch-summary.csv",
       ndjsonSummaryPath: batchWalk.export?.ndjsonSummaryPath ?? "batch-summary.ndjson",
       jsonSummaryPath: batchWalk.export?.jsonSummaryPath ?? "batch-summary.json",

@@ -4653,6 +4653,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=41
 ```
 
+## Verify CSV path + sealSources + summary zipBytes + Schema v42
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `csvPath` + `sealSources` (Schema v42)
+
+`CLI_SCHEMA_VERSION` bumps `41 → 42`.
+`VerifyBatchExportResult` gains optional `csvPath` and `sealSources`
+(`sidecar` | `summary` | `manifest` | `ndjson` | `csv`).
+
+### Move 2 — Summary `zipBytes` in `summaryMatched`
+
+When sealed summary `export.zipBytes` is present, `summaryMatched` requires both
+digest and compressed size to match (parallel to manifest matching).
+
+### Move 3 — CLI reports CSV presence
+
+`verify-batch-export` reports sibling `batch-summary.csv` via `csvPath` / text
+`csvLoaded`, and always emits `sealSources` / `sources=` for the consulted set.
+
+### Move 4 — Desktop live `outDir` stamp
+
+`runDesktopBatchJobCheck` stamps relative logical `outDir` (`.`) so inventory
+chips include `outDir`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=42
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

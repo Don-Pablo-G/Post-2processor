@@ -295,8 +295,12 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "its sealed `zipSha256`. JSON reports optional `writtenFileCount` /",
   "`zipEntryCount` from summary/manifest and `ndjsonPath` / `ndjsonMatched`.",
   "",
+  "Schema v42: when a sibling `batch-summary.csv` is present, reports `csvPath`.",
+  "Summary match also requires `export.zipBytes` when present. JSON reports",
+  "`sealSources` listing which seal artifacts were consulted.",
+  "",
   "Exit codes:",
-  "  0   digest matches (and summary/manifest/ndjson zipSha256 match when present)",
+  "  0   digest matches (and summary/manifest/ndjson zipSha256/zipBytes match when present)",
   "  1   digest mismatch or summary/manifest/ndjson zipSha256 (or zipBytes) mismatch",
   "  2   argument or IO error",
   "",
@@ -312,7 +316,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            summaryPath, summaryMatched, sealedAt, totalBytes.",
   "                            Schema v40 adds optional manifestPath, manifestMatched,",
   "                            byKind. Schema v41 adds optional writtenFileCount,",
-  "                            zipEntryCount, ndjsonPath, ndjsonMatched.",
+  "                            zipEntryCount, ndjsonPath, ndjsonMatched. Schema v42 adds",
+  "                            optional csvPath and sealSources.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -327,13 +332,23 @@ export type VerifyBatchExportArgs = {
   help: boolean;
 };
 
+/** Schema v42: seal artifacts consulted during verify-batch-export. */
+export type VerifyBatchExportSealSource =
+  | "sidecar"
+  | "summary"
+  | "manifest"
+  | "ndjson"
+  | "csv";
+
 /**
- * Schema v38–v41: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v42: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
  * Schema v40 adds optional sealed-manifest cross-check fields when
  * `batch-export-manifest.json` is found.
  * Schema v41 adds optional inventory counts and NDJSON seal cross-check.
+ * Schema v42 adds optional csvPath and sealSources; summaryMatched also
+ * considers export.zipBytes when present.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -346,8 +361,10 @@ export type VerifyBatchExportResult = {
   /** Schema v39: path of `batch-summary.json` when loaded for cross-check. */
   summaryPath?: string;
   /**
-   * Schema v39: true when summary export.zipSha256 matched the computed digest;
-   * false when it disagreed; absent when no summary was loaded / no digest field.
+   * Schema v39–v42: true when summary export.zipSha256 matched the computed
+   * digest (and export.zipBytes matched compressed size when present);
+   * false when either disagreed; absent when no summary was loaded / no
+   * digest or bytes field.
    */
   summaryMatched?: boolean;
   /** Schema v39: seal timestamp from summary export when present. */
@@ -374,6 +391,13 @@ export type VerifyBatchExportResult = {
    * false when it disagreed; absent when no NDJSON / no digest field.
    */
   ndjsonMatched?: boolean;
+  /** Schema v42: path of `batch-summary.csv` when present beside the zip. */
+  csvPath?: string;
+  /**
+   * Schema v42: which seal artifacts were found/consulted for this verify
+   * (always includes `sidecar` on a successful read path).
+   */
+  sealSources?: VerifyBatchExportSealSource[];
 };
 
 export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatchExportArgs {
@@ -443,6 +467,7 @@ export type VerifyBatchExportIo = {
 type SealedSummaryExportMeta = {
   summaryPath: string;
   zipSha256?: string;
+  zipBytes?: number;
   sealedAt?: string;
   totalBytes?: number;
   writtenFileCount?: number;
@@ -491,6 +516,7 @@ async function tryLoadSealedBatchSummaryExport(
     return {
       summaryPath,
       ...(typeof exp.zipSha256 === "string" ? { zipSha256: exp.zipSha256 } : {}),
+      ...(typeof exp.zipBytes === "number" ? { zipBytes: exp.zipBytes } : {}),
       ...(typeof exp.sealedAt === "string" ? { sealedAt: exp.sealedAt } : {}),
       ...(typeof exp.totalBytes === "number" ? { totalBytes: exp.totalBytes } : {}),
       ...(typeof exp.writtenFileCount === "number"
@@ -574,6 +600,23 @@ async function tryLoadSealedBatchSummaryNdjson(
   }
 }
 
+async function tryLoadSealedBatchSummaryCsv(
+  zipPath: string,
+  outDir: string | undefined,
+  readText: (filePath: string) => Promise<string>
+): Promise<{ csvPath: string } | undefined> {
+  const csvPath =
+    outDir !== undefined
+      ? path.join(outDir, "batch-summary.csv")
+      : path.join(path.dirname(zipPath), "batch-summary.csv");
+  try {
+    await readText(csvPath);
+    return { csvPath };
+  } catch {
+    return undefined;
+  }
+}
+
 export async function runVerifyBatchExport(
   parsed: VerifyBatchExportArgs,
   io: VerifyBatchExportIo = {}
@@ -642,11 +685,18 @@ export async function runVerifyBatchExport(
     parsed.outDir,
     readText
   );
+  const csvMeta = await tryLoadSealedBatchSummaryCsv(parsed.zip!, parsed.outDir, readText);
 
   let summaryMatched: boolean | undefined;
   let summaryMismatch = false;
-  if (summaryMeta?.zipSha256 !== undefined) {
-    summaryMatched = summaryMeta.zipSha256 === actual;
+  if (summaryMeta?.zipSha256 !== undefined || summaryMeta?.zipBytes !== undefined) {
+    const shaOk =
+      summaryMeta.zipSha256 === undefined ? true : summaryMeta.zipSha256 === actual;
+    const bytesOk =
+      summaryMeta.zipBytes === undefined
+        ? true
+        : summaryMeta.zipBytes === zipBytes.byteLength;
+    summaryMatched = shaOk && bytesOk;
     summaryMismatch = !summaryMatched;
   }
 
@@ -676,6 +726,11 @@ export async function runVerifyBatchExport(
   const writtenFileCount =
     summaryMeta?.writtenFileCount ?? manifestMeta?.writtenFileCount;
   const zipEntryCount = summaryMeta?.zipEntryCount ?? manifestMeta?.zipEntryCount;
+  const sealSources: VerifyBatchExportSealSource[] = ["sidecar"];
+  if (summaryMeta) sealSources.push("summary");
+  if (manifestMeta) sealSources.push("manifest");
+  if (ndjsonMeta) sealSources.push("ndjson");
+  if (csvMeta) sealSources.push("csv");
 
   if (parsed.format === "json") {
     const result: VerifyBatchExportResult = {
@@ -685,6 +740,7 @@ export async function runVerifyBatchExport(
       sha256Path: parsed.sha256!,
       zipSha256: actual,
       zipBytes: zipBytes.byteLength,
+      sealSources,
       ...(sidecarOk ? {} : { expectedZipSha256: expected }),
       ...(summaryMeta
         ? {
@@ -708,7 +764,8 @@ export async function runVerifyBatchExport(
             ndjsonPath: ndjsonMeta.ndjsonPath,
             ...(ndjsonMatched !== undefined ? { ndjsonMatched } : {})
           }
-        : {})
+        : {}),
+      ...(csvMeta ? { csvPath: csvMeta.csvPath } : {})
     };
     writeOut(`${JSON.stringify(result)}\n`);
     return ok ? 0 : 1;
@@ -721,9 +778,15 @@ export async function runVerifyBatchExport(
     return 1;
   }
   if (summaryMismatch) {
-    writeErr(
-      `cnc-job-check verify-batch-export: summary zipSha256 mismatch (expected ${summaryMeta!.zipSha256}, got ${actual})\n`
-    );
+    if (summaryMeta?.zipSha256 !== undefined && summaryMeta.zipSha256 !== actual) {
+      writeErr(
+        `cnc-job-check verify-batch-export: summary zipSha256 mismatch (expected ${summaryMeta.zipSha256}, got ${actual})\n`
+      );
+    } else {
+      writeErr(
+        `cnc-job-check verify-batch-export: summary zipBytes mismatch (expected ${summaryMeta!.zipBytes}, got ${zipBytes.byteLength})\n`
+      );
+    }
     return 1;
   }
   if (manifestMismatch) {
@@ -756,6 +819,7 @@ export async function runVerifyBatchExport(
           : "";
     const ndjsonPart =
       ndjsonMatched === true ? "; ndjsonMatched=true" : ndjsonMeta ? "; ndjsonLoaded" : "";
+    const csvPart = csvMeta ? "; csvLoaded" : "";
     const kindsPart =
       manifestMeta?.byKind !== undefined
         ? `; kinds=${Object.keys(manifestMeta.byKind).length}`
@@ -764,8 +828,9 @@ export async function runVerifyBatchExport(
       writtenFileCount !== undefined ? `; written=${writtenFileCount}` : "";
     const zipEntriesPart =
       zipEntryCount !== undefined ? `; zipEntries=${zipEntryCount}` : "";
+    const sourcesPart = `; sources=${sealSources.join("+")}`;
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${kindsPart}${writtenPart}${zipEntriesPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
     );
   }
   return 0;
