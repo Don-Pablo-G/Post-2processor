@@ -168,24 +168,61 @@ export function formatDesktopBatchSafetyChip(
   return `batch-safety: codes=${list.length} | top=${top || "n/a"}`;
 }
 
+export function formatDesktopBatchWalkChip(envelope: CliBatchEnvelope): string {
+  const walk = envelope.summary.batchWalk;
+  if (!walk) return "batch-walk: none";
+  return `batch-walk: matched=${walk.matched} skipped=${walk.skipped}${
+    walk.recursive ? " recursive" : ""
+  }`;
+}
+
+export type BatchDownloadItem = {
+  filename: string;
+  body: string | Uint8Array;
+  mimeType: string;
+};
+
 export type BatchPdfDownloadItem = {
   filename: string;
   bytes: Uint8Array;
 };
+
+function stemFromInput(input: string): string {
+  const base = input.split(/[/\\]/).pop() ?? input;
+  return base.replace(/\.(nc|tap|gcode)$/i, "");
+}
 
 export function buildDesktopBatchSetupSheetPdfs(
   runResults: ReadonlyArray<{ input: string; result: RunJobCheckResult }>
 ): BatchPdfDownloadItem[] {
   const items: BatchPdfDownloadItem[] = [];
   for (const { input, result } of runResults) {
-    const base = input.split(/[/\\]/).pop() ?? input;
-    const stem = base.replace(/\.(nc|tap|gcode)$/i, "");
     const bytes = buildSetupSheetPdf(result.setupSheet, {
       lintIssuesSummary: result.lintIssuesSummary
     });
-    items.push({ filename: `${stem}.pdf`, bytes });
+    items.push({ filename: `${stemFromInput(input)}.pdf`, bytes });
   }
   return items;
+}
+
+export function buildDesktopBatchSetupSheetTxts(
+  runResults: ReadonlyArray<{ input: string; result: RunJobCheckResult }>
+): BatchDownloadItem[] {
+  return runResults.map(({ input, result }) => ({
+    filename: `${stemFromInput(input)}.setup.txt`,
+    body: result.setupSheet.exportTxt,
+    mimeType: "text/plain;charset=utf-8"
+  }));
+}
+
+export function buildDesktopBatchEnvelopeJsonFiles(
+  envelope: CliBatchEnvelope
+): BatchDownloadItem[] {
+  return envelope.results.map((entry) => ({
+    filename: `${stemFromInput(entry.input)}.job-check.json`,
+    body: JSON.stringify(entry.envelope, null, 2),
+    mimeType: "application/json;charset=utf-8"
+  }));
 }
 
 export type BatchPdfDownloadEnvironment = {
@@ -207,15 +244,17 @@ function defaultBatchPdfEnv(): BatchPdfDownloadEnvironment {
 }
 
 /**
- * Fire one browser download per PDF (no zip dependency).
+ * Fire one browser download per item (no zip dependency).
  */
-export async function downloadDesktopBatchSetupSheetPdfs(
-  items: ReadonlyArray<BatchPdfDownloadItem>,
+export async function downloadDesktopBatchItems(
+  items: ReadonlyArray<BatchDownloadItem | BatchPdfDownloadItem>,
   env: BatchPdfDownloadEnvironment = defaultBatchPdfEnv()
 ): Promise<{ downloaded: number }> {
   let downloaded = 0;
   for (const item of items) {
-    const blob = new Blob([item.bytes as BlobPart], { type: "application/pdf" });
+    const body = "bytes" in item ? item.bytes : item.body;
+    const mimeType = "bytes" in item ? "application/pdf" : item.mimeType;
+    const blob = new Blob([body as BlobPart], { type: mimeType });
     const url = env.createObjectURL(blob);
     const anchor = env.createAnchor();
     anchor.href = url;
@@ -226,4 +265,14 @@ export async function downloadDesktopBatchSetupSheetPdfs(
     downloaded += 1;
   }
   return { downloaded };
+}
+
+/**
+ * Fire one browser download per PDF (no zip dependency).
+ */
+export async function downloadDesktopBatchSetupSheetPdfs(
+  items: ReadonlyArray<BatchPdfDownloadItem>,
+  env: BatchPdfDownloadEnvironment = defaultBatchPdfEnv()
+): Promise<{ downloaded: number }> {
+  return downloadDesktopBatchItems(items, env);
 }

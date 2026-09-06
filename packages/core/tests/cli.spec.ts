@@ -1016,7 +1016,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=17\n");
+    expect(stdout).toBe("cnc-job-check schema=18\n");
     expect(stderr).toBe("");
   });
 
@@ -1388,7 +1388,7 @@ describe("main()", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(17);
+    expect(parsed.schemaVersion).toBe(18);
     expect(parsed.summary).toMatchObject({
       files: 2,
       blocked: 0,
@@ -1777,7 +1777,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 3 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 4 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -1789,6 +1789,10 @@ describe("main()", () => {
       await readFile(path.join(outDir, "sub", "nested", "deep.json"), "utf8")
     );
     expect(deep.schemaVersion).toBe(CLI_SCHEMA_VERSION);
+    const batchSummary = JSON.parse(
+      await readFile(path.join(outDir, "batch-summary.json"), "utf8")
+    );
+    expect(batchSummary.summary.batchWalk.export.outDir).toBe(outDir);
   });
 
   it("--out-dir + --format ndjson writes single-line .ndjson files (one envelope per file)", async () => {
@@ -1976,7 +1980,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 2 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 3 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2608,8 +2612,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 17", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(17);
+  it("CLI_SCHEMA_VERSION is 18", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(18);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -2878,7 +2882,7 @@ describe("Schema v13: summary.strictControllerCodesGatedAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.strictControllerCodesGatedAggregated).toBeUndefined();
   });
 
@@ -2932,12 +2936,12 @@ describe("Schema v13: summary.strictControllerCodesGatedAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: { strictControllerCodesGated: ["CG_N_AND_O_MIXED"] }
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           strictControllerCodesGated: ["CG_N_AND_O_MIXED", "CG_DUPLICATE_O_HEADER"]
         }
@@ -2964,7 +2968,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.parseDiagnosticsPolicyBreachesAggregated).toBeUndefined();
   });
 
@@ -3008,7 +3012,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           parseDiagnosticsPolicyBreaches: [
             { key: "TOTAL", observed: 3, threshold: 0, severity: "blocker" as const }
@@ -3017,7 +3021,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           parseDiagnosticsPolicyBreaches: [
             {
@@ -3069,7 +3073,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(17);
+    expect(env.schemaVersion).toBe(18);
     expect(Array.isArray(env.safetyFindingsByCode)).toBe(true);
   });
 
@@ -3083,7 +3087,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.safetyFindingsByCodeAggregated).toBeUndefined();
   });
 
@@ -3091,7 +3095,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           safetyFindingsByCode: [
             {
@@ -3106,7 +3110,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           safetyFindingsByCode: [
             {
@@ -3167,7 +3171,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     const rows = buildBatchSafetyFindingsAttribution([
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           safetyFindingsByCode: [
             {
@@ -3182,7 +3186,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           safetyFindingsByCode: [
             {
@@ -3223,7 +3227,7 @@ describe("Schema v17: summary.batchWalk", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.batchWalk).toEqual({
       recursive: false,
       include: [],
@@ -3246,7 +3250,7 @@ describe("Schema v17: summary.batchWalk", () => {
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(17);
+    expect(env.schemaVersion).toBe(18);
     expect(env.summary?.batchWalk).toBeUndefined();
   });
 
@@ -3261,10 +3265,104 @@ describe("Schema v17: summary.batchWalk", () => {
         root: "/jobs"
       }
     });
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.batchWalk?.recursive).toBe(true);
     expect(batch.summary.batchWalk?.skipped).toBe(2);
     expect(batch.summary.batchWalk?.root).toBe("/jobs");
+  });
+});
+
+describe("Schema v18: safety attribution firstBlockIndex + batchWalk.export + safety_blocker", () => {
+  it("buildBatchSafetyFindingsAttribution propagates firstBlockIndex", () => {
+    const rows = buildBatchSafetyFindingsAttribution([
+      {
+        input: "a.nc",
+        schemaVersion: 18,
+        envelope: {
+          safetyFindingsByCode: [
+            {
+              source: "advisor",
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              count: 1,
+              blockers: 1,
+              warnings: 0,
+              firstBlockIndex: 4
+            }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchSafetyFindingsAttribution>[0]);
+    expect(rows[0].firstBlockIndex).toBe(4);
+  });
+
+  it("envelope.blockReasons includes safety_blocker with matchedCodes", async () => {
+    const tmp = await setupTmpDir();
+    const inputPath = path.join(tmp, "unsafe.nc");
+    // Negative Z without G43 → MISSING_G43_BEFORE_NEGATIVE_Z blocker via advisor.
+    await writeFile(inputPath, "%\nO0001\nG90 G17\nG0 Z-5\nM30\n%\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["--input", inputPath, "--controller", "fanuc", "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const env = JSON.parse(out.join(""));
+    expect(env.schemaVersion).toBe(18);
+    const safety = (env.blockReasons ?? []).find(
+      (r: { reason: string }) => r.reason === "safety_blocker"
+    );
+    expect(safety).toBeDefined();
+    expect(Array.isArray(safety.matchedCodes)).toBe(true);
+    expect(safety.matchedCodes.length).toBeGreaterThan(0);
+  });
+
+  it("batchWalk.export records outDir on --out-dir batch-summary.json", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "G0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    await mkdir(outDir);
+    const exit = await main(
+      [
+        "--input-dir",
+        tmp,
+        "--out-dir",
+        outDir,
+        "--format",
+        "json",
+        "--controller",
+        "fanuc"
+      ],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(18);
+    expect(summary.summary.batchWalk.export).toEqual({ outDir });
+  });
+
+  it("batchWalk.export records setupSheetPdfDir on JSON batch", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "G0 X1\nM30\n", "utf8");
+    const pdfDir = path.join(tmp, "pdfs");
+    await mkdir(pdfDir);
+    const out: string[] = [];
+    const exit = await main(
+      [
+        "--input-dir",
+        tmp,
+        "--export-setup-sheet-pdf-batch",
+        pdfDir,
+        "--format",
+        "json",
+        "--quiet",
+        "--controller",
+        "fanuc"
+      ],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const batch = JSON.parse(out.join(""));
+    expect(batch.summary.batchWalk.export).toEqual({ setupSheetPdfDir: pdfDir });
   });
 });
 
@@ -3489,7 +3587,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     const batch = buildBatchEnvelope([
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesBySource: [],
           lintIssuesByControllerCode: [],
@@ -3498,7 +3596,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
       },
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesBySource: [],
           lintIssuesByControllerCode: [],
@@ -3540,7 +3638,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesBySource: [
             { source: "profile_lint", count: 1, blockers: 0, warnings: 1 },
@@ -3550,7 +3648,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesBySource: [
             { source: "controller_grammar", count: 2, blockers: 0, warnings: 2 },
@@ -3578,7 +3676,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.lintIssuesByParseDiagCodeAggregated).toBeUndefined();
   });
 
@@ -3614,7 +3712,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesByParseDiagCode: [
             { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 1 }
@@ -3623,7 +3721,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesByParseDiagCode: [
             { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 2 },
@@ -3656,7 +3754,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.lintIssuesByControllerCodeAggregated).toBeUndefined();
   });
 
@@ -3698,7 +3796,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesByControllerCode: [
             {
@@ -3713,7 +3811,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           lintIssuesByControllerCode: [
             {
@@ -3758,7 +3856,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(17);
+    expect(batch.schemaVersion).toBe(18);
     expect(batch.summary.parseDiagnosticsByCodeAggregated).toBeUndefined();
   });
 
@@ -3796,7 +3894,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           parseDiagnosticsByCode: [
             { code: "UNMATCHED_OPEN_PAREN", count: 1, warnings: 1, errors: 0 }
@@ -3805,7 +3903,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 17,
+        schemaVersion: 18,
         envelope: {
           parseDiagnosticsByCode: [
             { code: "UNMATCHED_OPEN_PAREN", count: 2, warnings: 2, errors: 0 },

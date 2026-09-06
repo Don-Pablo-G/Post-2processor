@@ -5,7 +5,7 @@ import type {
 } from "../types.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 17;
+export const CLI_SCHEMA_VERSION = 18;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -418,6 +418,24 @@ function buildInitialBlockReasons(result: RunJobCheckResult): CliBlockReason[] {
       message: `Detected ${result.blockerCount} blocker(s); resolve before machine run.`
     });
   }
+  // Schema v18: structured safety-blocker reason with matched finding codes.
+  const safetyBlockerCodes = [
+    ...new Set(
+      [
+        ...(result.advisor?.safetyFindings ?? []),
+        ...(result.simulationFindings ?? [])
+      ]
+        .filter((f) => f.severity === "blocker" && typeof f.code === "string" && f.code.length > 0)
+        .map((f) => f.code)
+    )
+  ].sort((a, b) => a.localeCompare(b));
+  if (safetyBlockerCodes.length > 0) {
+    reasons.push({
+      reason: "safety_blocker",
+      message: `Detected ${safetyBlockerCodes.length} safety blocker code(s): ${safetyBlockerCodes.join(", ")}`,
+      matchedCodes: safetyBlockerCodes
+    });
+  }
   return reasons;
 }
 
@@ -631,6 +649,7 @@ export type CliBatchEnvelope = {
 
 /**
  * Schema v17: metadata describing an `--input-dir` (or desktop folder) walk.
+ * Schema v18 adds optional `export` when `--out-dir` / PDF-batch roots were used.
  */
 export type CliBatchWalk = {
   recursive: boolean;
@@ -639,6 +658,21 @@ export type CliBatchWalk = {
   matched: number;
   skipped: number;
   root: string;
+  /**
+   * Schema v18: where per-file batch artifacts were written (CLI) or would be
+   * mirrored (desktop). Absent when no export roots were configured.
+   */
+  export?: CliBatchWalkExport;
+};
+
+/**
+ * Schema v18: optional export roots recorded on `summary.batchWalk`.
+ */
+export type CliBatchWalkExport = {
+  /** `--out-dir` root when set. */
+  outDir?: string;
+  /** `--export-setup-sheet-pdf-batch` root when set. */
+  setupSheetPdfDir?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -731,6 +765,7 @@ export type CliBatchSafetyFindingsByCodeAggregation = {
 
 /**
  * Schema v16: per-input attribution of safety findings by `(source, code)`.
+ * Schema v18 adds optional `firstBlockIndex` when the per-entry row had one.
  */
 export type CliBatchSafetyFindingsAttribution = {
   input: string;
@@ -739,6 +774,8 @@ export type CliBatchSafetyFindingsAttribution = {
   count: number;
   blockers: number;
   warnings: number;
+  /** Schema v18: earliest block index for this `(input, source, code)`. */
+  firstBlockIndex?: number;
 };
 
 function buildBatchControllerCodeAttribution(
@@ -1243,7 +1280,10 @@ export function buildBatchSafetyFindingsAttribution(
         code: codeEntry.code,
         count: codeEntry.count,
         blockers: codeEntry.blockers,
-        warnings: codeEntry.warnings
+        warnings: codeEntry.warnings,
+        ...(codeEntry.firstBlockIndex !== undefined
+          ? { firstBlockIndex: codeEntry.firstBlockIndex }
+          : {})
       });
     }
   }

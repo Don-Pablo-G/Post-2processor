@@ -502,6 +502,113 @@ export function getQuickFixForSafetyFinding(input: {
   };
 }
 
+/**
+ * Walk a single-input envelope's `safetyFindingsByCode` and resolve catalogue
+ * safety-finding quick-fixes. Optional `source` attaches editor ranges via
+ * each row's `firstBlockIndex`.
+ */
+export function mapJobCheckEnvelopeToSafetyQuickFixes(
+  envelope: CliJobCheckEnvelope,
+  source?: string,
+  rangeOptions?: QuickFixRangeOptions
+): IdeQuickFix[] {
+  const out: IdeQuickFix[] = [];
+  const seen = new Set<string>();
+  for (const row of envelope.safetyFindingsByCode ?? []) {
+    if (seen.has(row.code)) continue;
+    const fix = getSafetyFindingFix(row.code);
+    if (!fix) continue;
+    seen.add(row.code);
+    const qf = toQuickFix(row.code, fix);
+    if (source !== undefined && row.firstBlockIndex !== undefined) {
+      const range = resolveQuickFixRange(source, row.firstBlockIndex, rangeOptions);
+      if (range) qf.range = range;
+    }
+    out.push(qf);
+  }
+  return out;
+}
+
+/**
+ * Walk a single-input envelope's `parseDiagnosticsByCode` and resolve catalogue
+ * parse-diagnostic quick-fixes. Optional `source` attaches editor ranges via
+ * each row's `firstBlockIndex`.
+ */
+export function mapJobCheckEnvelopeToParseDiagnosticQuickFixes(
+  envelope: CliJobCheckEnvelope,
+  source?: string,
+  rangeOptions?: QuickFixRangeOptions
+): IdeQuickFix[] {
+  const out: IdeQuickFix[] = [];
+  const seen = new Set<string>();
+  for (const row of envelope.parseDiagnosticsByCode ?? []) {
+    if (seen.has(row.code)) continue;
+    const fix = getParseDiagnosticFix(row.code);
+    if (!fix) continue;
+    seen.add(row.code);
+    const qf = toQuickFix(row.code, fix);
+    if (source !== undefined && row.firstBlockIndex !== undefined) {
+      const range = resolveQuickFixRange(source, row.firstBlockIndex, rangeOptions);
+      if (range) qf.range = range;
+    }
+    out.push(qf);
+  }
+  return out;
+}
+
+/**
+ * Map Schema v16/v18 `summary.safetyFindingsByCodePerInputFile` attribution
+ * rows to per-input quick-fixes. Prefer this over digging nested `results[]`
+ * when only attribution is available. Schema v18 `firstBlockIndex` on rows
+ * enables ranges without scanning per-entry envelopes.
+ */
+export function mapBatchSafetyFindingsAttributionToFileQuickFixes(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string> = new Map(),
+  rangeOptions?: QuickFixRangeOptions
+): Map<string, IdeQuickFix[]> {
+  const result = new Map<string, IdeQuickFix[]>();
+  const seenPerInput = new Map<string, Set<string>>();
+  for (const row of envelope.summary.safetyFindingsByCodePerInputFile ?? []) {
+    const fix = getSafetyFindingFix(row.code);
+    if (!fix) continue;
+    let seen = seenPerInput.get(row.input);
+    if (!seen) {
+      seen = new Set<string>();
+      seenPerInput.set(row.input, seen);
+    }
+    if (seen.has(row.code)) continue;
+    seen.add(row.code);
+    const out: IdeQuickFix = toQuickFix(row.code, fix);
+    const source = sourcesByInput.get(row.input);
+    if (source !== undefined && row.firstBlockIndex !== undefined) {
+      const range = resolveQuickFixRange(source, row.firstBlockIndex, rangeOptions);
+      if (range) out.range = range;
+    }
+    const existing = result.get(row.input);
+    if (existing) existing.push(out);
+    else result.set(row.input, [out]);
+  }
+  return result;
+}
+
+/**
+ * Thin status helper for Schema v17+ `summary.batchWalk` (no schema change).
+ */
+export function formatBatchWalkStatus(
+  envelope: CliBatchEnvelope
+): string {
+  const walk = envelope.summary.batchWalk;
+  if (!walk) return "batch-walk: none";
+  const exportPart =
+    walk.export?.outDir || walk.export?.setupSheetPdfDir
+      ? `, export outDir=${walk.export.outDir ?? "-"} pdf=${walk.export.setupSheetPdfDir ?? "-"}`
+      : "";
+  return `batch-walk: root=${walk.root} matched=${walk.matched} skipped=${walk.skipped}${
+    walk.recursive ? " recursive" : ""
+  }${exportPart}`;
+}
+
 function toQuickFix(
   code: string,
   fix: { title: string; rationale: string; replacementTemplate?: string }

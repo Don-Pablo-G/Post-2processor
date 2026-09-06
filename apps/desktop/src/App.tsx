@@ -114,13 +114,17 @@ import {
   formatSafetyFindingsForExport
 } from "./safetyFindingsView";
 import {
+  buildDesktopBatchEnvelopeJsonFiles,
   buildDesktopBatchSetupSheetPdfs,
+  buildDesktopBatchSetupSheetTxts,
+  downloadDesktopBatchItems,
   downloadDesktopBatchSetupSheetPdfs,
   filterBatchJobCheckFiles,
   formatDesktopBatchPolicyBreachChip,
   formatDesktopBatchSafetyChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
+  formatDesktopBatchWalkChip,
   runDesktopBatchJobCheck,
   type DesktopBatchJobCheckResult
 } from "./batchJobCheckView";
@@ -293,6 +297,10 @@ const UI_TEXT: Record<
     batchJobCheckExclude: string;
     batchJobCheckDownloadPdfs: string;
     batchJobCheckDownloadedPdfs: string;
+    batchJobCheckDownloadTxts: string;
+    batchJobCheckDownloadedTxts: string;
+    batchJobCheckDownloadEnvelopes: string;
+    batchJobCheckDownloadedEnvelopes: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -594,6 +602,10 @@ const UI_TEXT: Record<
     batchJobCheckExclude: "Exclude (glob)",
     batchJobCheckDownloadPdfs: "Pobierz PDF-y",
     batchJobCheckDownloadedPdfs: "Pobrano PDF-y batch",
+    batchJobCheckDownloadTxts: "Pobierz TXT setup",
+    batchJobCheckDownloadedTxts: "Pobrano TXT setup batch",
+    batchJobCheckDownloadEnvelopes: "Pobierz JSON envelope",
+    batchJobCheckDownloadedEnvelopes: "Pobrano JSON envelope batch",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -896,6 +908,10 @@ const UI_TEXT: Record<
     batchJobCheckExclude: "Exclude (glob)",
     batchJobCheckDownloadPdfs: "Download PDFs",
     batchJobCheckDownloadedPdfs: "Downloaded batch PDFs",
+    batchJobCheckDownloadTxts: "Download setup TXT",
+    batchJobCheckDownloadedTxts: "Downloaded batch setup TXT",
+    batchJobCheckDownloadEnvelopes: "Download envelope JSON",
+    batchJobCheckDownloadedEnvelopes: "Downloaded batch envelopes",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -1928,6 +1944,28 @@ export function App() {
       setExportStatus(`${t.batchJobCheckDownloadedPdfs}: ${downloaded}`);
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Batch PDF download failed.");
+    }
+  }
+
+  async function handleDownloadBatchTxts(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const items = buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults);
+      const { downloaded } = await downloadDesktopBatchItems(items);
+      setExportStatus(`${t.batchJobCheckDownloadedTxts}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch TXT download failed.");
+    }
+  }
+
+  async function handleDownloadBatchEnvelopes(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const items = buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope);
+      const { downloaded } = await downloadDesktopBatchItems(items);
+      setExportStatus(`${t.batchJobCheckDownloadedEnvelopes}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch envelope download failed.");
     }
   }
 
@@ -3626,6 +3664,12 @@ export function App() {
                 {formatDesktopBatchSummaryChip(batchJobCheckResult.envelope)}
               </span>
               <span
+                data-testid="folder-batch-walk-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchWalkChip(batchJobCheckResult.envelope)}
+              </span>
+              <span
                 data-testid="folder-batch-safety-chip"
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >
@@ -3654,6 +3698,20 @@ export function App() {
                 onClick={() => void handleDownloadBatchPdfs()}
               >
                 {t.batchJobCheckDownloadPdfs}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-txts"
+                onClick={() => void handleDownloadBatchTxts()}
+              >
+                {t.batchJobCheckDownloadTxts}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-envelopes"
+                onClick={() => void handleDownloadBatchEnvelopes()}
+              >
+                {t.batchJobCheckDownloadEnvelopes}
               </button>
             </>
           )}

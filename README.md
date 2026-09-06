@@ -3778,6 +3778,49 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=17
 ```
 
+## Desktop batch multi-download + ide-bridge mappers + browser export parity + Schema v18
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Desktop batch TXT / envelope JSON multi-download
+
+Folder batch gains **Download setup TXT** and **Download envelope JSON** (one
+file per matched input), plus a `batch-walk` chip. Still no zip dependency.
+
+### Move 2 — ide-bridge single-envelope + attribution mappers
+
+`mapJobCheckEnvelopeToSafetyQuickFixes`,
+`mapJobCheckEnvelopeToParseDiagnosticQuickFixes`,
+`mapBatchSafetyFindingsAttributionToFileQuickFixes`, and
+`formatBatchWalkStatus`.
+
+### Move 3 — Browser export parity for batch builders
+
+`@cnc/core/browser` re-exports the remaining `buildBatch*Aggregation` helpers,
+`applyStrictControllerCodesGate`, and `formatJobCheckJson` / `formatBatchJson`.
+
+### Move 4 — Safety attribution `firstBlockIndex` (Schema v18)
+
+`CLI_SCHEMA_VERSION` bumps `17 → 18`.
+`safetyFindingsByCodePerInputFile[]` rows gain optional `firstBlockIndex`
+propagated from per-entry safety rows (enables attribution-only IDE ranges).
+
+### Move 5 — `batchWalk.export` + `safety_blocker` blockReason (Schema v18)
+
+`summary.batchWalk.export` records `--out-dir` / `--export-setup-sheet-pdf-batch`
+roots. `--out-dir` also writes `batch-summary.json`. Envelopes gain
+`blockReasons[]` reason `"safety_blocker"` with `matchedCodes`.
+
+### Move 6 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=18
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3796,6 +3839,7 @@ next planning wave can pick them up:
   deeply nested embeddings and multi-script runs still need ICU or a
   full UAX#9 implementation.
 - **True zip / single-archive batch export** — desktop ships multi-download
-  PDFs only; a single zip archive would need a new dependency or native API.
-- **Desktop batch → out-dir / Node `exportWorkshopFiles`** — browser stays
-  download-based; Node CLI already has `--out-dir` / PDF batch export.
+  for PDF / TXT / envelope JSON; a single zip archive would need a new
+  dependency or native API.
+- **Broader safety-finding binding heuristics** — TOOL/H heuristics ship;
+  `{{Z}}` / `{{R}}` / richer message extraction remain incremental.

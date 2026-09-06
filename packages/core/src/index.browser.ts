@@ -138,11 +138,22 @@ export { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecatio
 
 export {
   CLI_SCHEMA_VERSION,
+  applyStrictControllerCodesGate,
   buildBatchEnvelope,
+  buildBatchLintIssuesByControllerCodeAggregation,
+  buildBatchLintIssuesByParseDiagCodeAggregation,
+  buildBatchLintIssuesBySourceAggregation,
+  buildBatchParseDiagnosticsByCodeAggregation,
+  buildBatchParseDiagnosticsPolicyBreachesAggregation,
   buildBatchSafetyFindingsAttribution,
   buildBatchSafetyFindingsByCodeAggregation,
+  buildBatchStrictControllerCodesGatedAggregation,
   buildJobCheckEnvelope,
-  buildSafetyFindingsByCode
+  buildSafetyFindingsByCode,
+  formatBatchJson,
+  formatBatchNdjson,
+  formatJobCheckJson,
+  formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
 
 export type {
@@ -150,6 +161,7 @@ export type {
   CliBatchEnvelope,
   CliBatchEntry,
   CliBatchWalk,
+  CliBatchWalkExport,
   CliBatchControllerCodeAttribution,
   CliBatchBlockReasonAggregation,
   CliBatchLintIssuesByParseDiagCodeAggregation,

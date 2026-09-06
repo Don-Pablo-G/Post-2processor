@@ -101,6 +101,7 @@ export type {
   CliNdjsonBatchEntry,
   CliParseDiagnosticsByCodeEntry,
   CliBatchWalk,
+  CliBatchWalkExport,
   CliSafetyFindingSource,
   CliSafetyFindingsByCodeEntry
 } from "./cli/jobCheckEnvelope.js";
@@ -1765,6 +1766,14 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       skipped: walkSkipped,
       root: parsed.inputDir
     };
+    if (parsed.outDir !== undefined || parsed.exportSetupSheetPdfBatch !== undefined) {
+      batchWalk.export = {
+        ...(parsed.outDir !== undefined ? { outDir: parsed.outDir } : {}),
+        ...(parsed.exportSetupSheetPdfBatch !== undefined
+          ? { setupSheetPdfDir: parsed.exportSetupSheetPdfBatch }
+          : {})
+      };
+    }
 
     const entries: CliBatchEntry[] = [];
     const textEntries: { input: string; result: RunJobCheckResult }[] = [];
@@ -1868,6 +1877,18 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           );
           return 2;
         }
+      }
+      // Schema v18: always drop a CLI-shaped batch summary beside per-file
+      // outputs so `batchWalk.export.outDir` is inspectable without stdout.
+      const summaryPath = path.join(outDir, "batch-summary.json");
+      try {
+        await writeFn(summaryPath, `${formatBatchJson(entries, { batchWalk })}\n`);
+        written += 1;
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir batch summary ${summaryPath}: ${(err as Error).message}\n`
+        );
+        return 2;
       }
       if (!parsed.quiet) {
         writeOut(`cnc-job-check: wrote ${written} files to ${outDir}\n`);

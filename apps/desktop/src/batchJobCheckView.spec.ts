@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildDesktopBatchEnvelopeJsonFiles,
   buildDesktopBatchSetupSheetPdfs,
+  buildDesktopBatchSetupSheetTxts,
   filterBatchJobCheckFiles,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
+  formatDesktopBatchWalkChip,
   runDesktopBatchJobCheck
 } from "./batchJobCheckView";
 import type { RunJobCheckResult } from "@cnc/core/browser";
@@ -127,7 +130,7 @@ describe("batchJobCheckView", () => {
       }
     );
     expect(batch.envelope.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(batch.envelope.schemaVersion).toBe(17);
+    expect(batch.envelope.schemaVersion).toBe(18);
     expect(batch.envelope.summary.files).toBe(2);
     expect(batch.envelope.summary.blocked).toBe(1);
     expect(batch.envelope.summary.batchWalk?.root).toBe("folder");
@@ -138,7 +141,7 @@ describe("batchJobCheckView", () => {
     expect(batch.envelope.summary.parseDiagnosticsPolicyBreachesAggregated?.[0].key).toBe("TOTAL");
     expect(formatDesktopBatchSummaryChip(batch.envelope)).toMatch(/files=2/);
     const exported = JSON.parse(formatDesktopBatchSummaryForExport(batch.envelope));
-    expect(exported.schemaVersion).toBe(17);
+    expect(exported.schemaVersion).toBe(18);
     expect(exported.summary.batchWalk.matched).toBe(2);
     expect(batch.runResults).toHaveLength(2);
   });
@@ -153,5 +156,35 @@ describe("batchJobCheckView", () => {
     expect(String.fromCharCode(items[0]!.bytes[0], items[0]!.bytes[1], items[0]!.bytes[2], items[0]!.bytes[3])).toBe(
       "%PDF"
     );
+  });
+
+  it("buildDesktopBatchSetupSheetTxts and envelope JSON multi-download builders", async () => {
+    const batch = await runDesktopBatchJobCheck(
+      [{ input: "a.nc", source: "x" }],
+      async () => makeResult({}),
+      {
+        batchWalk: {
+          recursive: false,
+          include: [],
+          exclude: [],
+          matched: 1,
+          skipped: 0,
+          root: "folder"
+        }
+      }
+    );
+    const txts = buildDesktopBatchSetupSheetTxts(batch.runResults);
+    expect(txts).toEqual([
+      {
+        filename: "a.setup.txt",
+        body: "t",
+        mimeType: "text/plain;charset=utf-8"
+      }
+    ]);
+    const envelopes = buildDesktopBatchEnvelopeJsonFiles(batch.envelope);
+    expect(envelopes).toHaveLength(1);
+    expect(envelopes[0]!.filename).toBe("a.job-check.json");
+    expect(JSON.parse(envelopes[0]!.body as string).schemaVersion).toBe(18);
+    expect(formatDesktopBatchWalkChip(batch.envelope)).toMatch(/matched=1/);
   });
 });

@@ -15,16 +15,20 @@ import {
   deriveParseDiagnosticFixBindings,
   deriveSafetyFindingFixBindings,
   expandIdeQuickFixTemplate,
+  formatBatchWalkStatus,
   getQuickFixForLintIssue,
   mapBatchAttributionToFileQuickFixes,
   mapBatchControllerCodeAggregatedToFileQuickFixes,
   mapBatchControllerCodeAggregatedToQuickFixes,
   mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes,
   mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes,
+  mapBatchSafetyFindingsAttributionToFileQuickFixes,
   mapBatchSafetyFindingsByCodeAggregatedToFileQuickFixes,
   mapBatchSafetyFindingsByCodeAggregatedToQuickFixes,
   getQuickFixForSafetyFinding,
+  mapJobCheckEnvelopeToParseDiagnosticQuickFixes,
   mapJobCheckEnvelopeToQuickFixes,
+  mapJobCheckEnvelopeToSafetyQuickFixes,
   resolveQuickFixRange,
   splitProgramIntoDisplayBlocks,
   type IdeQuickFix
@@ -92,7 +96,7 @@ function makeBatchEnvelope(
   aggregated?: CliBatchLintIssuesByControllerCodeAggregation[]
 ): CliBatchEnvelope {
   return {
-    schemaVersion: 17,
+    schemaVersion: 18,
     results: [],
     summary: {
       files: 0,
@@ -669,10 +673,10 @@ describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
 
   it("attaches ranges for file quick-fixes when sources are supplied", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 17,
+      schemaVersion: 18,
       results: [
         {
-          schemaVersion: 17,
+          schemaVersion: 18,
           input: "a.nc",
           envelope: {
             ...makeEnvelope([]),
@@ -716,6 +720,108 @@ describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
       endLine: 2,
       endColumn: 6
     });
+  });
+});
+
+describe("Schema v18 ide-bridge: single-envelope + attribution mappers", () => {
+  it("mapJobCheckEnvelopeToSafetyQuickFixes resolves catalogue entries with ranges", () => {
+    const envelope = {
+      ...makeEnvelope([]),
+      safetyFindingsByCode: [
+        {
+          source: "advisor" as const,
+          code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+          count: 1,
+          blockers: 1,
+          warnings: 0,
+          firstBlockIndex: 1
+        }
+      ]
+    };
+    const fixes = mapJobCheckEnvelopeToSafetyQuickFixes(envelope, "O1\nG0 Z-1\n");
+    expect(fixes).toHaveLength(1);
+    expect(fixes[0].code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
+    expect(fixes[0].range).toEqual({
+      startLine: 2,
+      startColumn: 1,
+      endLine: 2,
+      endColumn: 6
+    });
+  });
+
+  it("mapJobCheckEnvelopeToParseDiagnosticQuickFixes resolves catalogue entries", () => {
+    const envelope = {
+      ...makeEnvelope([]),
+      parseDiagnosticsByCode: [
+        {
+          code: "UNMATCHED_OPEN_PAREN",
+          count: 1,
+          warnings: 1,
+          errors: 0,
+          firstBlockIndex: 0
+        }
+      ]
+    };
+    const fixes = mapJobCheckEnvelopeToParseDiagnosticQuickFixes(envelope);
+    expect(fixes).toHaveLength(1);
+    expect(fixes[0].code).toBe("UNMATCHED_OPEN_PAREN");
+  });
+
+  it("mapBatchSafetyFindingsAttributionToFileQuickFixes uses v18 firstBlockIndex", () => {
+    const envelope: CliBatchEnvelope = {
+      schemaVersion: 18,
+      results: [],
+      summary: {
+        files: 1,
+        blocked: 0,
+        lintIssuesByControllerCodePerInputFile: [],
+        safetyFindingsByCodePerInputFile: [
+          {
+            input: "a.nc",
+            source: "advisor",
+            code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+            count: 1,
+            blockers: 1,
+            warnings: 0,
+            firstBlockIndex: 1
+          }
+        ]
+      }
+    };
+    const grouped = mapBatchSafetyFindingsAttributionToFileQuickFixes(
+      envelope,
+      new Map([["a.nc", "O1\nG0 Z-1\n"]])
+    );
+    expect(grouped.get("a.nc")?.[0].range).toEqual({
+      startLine: 2,
+      startColumn: 1,
+      endLine: 2,
+      endColumn: 6
+    });
+  });
+
+  it("formatBatchWalkStatus summarizes walk + export", () => {
+    const envelope: CliBatchEnvelope = {
+      schemaVersion: 18,
+      results: [],
+      summary: {
+        files: 0,
+        blocked: 0,
+        lintIssuesByControllerCodePerInputFile: [],
+        safetyFindingsByCodePerInputFile: [],
+        batchWalk: {
+          recursive: true,
+          include: [],
+          exclude: [],
+          matched: 3,
+          skipped: 1,
+          root: "/jobs",
+          export: { outDir: "/out", setupSheetPdfDir: "/pdf" }
+        }
+      }
+    };
+    expect(formatBatchWalkStatus(envelope)).toMatch(/matched=3/);
+    expect(formatBatchWalkStatus(envelope)).toMatch(/export outDir=\/out/);
   });
 });
 
