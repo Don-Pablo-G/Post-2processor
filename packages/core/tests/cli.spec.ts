@@ -1026,7 +1026,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=44\n");
+    expect(stdout).toBe("cnc-job-check schema=45\n");
     expect(stderr).toBe("");
   });
 
@@ -2637,8 +2637,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 44", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(44);
+  it("CLI_SCHEMA_VERSION is 45", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(45);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4621,7 +4621,9 @@ describe("Schema v42: csvPath + sealSources + summary zipBytes match", () => {
     expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     expect(result.csvPath).toMatch(/batch-summary\.csv$/);
-    expect(result.sealSources).toEqual(["sidecar", "summary", "manifest", "ndjson", "csv"]);
+    expect(result.sealSources).toEqual(
+      expect.arrayContaining(["sidecar", "summary", "manifest", "ndjson", "csv"])
+    );
     expect(result.summaryMatched).toBe(true);
   });
 
@@ -4766,7 +4768,7 @@ describe("Schema v44: csvRowCount + aggregation row cross-check", () => {
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(44);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const expectedRows = countBatchAggregationCsvRows(summary.summary);
     const out: string[] = [];
     const exit = await main(
@@ -4775,7 +4777,7 @@ describe("Schema v44: csvRowCount + aggregation row cross-check", () => {
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(44);
+    expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     expect(result.csvMatched).toBe(true);
     expect(result.csvRowCount).toBe(expectedRows);
@@ -4832,6 +4834,79 @@ describe("Schema v44: csvRowCount + aggregation row cross-check", () => {
     expect(exit).toBe(0);
     expect(out.join("")).toMatch(/csvMatched=true/);
     expect(out.join("")).toMatch(/csvRows=\d+/);
+  });
+});
+
+describe("Schema v45: expectedCsvRowCount + fixPreviewsPath", () => {
+  it("verify-batch-export --format json includes expectedCsvRowCount", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(45);
+    const expectedRows = countBatchAggregationCsvRows(summary.summary);
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.schemaVersion).toBe(45);
+    expect(result.ok).toBe(true);
+    expect(result.expectedCsvRowCount).toBe(expectedRows);
+    expect(result.csvRowCount).toBe(expectedRows);
+    expect(result.csvMatched).toBe(true);
+  });
+
+  it("verify-batch-export reports fixPreviewsPath when sibling file exists", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const fixPath = path.join(outDir, "batch-fix-previews.json");
+    await writeFile(fixPath, "[]\n", "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.fixPreviewsPath).toMatch(/batch-fix-previews\.json$/);
+    expect(result.sealSources).toContain("fixPreviews");
+  });
+
+  it("verify-batch-export text mode reports csvRows=N/M", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    const expectedRows = countBatchAggregationCsvRows(summary.summary);
+    const out: string[] = [];
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(out.join("")).toMatch(new RegExp(`csvRows=${expectedRows}/${expectedRows}`));
   });
 });
 

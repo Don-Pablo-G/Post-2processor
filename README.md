@@ -4759,6 +4759,42 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=44
 ```
 
+## Verify expected CSV rows + fix-previews path + Schema v45
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `expectedCsvRowCount` + `fixPreviewsPath` (Schema v45)
+
+`CLI_SCHEMA_VERSION` bumps `44 → 45`.
+`VerifyBatchExportResult` gains optional `expectedCsvRowCount` (from sealed
+summary aggregations) and `fixPreviewsPath` when sibling
+`batch-fix-previews.json` is present. `sealSources` may include `fixPreviews`.
+
+### Move 2 — Text `csvRows=N/M`
+
+When both actual and expected CSV row counts are known, text mode reports
+`csvRows=N/M` (actual/expected).
+
+### Move 3 — Fix-previews presence on verify
+
+`verify-batch-export` reports sibling fix-previews via `fixPreviewsPath` /
+text `fixPreviewsLoaded` without failing when absent.
+
+### Move 4 — Desktop live `fixPreviewCount` stamp
+
+`runDesktopBatchJobCheck` stamps `fixPreviewCount` (default `0`) so inventory
+chips show `fixPreviews=0` instead of path-only `fixPreviews`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=45
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
