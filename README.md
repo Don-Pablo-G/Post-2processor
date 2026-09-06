@@ -4724,6 +4724,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=43
 ```
 
+## Verify CSV row count + aggregation cross-check + setup-pdf stamp + Schema v44
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `csvRowCount` (Schema v44)
+
+`CLI_SCHEMA_VERSION` bumps `43 → 44`.
+`VerifyBatchExportResult` gains optional `csvRowCount`.
+`countBatchAggregationCsvRows` sums the five summary aggregation arrays that
+feed `batch-summary.csv`.
+
+### Move 2 — Aggregation row cross-check
+
+When a sealed summary is present, `csvMatched` also requires
+`csvRowCount === countBatchAggregationCsvRows(summary)`.
+
+### Move 3 — CLI reports `csvRows`
+
+JSON emits `csvRowCount`; text reports `csvRows=N` beside `csvMatched=true`.
+
+### Move 4 — Desktop live `setupSheetPdfDir` stamp
+
+`runDesktopBatchJobCheck` stamps relative logical `setupSheetPdfDir`
+(`setup-pdf`) so inventory chips include `pdf`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=44
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

@@ -48,6 +48,7 @@ import {
 import {
   CLI_SCHEMA_VERSION,
   BATCH_SUMMARY_CSV_HEADER,
+  countBatchAggregationCsvRows,
   applyStrictControllerCodesGate,
   buildBatchEnvelope,
   buildJobCheckEnvelope,
@@ -73,6 +74,7 @@ export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 export {
   CLI_SCHEMA_VERSION,
   BATCH_SUMMARY_CSV_HEADER,
+  countBatchAggregationCsvRows,
   applyStrictControllerCodesGate,
   buildBatchBlockReasonAggregation,
   buildBatchEnvelope,
@@ -304,9 +306,13 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "Schema v43: CSV first-line header must match the canonical aggregations",
   "header (`csvMatched`). JSON also reports `kindCount` from manifest `byKind`.",
   "",
+  "Schema v44: reports `csvRowCount` (data rows after the header). When a sealed",
+  "summary is present, `csvMatched` also requires the row count to equal the",
+  "summary aggregation row total.",
+  "",
   "Exit codes:",
   "  0   digest matches (and summary/manifest/ndjson/csv seal checks pass when present)",
-  "  1   digest mismatch or summary/manifest/ndjson zipSha256/zipBytes or CSV header mismatch",
+  "  1   digest mismatch or summary/manifest/ndjson zipSha256/zipBytes or CSV header/row mismatch",
   "  2   argument or IO error",
   "",
   "Options:",
@@ -323,7 +329,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            byKind. Schema v41 adds optional writtenFileCount,",
   "                            zipEntryCount, ndjsonPath, ndjsonMatched. Schema v42 adds",
   "                            optional csvPath and sealSources. Schema v43 adds optional",
-  "                            csvMatched and kindCount.",
+  "                            csvMatched and kindCount. Schema v44 adds optional",
+  "                            csvRowCount.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -347,7 +354,7 @@ export type VerifyBatchExportSealSource =
   | "csv";
 
 /**
- * Schema v38–v43: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v44: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
  * Schema v40 adds optional sealed-manifest cross-check fields when
@@ -356,6 +363,8 @@ export type VerifyBatchExportSealSource =
  * Schema v42 adds optional csvPath and sealSources; summaryMatched also
  * considers export.zipBytes when present.
  * Schema v43 adds optional csvMatched (CSV header) and kindCount (byKind).
+ * Schema v44 adds optional csvRowCount; csvMatched also considers aggregation
+ * row totals from the sealed summary when present.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -403,10 +412,14 @@ export type VerifyBatchExportResult = {
   /** Schema v42: path of `batch-summary.csv` when present beside the zip. */
   csvPath?: string;
   /**
-   * Schema v43: true when CSV first line matches `BATCH_SUMMARY_CSV_HEADER`;
-   * false when CSV was present but the header disagreed; absent when no CSV.
+   * Schema v43–v44: true when CSV first line matches `BATCH_SUMMARY_CSV_HEADER`
+   * (and, when a sealed summary is present, data-row count matches the summary
+   * aggregation row total); false when CSV was present but disagreed; absent
+   * when no CSV.
    */
   csvMatched?: boolean;
+  /** Schema v44: number of non-empty data rows after the CSV header. */
+  csvRowCount?: number;
   /**
    * Schema v42: which seal artifacts were found/consulted for this verify
    * (always includes `sidecar` on a successful read path).
@@ -486,6 +499,8 @@ type SealedSummaryExportMeta = {
   totalBytes?: number;
   writtenFileCount?: number;
   zipEntryCount?: number;
+  /** Schema v44: sum of aggregation array lengths that feed batch-summary.csv. */
+  aggregationRowCount?: number;
 };
 
 type SealedManifestMeta = {
@@ -521,11 +536,25 @@ async function tryLoadSealedBatchSummaryExport(
   }
   try {
     const parsed = JSON.parse(raw) as {
-      summary?: { batchWalk?: { export?: Record<string, unknown> } };
+      summary?: {
+        batchWalk?: { export?: Record<string, unknown> };
+        safetyFindingsByCodeAggregated?: unknown[];
+        parseDiagnosticsPolicyBreachesAggregated?: unknown[];
+        lintIssuesByControllerCodeAggregated?: unknown[];
+        parseDiagnosticsByCodeAggregated?: unknown[];
+        lintIssuesByParseDiagCodeAggregated?: unknown[];
+      };
     };
     const exp = parsed.summary?.batchWalk?.export;
+    const aggregationRowCount =
+      parsed.summary !== undefined
+        ? countBatchAggregationCsvRows(parsed.summary)
+        : undefined;
     if (!exp || typeof exp !== "object") {
-      return { summaryPath };
+      return {
+        summaryPath,
+        ...(aggregationRowCount !== undefined ? { aggregationRowCount } : {})
+      };
     }
     return {
       summaryPath,
@@ -536,7 +565,8 @@ async function tryLoadSealedBatchSummaryExport(
       ...(typeof exp.writtenFileCount === "number"
         ? { writtenFileCount: exp.writtenFileCount }
         : {}),
-      ...(typeof exp.zipEntryCount === "number" ? { zipEntryCount: exp.zipEntryCount } : {})
+      ...(typeof exp.zipEntryCount === "number" ? { zipEntryCount: exp.zipEntryCount } : {}),
+      ...(aggregationRowCount !== undefined ? { aggregationRowCount } : {})
     };
   } catch {
     return { summaryPath };
@@ -618,7 +648,7 @@ async function tryLoadSealedBatchSummaryCsv(
   zipPath: string,
   outDir: string | undefined,
   readText: (filePath: string) => Promise<string>
-): Promise<{ csvPath: string; header: string } | undefined> {
+): Promise<{ csvPath: string; header: string; rowCount: number } | undefined> {
   const csvPath =
     outDir !== undefined
       ? path.join(outDir, "batch-summary.csv")
@@ -629,8 +659,13 @@ async function tryLoadSealedBatchSummaryCsv(
   } catch {
     return undefined;
   }
-  const firstLine = raw.split(/\r?\n/, 1)[0] ?? "";
-  return { csvPath, header: firstLine.trimEnd() };
+  const lines = raw.split(/\r?\n/);
+  const firstLine = lines[0] ?? "";
+  let rowCount = 0;
+  for (let i = 1; i < lines.length; i += 1) {
+    if ((lines[i] ?? "").trim().length > 0) rowCount += 1;
+  }
+  return { csvPath, header: firstLine.trimEnd(), rowCount };
 }
 
 export async function runVerifyBatchExport(
@@ -739,7 +774,12 @@ export async function runVerifyBatchExport(
   let csvMatched: boolean | undefined;
   let csvMismatch = false;
   if (csvMeta) {
-    csvMatched = csvMeta.header === BATCH_SUMMARY_CSV_HEADER;
+    const headerOk = csvMeta.header === BATCH_SUMMARY_CSV_HEADER;
+    const rowsOk =
+      summaryMeta?.aggregationRowCount === undefined
+        ? true
+        : csvMeta.rowCount === summaryMeta.aggregationRowCount;
+    csvMatched = headerOk && rowsOk;
     csvMismatch = !csvMatched;
   }
 
@@ -795,6 +835,7 @@ export async function runVerifyBatchExport(
       ...(csvMeta
         ? {
             csvPath: csvMeta.csvPath,
+            csvRowCount: csvMeta.rowCount,
             ...(csvMatched !== undefined ? { csvMatched } : {})
           }
         : {})
@@ -840,9 +881,15 @@ export async function runVerifyBatchExport(
     return 1;
   }
   if (csvMismatch) {
-    writeErr(
-      `cnc-job-check verify-batch-export: csv header mismatch (expected ${BATCH_SUMMARY_CSV_HEADER}, got ${csvMeta!.header})\n`
-    );
+    if (csvMeta!.header !== BATCH_SUMMARY_CSV_HEADER) {
+      writeErr(
+        `cnc-job-check verify-batch-export: csv header mismatch (expected ${BATCH_SUMMARY_CSV_HEADER}, got ${csvMeta!.header})\n`
+      );
+    } else {
+      writeErr(
+        `cnc-job-check verify-batch-export: csv row count mismatch (expected ${summaryMeta!.aggregationRowCount}, got ${csvMeta!.rowCount})\n`
+      );
+    }
     return 1;
   }
   if (!parsed.quiet) {
@@ -859,6 +906,7 @@ export async function runVerifyBatchExport(
       ndjsonMatched === true ? "; ndjsonMatched=true" : ndjsonMeta ? "; ndjsonLoaded" : "";
     const csvPart =
       csvMatched === true ? "; csvMatched=true" : csvMeta ? "; csvLoaded" : "";
+    const csvRowsPart = csvMeta ? `; csvRows=${csvMeta.rowCount}` : "";
     const kindsPart = kindCount !== undefined ? `; kinds=${kindCount}` : "";
     const writtenPart =
       writtenFileCount !== undefined ? `; written=${writtenFileCount}` : "";
@@ -866,7 +914,7 @@ export async function runVerifyBatchExport(
       zipEntryCount !== undefined ? `; zipEntries=${zipEntryCount}` : "";
     const sourcesPart = `; sources=${sealSources.join("+")}`;
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
     );
   }
   return 0;

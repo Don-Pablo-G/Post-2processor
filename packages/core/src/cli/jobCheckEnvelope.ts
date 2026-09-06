@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 43;
+export const CLI_SCHEMA_VERSION = 44;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -1624,6 +1624,26 @@ export function formatBatchJson(
 function csvEscapeCell(value: string): string {
   if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
+}
+
+/**
+ * Schema v44: number of data rows `formatBatchAggregationsAsCsv` would emit
+ * for a sealed batch summary (sum of the five aggregation arrays).
+ */
+export function countBatchAggregationCsvRows(summary: {
+  safetyFindingsByCodeAggregated?: readonly unknown[];
+  parseDiagnosticsPolicyBreachesAggregated?: readonly unknown[];
+  lintIssuesByControllerCodeAggregated?: readonly unknown[];
+  parseDiagnosticsByCodeAggregated?: readonly unknown[];
+  lintIssuesByParseDiagCodeAggregated?: readonly unknown[];
+}): number {
+  return (
+    (summary.safetyFindingsByCodeAggregated?.length ?? 0) +
+    (summary.parseDiagnosticsPolicyBreachesAggregated?.length ?? 0) +
+    (summary.lintIssuesByControllerCodeAggregated?.length ?? 0) +
+    (summary.parseDiagnosticsByCodeAggregated?.length ?? 0) +
+    (summary.lintIssuesByParseDiagCodeAggregated?.length ?? 0)
+  );
 }
 
 /**

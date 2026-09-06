@@ -153,10 +153,10 @@ export async function runDesktopBatchJobCheck(
 }
 
 /**
- * Schema v36–v43: ensure live desktop batchWalk.export carries relative logical
+ * Schema v36–v44: ensure live desktop batchWalk.export carries relative logical
  * paths for always-on summary sidecars, export zip, manifest, unbound SARIF,
- * fix-previews, outDir, setup-txt / patched-nc dirs, and the zip SHA-256
- * sidecar so inventory chips can surface them.
+ * fix-previews, outDir, setup-txt / patched-nc / setup-pdf dirs, and the zip
+ * SHA-256 sidecar so inventory chips can surface them.
  */
 export function stampDesktopBatchExportSummaryPaths(
   batchWalk: CliBatchWalk | undefined
@@ -167,6 +167,7 @@ export function stampDesktopBatchExportSummaryPaths(
     export: {
       ...batchWalk.export,
       outDir: batchWalk.export?.outDir ?? ".",
+      setupSheetPdfDir: batchWalk.export?.setupSheetPdfDir ?? "setup-pdf",
       setupTxtDir: batchWalk.export?.setupTxtDir ?? "setup-txt",
       patchedNcDir: batchWalk.export?.patchedNcDir ?? "patched-nc",
       csvSummaryPath: batchWalk.export?.csvSummaryPath ?? "batch-summary.csv",

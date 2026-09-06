@@ -177,6 +177,7 @@ describe("batchJobCheckView", () => {
       "batch-fix-previews.json"
     );
     expect(exported.summary.batchWalk.export.outDir).toBe(".");
+    expect(exported.summary.batchWalk.export.setupSheetPdfDir).toBe("setup-pdf");
     expect(exported.summary.batchWalk.export.setupTxtDir).toBe("setup-txt");
     expect(exported.summary.batchWalk.export.patchedNcDir).toBe("patched-nc");
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
@@ -220,6 +221,11 @@ describe("batchJobCheckView", () => {
       formatDesktopBatchExportInventoryChip(batch.envelope)
         .replace(/^batch-export:\s*/, "")
         .split(",")
+    ).toContain("pdf");
+    expect(
+      formatDesktopBatchExportInventoryChip(batch.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
     ).toContain("setupTxtDir");
     expect(
       formatDesktopBatchExportInventoryChip(batch.envelope)
@@ -240,12 +246,14 @@ describe("batchJobCheckView", () => {
       export: {
         csvSummaryPath: "/abs/batch-summary.csv",
         outDir: "/abs/out",
+        setupSheetPdfDir: "/abs/setup-pdf",
         setupTxtDir: "/abs/setup-txt",
         patchedNcDir: "/abs/patched-nc"
       }
     });
     expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
     expect(stamped?.export?.outDir).toBe("/abs/out");
+    expect(stamped?.export?.setupSheetPdfDir).toBe("/abs/setup-pdf");
     expect(stamped?.export?.setupTxtDir).toBe("/abs/setup-txt");
     expect(stamped?.export?.patchedNcDir).toBe("/abs/patched-nc");
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
