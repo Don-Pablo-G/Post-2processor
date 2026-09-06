@@ -52,7 +52,7 @@ import {
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 15;
+export const CLI_SCHEMA_VERSION = 16;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -841,11 +841,15 @@ export type CliLintIssuesByControllerCodeEntry = {
 };
 
 /**
- * Schema v15: rollup of advisor + simulation `SafetyFinding` rows by `code`.
- * Empty array when no safety findings are present. Sorted by `count` desc →
- * `code` asc. Append-only field.
+ * Schema v15–v16: rollup of advisor + simulation `SafetyFinding` rows by
+ * `(source, code)`. Empty array when no safety findings are present.
+ * Sorted by `count` desc → `source` asc → `code` asc. Append-only field.
+ * Schema v16 adds the required `source` discriminator.
  */
+export type CliSafetyFindingSource = "advisor" | "simulation";
+
 export type CliSafetyFindingsByCodeEntry = {
+  source: CliSafetyFindingSource;
   code: string;
   count: number;
   blockers: number;
@@ -887,9 +891,9 @@ export type CliJobCheckEnvelope = {
    */
   lintIssuesByControllerCode: CliLintIssuesByControllerCodeEntry[];
   /**
-   * Schema v15: per-code rollup of advisor `safetyFindings` +
+   * Schema v15–v16: per-(source, code) rollup of advisor `safetyFindings` +
    * `simulationFindings`. Empty array when none. Sorted `count` desc →
-   * `code` asc. Append-only field.
+   * `source` asc → `code` asc. Append-only field. Schema v16 requires `source`.
    */
   safetyFindingsByCode: CliSafetyFindingsByCodeEntry[];
   controllerLints: LintIssueWithProvenance[];
@@ -1077,41 +1081,57 @@ function buildLintIssuesByControllerCode(
 }
 
 /**
- * Schema v15: roll up advisor + simulation safety findings by `code`.
- * Pure function — deterministic given `result`.
+ * Schema v15–v16: roll up advisor + simulation safety findings by
+ * `(source, code)`. Pure function — deterministic given `result`.
  */
 export function buildSafetyFindingsByCode(
   result: RunJobCheckResult
 ): CliSafetyFindingsByCodeEntry[] {
-  const findings = [
-    ...(result.advisor?.safetyFindings ?? []),
-    ...(result.simulationFindings ?? [])
+  const groups: Array<{ source: CliSafetyFindingSource; findings: typeof result.simulationFindings }> = [
+    { source: "advisor", findings: result.advisor?.safetyFindings ?? [] },
+    { source: "simulation", findings: result.simulationFindings ?? [] }
   ];
-  if (findings.length === 0) return [];
   const buckets = new Map<
     string,
-    { count: number; blockers: number; warnings: number; firstBlockIndex?: number }
-  >();
-  for (const finding of findings) {
-    if (typeof finding.code !== "string" || finding.code.length === 0) continue;
-    let bucket = buckets.get(finding.code);
-    if (!bucket) {
-      bucket = { count: 0, blockers: 0, warnings: 0 };
-      buckets.set(finding.code, bucket);
+    {
+      source: CliSafetyFindingSource;
+      code: string;
+      count: number;
+      blockers: number;
+      warnings: number;
+      firstBlockIndex?: number;
     }
-    bucket.count += 1;
-    if (finding.severity === "blocker") bucket.blockers += 1;
-    else bucket.warnings += 1;
-    if (finding.blockIndex !== undefined) {
-      if (bucket.firstBlockIndex === undefined || finding.blockIndex < bucket.firstBlockIndex) {
-        bucket.firstBlockIndex = finding.blockIndex;
+  >();
+  for (const group of groups) {
+    for (const finding of group.findings) {
+      if (typeof finding.code !== "string" || finding.code.length === 0) continue;
+      const key = `${group.source}::${finding.code}`;
+      let bucket = buckets.get(key);
+      if (!bucket) {
+        bucket = {
+          source: group.source,
+          code: finding.code,
+          count: 0,
+          blockers: 0,
+          warnings: 0
+        };
+        buckets.set(key, bucket);
+      }
+      bucket.count += 1;
+      if (finding.severity === "blocker") bucket.blockers += 1;
+      else bucket.warnings += 1;
+      if (finding.blockIndex !== undefined) {
+        if (bucket.firstBlockIndex === undefined || finding.blockIndex < bucket.firstBlockIndex) {
+          bucket.firstBlockIndex = finding.blockIndex;
+        }
       }
     }
   }
   const entries: CliSafetyFindingsByCodeEntry[] = [];
-  for (const [code, bucket] of buckets) {
+  for (const bucket of buckets.values()) {
     entries.push({
-      code,
+      source: bucket.source,
+      code: bucket.code,
       count: bucket.count,
       blockers: bucket.blockers,
       warnings: bucket.warnings,
@@ -1120,6 +1140,7 @@ export function buildSafetyFindingsByCode(
   }
   entries.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
+    if (a.source !== b.source) return a.source.localeCompare(b.source);
     return a.code.localeCompare(b.code);
   });
   return entries;
@@ -1378,13 +1399,20 @@ export type CliBatchEnvelope = {
      */
     parseDiagnosticsPolicyBreachesAggregated?: CliBatchParseDiagnosticsPolicyBreachesAggregation[];
     /**
-     * Schema v15: cross-input aggregation of every entry's
-     * `envelope.safetyFindingsByCode`. One row per distinct `code`;
-     * `inputs` lists entry inputs that reported the code (sorted ascending,
+     * Schema v15–v16: cross-input aggregation of every entry's
+     * `envelope.safetyFindingsByCode`. One row per distinct `(source, code)`;
+     * `inputs` lists entry inputs that reported the pair (sorted ascending,
      * deduped). Counts sum across entries. Sort order: `count` desc →
-     * `code` asc. Absent when no entry has safety findings.
+     * `source` asc → `code` asc. Absent when no entry has safety findings.
+     * Schema v16 requires `source` on each row.
      */
     safetyFindingsByCodeAggregated?: CliBatchSafetyFindingsByCodeAggregation[];
+    /**
+     * Schema v16: per-input attribution of `safetyFindingsByCode` rows.
+     * One row per `(input, source, code)`. Sorted by `input` asc → `count`
+     * desc → `source` asc → `code` asc. Empty array when none.
+     */
+    safetyFindingsByCodePerInputFile: CliBatchSafetyFindingsAttribution[];
   };
 };
 
@@ -1464,14 +1492,28 @@ export type CliBatchParseDiagnosticsPolicyBreachesAggregation = {
 };
 
 /**
- * Schema v15: cross-input rollup of per-entry `safetyFindingsByCode` rows.
+ * Schema v15–v16: cross-input rollup of per-entry `safetyFindingsByCode` rows.
+ * Schema v16 adds `source`.
  */
 export type CliBatchSafetyFindingsByCodeAggregation = {
+  source: CliSafetyFindingSource;
   code: string;
   count: number;
   blockers: number;
   warnings: number;
   inputs: string[];
+};
+
+/**
+ * Schema v16: per-input attribution of safety findings by `(source, code)`.
+ */
+export type CliBatchSafetyFindingsAttribution = {
+  input: string;
+  source: CliSafetyFindingSource;
+  code: string;
+  count: number;
+  blockers: number;
+  warnings: number;
 };
 
 function buildBatchControllerCodeAttribution(
@@ -1510,7 +1552,8 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const summary: CliBatchEnvelope["summary"] = {
     files: entries.length,
     blocked,
-    lintIssuesByControllerCodePerInputFile: buildBatchControllerCodeAttribution(entries)
+    lintIssuesByControllerCodePerInputFile: buildBatchControllerCodeAttribution(entries),
+    safetyFindingsByCodePerInputFile: buildBatchSafetyFindingsAttribution(entries)
   };
   if (gatedCodes.size > 0) {
     summary.strictControllerCodesGated = [...gatedCodes].sort((a, b) => a.localeCompare(b));
@@ -1894,24 +1937,40 @@ export function buildBatchParseDiagnosticsPolicyBreachesAggregation(
 }
 
 /**
- * Schema v15: walk every entry's `envelope.safetyFindingsByCode` and group
- * by `code`. Pure function — deterministic given `entries`.
+ * Schema v15–v16: walk every entry's `envelope.safetyFindingsByCode` and group
+ * by `(source, code)`. Pure function — deterministic given `entries`.
  */
 export function buildBatchSafetyFindingsByCodeAggregation(
   entries: CliBatchEntry[]
 ): CliBatchSafetyFindingsByCodeAggregation[] {
-  const byCode = new Map<
+  const byKey = new Map<
     string,
-    { count: number; blockers: number; warnings: number; inputs: Set<string> }
+    {
+      source: CliSafetyFindingSource;
+      code: string;
+      count: number;
+      blockers: number;
+      warnings: number;
+      inputs: Set<string>;
+    }
   >();
   for (const entry of entries) {
     const rows = entry.envelope.safetyFindingsByCode;
     if (!rows || rows.length === 0) continue;
     for (const row of rows) {
-      let bucket = byCode.get(row.code);
+      const source = row.source ?? "advisor";
+      const key = `${source}::${row.code}`;
+      let bucket = byKey.get(key);
       if (!bucket) {
-        bucket = { count: 0, blockers: 0, warnings: 0, inputs: new Set<string>() };
-        byCode.set(row.code, bucket);
+        bucket = {
+          source,
+          code: row.code,
+          count: 0,
+          blockers: 0,
+          warnings: 0,
+          inputs: new Set<string>()
+        };
+        byKey.set(key, bucket);
       }
       bucket.count += row.count;
       bucket.blockers += row.blockers;
@@ -1920,9 +1979,10 @@ export function buildBatchSafetyFindingsByCodeAggregation(
     }
   }
   const rows: CliBatchSafetyFindingsByCodeAggregation[] = [];
-  for (const [code, bucket] of byCode) {
+  for (const bucket of byKey.values()) {
     rows.push({
-      code,
+      source: bucket.source,
+      code: bucket.code,
       count: bucket.count,
       blockers: bucket.blockers,
       warnings: bucket.warnings,
@@ -1931,6 +1991,35 @@ export function buildBatchSafetyFindingsByCodeAggregation(
   }
   rows.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
+    if (a.source !== b.source) return a.source.localeCompare(b.source);
+    return a.code.localeCompare(b.code);
+  });
+  return rows;
+}
+
+/**
+ * Schema v16: per-input attribution of `safetyFindingsByCode`.
+ */
+export function buildBatchSafetyFindingsAttribution(
+  entries: CliBatchEntry[]
+): CliBatchSafetyFindingsAttribution[] {
+  const rows: CliBatchSafetyFindingsAttribution[] = [];
+  for (const entry of entries) {
+    for (const codeEntry of entry.envelope.safetyFindingsByCode ?? []) {
+      rows.push({
+        input: entry.input,
+        source: codeEntry.source,
+        code: codeEntry.code,
+        count: codeEntry.count,
+        blockers: codeEntry.blockers,
+        warnings: codeEntry.warnings
+      });
+    }
+  }
+  rows.sort((a, b) => {
+    if (a.input !== b.input) return a.input < b.input ? -1 : 1;
+    if (a.count !== b.count) return b.count - a.count;
+    if (a.source !== b.source) return a.source.localeCompare(b.source);
     return a.code.localeCompare(b.code);
   });
   return rows;

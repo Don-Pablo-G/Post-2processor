@@ -13,6 +13,7 @@ import {
 import {
   deriveQuickFixBindings,
   deriveParseDiagnosticFixBindings,
+  deriveSafetyFindingFixBindings,
   expandIdeQuickFixTemplate,
   getQuickFixForLintIssue,
   mapBatchAttributionToFileQuickFixes,
@@ -20,6 +21,9 @@ import {
   mapBatchControllerCodeAggregatedToQuickFixes,
   mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes,
   mapBatchParseDiagnosticsByCodeAggregatedToQuickFixes,
+  mapBatchSafetyFindingsByCodeAggregatedToFileQuickFixes,
+  mapBatchSafetyFindingsByCodeAggregatedToQuickFixes,
+  getQuickFixForSafetyFinding,
   mapJobCheckEnvelopeToQuickFixes,
   resolveQuickFixRange,
   splitProgramIntoDisplayBlocks,
@@ -88,12 +92,13 @@ function makeBatchEnvelope(
   aggregated?: CliBatchLintIssuesByControllerCodeAggregation[]
 ): CliBatchEnvelope {
   return {
-    schemaVersion: 11,
+    schemaVersion: 16,
     results: [],
     summary: {
       files: 0,
       blocked: 0,
       lintIssuesByControllerCodePerInputFile: rows,
+      safetyFindingsByCodePerInputFile: [],
       ...(aggregated && aggregated.length > 0
         ? { lintIssuesByControllerCodeAggregated: aggregated }
         : {})
@@ -332,6 +337,7 @@ describe("mapBatchControllerCodeAggregatedToFileQuickFixes", () => {
         files: 2,
         blocked: 0,
         lintIssuesByControllerCodePerInputFile: [],
+        safetyFindingsByCodePerInputFile: [],
         lintIssuesByControllerCodeAggregated: [
           {
             source: "controller_grammar",
@@ -397,6 +403,7 @@ describe("mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes", () => {
         files: 1,
         blocked: 0,
         lintIssuesByControllerCodePerInputFile: [],
+        safetyFindingsByCodePerInputFile: [],
         parseDiagnosticsByCodeAggregated: [
           {
             code: "UNMATCHED_OPEN_PAREN",
@@ -599,6 +606,116 @@ describe("deriveParseDiagnosticFixBindings", () => {
         message: "Unmatched '(' found"
       })
     ).toEqual({});
+  });
+
+  it("derives CHAR from INVALID_CHARACTER message", () => {
+    expect(
+      deriveParseDiagnosticFixBindings({
+        code: "INVALID_CHARACTER",
+        message: "Remove unsupported character '@'"
+      })
+    ).toEqual({ CHAR: "@" });
+  });
+
+  it("derives CLOSER from UNMATCHED_BRACKET when missing ]", () => {
+    expect(
+      deriveParseDiagnosticFixBindings({
+        code: "UNMATCHED_BRACKET",
+        message: "Add missing ']'"
+      })
+    ).toEqual({ CLOSER: "]" });
+  });
+});
+
+describe("deriveSafetyFindingFixBindings", () => {
+  it("derives TOOL/H from TOOL_H_MISMATCH message", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "TOOL_H_MISMATCH",
+        message: "Tool T3 uses mismatched H offset"
+      })
+    ).toEqual({ TOOL: "3", H: "3" });
+  });
+
+  it("returns empty for codes without heuristics", () => {
+    expect(
+      deriveSafetyFindingFixBindings({
+        code: "SIM_RAPID_Z_PLUNGE",
+        message: "Rapid Z plunge"
+      })
+    ).toEqual({});
+  });
+});
+
+describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
+  it("maps aggregated safety rows to catalogue fixes", () => {
+    const envelope = makeBatchEnvelope([]);
+    envelope.summary.safetyFindingsByCodeAggregated = [
+      {
+        source: "advisor",
+        code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+        count: 2,
+        blockers: 2,
+        warnings: 0,
+        inputs: ["a.nc", "b.nc"]
+      }
+    ];
+    const fixes = mapBatchSafetyFindingsByCodeAggregatedToQuickFixes(envelope);
+    expect(fixes).toHaveLength(1);
+    expect(fixes[0].code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
+    expect(fixes[0].source).toBe("advisor");
+    expect(getQuickFixForSafetyFinding({ code: "SIM_RAPID_Z_PLUNGE" })?.title).toMatch(/feed/i);
+  });
+
+  it("attaches ranges for file quick-fixes when sources are supplied", () => {
+    const envelope: CliBatchEnvelope = {
+      schemaVersion: 16,
+      results: [
+        {
+          schemaVersion: 16,
+          input: "a.nc",
+          envelope: {
+            ...makeEnvelope([]),
+            safetyFindingsByCode: [
+              {
+                source: "advisor",
+                code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+                count: 1,
+                blockers: 1,
+                warnings: 0,
+                firstBlockIndex: 1
+              }
+            ]
+          }
+        }
+      ],
+      summary: {
+        files: 1,
+        blocked: 0,
+        lintIssuesByControllerCodePerInputFile: [],
+        safetyFindingsByCodePerInputFile: [],
+        safetyFindingsByCodeAggregated: [
+          {
+            source: "advisor",
+            code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+            count: 1,
+            blockers: 1,
+            warnings: 0,
+            inputs: ["a.nc"]
+          }
+        ]
+      }
+    };
+    const grouped = mapBatchSafetyFindingsByCodeAggregatedToFileQuickFixes(
+      envelope,
+      new Map([["a.nc", "O1\nG0 Z-1\n"]])
+    );
+    expect(grouped.get("a.nc")?.[0].range).toEqual({
+      startLine: 2,
+      startColumn: 1,
+      endLine: 2,
+      endColumn: 6
+    });
   });
 });
 

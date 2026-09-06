@@ -25,6 +25,7 @@
 import {
   getControllerGrammarFix,
   getParseDiagnosticFix,
+  getSafetyFindingFix,
   blockSpanToRange,
   splitProgramIntoBlockSpans,
   splitProgramIntoBlocks,
@@ -384,6 +385,123 @@ export function mapBatchParseDiagnosticsByCodeAggregatedToFileQuickFixes(
   return result;
 }
 
+export type IdeBatchSafetyFindingsAggregatedQuickFix = IdeQuickFix & {
+  source: string;
+  count: number;
+  blockers: number;
+  warnings: number;
+  inputs: string[];
+};
+
+/**
+ * Map Schema v15/v16 `summary.safetyFindingsByCodeAggregated` rows to
+ * catalogue safety-finding fixes.
+ */
+export function mapBatchSafetyFindingsByCodeAggregatedToQuickFixes(
+  envelope: CliBatchEnvelope
+): IdeBatchSafetyFindingsAggregatedQuickFix[] {
+  const rows = envelope.summary.safetyFindingsByCodeAggregated;
+  if (!rows || rows.length === 0) return [];
+  const out: IdeBatchSafetyFindingsAggregatedQuickFix[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const key = `${row.source}::${row.code}`;
+    if (seen.has(key)) continue;
+    const fix = getSafetyFindingFix(row.code);
+    if (!fix) continue;
+    seen.add(key);
+    out.push({
+      code: row.code,
+      title: fix.title,
+      rationale: fix.rationale,
+      ...(fix.replacementTemplate !== undefined
+        ? { replacementTemplate: fix.replacementTemplate }
+        : {}),
+      source: row.source,
+      count: row.count,
+      blockers: row.blockers,
+      warnings: row.warnings,
+      inputs: [...row.inputs]
+    });
+  }
+  return out;
+}
+
+/**
+ * Map aggregated safety-finding quick-fixes to per-input fixes with optional
+ * editor ranges when program sources are supplied via `sourcesByInput`.
+ */
+export function mapBatchSafetyFindingsByCodeAggregatedToFileQuickFixes(
+  envelope: CliBatchEnvelope,
+  sourcesByInput: ReadonlyMap<string, string>,
+  rangeOptions?: QuickFixRangeOptions
+): Map<string, IdeQuickFix[]> {
+  const aggregated = mapBatchSafetyFindingsByCodeAggregatedToQuickFixes(envelope);
+  if (aggregated.length === 0) return new Map();
+
+  const blockIndexByInputCode = new Map<string, Map<string, number>>();
+  for (const entry of envelope.results) {
+    const byCode = new Map<string, number>();
+    for (const row of entry.envelope.safetyFindingsByCode) {
+      if (row.firstBlockIndex === undefined) continue;
+      if (!byCode.has(row.code)) byCode.set(row.code, row.firstBlockIndex);
+    }
+    blockIndexByInputCode.set(entry.input, byCode);
+  }
+
+  const result = new Map<string, IdeQuickFix[]>();
+  const seenPerInput = new Map<string, Set<string>>();
+  for (const fix of aggregated) {
+    for (const input of fix.inputs) {
+      let seen = seenPerInput.get(input);
+      if (!seen) {
+        seen = new Set<string>();
+        seenPerInput.set(input, seen);
+      }
+      if (seen.has(fix.code)) continue;
+      seen.add(fix.code);
+
+      const out: IdeQuickFix = {
+        code: fix.code,
+        title: fix.title,
+        rationale: fix.rationale
+      };
+      if (fix.replacementTemplate !== undefined) {
+        out.replacementTemplate = fix.replacementTemplate;
+      }
+      const source = sourcesByInput.get(input);
+      const blockIndex = blockIndexByInputCode.get(input)?.get(fix.code);
+      if (source !== undefined && blockIndex !== undefined) {
+        const range = resolveQuickFixRange(source, blockIndex, rangeOptions);
+        if (range) out.range = range;
+      }
+
+      const existing = result.get(input);
+      if (existing) {
+        existing.push(out);
+      } else {
+        result.set(input, [out]);
+      }
+    }
+  }
+  return result;
+}
+
+export function getQuickFixForSafetyFinding(input: {
+  code: string;
+}): IdeQuickFix | undefined {
+  const fix = getSafetyFindingFix(input.code);
+  if (!fix) return undefined;
+  return {
+    code: fix.code,
+    title: fix.title,
+    rationale: fix.rationale,
+    ...(fix.replacementTemplate !== undefined
+      ? { replacementTemplate: fix.replacementTemplate }
+      : {})
+  };
+}
+
 function toQuickFix(
   code: string,
   fix: { title: string; rationale: string; replacementTemplate?: string }
@@ -498,6 +616,36 @@ export function deriveParseDiagnosticFixBindings(
   if (code === "UNKNOWN_TOKEN") {
     const match = message.match(/Unknown token\s+'([^']+)'/);
     if (match?.[1]) return Object.freeze({ TOKEN: match[1] });
+  }
+  if (code === "INVALID_CHARACTER") {
+    const match = message.match(/character\s+'([^']+)'/i) ?? message.match(/'([^']+)'/);
+    if (match?.[1]) return Object.freeze({ CHAR: match[1] });
+  }
+  if (code === "UNMATCHED_BRACKET") {
+    if (/missing\s+'\]'|Add missing '\]'/i.test(message) || /opens?\s*>\s*closes?/i.test(message)) {
+      return Object.freeze({ CLOSER: "]" });
+    }
+  }
+  return Object.freeze({});
+}
+
+export type SafetyFindingBindingInput = {
+  code: string;
+  message?: string;
+};
+
+/**
+ * Narrow heuristic bindings for safety-finding catalogue templates.
+ * Today: TOOL_H_MISMATCH / TOOL_WITHOUT_G43 → `{ TOOL }` when message has T##.
+ */
+export function deriveSafetyFindingFixBindings(
+  input: SafetyFindingBindingInput
+): IdeQuickFixBindings {
+  const code = typeof input.code === "string" ? input.code : "";
+  const message = typeof input.message === "string" ? input.message : "";
+  if (code === "TOOL_H_MISMATCH" || code === "TOOL_WITHOUT_G43") {
+    const match = message.match(/\bT\s*(\d+)\b/i) ?? message.match(/tool\s+(\d+)/i);
+    if (match?.[1]) return Object.freeze({ TOOL: match[1], H: match[1] });
   }
   return Object.freeze({});
 }

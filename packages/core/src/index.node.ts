@@ -92,6 +92,12 @@ export {
 } from "./parser/parseDiagnosticFixes.js";
 export type { ParseDiagnosticFix } from "./parser/parseDiagnosticFixes.js";
 
+export {
+  SAFETY_FINDING_FIXES,
+  getSafetyFindingFix
+} from "./workshop/safetyFindingFixes.js";
+export type { SafetyFindingFix } from "./workshop/safetyFindingFixes.js";
+
 export { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecation.js";
 
 export type {
@@ -106,13 +112,15 @@ export type {
   CliBatchStrictControllerCodesGatedAggregation,
   CliBatchParseDiagnosticsPolicyBreachesAggregation,
   CliBatchSafetyFindingsByCodeAggregation,
+  CliBatchSafetyFindingsAttribution,
   CliBatchLintIssuesBySourceAggregation,
   CliBlockReason,
   CliLintIssuesByControllerCodeEntry,
   CliLintIssuesBySourceEntry,
   CliLintIssuesByParseDiagCodeEntry,
   CliParseDiagnosticsByCodeEntry,
-  CliSafetyFindingsByCodeEntry
+  CliSafetyFindingsByCodeEntry,
+  CliSafetyFindingSource
 } from "./cli.js";
 
 export function isNodeCapable(): boolean {

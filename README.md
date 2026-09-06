@@ -3692,6 +3692,49 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=15
 ```
 
+## Safety source attribution + fix catalogue + folder batch + Schema v16
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `source` on safety findings + per-input attribution (Schema v16)
+
+`CLI_SCHEMA_VERSION` bumps `15 → 16`. `safetyFindingsByCode[]` rows gain required
+`source: "advisor" | "simulation"` (one row per `(source, code)`). Batch summary
+keeps `safetyFindingsByCodeAggregated` (now keyed by `(source, code)`) and adds
+`safetyFindingsByCodePerInputFile` attribution.
+
+### Move 2 — `safetyFindingFixes` catalogue
+
+`getSafetyFindingFix(code)` covers high-traffic advisor + `SIM_*` codes with
+stable titles, rationales, and optional templates.
+
+### Move 3 — ide-bridge safety-findings quick-fix maps
+
+`mapBatchSafetyFindingsByCodeAggregatedToQuickFixes` /
+`ToFileQuickFixes` plus `getQuickFixForSafetyFinding`.
+
+### Move 4 — Broader binding heuristics
+
+`deriveParseDiagnosticFixBindings` gains `INVALID_CHARACTER` → `{ CHAR }` and
+`UNMATCHED_BRACKET` → `{ CLOSER }`. New `deriveSafetyFindingFixBindings` for
+tool/H message heuristics.
+
+### Move 5 — Desktop non-recursive folder batch Job Check
+
+Folder picker (webkitdirectory) runs `.nc/.tap/.gcode` files in the selected
+folder (top-level only), surfaces batch summary / safety / breach chips, and
+supports **Copy batch JSON**.
+
+### Move 6 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=16
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3709,9 +3752,9 @@ next planning wave can pick them up:
   reorder, embedded LTR islands, and bracket/quote preservation ship;
   deeply nested embeddings and multi-script runs still need ICU or a
   full UAX#9 implementation.
-- **Desktop multi-file batch Job Check** — v15 exports are rollup-shaped
-  but desktop still runs single-file; a batch walker UI would close parity.
-- **Simulation/advisor ide-bridge quick-fix catalogue** — rollup ships;
-  no `SIM_*` / advisor fix catalogue yet.
-- **Broader parse-diag binding heuristics** — LETTER/TOKEN ship; additional
-  codes may need message-derived bindings later.
+- **Recursive / include-exclude batch UI** — folder batch ships
+  non-recursive only; CLI already supports `--recursive` / globs.
+- **Full safety-finding catalogue coverage** — high-traffic subset ships;
+  rarer advisor/sim codes may still lack catalogue entries.
+- **Desktop PDF / export from batch** — folder run shows chips and JSON
+  copy, not per-file PDF zip.

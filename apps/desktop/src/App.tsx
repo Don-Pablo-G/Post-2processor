@@ -113,6 +113,15 @@ import {
   formatSafetyFindingsChip,
   formatSafetyFindingsForExport
 } from "./safetyFindingsView";
+import {
+  filterBatchJobCheckFiles,
+  formatDesktopBatchPolicyBreachChip,
+  formatDesktopBatchSafetyChip,
+  formatDesktopBatchSummaryChip,
+  formatDesktopBatchSummaryForExport,
+  runDesktopBatchJobCheck,
+  type DesktopBatchJobCheckResult
+} from "./batchJobCheckView";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -270,6 +279,13 @@ const UI_TEXT: Record<
     safetyFindingsCopyJson: string;
     safetyFindingsCopiedJson: string;
     safetyFindingsCopyJsonFallback: string;
+    batchJobCheckLabel: string;
+    batchJobCheckPickFolder: string;
+    batchJobCheckRunning: string;
+    batchJobCheckCopyJson: string;
+    batchJobCheckCopiedJson: string;
+    batchJobCheckCopyJsonFallback: string;
+    batchJobCheckEmpty: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -559,6 +575,13 @@ const UI_TEXT: Record<
     safetyFindingsCopyJson: "Kopiuj JSON bezpieczeństwa",
     safetyFindingsCopiedJson: "Skopiowano rollup bezpieczeństwa (JSON)",
     safetyFindingsCopyJsonFallback: "Kopiuj rollup bezpieczeństwa ręcznie",
+    batchJobCheckLabel: "Batch folder",
+    batchJobCheckPickFolder: "Wybierz folder…",
+    batchJobCheckRunning: "Uruchamianie batch…",
+    batchJobCheckCopyJson: "Kopiuj JSON batch",
+    batchJobCheckCopiedJson: "Skopiowano podsumowanie batch",
+    batchJobCheckCopyJsonFallback: "Kopiuj podsumowanie batch ręcznie",
+    batchJobCheckEmpty: "Brak plików .nc/.tap/.gcode w folderze",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -849,6 +872,13 @@ const UI_TEXT: Record<
     safetyFindingsCopyJson: "Copy safety JSON",
     safetyFindingsCopiedJson: "Copied safety findings rollup (JSON)",
     safetyFindingsCopyJsonFallback: "Copy safety findings rollup manually",
+    batchJobCheckLabel: "Folder batch",
+    batchJobCheckPickFolder: "Pick folder…",
+    batchJobCheckRunning: "Running batch…",
+    batchJobCheckCopyJson: "Copy batch JSON",
+    batchJobCheckCopiedJson: "Copied batch summary",
+    batchJobCheckCopyJsonFallback: "Copy batch summary manually",
+    batchJobCheckEmpty: "No .nc/.tap/.gcode files in folder",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -1084,6 +1114,11 @@ export function App() {
   const [policyContextCopyStatus, setPolicyContextCopyStatus] = useState("");
   const [fullExportContextCopyStatus, setFullExportContextCopyStatus] = useState("");
   const [jobCheckResult, setJobCheckResult] = useState<RunJobCheckResult | null>(null);
+  const [batchJobCheckResult, setBatchJobCheckResult] = useState<DesktopBatchJobCheckResult | null>(
+    null
+  );
+  const [batchJobCheckBusy, setBatchJobCheckBusy] = useState(false);
+  const batchFolderInputRef = useRef<HTMLInputElement | null>(null);
   const strictGateSummary = useMemo(() => {
     if (!jobCheckResult || strictGateWatchPatterns.length === 0) {
       return {
@@ -1771,6 +1806,80 @@ export function App() {
     } catch (error) {
       setJobCheckStatus(error instanceof Error ? error.message : "Job check failed.");
       setJobCheckResult(null);
+    }
+  }
+
+  async function handleRunFolderBatchJobCheck(
+    fileList: FileList | null
+  ): Promise<void> {
+    if (!fileList || fileList.length === 0 || batchJobCheckBusy) return;
+    setBatchJobCheckBusy(true);
+    try {
+      const selected = filterBatchJobCheckFiles(
+        Array.from(fileList).map((f) => ({
+          name: f.name,
+          webkitRelativePath: f.webkitRelativePath
+        }))
+      );
+      if (selected.length === 0) {
+        setExportStatus(t.batchJobCheckEmpty);
+        setBatchJobCheckResult(null);
+        return;
+      }
+      const byName = new Map(Array.from(fileList).map((f) => [f.name, f]));
+      const batchFiles: Array<{ input: string; source: string }> = [];
+      for (const item of selected) {
+        const file = byName.get(item.name);
+        if (!file) continue;
+        batchFiles.push({ input: item.relativePath, source: await file.text() });
+      }
+      const batch = await runDesktopBatchJobCheck(batchFiles, async (source) => {
+        const fileAst = parse(source, haasNgcProfile, { includeExpressionAst: true });
+        return runJobCheck({
+          ast: fileAst,
+          policyPreset: jobCheckPolicyPreset,
+          initialState: {},
+          advisorOptions: {
+            stock: {
+              minX: -10,
+              maxX: 200,
+              minY: -10,
+              maxY: 200,
+              topZ: 0,
+              bottomZ: -80
+            },
+            clampZones: [
+              { name: "LEFT_VISE_JAW", minX: -5, maxX: 15, minY: -5, maxY: 205, minZ: -10, maxZ: 80 }
+            ]
+          },
+          simulationLimits: {
+            maxSteps: 10000,
+            maxLoopIterations: 1000,
+            subprogramTargetPolicy,
+            logSemantics
+          },
+          parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy
+        });
+      });
+      setBatchJobCheckResult(batch);
+      setExportStatus(formatDesktopBatchSummaryChip(batch.summary));
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Folder batch failed.");
+      setBatchJobCheckResult(null);
+    } finally {
+      setBatchJobCheckBusy(false);
+      if (batchFolderInputRef.current) batchFolderInputRef.current.value = "";
+    }
+  }
+
+  async function handleCopyBatchJobCheckJson(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const payload = formatDesktopBatchSummaryForExport(batchJobCheckResult.summary);
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.batchJobCheckCopiedJson);
+    } catch {
+      setExportStatus(`${t.batchJobCheckCopyJsonFallback}: ${payload}`);
     }
   }
 
@@ -3413,6 +3522,63 @@ export function App() {
           </div>
         </section>
       )}
+
+      <section data-testid="folder-batch-job-check" style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+          <span style={{ opacity: 0.85 }}>{`${t.batchJobCheckLabel}:`}</span>
+          <button
+            type="button"
+            data-testid="folder-batch-pick"
+            disabled={batchJobCheckBusy}
+            onClick={() => batchFolderInputRef.current?.click()}
+          >
+            {batchJobCheckBusy ? t.batchJobCheckRunning : t.batchJobCheckPickFolder}
+          </button>
+          <input
+            ref={batchFolderInputRef}
+            type="file"
+            // @ts-expect-error webkitdirectory is widely supported for folder picks
+            webkitdirectory=""
+            multiple
+            style={{ display: "none" }}
+            data-testid="folder-batch-input"
+            onChange={(event) => void handleRunFolderBatchJobCheck(event.target.files)}
+          />
+          {batchJobCheckResult && (
+            <>
+              <span
+                data-testid="folder-batch-summary-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchSummaryChip(batchJobCheckResult.summary)}
+              </span>
+              <span
+                data-testid="folder-batch-safety-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchSafetyChip(
+                  batchJobCheckResult.summary.safetyFindingsByCodeAggregated
+                )}
+              </span>
+              <span
+                data-testid="folder-batch-breach-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchPolicyBreachChip(
+                  batchJobCheckResult.summary.parseDiagnosticsPolicyBreachesAggregated
+                )}
+              </span>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-json"
+                onClick={() => void handleCopyBatchJobCheckJson()}
+              >
+                {t.batchJobCheckCopyJson}
+              </button>
+            </>
+          )}
+        </div>
+      </section>
 
       <section>
         <h2>{t.programInput}</h2>

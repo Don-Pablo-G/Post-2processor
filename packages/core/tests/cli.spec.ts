@@ -17,6 +17,7 @@ import {
   buildBatchLintIssuesByControllerCodeAggregation,
   buildBatchParseDiagnosticsPolicyBreachesAggregation,
   buildBatchSafetyFindingsByCodeAggregation,
+  buildBatchSafetyFindingsAttribution,
   buildBatchStrictControllerCodesGatedAggregation,
   buildBatchParseDiagnosticsByCodeAggregation,
   buildSafetyFindingsByCode,
@@ -1015,7 +1016,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=15\n");
+    expect(stdout).toBe("cnc-job-check schema=16\n");
     expect(stderr).toBe("");
   });
 
@@ -1387,7 +1388,7 @@ describe("main()", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(15);
+    expect(parsed.schemaVersion).toBe(16);
     expect(parsed.summary).toMatchObject({
       files: 2,
       blocked: 0,
@@ -2608,7 +2609,7 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 
 describe("--strict-controller-codes gate (schema v7)", () => {
   it("CLI_SCHEMA_VERSION is 9", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(15);
+    expect(CLI_SCHEMA_VERSION).toBe(16);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -2877,7 +2878,7 @@ describe("Schema v13: summary.strictControllerCodesGatedAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(15);
+    expect(batch.schemaVersion).toBe(16);
     expect(batch.summary.strictControllerCodesGatedAggregated).toBeUndefined();
   });
 
@@ -2931,12 +2932,12 @@ describe("Schema v13: summary.strictControllerCodesGatedAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: { strictControllerCodesGated: ["CG_N_AND_O_MIXED"] }
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           strictControllerCodesGated: ["CG_N_AND_O_MIXED", "CG_DUPLICATE_O_HEADER"]
         }
@@ -2963,7 +2964,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(15);
+    expect(batch.schemaVersion).toBe(16);
     expect(batch.summary.parseDiagnosticsPolicyBreachesAggregated).toBeUndefined();
   });
 
@@ -3007,7 +3008,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           parseDiagnosticsPolicyBreaches: [
             { key: "TOTAL", observed: 3, threshold: 0, severity: "blocker" as const }
@@ -3016,7 +3017,7 @@ describe("Schema v14: summary.parseDiagnosticsPolicyBreachesAggregated + firstBl
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           parseDiagnosticsPolicyBreaches: [
             {
@@ -3068,7 +3069,7 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     );
     expect(exit).toBe(0);
     const env = JSON.parse(out.join(""));
-    expect(env.schemaVersion).toBe(15);
+    expect(env.schemaVersion).toBe(16);
     expect(Array.isArray(env.safetyFindingsByCode)).toBe(true);
   });
 
@@ -3082,45 +3083,65 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(15);
+    expect(batch.schemaVersion).toBe(16);
     expect(batch.summary.safetyFindingsByCodeAggregated).toBeUndefined();
   });
 
-  it("buildBatchSafetyFindingsByCodeAggregation sorts by count desc then code asc", () => {
+  it("buildBatchSafetyFindingsByCodeAggregation sorts by count desc then source/code asc", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           safetyFindingsByCode: [
-            { code: "SIM_RAPID_Z_PLUNGE", count: 1, blockers: 0, warnings: 1 }
+            {
+              source: "simulation" as const,
+              code: "SIM_RAPID_Z_PLUNGE",
+              count: 1,
+              blockers: 0,
+              warnings: 1
+            }
           ]
         }
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           safetyFindingsByCode: [
-            { code: "SIM_RAPID_Z_PLUNGE", count: 2, blockers: 0, warnings: 2 },
-            { code: "MISSING_G43_BEFORE_NEGATIVE_Z", count: 1, blockers: 1, warnings: 0 }
+            {
+              source: "simulation" as const,
+              code: "SIM_RAPID_Z_PLUNGE",
+              count: 2,
+              blockers: 0,
+              warnings: 2
+            },
+            {
+              source: "advisor" as const,
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              count: 1,
+              blockers: 1,
+              warnings: 0
+            }
           ]
         }
       }
     ] as Parameters<typeof buildBatchSafetyFindingsByCodeAggregation>[0];
     const agg = buildBatchSafetyFindingsByCodeAggregation(entries);
     expect(agg[0]).toEqual({
+      source: "simulation",
       code: "SIM_RAPID_Z_PLUNGE",
       count: 3,
       blockers: 0,
       warnings: 3,
       inputs: ["a.nc", "b.nc"]
     });
+    expect(agg[1].source).toBe("advisor");
     expect(agg[1].code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
     expect(agg[1].inputs).toEqual(["a.nc"]);
   });
 
-  it("buildSafetyFindingsByCode unions advisor + simulation findings", () => {
+  it("buildSafetyFindingsByCode attributes advisor vs simulation sources", () => {
     const rows = buildSafetyFindingsByCode({
       advisor: {
         safetyFindings: [
@@ -3133,11 +3154,50 @@ describe("Schema v15: safetyFindingsByCode + summary.safetyFindingsByCodeAggrega
       ]
     } as Parameters<typeof buildSafetyFindingsByCode>[0]);
     expect(rows).toHaveLength(2);
+    expect(rows[0].source).toBe("simulation");
     expect(rows[0].code).toBe("SIM_RAPID_Z_PLUNGE");
     expect(rows[0].count).toBe(2);
     expect(rows[0].firstBlockIndex).toBe(1);
+    expect(rows[1].source).toBe("advisor");
     expect(rows[1].code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
     expect(rows[1].blockers).toBe(1);
+  });
+
+  it("buildBatchSafetyFindingsAttribution emits per-input rows", () => {
+    const rows = buildBatchSafetyFindingsAttribution([
+      {
+        input: "b.nc",
+        schemaVersion: 16,
+        envelope: {
+          safetyFindingsByCode: [
+            {
+              source: "simulation",
+              code: "SIM_RAPID_Z_PLUNGE",
+              count: 1,
+              blockers: 0,
+              warnings: 1
+            }
+          ]
+        }
+      },
+      {
+        input: "a.nc",
+        schemaVersion: 16,
+        envelope: {
+          safetyFindingsByCode: [
+            {
+              source: "advisor",
+              code: "MISSING_G43_BEFORE_NEGATIVE_Z",
+              count: 1,
+              blockers: 1,
+              warnings: 0
+            }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchSafetyFindingsAttribution>[0]);
+    expect(rows.map((r) => r.input)).toEqual(["a.nc", "b.nc"]);
+    expect(rows[0].source).toBe("advisor");
   });
 });
 
@@ -3362,7 +3422,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     const batch = buildBatchEnvelope([
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesBySource: [],
           lintIssuesByControllerCode: [],
@@ -3371,7 +3431,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
       },
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesBySource: [],
           lintIssuesByControllerCode: [],
@@ -3413,7 +3473,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesBySource: [
             { source: "profile_lint", count: 1, blockers: 0, warnings: 1 },
@@ -3423,7 +3483,7 @@ describe("Schema v9: summary.lintIssuesBySourceAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesBySource: [
             { source: "controller_grammar", count: 2, blockers: 0, warnings: 2 },
@@ -3451,7 +3511,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(15);
+    expect(batch.schemaVersion).toBe(16);
     expect(batch.summary.lintIssuesByParseDiagCodeAggregated).toBeUndefined();
   });
 
@@ -3487,7 +3547,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesByParseDiagCode: [
             { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 1 }
@@ -3496,7 +3556,7 @@ describe("Schema v10: summary.lintIssuesByParseDiagCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesByParseDiagCode: [
             { source: "lexer", code: "UNMATCHED_OPEN_PAREN", count: 2 },
@@ -3529,7 +3589,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(15);
+    expect(batch.schemaVersion).toBe(16);
     expect(batch.summary.lintIssuesByControllerCodeAggregated).toBeUndefined();
   });
 
@@ -3571,7 +3631,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesByControllerCode: [
             {
@@ -3586,7 +3646,7 @@ describe("Schema v11: summary.lintIssuesByControllerCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           lintIssuesByControllerCode: [
             {
@@ -3631,7 +3691,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.schemaVersion).toBe(15);
+    expect(batch.schemaVersion).toBe(16);
     expect(batch.summary.parseDiagnosticsByCodeAggregated).toBeUndefined();
   });
 
@@ -3669,7 +3729,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
     const entries = [
       {
         input: "b.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           parseDiagnosticsByCode: [
             { code: "UNMATCHED_OPEN_PAREN", count: 1, warnings: 1, errors: 0 }
@@ -3678,7 +3738,7 @@ describe("Schema v12: summary.parseDiagnosticsByCodeAggregated", () => {
       },
       {
         input: "a.nc",
-        schemaVersion: 15,
+        schemaVersion: 16,
         envelope: {
           parseDiagnosticsByCode: [
             { code: "UNMATCHED_OPEN_PAREN", count: 2, warnings: 2, errors: 0 },
