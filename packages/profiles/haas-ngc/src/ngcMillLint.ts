@@ -1146,6 +1146,50 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG30(block) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while cutter compensation (G41/G42) is still active — cancel with G40 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while a canned cycle is still active — cancel with G80 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G28 while coordinate rotation (G68) is still active — cancel with G69 before reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G53 while coordinate rotation (G68) is still active — cancel with G69 before machine move.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 while scaling (G51) is still active — cancel with G50 before reference return.",
+        blockIndex: index
+      });
+    }
+
     if (hasSpindleDirectionConflict(block)) {
       issues.push({
         severity: "warning",

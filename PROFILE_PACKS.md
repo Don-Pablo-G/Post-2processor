@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 108
+Total rules: 113
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -113,6 +113,11 @@ Total rules: 108
 | `haas.g53-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a G53 machine move. |
 | `haas.g53-while-canned` | warning | — | — | Cancel the canned cycle with G80 before a G53 machine move. |
 | `haas.g52-local-offset` | warning | — | — | G52 local offsets should be intentional — prefer work offsets (G54-G59) when possible. |
+| `haas.g30-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before G30 secondary reference return. |
+| `haas.g30-while-canned` | warning | — | — | Cancel the canned cycle with G80 before G30 secondary reference return. |
+| `haas.g28-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before G28 reference return. |
+| `haas.g53-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before a G53 machine move. |
+| `haas.g28-while-scaling` | warning | — | — | Cancel scaling with G50 before G28 reference return. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -2914,6 +2919,178 @@ O0001
 T1 M6
 G54
 G0 X10.
+M30
+```
+
+### `haas.g30-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G30 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before G30 secondary reference return.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G41 D1
+G91
+G30 Z0
+G90
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G41 D1
+G40
+G91
+G30 Z0
+G90
+M30
+```
+
+### `haas.g30-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G30 while a canned cycle is still active/`
+- **Summary:** Cancel the canned cycle with G80 before G30 secondary reference return.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G81 Z-5. R2. F100.
+G91
+G30 Z0
+G90
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G81 Z-5. R2. F100.
+G80
+G91
+G30 Z0
+G90
+M30
+```
+
+### `haas.g28-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G28 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before G28 reference return.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G91
+G28 Z0
+G90
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G69
+G91
+G28 Z0
+G90
+M30
+```
+
+### `haas.g53-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G53 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before a G53 machine move.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G68
+G53 Z0
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G68
+G69
+G53 Z0
+M30
+```
+
+### `haas.g28-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/G28 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before G28 reference return.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G91
+G28 Z0
+G90
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G50
+G91
+G28 Z0
+G90
 M30
 ```
 
