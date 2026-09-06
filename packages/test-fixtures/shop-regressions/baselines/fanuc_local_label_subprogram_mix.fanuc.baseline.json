@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_local_label_subprogram_mix.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 7,
+  "lintIssueCount": 9,
   "lintIssues": [
     {
       "severity": "warning",
@@ -29,7 +29,15 @@
     },
     {
       "severity": "warning",
+      "message": "M99 while tool length compensation (G43) is still active — cancel with G49 before subprogram return."
+    },
+    {
+      "severity": "warning",
       "message": "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion."
+    },
+    {
+      "severity": "warning",
+      "message": "M99 while tool length compensation (G43) is still active — cancel with G49 before subprogram return."
     }
   ],
   "simulation": {

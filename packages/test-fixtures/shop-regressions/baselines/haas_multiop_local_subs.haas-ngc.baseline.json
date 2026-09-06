@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_multiop_local_subs.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 7,
+  "lintIssueCount": 9,
   "lintIssues": [
     {
       "severity": "warning",
@@ -29,7 +29,15 @@
     },
     {
       "severity": "warning",
+      "message": "M99 while tool length compensation (G43) is still active — cancel with G49 before subprogram return."
+    },
+    {
+      "severity": "warning",
       "message": "Canned cycle (G73/G76/G81-G83/G85-G89) while spindle is off — start spindle before the cycle."
+    },
+    {
+      "severity": "warning",
+      "message": "M99 while tool length compensation (G43) is still active — cancel with G49 before subprogram return."
     }
   ],
   "simulation": {

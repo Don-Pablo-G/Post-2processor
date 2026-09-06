@@ -989,6 +989,91 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG65(block) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 while scaling (G51) is still active — cancel with G50 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M98 while coolant is still on — turn coolant off with M9 before the subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 while coolant is still on — turn coolant off with M9 before the local subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 while coolant is still on — turn coolant off with M9 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M98 while incremental mode (G91) is active — restore G90 before the subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 while incremental mode (G91) is active — restore G90 before the local subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message: "G65 while incremental mode (G91) is active — restore G90 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M99 while cutter compensation (G41/G42) is still active — cancel with G40 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M99 while a canned cycle is still active — cancel with G80 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 99) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M99 while tool length compensation (G43) is still active — cancel with G49 before subprogram return.",
+        blockIndex: index
+      });
+    }
+
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {
       issues.push({
         severity: "warning",

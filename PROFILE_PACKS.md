@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 231 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 241 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -141,6 +141,16 @@ Total rules: 231 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g65-while-canned` | warning | — | — | Cancel canned cycles with G80 before a G65 macro call. |
 | `haas.g65-while-tool-length` | warning | — | — | Cancel tool length with G49 before a G65 macro call. |
 | `haas.g65-while-rotation` | warning | — | — | Cancel rotation with G69 before a G65 macro call. |
+| `haas.g65-while-scaling` | warning | — | — | Cancel scaling with G50 before a G65 macro call. |
+| `haas.m98-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M98 subprogram call. |
+| `haas.m97-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M97 local subprogram call. |
+| `haas.g65-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a G65 macro call. |
+| `haas.m98-while-incremental` | warning | — | — | Restore G90 before an M98 subprogram call. |
+| `haas.m97-while-incremental` | warning | — | — | Restore G90 before an M97 local subprogram call. |
+| `haas.g65-while-incremental` | warning | — | — | Restore G90 before a G65 macro call. |
+| `haas.m99-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before M99 subprogram return. |
+| `haas.m99-while-canned` | warning | — | — | Cancel canned cycles with G80 before M99 subprogram return. |
+| `haas.m99-while-tool-length` | warning | — | — | Cancel tool length with G49 before M99 subprogram return. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -3970,6 +3980,321 @@ G68 X0 Y0 R45.
 G69
 G65 P1000
 M30
+```
+
+### `haas.g65-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G65 P1000
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G50
+G65 P1000
+M30
+```
+
+### `haas.m98-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M98 subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M98 P1000
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+M98 P1000
+M5
+M30
+```
+
+### `haas.m97-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M97 local subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M97 P10
+M9
+N10
+M99
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+M97 P10
+N10
+M99
+M5
+M30
+```
+
+### `haas.g65-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G65 P1000
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G65 P1000
+M5
+M30
+```
+
+### `haas.m98-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an M98 subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+M98 P1000
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+M98 P1000
+M30
+```
+
+### `haas.m97-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an M97 local subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+M97 P10
+G90
+N10
+M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+M97 P10
+N10
+M99
+M30
+```
+
+### `haas.g65-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before a G65 macro call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G65 P1000
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+G65 P1000
+M30
+```
+
+### `haas.m99-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M99 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before M99 subprogram return.
+
+**Triggers (positive):**
+
+```gcode
+O1000
+T1 M6
+G54
+G43 H1 Z25.
+G41 D1
+M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1000
+T1 M6
+G54
+G43 H1 Z25.
+G41 D1
+G40
+M99
+```
+
+### `haas.m99-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M99 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before M99 subprogram return.
+
+**Triggers (positive):**
+
+```gcode
+O1000
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1000
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+M99
+```
+
+### `haas.m99-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M99 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before M99 subprogram return.
+
+**Triggers (positive):**
+
+```gcode
+O1000
+T1 M6
+G54
+G43 H1 Z25.
+M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1000
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M99
 ```
 
 ### `haas.g28-and-g92-same-block`

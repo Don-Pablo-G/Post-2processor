@@ -3317,6 +3317,99 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G65 while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51 P2.\nG65 P1000\nG50\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 while coolant is on", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nM8\nM98 P1000\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while coolant is still on")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while coolant is on", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nM8\nM97 P10\nM9\nN10\nM99\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while coolant is still on")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 while coolant is on", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nM8\nG65 P1000\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while coolant is still on")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M98 while incremental mode is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nM98 P1000\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M98 while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M97 while incremental mode is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nM97 P10\nG90\nN10\nM99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M97 while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G65 while incremental mode is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nG65 P1000\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M99 while cutter compensation is active", () => {
+    const ast = parse("O1000\nT1 M6\nG54\nG43 H1 Z25.\nG41 D1\nM99", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M99 while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M99 while canned cycle is active", () => {
+    const ast = parse("O1000\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM99", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M99 while a canned cycle is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M99 while tool length is active", () => {
+    const ast = parse("O1000\nT1 M6\nG54\nG43 H1 Z25.\nM99", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M99 while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
   it("warns G28 and G92 on the same block", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(
