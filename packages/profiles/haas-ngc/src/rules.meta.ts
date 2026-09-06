@@ -779,6 +779,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM30\n"
   },
   {
+    id: "haas.g28-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G28 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G28 reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nG91\nG28 Z0\nG90\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nG40\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g28-while-canned",
+    severity: "warning",
+    messageMatcher: /G28 while a canned cycle is still active/,
+    summary: "Cancel the canned cycle with G80 before G28 reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100.\nG91\nG28 Z0\nG90\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100.\nG80\nG91\nG28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g53-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G53 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before a G53 machine move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nG53 Z0\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nG40\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.g53-while-canned",
+    severity: "warning",
+    messageMatcher: /G53 while a canned cycle is still active/,
+    summary: "Cancel the canned cycle with G80 before a G53 machine move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100.\nG53 Z0\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100.\nG80\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.g52-local-offset",
+    severity: "warning",
+    messageMatcher: /G52 local coordinate offset/,
+    summary: "G52 local offsets should be intentional — prefer work offsets (G54-G59) when possible.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG0 X10.\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

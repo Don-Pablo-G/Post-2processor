@@ -232,6 +232,13 @@ function hasExactG92(block: { words: Word[] }): boolean {
   });
 }
 
+function hasExactG52(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 52;
+  });
+}
+
 function hasExactTappingCycle(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;
@@ -976,6 +983,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G52 local coordinate offset — verify intentional use; prefer work offsets (G54-G59) when possible.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG4(block) && !hasLetter(block, "P") && !hasLetter(block, "X")) {
       issues.push({
         severity: "warning",
@@ -1092,6 +1108,40 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         severity: "warning",
         message:
           "G30 with multiple axes on one block — prefer single-axis G30 moves for safer secondary homing.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G28 while cutter compensation (G41/G42) is still active — cancel with G40 before reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 while a canned cycle is still active — cancel with G80 before reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && cutterCompActive && !hasExactG40(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G53 while cutter compensation (G41/G42) is still active — cancel with G40 before machine move.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && cannedActive && !hasExactG80(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G53 while a canned cycle is still active — cancel with G80 before machine move.",
         blockIndex: index
       });
     }
