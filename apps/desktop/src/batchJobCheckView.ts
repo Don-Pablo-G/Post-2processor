@@ -1,6 +1,7 @@
 import {
   BATCH_INPUT_EXTENSIONS,
   buildBatchEnvelope,
+  buildBatchFixTemplateCandidates,
   buildJobCheckEnvelope,
   buildSetupSheetPdf,
   classifyBatchRelativePath,
@@ -8,9 +9,11 @@ import {
   createStoreZip,
   createZip,
   formatBatchAggregationsAsCsv,
+  formatBatchFixCandidatesAsSarifLite,
   getControllerGrammarFix,
   getParseDiagnosticFix,
   getSafetyFindingFix,
+  type BatchFixCandidateRow,
   type CliBatchEnvelope,
   type CliBatchWalk,
   type CliBatchParseDiagnosticsPolicyBreachesAggregation,
@@ -425,6 +428,44 @@ export function formatDesktopBatchUnboundFixChip(
     .map((p) => p.code)
     .join(",");
   return `batch-unbound-fixes: ${unbound.length} | top=${top || "n/a"}`;
+}
+
+/**
+ * Schema v24: clipboard payload concatenating patched NC bodies with separators.
+ */
+export function formatDesktopBatchPatchedProgramsForClipboard(
+  items: readonly BatchDownloadItem[]
+): string {
+  if (items.length === 0) return "";
+  return items
+    .map((item) => `===== ${item.filename} =====\n${String(item.body)}`)
+    .join("\n\n");
+}
+
+/**
+ * Schema v24: SARIF-lite from true unbound previews when available; otherwise
+ * catalogue template-placeholder candidates from the envelope.
+ */
+export function formatDesktopBatchUnboundFixesAsSarifLite(
+  envelope: CliBatchEnvelope,
+  previews: readonly DesktopBatchQuickFixPreview[] = []
+): string {
+  const unbound = previews.filter((p) => p.unbound);
+  const rows: BatchFixCandidateRow[] =
+    unbound.length > 0
+      ? unbound.map((p) => ({
+          input: p.input,
+          code: p.code,
+          kind: (p.kind ?? "safety") as BatchFixCandidateRow["kind"],
+          title: p.title,
+          reason: "unbound_after_expand" as const,
+          ...(p.firstBlockIndex !== undefined ? { firstBlockIndex: p.firstBlockIndex } : {}),
+          ...(p.expanded !== undefined ? { replacementTemplate: p.expanded } : {})
+        }))
+      : buildBatchFixTemplateCandidates(envelope);
+  return formatBatchFixCandidatesAsSarifLite(rows, {
+    schemaVersion: envelope.schemaVersion
+  });
 }
 
 export function formatDesktopBatchQuickFixPreviewsForExport(

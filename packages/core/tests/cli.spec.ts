@@ -1018,7 +1018,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=23\n");
+    expect(stdout).toBe("cnc-job-check schema=24\n");
     expect(stderr).toBe("");
   });
 
@@ -1779,7 +1779,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 6 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 7 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -1813,7 +1813,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 6 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 7 files to /);
     const aRaw = await readFile(path.join(outDir, "a.ndjson"), "utf8");
     const aLines = aRaw.split("\n").filter((l) => l.length > 0);
     expect(aLines).toHaveLength(1);
@@ -1997,7 +1997,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 5 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 6 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2629,8 +2629,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 23", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(23);
+  it("CLI_SCHEMA_VERSION is 24", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(24);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3631,6 +3631,54 @@ describe("Schema v23: controller aggregated firstBlockIndex + batch-export.zip",
     expect(zipBytes[1]).toBe(0x4b);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
     expect(summary.summary.batchWalk.export.batchExportZip).toMatch(/batch-export\.zip$/);
+  });
+});
+
+describe("Schema v24: parseDiagnostics aggregated firstBlockIndex + SARIF sidecar", () => {
+  it("buildBatchParseDiagnosticsByCodeAggregation propagates firstBlockIndex", () => {
+    const entries = [
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "a.nc",
+        envelope: {
+          parseDiagnosticsByCode: [
+            { code: "UNMATCHED_OPEN_PAREN", count: 1, warnings: 1, errors: 0, firstBlockIndex: 4 }
+          ]
+        }
+      },
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "b.nc",
+        envelope: {
+          parseDiagnosticsByCode: [
+            { code: "UNMATCHED_OPEN_PAREN", count: 1, warnings: 1, errors: 0, firstBlockIndex: 1 }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchParseDiagnosticsByCodeAggregation>[0];
+    const rows = buildBatchParseDiagnosticsByCodeAggregation(entries);
+    expect(rows[0]!.firstBlockIndex).toBe(1);
+    expect(rows[0]!.count).toBe(2);
+  });
+
+  it("--out-dir writes batch-unbound-fixes.sarif.json and setup-txt in zip metadata", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const sarif = JSON.parse(
+      await readFile(path.join(outDir, "batch-unbound-fixes.sarif.json"), "utf8")
+    );
+    expect(sarif.version).toBe("2.1.0");
+    expect(Array.isArray(sarif.runs)).toBe(true);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.summary.batchWalk.export.batchUnboundSarif).toMatch(
+      /batch-unbound-fixes\.sarif\.json$/
+    );
   });
 });
 

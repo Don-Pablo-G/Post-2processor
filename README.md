@@ -4022,6 +4022,39 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=23
 ```
 
+## Parse-diag aggregated firstBlockIndex + zip setup artifacts + SARIF-lite + Schema v24
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Parse-diag aggregated `firstBlockIndex` (Schema v24)
+
+`CLI_SCHEMA_VERSION` bumps `23 → 24`.
+`summary.parseDiagnosticsByCodeAggregated[]` gains optional `firstBlockIndex`.
+
+### Move 2 — Richer `batch-export.zip`
+
+`--out-dir` zip always includes `setup-txt/*.setup.txt`; when
+`--export-setup-sheet-pdf-batch` also ran, includes `setup-pdf/*.pdf`.
+
+### Move 3 — Desktop Copy patched NC
+
+Folder batch gains **Copy patched NC** (clipboard of patched programs).
+
+### Move 4 — SARIF-lite unbound / template-candidate report
+
+CLI writes `batch-unbound-fixes.sarif.json` (and records
+`batchWalk.export.batchUnboundSarif`). Desktop gains **Copy unbound SARIF**.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=24
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

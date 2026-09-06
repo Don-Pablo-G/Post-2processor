@@ -132,6 +132,8 @@ import {
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchUnboundFixChip,
+  formatDesktopBatchUnboundFixesAsSarifLite,
+  formatDesktopBatchPatchedProgramsForClipboard,
   formatDesktopBatchWalkChip,
   buildDesktopBatchQuickFixPreviews,
   runDesktopBatchJobCheck,
@@ -318,6 +320,10 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: string;
     batchJobCheckCopyFixPreview: string;
     batchJobCheckCopiedFixPreview: string;
+    batchJobCheckCopyPatched: string;
+    batchJobCheckCopiedPatched: string;
+    batchJobCheckCopySarif: string;
+    batchJobCheckCopiedSarif: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -631,6 +637,10 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: "Skopiowano CSV agregacji batch",
     batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
     batchJobCheckCopiedFixPreview: "Skopiowano podgląd fixów batch",
+    batchJobCheckCopyPatched: "Kopiuj patched NC",
+    batchJobCheckCopiedPatched: "Skopiowano patched NC batch",
+    batchJobCheckCopySarif: "Kopiuj SARIF unbound",
+    batchJobCheckCopiedSarif: "Skopiowano SARIF unbound batch",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -945,6 +955,10 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: "Copied batch aggregation CSV",
     batchJobCheckCopyFixPreview: "Copy fix preview",
     batchJobCheckCopiedFixPreview: "Copied batch fix preview",
+    batchJobCheckCopyPatched: "Copy patched NC",
+    batchJobCheckCopiedPatched: "Copied batch patched NC",
+    batchJobCheckCopySarif: "Copy unbound SARIF",
+    batchJobCheckCopiedSarif: "Copied batch unbound SARIF",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -2073,6 +2087,47 @@ export function App() {
       setExportStatus(
         `${t.batchJobCheckCopiedFixPreview}: ${formatDesktopBatchQuickFixPreviewChip(previews)}`
       );
+    } catch {
+      setExportStatus(payload);
+    }
+  }
+
+  async function handleCopyBatchPatched(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const sourcesByInput = new Map(
+      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+    );
+    const items = buildDesktopBatchPatchedPrograms(
+      batchJobCheckResult.envelope,
+      sourcesByInput
+    );
+    const payload = formatDesktopBatchPatchedProgramsForClipboard(items);
+    try {
+      await navigator.clipboard.writeText(payload || "(none)");
+      setExportStatus(
+        `${t.batchJobCheckCopiedPatched}: ${formatDesktopBatchPatchedProgramsChip(items)}`
+      );
+    } catch {
+      setExportStatus(payload || "(none)");
+    }
+  }
+
+  async function handleCopyBatchUnboundSarif(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const sourcesByInput = new Map(
+      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+    );
+    const previews = buildDesktopBatchQuickFixPreviews(
+      batchJobCheckResult.envelope,
+      sourcesByInput
+    );
+    const payload = formatDesktopBatchUnboundFixesAsSarifLite(
+      batchJobCheckResult.envelope,
+      previews
+    );
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.batchJobCheckCopiedSarif);
     } catch {
       setExportStatus(payload);
     }
@@ -3868,6 +3923,20 @@ export function App() {
                 onClick={() => void handleCopyBatchFixPreview()}
               >
                 {t.batchJobCheckCopyFixPreview}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-patched"
+                onClick={() => void handleCopyBatchPatched()}
+              >
+                {t.batchJobCheckCopyPatched}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-sarif"
+                onClick={() => void handleCopyBatchUnboundSarif()}
+              >
+                {t.batchJobCheckCopySarif}
               </button>
             </>
           )}

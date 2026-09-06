@@ -123,6 +123,8 @@ export {
   formatBatchJson,
   formatBatchNdjson,
   formatBatchAggregationsAsCsv,
+  formatBatchFixCandidatesAsSarifLite,
+  buildBatchFixTemplateCandidates,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -150,7 +152,9 @@ export type {
   CliLintIssuesByParseDiagCodeEntry,
   CliParseDiagnosticsByCodeEntry,
   CliSafetyFindingsByCodeEntry,
-  CliSafetyFindingSource
+  CliSafetyFindingSource,
+  BatchFixCandidateRow,
+  BatchFixCandidateKind
 } from "./cli/jobCheckEnvelope.js";
 
 export {

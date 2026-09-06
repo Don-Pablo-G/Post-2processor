@@ -52,6 +52,8 @@ import {
   formatBatchJson,
   formatBatchNdjson,
   formatBatchAggregationsAsCsv,
+  formatBatchFixCandidatesAsSarifLite,
+  buildBatchFixTemplateCandidates,
   formatJobCheckJson,
   formatJobCheckNdjsonLine,
   type CliBatchEntry,
@@ -83,6 +85,8 @@ export {
   formatBatchJson,
   formatBatchNdjson,
   formatBatchAggregationsAsCsv,
+  formatBatchFixCandidatesAsSarifLite,
+  buildBatchFixTemplateCandidates,
   formatJobCheckJson,
   formatJobCheckNdjsonLine
 } from "./cli/jobCheckEnvelope.js";
@@ -1889,15 +1893,30 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           return 2;
         }
       }
-      // Schema v23: record batch-export.zip path on walk.export before summaries.
+      // Schema v23–v24: record export sidecar paths on walk.export before summaries.
       const zipPath = path.join(outDir, "batch-export.zip");
+      const sarifPath = path.join(outDir, "batch-unbound-fixes.sarif.json");
       if (!batchWalk.export) batchWalk.export = { outDir };
       batchWalk.export.batchExportZip = zipPath;
+      batchWalk.export.batchUnboundSarif = sarifPath;
 
-      // Schema v18–v23: always drop a CLI-shaped batch summary beside per-file
+      // Schema v24: include setup-sheet TXT from each checked file.
+      for (const { input, result } of textEntries) {
+        const base = path.basename(input).replace(/\.(nc|tap|gcode)$/i, "");
+        const rel = `setup-txt/${base}.setup.txt`;
+        zipEntries.push({ path: rel, data: result.setupSheet.exportTxt });
+      }
+      // Schema v24: include PDFs when --export-setup-sheet-pdf-batch also ran.
+      for (const { sourcePath, bytes } of perFilePdfs) {
+        const base = path.basename(sourcePath).replace(/\.(nc|tap|gcode)$/i, "");
+        zipEntries.push({ path: `setup-pdf/${base}.pdf`, data: bytes });
+      }
+
+      // Schema v18–v24: always drop a CLI-shaped batch summary beside per-file
       // outputs so `batchWalk.export.outDir` is inspectable without stdout.
       // JSON envelope summary ships for every --format (including ndjson).
       const summaryPath = path.join(outDir, "batch-summary.json");
+      const batchEnvelope = buildBatchEnvelope(entries, { batchWalk });
       const summaryJson = `${formatBatchJson(entries, { batchWalk })}\n`;
       try {
         await writeFn(summaryPath, summaryJson);
@@ -1911,9 +1930,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       }
       // Schema v21: dashboard CSV of aggregations.
       const csvSummaryPath = path.join(outDir, "batch-summary.csv");
-      const summaryCsv = formatBatchAggregationsAsCsv(
-        buildBatchEnvelope(entries, { batchWalk })
-      );
+      const summaryCsv = formatBatchAggregationsAsCsv(batchEnvelope);
       try {
         await writeFn(csvSummaryPath, summaryCsv);
         written += 1;
@@ -1924,11 +1941,26 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         );
         return 2;
       }
+      // Schema v24: SARIF-lite report of fix templates that still need bindings.
+      const sarifBody = formatBatchFixCandidatesAsSarifLite(
+        buildBatchFixTemplateCandidates(batchEnvelope),
+        { schemaVersion: CLI_SCHEMA_VERSION }
+      );
+      try {
+        await writeFn(sarifPath, sarifBody);
+        written += 1;
+        zipEntries.push({ path: "batch-unbound-fixes.sarif.json", data: sarifBody });
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir unbound SARIF ${sarifPath}: ${(err as Error).message}\n`
+        );
+        return 2;
+      }
       // Schema v20: when --format ndjson, also write a streaming-friendly
       // one-line NDJSON envelope summary (same CliBatchEnvelope body).
       if (parsed.format === "ndjson") {
         const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
-        const ndjsonBody = `${JSON.stringify(buildBatchEnvelope(entries, { batchWalk }))}\n`;
+        const ndjsonBody = `${JSON.stringify(batchEnvelope)}\n`;
         try {
           await writeFn(ndjsonSummaryPath, ndjsonBody);
           written += 1;

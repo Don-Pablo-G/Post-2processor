@@ -3,9 +3,12 @@ import type {
   LintIssueWithProvenance,
   RunJobCheckResult
 } from "../types.js";
+import { getControllerGrammarFix } from "../lints/controllerGrammarFixes.js";
+import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
+import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 23;
+export const CLI_SCHEMA_VERSION = 24;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -744,6 +747,8 @@ export type CliBatchWalkExport = {
   setupSheetPdfDir?: string;
   /** Schema v23: absolute or CLI-resolved path of `batch-export.zip` when written. */
   batchExportZip?: string;
+  /** Schema v24: path of SARIF-lite unbound/template-candidate report when written. */
+  batchUnboundSarif?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -801,6 +806,8 @@ export type CliBatchLintIssuesByControllerCodeAggregation = {
 /**
  * Schema v12: cross-input rollup of per-entry `parseDiagnosticsByCode` rows.
  * One row per distinct parse-diagnostic `code`.
+ * Schema v24 adds optional `firstBlockIndex` (earliest across contributing
+ * per-entry rows).
  */
 export type CliBatchParseDiagnosticsByCodeAggregation = {
   code: string;
@@ -808,6 +815,8 @@ export type CliBatchParseDiagnosticsByCodeAggregation = {
   warnings: number;
   errors: number;
   inputs: string[];
+  /** Schema v24: earliest `firstBlockIndex` among contributing entry rows. */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -1213,7 +1222,13 @@ export function buildBatchParseDiagnosticsByCodeAggregation(
 ): CliBatchParseDiagnosticsByCodeAggregation[] {
   const byCode = new Map<
     string,
-    { count: number; warnings: number; errors: number; inputs: Set<string> }
+    {
+      count: number;
+      warnings: number;
+      errors: number;
+      inputs: Set<string>;
+      firstBlockIndex?: number;
+    }
   >();
   for (const entry of entries) {
     const rows = entry.envelope.parseDiagnosticsByCode;
@@ -1221,13 +1236,29 @@ export function buildBatchParseDiagnosticsByCodeAggregation(
     for (const row of rows) {
       let bucket = byCode.get(row.code);
       if (!bucket) {
-        bucket = { count: 0, warnings: 0, errors: 0, inputs: new Set<string>() };
+        bucket = {
+          count: 0,
+          warnings: 0,
+          errors: 0,
+          inputs: new Set<string>(),
+          ...(row.firstBlockIndex !== undefined
+            ? { firstBlockIndex: row.firstBlockIndex }
+            : {})
+        };
         byCode.set(row.code, bucket);
       }
       bucket.count += row.count;
       bucket.warnings += row.warnings;
       bucket.errors += row.errors;
       bucket.inputs.add(entry.input);
+      if (row.firstBlockIndex !== undefined) {
+        if (
+          bucket.firstBlockIndex === undefined ||
+          row.firstBlockIndex < bucket.firstBlockIndex
+        ) {
+          bucket.firstBlockIndex = row.firstBlockIndex;
+        }
+      }
     }
   }
   const rows: CliBatchParseDiagnosticsByCodeAggregation[] = [];
@@ -1237,7 +1268,10 @@ export function buildBatchParseDiagnosticsByCodeAggregation(
       count: bucket.count,
       warnings: bucket.warnings,
       errors: bucket.errors,
-      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b)),
+      ...(bucket.firstBlockIndex !== undefined
+        ? { firstBlockIndex: bucket.firstBlockIndex }
+        : {})
     });
   }
   rows.sort((a, b) => {
@@ -1555,4 +1589,164 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
     );
   }
   return `${lines.join("\n")}\n`;
+}
+
+export type BatchFixCandidateKind = "safety" | "controller" | "parse-diag";
+
+export type BatchFixCandidateRow = {
+  input: string;
+  code: string;
+  kind: BatchFixCandidateKind;
+  title: string;
+  replacementTemplate?: string;
+  /**
+   * `template_placeholders` — catalogue template still contains `{{…}}`
+   * (CLI / no program-source expansion).
+   * `unbound_after_expand` — desktop preview still had placeholders after bindings.
+   */
+  reason: "template_placeholders" | "unbound_after_expand";
+  firstBlockIndex?: number;
+};
+
+/**
+ * Schema v24: catalogue rows in the batch whose replacement templates still
+ * contain `{{NAME}}` placeholders (candidates needing bindings / operator input).
+ */
+export function buildBatchFixTemplateCandidates(
+  envelope: CliBatchEnvelope
+): BatchFixCandidateRow[] {
+  const out: BatchFixCandidateRow[] = [];
+  const seen = new Set<string>();
+
+  for (const row of envelope.summary.safetyFindingsByCodePerInputFile) {
+    const key = `safety::${row.input}::${row.code}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fix = getSafetyFindingFix(row.code);
+    if (!fix?.replacementTemplate || !/\{\{[A-Z0-9_]+\}\}/.test(fix.replacementTemplate)) {
+      continue;
+    }
+    out.push({
+      input: row.input,
+      code: row.code,
+      kind: "safety",
+      title: fix.title,
+      replacementTemplate: fix.replacementTemplate,
+      reason: "template_placeholders",
+      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {})
+    });
+  }
+
+  for (const row of envelope.summary.lintIssuesByControllerCodePerInputFile) {
+    const key = `controller::${row.input}::${row.code}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fix = getControllerGrammarFix(row.code);
+    if (!fix?.replacementTemplate || !/\{\{[A-Z0-9_]+\}\}/.test(fix.replacementTemplate)) {
+      continue;
+    }
+    out.push({
+      input: row.input,
+      code: row.code,
+      kind: "controller",
+      title: fix.title,
+      replacementTemplate: fix.replacementTemplate,
+      reason: "template_placeholders",
+      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {})
+    });
+  }
+
+  for (const row of envelope.summary.parseDiagnosticsByCodePerInputFile) {
+    const key = `parse-diag::${row.input}::${row.code}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fix = getParseDiagnosticFix(row.code);
+    if (!fix?.replacementTemplate || !/\{\{[A-Z0-9_]+\}\}/.test(fix.replacementTemplate)) {
+      continue;
+    }
+    out.push({
+      input: row.input,
+      code: row.code,
+      kind: "parse-diag",
+      title: fix.title,
+      replacementTemplate: fix.replacementTemplate,
+      reason: "template_placeholders",
+      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {})
+    });
+  }
+
+  out.sort((a, b) => {
+    if (a.input !== b.input) return a.input.localeCompare(b.input);
+    if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
+    return a.code.localeCompare(b.code);
+  });
+  return out;
+}
+
+/**
+ * Schema v24: minimal SARIF 2.1.0-shaped report for fix candidates / unbound previews.
+ */
+export function formatBatchFixCandidatesAsSarifLite(
+  rows: ReadonlyArray<BatchFixCandidateRow>,
+  options?: { schemaVersion?: number }
+): string {
+  const schemaVersion = options?.schemaVersion ?? CLI_SCHEMA_VERSION;
+  const results = rows.map((row) => ({
+    ruleId: row.code,
+    level: "warning" as const,
+    message: {
+      text: `${row.kind}: ${row.title} (${row.reason})`
+    },
+    locations: [
+      {
+        physicalLocation: {
+          artifactLocation: { uri: row.input },
+          ...(row.firstBlockIndex !== undefined
+            ? {
+                region: {
+                  startLine: row.firstBlockIndex + 1,
+                  message: { text: `blockIndex=${row.firstBlockIndex}` }
+                }
+              }
+            : {})
+        }
+      }
+    ],
+    properties: {
+      kind: row.kind,
+      reason: row.reason,
+      ...(row.replacementTemplate !== undefined
+        ? { replacementTemplate: row.replacementTemplate }
+        : {})
+    }
+  }));
+  const doc = {
+    $schema: "https://json.schemastore.org/sarif-2.1.0.json",
+    version: "2.1.0",
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: "cnc-job-check",
+            informationUri: "https://github.com/Don-Pablo-G/Post-2processor",
+            version: String(schemaVersion),
+            rules: [
+              ...new Map(
+                rows.map((r) => [
+                  r.code,
+                  {
+                    id: r.code,
+                    shortDescription: { text: r.title },
+                    properties: { kind: r.kind }
+                  }
+                ])
+              ).values()
+            ]
+          }
+        },
+        results
+      }
+    ]
+  };
+  return `${JSON.stringify(doc, null, 2)}\n`;
 }

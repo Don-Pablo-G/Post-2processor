@@ -15,6 +15,8 @@ import {
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
   formatDesktopBatchUnboundFixChip,
+  formatDesktopBatchUnboundFixesAsSarifLite,
+  formatDesktopBatchPatchedProgramsForClipboard,
   formatDesktopBatchWalkChip,
   runDesktopBatchJobCheck
 } from "./batchJobCheckView";
@@ -267,6 +269,9 @@ describe("batchJobCheckView", () => {
     expect(patched[0]!.filename).toBe("a.patched.nc");
     expect(String(patched[0]!.body)).toMatch(/G43/);
     expect(formatDesktopBatchPatchedProgramsChip(patched)).toMatch(/files=1/);
+    expect(formatDesktopBatchPatchedProgramsForClipboard(patched)).toMatch(/a\.patched\.nc/);
+    const sarif = formatDesktopBatchUnboundFixesAsSarifLite(batch.envelope, previews);
+    expect(sarif).toMatch(/"version": "2\.1\.0"/);
     const zip = await buildDesktopBatchArchiveZip(
       [...buildDesktopBatchSetupSheetTxts(batch.runResults), ...patched],
       { compression: "deflate" }
