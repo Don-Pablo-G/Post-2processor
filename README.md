@@ -4191,6 +4191,38 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=28
 ```
 
+## Export manifest + CSV download + richer desktop zip + Schema v29
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `exportManifestPath` / `writtenFileCount` (Schema v29)
+
+`CLI_SCHEMA_VERSION` bumps `28 → 29`.
+`batchWalk.export` gains optional `exportManifestPath` and `writtenFileCount`.
+
+### Move 2 — `batch-export-manifest.json`
+
+`--out-dir` writes a path→kind inventory sidecar (also packed into the zip).
+
+### Move 3 — Desktop Download aggregation CSV
+
+Folder batch gains **Download aggregation CSV** (same payload as clipboard).
+
+### Move 4 — Richer desktop zip
+
+Desktop **Download ZIP** includes SARIF, fix-previews, and aggregation CSV
+alongside PDFs / TXT / envelopes / patched NC.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=29
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

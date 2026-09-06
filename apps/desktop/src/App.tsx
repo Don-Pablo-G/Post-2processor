@@ -320,6 +320,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedZip: string;
     batchJobCheckCopyCsv: string;
     batchJobCheckCopiedCsv: string;
+    batchJobCheckDownloadCsv: string;
+    batchJobCheckDownloadedCsv: string;
     batchJobCheckCopyFixPreview: string;
     batchJobCheckCopiedFixPreview: string;
     batchJobCheckDownloadFixPreview: string;
@@ -641,6 +643,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedZip: "Pobrano ZIP batch",
     batchJobCheckCopyCsv: "Kopiuj CSV agregacji",
     batchJobCheckCopiedCsv: "Skopiowano CSV agregacji batch",
+    batchJobCheckDownloadCsv: "Pobierz CSV agregacji",
+    batchJobCheckDownloadedCsv: "Pobrano CSV agregacji batch",
     batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
     batchJobCheckCopiedFixPreview: "Skopiowano podgląd fixów batch",
     batchJobCheckDownloadFixPreview: "Pobierz podgląd fixów",
@@ -963,6 +967,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedZip: "Downloaded batch ZIP",
     batchJobCheckCopyCsv: "Copy aggregation CSV",
     batchJobCheckCopiedCsv: "Copied batch aggregation CSV",
+    batchJobCheckDownloadCsv: "Download aggregation CSV",
+    batchJobCheckDownloadedCsv: "Downloaded batch aggregation CSV",
     batchJobCheckCopyFixPreview: "Copy fix preview",
     batchJobCheckCopiedFixPreview: "Copied batch fix preview",
     batchJobCheckDownloadFixPreview: "Download fix preview",
@@ -2055,11 +2061,33 @@ export function App() {
       const sourcesByInput = new Map(
         batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
       );
+      const previews = buildDesktopBatchQuickFixPreviews(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
       const items = [
         ...buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults),
         ...buildDesktopBatchSetupSheetTxts(batchJobCheckResult.runResults),
         ...buildDesktopBatchEnvelopeJsonFiles(batchJobCheckResult.envelope),
-        ...buildDesktopBatchPatchedPrograms(batchJobCheckResult.envelope, sourcesByInput)
+        ...buildDesktopBatchPatchedPrograms(batchJobCheckResult.envelope, sourcesByInput),
+        {
+          filename: "batch-fix-previews.json",
+          body: formatDesktopBatchQuickFixPreviewsForExport(previews),
+          mimeType: "application/json;charset=utf-8"
+        },
+        {
+          filename: "batch-unbound-fixes.sarif.json",
+          body: formatDesktopBatchUnboundFixesAsSarifLite(
+            batchJobCheckResult.envelope,
+            previews
+          ),
+          mimeType: "application/json;charset=utf-8"
+        },
+        {
+          filename: "batch-summary.csv",
+          body: formatDesktopBatchAggregationsAsCsv(batchJobCheckResult.envelope),
+          mimeType: "text/csv;charset=utf-8"
+        }
       ];
       const bytes = await buildDesktopBatchArchiveZip(items, { compression: "deflate" });
       const { downloaded } = await downloadDesktopBatchItems([
@@ -2083,6 +2111,23 @@ export function App() {
       setExportStatus(t.batchJobCheckCopiedCsv);
     } catch {
       setExportStatus(payload);
+    }
+  }
+
+  async function handleDownloadBatchAggregationsCsv(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const payload = formatDesktopBatchAggregationsAsCsv(batchJobCheckResult.envelope);
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-summary.csv",
+          body: payload,
+          mimeType: "text/csv;charset=utf-8"
+        }
+      ]);
+      setExportStatus(`${t.batchJobCheckDownloadedCsv}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch CSV download failed.");
     }
   }
 
@@ -4025,6 +4070,13 @@ export function App() {
                 onClick={() => void handleCopyBatchAggregationsCsv()}
               >
                 {t.batchJobCheckCopyCsv}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-csv"
+                onClick={() => void handleDownloadBatchAggregationsCsv()}
+              >
+                {t.batchJobCheckDownloadCsv}
               </button>
               <button
                 type="button"

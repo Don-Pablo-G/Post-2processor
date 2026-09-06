@@ -350,6 +350,8 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   else if (exp.fixPreviewsPath) parts.push("fixPreviews");
   if (exp.patchedNcCount !== undefined) parts.push(`patched=${exp.patchedNcCount}`);
   if (exp.patchedNcDir) parts.push("patchedDir");
+  if (exp.exportManifestPath) parts.push("manifest");
+  if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 

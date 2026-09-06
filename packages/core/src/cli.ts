@@ -2012,9 +2012,17 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v24: always drop a CLI-shaped batch summary beside per-file
-      // outputs so `batchWalk.export.outDir` is inspectable without stdout.
-      // JSON envelope summary ships for every --format (including ndjson).
+      // Schema v18–v29: summaries + SARIF, then manifest, then zip.
+      // Predetermine exportManifestPath / writtenFileCount before summary JSON
+      // so batchWalk.export in the envelope is complete.
+      const manifestPath = path.join(outDir, "batch-export-manifest.json");
+      const willWriteNdjson = parsed.format === "ndjson";
+      // Remaining disk writes: summary.json, csv, sarif, [ndjson], manifest, zip.
+      const remainingWrites = 5 + (willWriteNdjson ? 1 : 0);
+      if (!batchWalk.export) batchWalk.export = { outDir };
+      batchWalk.export.exportManifestPath = manifestPath;
+      batchWalk.export.writtenFileCount = written + remainingWrites;
+
       const summaryPath = path.join(outDir, "batch-summary.json");
       const batchEnvelope = buildBatchEnvelope(entries, { batchWalk });
       const summaryJson = `${formatBatchJson(entries, { batchWalk })}\n`;
@@ -2058,7 +2066,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       }
       // Schema v20: when --format ndjson, also write a streaming-friendly
       // one-line NDJSON envelope summary (same CliBatchEnvelope body).
-      if (parsed.format === "ndjson") {
+      if (willWriteNdjson) {
         const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
         const ndjsonBody = `${JSON.stringify(batchEnvelope)}\n`;
         try {
@@ -2072,6 +2080,48 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           return 2;
         }
       }
+
+      // Schema v29: export manifest listing zip-bound paths + kinds.
+      const classifyExportPath = (rel: string): string => {
+        if (rel === "batch-summary.json") return "summary-json";
+        if (rel === "batch-summary.csv") return "summary-csv";
+        if (rel === "batch-summary.ndjson") return "summary-ndjson";
+        if (rel === "batch-unbound-fixes.sarif.json") return "sarif";
+        if (rel === "batch-fix-previews.json") return "fix-previews";
+        if (rel === "batch-export-manifest.json") return "manifest";
+        if (rel === "batch-export.zip") return "zip";
+        if (rel.startsWith("setup-txt/")) return "setup-txt";
+        if (rel.startsWith("setup-pdf/")) return "setup-pdf";
+        if (rel.startsWith("patched-nc/")) return "patched-nc";
+        if (/\.(json|ndjson)$/i.test(rel)) return "envelope";
+        return "other";
+      };
+      const manifestEntries = [
+        ...zipEntries.map((e) => ({ path: e.path, kind: classifyExportPath(e.path) })),
+        { path: "batch-export-manifest.json", kind: "manifest" as const },
+        { path: "batch-export.zip", kind: "zip" as const }
+      ];
+      const manifestBody = `${JSON.stringify(
+        {
+          schemaVersion: CLI_SCHEMA_VERSION,
+          outDir,
+          writtenFileCount: batchWalk.export.writtenFileCount,
+          entries: manifestEntries
+        },
+        null,
+        2
+      )}\n`;
+      try {
+        await writeFn(manifestPath, manifestBody);
+        written += 1;
+        zipEntries.push({ path: "batch-export-manifest.json", data: manifestBody });
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir export manifest ${manifestPath}: ${(err as Error).message}\n`
+        );
+        return 2;
+      }
+
       // Schema v23: pack per-file outputs + summaries into batch-export.zip.
       try {
         const zipBytes = await createZip(zipEntries, { method: "deflate" });

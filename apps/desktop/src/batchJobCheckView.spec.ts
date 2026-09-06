@@ -331,7 +331,9 @@ describe("batchJobCheckView", () => {
             setupTxtDir: "/out/setup-txt",
             setupPdfCount: 2,
             fixPreviewsPath: "/out/batch-fix-previews.json",
-            fixPreviewCount: 3
+            fixPreviewCount: 3,
+            exportManifestPath: "/out/batch-export-manifest.json",
+            writtenFileCount: 12
           }
         }
       }
@@ -350,6 +352,8 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(
       /fixPreviews=3/
     );
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/manifest/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/written=12/);
     expect(
       formatDesktopBatchQuickFixPreviewChip(
         buildDesktopBatchQuickFixPreviews(

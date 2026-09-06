@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 28;
+export const CLI_SCHEMA_VERSION = 29;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -774,6 +774,15 @@ export type CliBatchWalkExport = {
    * `--export-setup-sheet-pdf-batch` (and/or packed into the zip).
    */
   setupPdfCount?: number;
+  /**
+   * Schema v29: path of `batch-export-manifest.json` under `--out-dir` when written.
+   */
+  exportManifestPath?: string;
+  /**
+   * Schema v29: total files written under `--out-dir` for this batch export
+   * (per-file envelopes, sidecars, summaries, manifest, and zip).
+   */
+  writtenFileCount?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {
