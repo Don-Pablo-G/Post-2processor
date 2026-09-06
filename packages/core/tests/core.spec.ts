@@ -3863,6 +3863,96 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G43 and G53 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25. G53 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G43 and G53 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G49 and G53 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG43 H1 Z25.\nG49 G53 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G49 and G53 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G40 and G53 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG40 G53 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G40 and G53 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G80 and G53 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G53 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G80 and G53 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G41/G42 and G28 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG41 D1 G28 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G41/G42 and G28 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G41/G42 and G30 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG41 D1 G30 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G41/G42 and G30 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G68 and G28 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45. G28 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G68 and G28 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G68 and G30 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45. G30 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G68 and G30 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G69 and G28 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G28 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G69 and G28 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G69 and G30 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 X0 Y0 R45.\nG69 G30 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G69 and G30 on the same block")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

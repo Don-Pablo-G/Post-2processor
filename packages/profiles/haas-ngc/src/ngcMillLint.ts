@@ -1784,6 +1784,86 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasG43Classic(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G43 and G53 on the same block — length compensation and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG49(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G49 and G53 on the same block — cancel length compensation and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG40(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G40 and G53 on the same block — cancel cutter compensation and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G80 and G53 on the same block — cancel canned cycle and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG41Or42(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G41/G42 and G28 on the same block — cutter compensation and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG41Or42(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G41/G42 and G30 on the same block — cutter compensation and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG68(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G68 and G28 on the same block — coordinate rotation and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG68(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G68 and G30 on the same block — coordinate rotation and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG69(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G69 and G28 on the same block — cancel rotation and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG69(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G69 and G30 on the same block — cancel rotation and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (

@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 199 (of which 13 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 209 (of which 13 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -203,6 +203,16 @@ Total rules: 199 (of which 13 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g40-and-g30-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G30 on one block. |
 | `haas.g80-and-g28-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G28 on one block. |
 | `haas.g80-and-g30-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G30 on one block. |
+| `haas.g43-and-g53-same-block` | warning | — | — | Do not combine G43 length compensation with G53 on one block. |
+| `haas.g49-and-g53-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G53 on one block. |
+| `haas.g40-and-g53-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G53 on one block. |
+| `haas.g80-and-g53-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G53 on one block. |
+| `haas.cutter-comp-and-g28-same-block` | warning | — | — | Do not combine G41/G42 cutter compensation with G28 on one block. |
+| `haas.cutter-comp-and-g30-same-block` | warning | — | — | Do not combine G41/G42 cutter compensation with G30 on one block. |
+| `haas.g68-and-g28-same-block` | warning | — | — | Do not combine G68 coordinate rotation with G28 on one block. |
+| `haas.g68-and-g30-same-block` | warning | — | — | Do not combine G68 coordinate rotation with G30 on one block. |
+| `haas.g69-and-g28-same-block` | warning | — | — | Do not combine G69 cancel rotation with G28 on one block. |
+| `haas.g69-and-g30-same-block` | warning | — | — | Do not combine G69 cancel rotation with G30 on one block. |
 | `haas.multiple-m-codes-same-block` | warning | — | — | Haas allows only one M function per block — split M codes onto separate blocks. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
@@ -5615,6 +5625,286 @@ T1 M6
 G54
 G81 Z-1. R0.1 F10.
 G80
+G30 Z0
+M30
+```
+
+### `haas.g43-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G53 on the same block/`
+- **Summary:** Do not combine G43 length compensation with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G53 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G53 Z0
+M30
+```
+
+### `haas.g49-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G49 and G53 on the same block/`
+- **Summary:** Do not combine G49 cancel length compensation with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49 G53 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+G53 Z0
+M30
+```
+
+### `haas.g40-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G40 and G53 on the same block/`
+- **Summary:** Do not combine G40 cancel cutter compensation with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40 G53 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40
+G53 Z0
+M30
+```
+
+### `haas.g80-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G80 and G53 on the same block/`
+- **Summary:** Do not combine G80 cancel canned cycle with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G80 G53 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G80
+G53 Z0
+M30
+```
+
+### `haas.cutter-comp-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 and G28 on the same block/`
+- **Summary:** Do not combine G41/G42 cutter compensation with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1 G28 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G28 Z0
+M30
+```
+
+### `haas.cutter-comp-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 and G30 on the same block/`
+- **Summary:** Do not combine G41/G42 cutter compensation with G30 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1 G30 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G30 Z0
+M30
+```
+
+### `haas.g68-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G68 and G28 on the same block/`
+- **Summary:** Do not combine G68 coordinate rotation with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45. G28 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G28 Z0
+M30
+```
+
+### `haas.g68-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G68 and G30 on the same block/`
+- **Summary:** Do not combine G68 coordinate rotation with G30 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45. G30 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G30 Z0
+M30
+```
+
+### `haas.g69-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G69 and G28 on the same block/`
+- **Summary:** Do not combine G69 cancel rotation with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69 G28 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69
+G28 Z0
+M30
+```
+
+### `haas.g69-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G69 and G30 on the same block/`
+- **Summary:** Do not combine G69 cancel rotation with G30 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69 G30 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G69
 G30 Z0
 M30
 ```
