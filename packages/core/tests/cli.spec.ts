@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=40\n");
+    expect(stdout).toBe("cnc-job-check schema=41\n");
     expect(stderr).toBe("");
   });
 
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 40", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(40);
+  it("CLI_SCHEMA_VERSION is 41", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(41);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4419,7 +4419,7 @@ describe("Schema v40: verify manifest cross-check + byKind + desktop sarif stamp
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(40);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const manifest = JSON.parse(
       await readFile(path.join(outDir, "batch-export-manifest.json"), "utf8")
     );
@@ -4430,7 +4430,7 @@ describe("Schema v40: verify manifest cross-check + byKind + desktop sarif stamp
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(40);
+    expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     expect(result.manifestMatched).toBe(true);
     expect(result.manifestPath).toMatch(/batch-export-manifest\.json$/);
@@ -4513,6 +4513,86 @@ describe("Schema v40: verify manifest cross-check + byKind + desktop sarif stamp
     const result = JSON.parse(out.join(""));
     expect(result.ok).toBe(false);
     expect(result.manifestMatched).toBe(false);
+  });
+});
+
+describe("Schema v41: verify NDJSON cross-check + inventory counts", () => {
+  it("verify-batch-export --format json includes ndjsonMatched and written/zipEntry counts", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(41);
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.schemaVersion).toBe(41);
+    expect(result.ok).toBe(true);
+    expect(result.ndjsonMatched).toBe(true);
+    expect(result.ndjsonPath).toMatch(/batch-summary\.ndjson$/);
+    expect(result.writtenFileCount).toBe(summary.summary.batchWalk.export.writtenFileCount);
+    expect(result.zipEntryCount).toBe(summary.summary.batchWalk.export.zipEntryCount);
+    expect(result.summaryMatched).toBe(true);
+    expect(result.manifestMatched).toBe(true);
+  });
+
+  it("verify-batch-export text mode reports ndjsonMatched and written/zipEntries", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const out: string[] = [];
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(out.join("")).toMatch(/ndjsonMatched=true/);
+    expect(out.join("")).toMatch(/written=\d+/);
+    expect(out.join("")).toMatch(/zipEntries=\d+/);
+  });
+
+  it("verify-batch-export fails when NDJSON zipSha256 disagrees with the zip", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const ndjsonPath = path.join(outDir, "batch-summary.ndjson");
+    const line = (await readFile(ndjsonPath, "utf8")).split("\n").find((l) => l.length > 0)!;
+    const env = JSON.parse(line);
+    env.summary.batchWalk.export.zipSha256 = "d".repeat(64);
+    await writeFile(ndjsonPath, `${JSON.stringify(env)}\n`, "utf8");
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(1);
+    const result = JSON.parse(out.join(""));
+    expect(result.ok).toBe(false);
+    expect(result.ndjsonMatched).toBe(false);
+    expect(result.summaryMatched).toBe(true);
+    expect(result.manifestMatched).toBe(true);
   });
 });
 

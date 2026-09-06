@@ -291,9 +291,13 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "Schema v40: when a sibling `batch-export-manifest.json` is present, also",
   "cross-checks manifest `zipSha256` / optional `zipBytes` and reports `byKind`.",
   "",
+  "Schema v41: when a sibling `batch-summary.ndjson` is present, also cross-checks",
+  "its sealed `zipSha256`. JSON reports optional `writtenFileCount` /",
+  "`zipEntryCount` from summary/manifest and `ndjsonPath` / `ndjsonMatched`.",
+  "",
   "Exit codes:",
-  "  0   digest matches (and summary/manifest zipSha256 match when present)",
-  "  1   digest mismatch or summary/manifest zipSha256 (or zipBytes) mismatch",
+  "  0   digest matches (and summary/manifest/ndjson zipSha256 match when present)",
+  "  1   digest mismatch or summary/manifest/ndjson zipSha256 (or zipBytes) mismatch",
   "  2   argument or IO error",
   "",
   "Options:",
@@ -307,7 +311,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            zipBytes (success and mismatch). Schema v39 adds optional",
   "                            summaryPath, summaryMatched, sealedAt, totalBytes.",
   "                            Schema v40 adds optional manifestPath, manifestMatched,",
-  "                            byKind.",
+  "                            byKind. Schema v41 adds optional writtenFileCount,",
+  "                            zipEntryCount, ndjsonPath, ndjsonMatched.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -323,11 +328,12 @@ export type VerifyBatchExportArgs = {
 };
 
 /**
- * Schema v38–v40: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v41: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
  * Schema v40 adds optional sealed-manifest cross-check fields when
  * `batch-export-manifest.json` is found.
+ * Schema v41 adds optional inventory counts and NDJSON seal cross-check.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -357,6 +363,17 @@ export type VerifyBatchExportResult = {
   manifestMatched?: boolean;
   /** Schema v40: manifest `byKind` rollup when present. */
   byKind?: Record<string, number>;
+  /** Schema v41: export/manifest writtenFileCount when known. */
+  writtenFileCount?: number;
+  /** Schema v41: export/manifest zipEntryCount when known. */
+  zipEntryCount?: number;
+  /** Schema v41: path of `batch-summary.ndjson` when loaded. */
+  ndjsonPath?: string;
+  /**
+   * Schema v41: true when NDJSON envelope export.zipSha256 matched;
+   * false when it disagreed; absent when no NDJSON / no digest field.
+   */
+  ndjsonMatched?: boolean;
 };
 
 export function parseVerifyBatchExportArgs(argv: readonly string[]): VerifyBatchExportArgs {
@@ -428,6 +445,8 @@ type SealedSummaryExportMeta = {
   zipSha256?: string;
   sealedAt?: string;
   totalBytes?: number;
+  writtenFileCount?: number;
+  zipEntryCount?: number;
 };
 
 type SealedManifestMeta = {
@@ -437,6 +456,13 @@ type SealedManifestMeta = {
   sealedAt?: string;
   totalBytes?: number;
   byKind?: Record<string, number>;
+  writtenFileCount?: number;
+  zipEntryCount?: number;
+};
+
+type SealedNdjsonMeta = {
+  ndjsonPath: string;
+  zipSha256?: string;
 };
 
 async function tryLoadSealedBatchSummaryExport(
@@ -466,7 +492,11 @@ async function tryLoadSealedBatchSummaryExport(
       summaryPath,
       ...(typeof exp.zipSha256 === "string" ? { zipSha256: exp.zipSha256 } : {}),
       ...(typeof exp.sealedAt === "string" ? { sealedAt: exp.sealedAt } : {}),
-      ...(typeof exp.totalBytes === "number" ? { totalBytes: exp.totalBytes } : {})
+      ...(typeof exp.totalBytes === "number" ? { totalBytes: exp.totalBytes } : {}),
+      ...(typeof exp.writtenFileCount === "number"
+        ? { writtenFileCount: exp.writtenFileCount }
+        : {}),
+      ...(typeof exp.zipEntryCount === "number" ? { zipEntryCount: exp.zipEntryCount } : {})
     };
   } catch {
     return { summaryPath };
@@ -500,10 +530,47 @@ async function tryLoadSealedBatchExportManifest(
       ...(typeof parsed.zipBytes === "number" ? { zipBytes: parsed.zipBytes } : {}),
       ...(typeof parsed.sealedAt === "string" ? { sealedAt: parsed.sealedAt } : {}),
       ...(typeof parsed.totalBytes === "number" ? { totalBytes: parsed.totalBytes } : {}),
+      ...(typeof parsed.writtenFileCount === "number"
+        ? { writtenFileCount: parsed.writtenFileCount }
+        : {}),
+      ...(typeof parsed.zipEntryCount === "number"
+        ? { zipEntryCount: parsed.zipEntryCount }
+        : {}),
       ...(byKind !== undefined ? { byKind } : {})
     };
   } catch {
     return { manifestPath };
+  }
+}
+
+async function tryLoadSealedBatchSummaryNdjson(
+  zipPath: string,
+  outDir: string | undefined,
+  readText: (filePath: string) => Promise<string>
+): Promise<SealedNdjsonMeta | undefined> {
+  const ndjsonPath =
+    outDir !== undefined
+      ? path.join(outDir, "batch-summary.ndjson")
+      : path.join(path.dirname(zipPath), "batch-summary.ndjson");
+  let raw: string;
+  try {
+    raw = await readText(ndjsonPath);
+  } catch {
+    return undefined;
+  }
+  const firstLine = raw.split("\n").find((line) => line.trim().length > 0);
+  if (!firstLine) return { ndjsonPath };
+  try {
+    const parsed = JSON.parse(firstLine) as {
+      summary?: { batchWalk?: { export?: Record<string, unknown> } };
+    };
+    const exp = parsed.summary?.batchWalk?.export;
+    return {
+      ndjsonPath,
+      ...(typeof exp?.zipSha256 === "string" ? { zipSha256: exp.zipSha256 } : {})
+    };
+  } catch {
+    return { ndjsonPath };
   }
 }
 
@@ -570,6 +637,11 @@ export async function runVerifyBatchExport(
     parsed.outDir,
     readText
   );
+  const ndjsonMeta = await tryLoadSealedBatchSummaryNdjson(
+    parsed.zip!,
+    parsed.outDir,
+    readText
+  );
 
   let summaryMatched: boolean | undefined;
   let summaryMismatch = false;
@@ -591,9 +663,19 @@ export async function runVerifyBatchExport(
     manifestMismatch = !manifestMatched;
   }
 
-  const ok = sidecarOk && !summaryMismatch && !manifestMismatch;
+  let ndjsonMatched: boolean | undefined;
+  let ndjsonMismatch = false;
+  if (ndjsonMeta?.zipSha256 !== undefined) {
+    ndjsonMatched = ndjsonMeta.zipSha256 === actual;
+    ndjsonMismatch = !ndjsonMatched;
+  }
+
+  const ok = sidecarOk && !summaryMismatch && !manifestMismatch && !ndjsonMismatch;
   const sealedAt = summaryMeta?.sealedAt ?? manifestMeta?.sealedAt;
   const totalBytes = summaryMeta?.totalBytes ?? manifestMeta?.totalBytes;
+  const writtenFileCount =
+    summaryMeta?.writtenFileCount ?? manifestMeta?.writtenFileCount;
+  const zipEntryCount = summaryMeta?.zipEntryCount ?? manifestMeta?.zipEntryCount;
 
   if (parsed.format === "json") {
     const result: VerifyBatchExportResult = {
@@ -612,11 +694,19 @@ export async function runVerifyBatchExport(
         : {}),
       ...(sealedAt !== undefined ? { sealedAt } : {}),
       ...(totalBytes !== undefined ? { totalBytes } : {}),
+      ...(writtenFileCount !== undefined ? { writtenFileCount } : {}),
+      ...(zipEntryCount !== undefined ? { zipEntryCount } : {}),
       ...(manifestMeta
         ? {
             manifestPath: manifestMeta.manifestPath,
             ...(manifestMatched !== undefined ? { manifestMatched } : {}),
             ...(manifestMeta.byKind !== undefined ? { byKind: manifestMeta.byKind } : {})
+          }
+        : {}),
+      ...(ndjsonMeta
+        ? {
+            ndjsonPath: ndjsonMeta.ndjsonPath,
+            ...(ndjsonMatched !== undefined ? { ndjsonMatched } : {})
           }
         : {})
     };
@@ -648,6 +738,12 @@ export async function runVerifyBatchExport(
     }
     return 1;
   }
+  if (ndjsonMismatch) {
+    writeErr(
+      `cnc-job-check verify-batch-export: ndjson zipSha256 mismatch (expected ${ndjsonMeta!.zipSha256}, got ${actual})\n`
+    );
+    return 1;
+  }
   if (!parsed.quiet) {
     const sealedPart = sealedAt !== undefined ? `; sealedAt=${sealedAt}` : "";
     const summaryPart =
@@ -658,12 +754,18 @@ export async function runVerifyBatchExport(
         : manifestMeta
           ? "; manifestLoaded"
           : "";
+    const ndjsonPart =
+      ndjsonMatched === true ? "; ndjsonMatched=true" : ndjsonMeta ? "; ndjsonLoaded" : "";
     const kindsPart =
       manifestMeta?.byKind !== undefined
         ? `; kinds=${Object.keys(manifestMeta.byKind).length}`
         : "";
+    const writtenPart =
+      writtenFileCount !== undefined ? `; written=${writtenFileCount}` : "";
+    const zipEntriesPart =
+      zipEntryCount !== undefined ? `; zipEntries=${zipEntryCount}` : "";
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${kindsPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${kindsPart}${writtenPart}${zipEntriesPart}\n`
     );
   }
   return 0;

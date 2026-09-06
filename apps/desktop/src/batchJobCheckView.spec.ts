@@ -173,6 +173,9 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.batchUnboundSarif).toBe(
       "batch-unbound-fixes.sarif.json"
     );
+    expect(exported.summary.batchWalk.export.fixPreviewsPath).toBe(
+      "batch-fix-previews.json"
+    );
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -200,6 +203,11 @@ describe("batchJobCheckView", () => {
         .replace(/^batch-export:\s*/, "")
         .split(",")
     ).toContain("sarif");
+    expect(
+      formatDesktopBatchExportInventoryChip(batch.envelope)
+        .replace(/^batch-export:\s*/, "")
+        .split(",")
+    ).toContain("fixPreviews");
     expect(batch.runResults).toHaveLength(2);
   });
 
@@ -220,6 +228,7 @@ describe("batchJobCheckView", () => {
     expect(stamped?.export?.batchExportZip).toBe("batch-export.zip");
     expect(stamped?.export?.exportManifestPath).toBe("batch-export-manifest.json");
     expect(stamped?.export?.batchUnboundSarif).toBe("batch-unbound-fixes.sarif.json");
+    expect(stamped?.export?.fixPreviewsPath).toBe("batch-fix-previews.json");
   });
 
   it("buildDesktopBatchSetupSheetPdfs emits one PDF per input", () => {

@@ -4618,6 +4618,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=40
 ```
 
+## Verify NDJSON cross-check + inventory counts + fix-preview stamp + Schema v41
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Verify result counts + NDJSON fields (Schema v41)
+
+`CLI_SCHEMA_VERSION` bumps `40 → 41`.
+`VerifyBatchExportResult` gains optional `writtenFileCount`, `zipEntryCount`,
+`ndjsonPath`, and `ndjsonMatched`.
+
+### Move 2 — CLI reports inventory counts
+
+`verify-batch-export` surfaces `writtenFileCount` / `zipEntryCount` from sealed
+summary (fallback: manifest) in JSON and text output.
+
+### Move 3 — CLI NDJSON seal cross-check
+
+When sibling `batch-summary.ndjson` is present, its first-line envelope
+`export.zipSha256` must match the computed digest.
+
+### Move 4 — Desktop live fix-preview stamp
+
+`runDesktopBatchJobCheck` stamps relative logical `fixPreviewsPath`
+(`batch-fix-previews.json`). Inventory chip includes `fixPreviews`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=41
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
