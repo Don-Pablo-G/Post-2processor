@@ -1,6 +1,6 @@
 /**
- * Catalogue mapping high-traffic advisor + simulation safety finding codes
- * to stable fix titles and rationales. Parallel to controller-grammar and
+ * Catalogue mapping advisor + simulation safety finding codes to stable
+ * fix titles and rationales. Parallel to controller-grammar and
  * parse-diagnostic catalogues for IDE / batch tooling.
  */
 
@@ -59,6 +59,31 @@ export const SAFETY_FINDING_FIXES: Readonly<Record<string, SafetyFindingFix>> = 
     title: "Review toolpath against clamp/fixture zones",
     rationale: "Motion intersects a declared clamp zone — adjust stock setup or path."
   },
+  X_OUTSIDE_STOCK: {
+    code: "X_OUTSIDE_STOCK",
+    title: "Keep X motion inside the declared stock envelope",
+    rationale: "Simulated X travel exceeds the configured stock bounds."
+  },
+  Y_OUTSIDE_STOCK: {
+    code: "Y_OUTSIDE_STOCK",
+    title: "Keep Y motion inside the declared stock envelope",
+    rationale: "Simulated Y travel exceeds the configured stock bounds."
+  },
+  Z_OUTSIDE_EXPECTED_ENVELOPE: {
+    code: "Z_OUTSIDE_EXPECTED_ENVELOPE",
+    title: "Keep Z motion inside the expected envelope",
+    rationale: "Simulated Z travel exceeds the configured top/bottom stock envelope."
+  },
+  MIXED_FEED_MODES: {
+    code: "MIXED_FEED_MODES",
+    title: "Use a consistent feed mode (G94 or G95) for the program",
+    rationale: "Mixing per-minute and per-revolution feed modes is easy to misread on the machine."
+  },
+  MIXED_UNITS: {
+    code: "MIXED_UNITS",
+    title: "Use a single unit mode (G20 or G21) for the program",
+    rationale: "Mixing inch and metric modes causes scale errors at the controller."
+  },
   SIM_RAPID_Z_PLUNGE: {
     code: "SIM_RAPID_Z_PLUNGE",
     title: "Use feed (G1) for Z plunges instead of rapid (G0)",
@@ -93,6 +118,56 @@ export const SAFETY_FINDING_FIXES: Readonly<Record<string, SafetyFindingFix>> = 
     code: "SIM_MAX_STEPS_LIMIT",
     title: "Reduce program length or raise the step limit carefully",
     rationale: "Simulation stopped after hitting the configured max-steps ceiling."
+  },
+  SIM_MACRO_ALARM: {
+    code: "SIM_MACRO_ALARM",
+    title: "Resolve the macro alarm condition before running",
+    rationale: "Simulation raised a macro alarm (#3000-style) during execution."
+  },
+  SIM_UNFINISHED_RETURN_PATH: {
+    code: "SIM_UNFINISHED_RETURN_PATH",
+    title: "Complete or remove unfinished return-path logic",
+    rationale: "A subprogram return path did not finish cleanly in simulation."
+  },
+  SIM_INVALID_ASSIGNMENT: {
+    code: "SIM_INVALID_ASSIGNMENT",
+    title: "Fix the invalid variable assignment",
+    rationale: "A macro assignment could not be evaluated during simulation."
+  },
+  SIM_IF_THEN_RHS_INVALID: {
+    code: "SIM_IF_THEN_RHS_INVALID",
+    title: "Fix the IF/THEN right-hand side expression",
+    rationale: "An IF/THEN branch has an invalid RHS in simulation."
+  },
+  SIM_FUNCTION_DOMAIN_ERROR: {
+    code: "SIM_FUNCTION_DOMAIN_ERROR",
+    title: "Fix the math function domain error",
+    rationale: "A macro math function received an out-of-domain argument."
+  },
+  SIM_CONTROL_FLOW_MISSING_END: {
+    code: "SIM_CONTROL_FLOW_MISSING_END",
+    title: "Add the missing END for the open control-flow block",
+    rationale: "A WHILE/IF control structure is missing its END terminator."
+  },
+  SIM_CONTROL_FLOW_LOOP_LIMIT: {
+    code: "SIM_CONTROL_FLOW_LOOP_LIMIT",
+    title: "Reduce loop iterations or raise the loop limit carefully",
+    rationale: "A control-flow loop hit the configured max-iteration ceiling."
+  },
+  SIM_CONTROL_FLOW_ORPHAN_END: {
+    code: "SIM_CONTROL_FLOW_ORPHAN_END",
+    title: "Remove or pair the orphan END",
+    rationale: "An END was found without a matching open control-flow block."
+  },
+  SIM_CYCLE_PARAMETER_ISSUE: {
+    code: "SIM_CYCLE_PARAMETER_ISSUE",
+    title: "Correct canned-cycle parameters",
+    rationale: "A canned cycle has missing or inconsistent parameters in simulation."
+  },
+  SIM_UNSUPPORTED_FUNCTION: {
+    code: "SIM_UNSUPPORTED_FUNCTION",
+    title: "Replace the unsupported macro function",
+    rationale: "Simulation does not implement this macro function for the active profile."
   }
 };
 

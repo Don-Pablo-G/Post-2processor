@@ -1,186 +1,153 @@
-import type { RunJobCheckResult } from "@cnc/core/browser";
-
 import {
-  buildSafetyFindingsByCodeFromFindings,
-  type SafetyFindingsByCodeRow
-} from "./safetyFindingsView";
-import type { PolicyBreachLike } from "./policyBreachView";
+  BATCH_INPUT_EXTENSIONS,
+  buildBatchEnvelope,
+  buildJobCheckEnvelope,
+  buildSetupSheetPdf,
+  classifyBatchRelativePath,
+  CLI_SCHEMA_VERSION,
+  type CliBatchEnvelope,
+  type CliBatchWalk,
+  type CliBatchParseDiagnosticsPolicyBreachesAggregation,
+  type CliBatchSafetyFindingsByCodeAggregation,
+  type RunJobCheckResult
+} from "@cnc/core/browser";
 
-const BATCH_INPUT_EXTENSIONS = /\.(nc|tap|gcode)$/i;
-
-export type DesktopBatchFile = {
-  input: string;
-  source: string;
+export type DesktopBatchFilterOptions = {
+  recursive?: boolean;
+  include?: ReadonlyArray<string> | string;
+  exclude?: ReadonlyArray<string> | string;
+  /** Display label for `batchWalk.root` (selected folder name). */
+  root?: string;
 };
 
-export type DesktopBatchEntry = {
-  input: string;
-  blocked: boolean;
-  result: RunJobCheckResult;
-};
-
-export type DesktopBatchPolicyBreachAgg = {
-  key: string;
-  count: number;
-  inputs: string[];
-  totalObserved: number;
-  severity: "warning" | "blocker";
-};
-
-export type DesktopBatchSafetyAgg = SafetyFindingsByCodeRow & {
-  inputs: string[];
-};
-
-export type DesktopBatchSummary = {
-  files: number;
-  blocked: number;
-  safetyFindingsByCodeAggregated?: DesktopBatchSafetyAgg[];
-  parseDiagnosticsPolicyBreachesAggregated?: DesktopBatchPolicyBreachAgg[];
+export type DesktopBatchFilterResult = {
+  matched: Array<{ name: string; relativePath: string; lookupPath: string }>;
+  skipped: number;
+  batchWalk: CliBatchWalk;
 };
 
 export type DesktopBatchJobCheckResult = {
-  summary: DesktopBatchSummary;
-  entries: DesktopBatchEntry[];
+  envelope: CliBatchEnvelope;
+  /** Parallel to envelope.results — full job-check payloads for PDF download. */
+  runResults: Array<{ input: string; result: RunJobCheckResult }>;
 };
+
+function parseGlobList(value: ReadonlyArray<string> | string | undefined): string[] {
+  if (value === undefined) return [];
+  if (typeof value === "string") {
+    return value
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  }
+  return value.map((s) => s.trim()).filter((s) => s.length > 0);
+}
+
+/**
+ * Strip a shared webkitdirectory root folder segment when every path shares it.
+ */
+function stripSharedWebkitRoot(relativePaths: string[]): string[] {
+  if (relativePaths.length === 0) return relativePaths;
+  const partsList = relativePaths.map((p) => p.split(/[/\\]/).filter(Boolean));
+  if (!partsList.every((p) => p.length >= 2)) return relativePaths;
+  const first = partsList[0]![0]!;
+  if (!partsList.every((p) => p[0] === first)) return relativePaths;
+  return partsList.map((p) => p.slice(1).join("/"));
+}
 
 export function isBatchJobCheckFilename(name: string): boolean {
   return BATCH_INPUT_EXTENSIONS.test(name);
 }
 
 export function filterBatchJobCheckFiles(
-  files: ReadonlyArray<{ name: string; webkitRelativePath?: string }>
-): Array<{ name: string; relativePath: string }> {
-  const out: Array<{ name: string; relativePath: string }> = [];
-  for (const file of files) {
+  files: ReadonlyArray<{ name: string; webkitRelativePath?: string }>,
+  options: DesktopBatchFilterOptions = {}
+): DesktopBatchFilterResult {
+  const recursive = options.recursive ?? false;
+  const include = parseGlobList(options.include);
+  const exclude = parseGlobList(options.exclude);
+  const lookupPaths = files.map((file) => {
     const relativePath =
       typeof file.webkitRelativePath === "string" && file.webkitRelativePath.length > 0
         ? file.webkitRelativePath
         : file.name;
-    const base = relativePath.split(/[/\\]/).pop() ?? file.name;
-    // Non-recursive: only files directly in the selected folder (no subdirs).
-    const depth = relativePath.split(/[/\\]/).filter(Boolean).length;
-    if (depth > 1) continue;
-    if (!isBatchJobCheckFilename(base)) continue;
-    out.push({ name: base, relativePath: base });
-  }
-  out.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
-  return out;
-}
-
-export function buildDesktopBatchSummary(entries: readonly DesktopBatchEntry[]): DesktopBatchSummary {
-  const blocked = entries.reduce((acc, e) => acc + (e.blocked ? 1 : 0), 0);
-  const safetyByCode = new Map<string, DesktopBatchSafetyAgg>();
-  const breachByKey = new Map<string, DesktopBatchPolicyBreachAgg>();
-
-  for (const entry of entries) {
-    const safetyRows = buildSafetyFindingsByCodeFromFindings([
-      ...(entry.result.advisor?.safetyFindings ?? []),
-      ...(entry.result.simulationFindings ?? [])
-    ]);
-    for (const row of safetyRows) {
-      let bucket = safetyByCode.get(row.code);
-      if (!bucket) {
-        bucket = { ...row, inputs: [] };
-        safetyByCode.set(row.code, bucket);
-      } else {
-        bucket.count += row.count;
-        bucket.blockers += row.blockers;
-        bucket.warnings += row.warnings;
-        if (
-          row.firstBlockIndex !== undefined &&
-          (bucket.firstBlockIndex === undefined || row.firstBlockIndex < bucket.firstBlockIndex)
-        ) {
-          bucket.firstBlockIndex = row.firstBlockIndex;
-        }
-      }
-      if (!bucket.inputs.includes(entry.input)) bucket.inputs.push(entry.input);
-    }
-
-    for (const breach of entry.result.parseDiagnosticsPolicyBreaches ?? []) {
-      let bucket = breachByKey.get(breach.key);
-      if (!bucket) {
-        bucket = {
-          key: breach.key,
-          count: 0,
-          inputs: [],
-          totalObserved: 0,
-          severity: "warning"
-        };
-        breachByKey.set(breach.key, bucket);
-      }
-      if (!bucket.inputs.includes(entry.input)) {
-        bucket.count += 1;
-        bucket.inputs.push(entry.input);
-      }
-      bucket.totalObserved += breach.observed;
-      if (breach.severity === "blocker") bucket.severity = "blocker";
+    return relativePath.split(/\\/).join("/");
+  });
+  const stripped = stripSharedWebkitRoot(lookupPaths);
+  const matched: Array<{ name: string; relativePath: string; lookupPath: string }> = [];
+  let skipped = 0;
+  for (let i = 0; i < files.length; i += 1) {
+    const lookupPath = lookupPaths[i]!;
+    const relativePath = stripped[i]!;
+    const base = relativePath.split("/").pop() ?? files[i]!.name;
+    const classification = classifyBatchRelativePath(relativePath, {
+      recursive,
+      include,
+      exclude
+    });
+    if (classification === "matched") {
+      matched.push({ name: base, relativePath, lookupPath });
+    } else if (classification === "skipped") {
+      skipped += 1;
     }
   }
-
-  const safetyFindingsByCodeAggregated = [...safetyByCode.values()]
-    .map((row) => ({
-      ...row,
-      inputs: [...row.inputs].sort((a, b) => a.localeCompare(b))
-    }))
-    .sort((a, b) => {
-      if (a.count !== b.count) return b.count - a.count;
-      return a.code.localeCompare(b.code);
-    });
-
-  const parseDiagnosticsPolicyBreachesAggregated = [...breachByKey.values()]
-    .map((row) => ({
-      ...row,
-      inputs: [...row.inputs].sort((a, b) => a.localeCompare(b))
-    }))
-    .sort((a, b) => {
-      if (a.count !== b.count) return b.count - a.count;
-      return a.key.localeCompare(b.key);
-    });
-
-  const summary: DesktopBatchSummary = {
-    files: entries.length,
-    blocked
+  matched.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+  const root =
+    options.root ??
+    (lookupPaths[0]?.includes("/") ? lookupPaths[0]!.split("/")[0]! : ".");
+  return {
+    matched,
+    skipped,
+    batchWalk: {
+      recursive,
+      include: [...include],
+      exclude: [...exclude],
+      matched: matched.length,
+      skipped,
+      root
+    }
   };
-  if (safetyFindingsByCodeAggregated.length > 0) {
-    summary.safetyFindingsByCodeAggregated = safetyFindingsByCodeAggregated;
-  }
-  if (parseDiagnosticsPolicyBreachesAggregated.length > 0) {
-    summary.parseDiagnosticsPolicyBreachesAggregated = parseDiagnosticsPolicyBreachesAggregated;
-  }
-  return summary;
 }
 
 export async function runDesktopBatchJobCheck(
-  files: ReadonlyArray<DesktopBatchFile>,
-  runOne: (source: string) => Promise<RunJobCheckResult>
+  files: ReadonlyArray<{ input: string; source: string }>,
+  runOne: (source: string) => Promise<RunJobCheckResult>,
+  options?: { batchWalk?: CliBatchWalk }
 ): Promise<DesktopBatchJobCheckResult> {
-  const entries: DesktopBatchEntry[] = [];
+  const entries = [];
+  const runResults: Array<{ input: string; result: RunJobCheckResult }> = [];
   for (const file of files) {
     const result = await runOne(file.source);
+    const envelope = buildJobCheckEnvelope(result);
     entries.push({
+      schemaVersion: CLI_SCHEMA_VERSION,
       input: file.input,
-      blocked: result.blocked,
-      result
+      envelope
     });
+    runResults.push({ input: file.input, result });
   }
   return {
-    summary: buildDesktopBatchSummary(entries),
-    entries
+    envelope: buildBatchEnvelope(entries, { batchWalk: options?.batchWalk }),
+    runResults
   };
 }
 
-export function formatDesktopBatchSummaryChip(summary: DesktopBatchSummary): string {
-  const safety = summary.safetyFindingsByCodeAggregated?.length ?? 0;
-  const breaches = summary.parseDiagnosticsPolicyBreachesAggregated?.length ?? 0;
-  return `batch: files=${summary.files}, blocked=${summary.blocked}, safetyCodes=${safety}, breachKeys=${breaches}`;
+export function formatDesktopBatchSummaryChip(envelope: CliBatchEnvelope): string {
+  const walk = envelope.summary.batchWalk;
+  const safety = envelope.summary.safetyFindingsByCodeAggregated?.length ?? 0;
+  const breaches = envelope.summary.parseDiagnosticsPolicyBreachesAggregated?.length ?? 0;
+  const walkPart = walk
+    ? `, walk matched=${walk.matched} skipped=${walk.skipped}${walk.recursive ? " recursive" : ""}`
+    : "";
+  return `batch: files=${envelope.summary.files}, blocked=${envelope.summary.blocked}, safetyCodes=${safety}, breachKeys=${breaches}${walkPart}`;
 }
 
-export function formatDesktopBatchSummaryForExport(summary: DesktopBatchSummary): string {
-  return JSON.stringify(summary, null, 2);
+export function formatDesktopBatchSummaryForExport(envelope: CliBatchEnvelope): string {
+  return JSON.stringify(envelope, null, 2);
 }
 
 export function formatDesktopBatchPolicyBreachChip(
-  rows: readonly DesktopBatchPolicyBreachAgg[] | undefined
+  rows: readonly CliBatchParseDiagnosticsPolicyBreachesAggregation[] | undefined
 ): string {
   const list = [...(rows ?? [])].sort((a, b) => a.key.localeCompare(b.key));
   if (list.length === 0) return "batch-policy-breach: none";
@@ -190,7 +157,7 @@ export function formatDesktopBatchPolicyBreachChip(
 }
 
 export function formatDesktopBatchSafetyChip(
-  rows: readonly DesktopBatchSafetyAgg[] | undefined
+  rows: readonly CliBatchSafetyFindingsByCodeAggregation[] | undefined
 ): string {
   const list = rows ?? [];
   if (list.length === 0) return "batch-safety: none";
@@ -201,4 +168,62 @@ export function formatDesktopBatchSafetyChip(
   return `batch-safety: codes=${list.length} | top=${top || "n/a"}`;
 }
 
-export type { PolicyBreachLike };
+export type BatchPdfDownloadItem = {
+  filename: string;
+  bytes: Uint8Array;
+};
+
+export function buildDesktopBatchSetupSheetPdfs(
+  runResults: ReadonlyArray<{ input: string; result: RunJobCheckResult }>
+): BatchPdfDownloadItem[] {
+  const items: BatchPdfDownloadItem[] = [];
+  for (const { input, result } of runResults) {
+    const base = input.split(/[/\\]/).pop() ?? input;
+    const stem = base.replace(/\.(nc|tap|gcode)$/i, "");
+    const bytes = buildSetupSheetPdf(result.setupSheet, {
+      lintIssuesSummary: result.lintIssuesSummary
+    });
+    items.push({ filename: `${stem}.pdf`, bytes });
+  }
+  return items;
+}
+
+export type BatchPdfDownloadEnvironment = {
+  createObjectURL: (blob: Blob) => string;
+  revokeObjectURL: (url: string) => void;
+  createAnchor: () => HTMLAnchorElement;
+  scheduleRevoke?: (fn: () => void) => void;
+};
+
+function defaultBatchPdfEnv(): BatchPdfDownloadEnvironment {
+  return {
+    createObjectURL: (blob) => URL.createObjectURL(blob),
+    revokeObjectURL: (url) => URL.revokeObjectURL(url),
+    createAnchor: () => document.createElement("a"),
+    scheduleRevoke: (fn) => {
+      queueMicrotask(fn);
+    }
+  };
+}
+
+/**
+ * Fire one browser download per PDF (no zip dependency).
+ */
+export async function downloadDesktopBatchSetupSheetPdfs(
+  items: ReadonlyArray<BatchPdfDownloadItem>,
+  env: BatchPdfDownloadEnvironment = defaultBatchPdfEnv()
+): Promise<{ downloaded: number }> {
+  let downloaded = 0;
+  for (const item of items) {
+    const blob = new Blob([item.bytes as BlobPart], { type: "application/pdf" });
+    const url = env.createObjectURL(blob);
+    const anchor = env.createAnchor();
+    anchor.href = url;
+    anchor.download = item.filename;
+    anchor.click();
+    if (env.scheduleRevoke) env.scheduleRevoke(() => env.revokeObjectURL(url));
+    else env.revokeObjectURL(url);
+    downloaded += 1;
+  }
+  return { downloaded };
+}

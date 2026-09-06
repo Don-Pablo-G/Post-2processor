@@ -92,7 +92,7 @@ function makeBatchEnvelope(
   aggregated?: CliBatchLintIssuesByControllerCodeAggregation[]
 ): CliBatchEnvelope {
   return {
-    schemaVersion: 16,
+    schemaVersion: 17,
     results: [],
     summary: {
       files: 0,
@@ -669,10 +669,10 @@ describe("mapBatchSafetyFindingsByCodeAggregatedToQuickFixes", () => {
 
   it("attaches ranges for file quick-fixes when sources are supplied", () => {
     const envelope: CliBatchEnvelope = {
-      schemaVersion: 16,
+      schemaVersion: 17,
       results: [
         {
-          schemaVersion: 16,
+          schemaVersion: 17,
           input: "a.nc",
           envelope: {
             ...makeEnvelope([]),

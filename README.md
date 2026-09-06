@@ -3735,6 +3735,49 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=16
 ```
 
+## Batch walk metadata + full safety catalogue + desktop CliBatchEnvelope + batch PDFs + Schema v17
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `summary.batchWalk` (Schema v17)
+
+`CLI_SCHEMA_VERSION` bumps `16 → 17`. Batch JSON gains optional
+`summary.batchWalk` (`recursive`, `include[]`, `exclude[]`, `matched`,
+`skipped`, `root`) populated from `--input-dir` walks. Absent on single-file
+runs.
+
+### Move 2 — Complete `safetyFindingFixes` catalogue
+
+`SAFETY_FINDING_FIXES` covers the remaining advisor codes (`X/Y_OUTSIDE_STOCK`,
+`Z_OUTSIDE_EXPECTED_ENVELOPE`, `MIXED_FEED_MODES`, `MIXED_UNITS`) and remaining
+simulation codes (`SIM_MACRO_ALARM`, control-flow, cycle/function gaps, etc.).
+
+### Move 3 — Browser-safe envelope builders + desktop `CliBatchEnvelope`
+
+Pure builders live in `packages/core/src/cli/jobCheckEnvelope.ts` and export from
+`@cnc/core/browser`. Desktop folder batch returns a real schema-17
+`CliBatchEnvelope`; **Copy batch JSON** pastes the CLI-shaped envelope.
+
+### Move 4 — Desktop recursive + include/exclude
+
+Folder batch gains Recursive checkbox plus Include/Exclude glob fields (CLI-
+aligned globs via shared `batchPathGlob`). Emits `summary.batchWalk`.
+
+### Move 5 — Desktop batch setup-sheet PDF multi-download
+
+`buildSetupSheetPdf` exports from `@cnc/core/browser`. After a folder run,
+**Download PDFs** fires one `<basename>.pdf` download per matched input (no zip).
+
+### Move 6 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=17
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3752,9 +3795,7 @@ next planning wave can pick them up:
   reorder, embedded LTR islands, and bracket/quote preservation ship;
   deeply nested embeddings and multi-script runs still need ICU or a
   full UAX#9 implementation.
-- **Recursive / include-exclude batch UI** — folder batch ships
-  non-recursive only; CLI already supports `--recursive` / globs.
-- **Full safety-finding catalogue coverage** — high-traffic subset ships;
-  rarer advisor/sim codes may still lack catalogue entries.
-- **Desktop PDF / export from batch** — folder run shows chips and JSON
-  copy, not per-file PDF zip.
+- **True zip / single-archive batch export** — desktop ships multi-download
+  PDFs only; a single zip archive would need a new dependency or native API.
+- **Desktop batch → out-dir / Node `exportWorkshopFiles`** — browser stays
+  download-based; Node CLI already has `--out-dir` / PDF batch export.

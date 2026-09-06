@@ -100,10 +100,20 @@ export type { SafetyFindingFix } from "./workshop/safetyFindingFixes.js";
 
 export { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecation.js";
 
+export {
+  CLI_SCHEMA_VERSION,
+  buildBatchEnvelope,
+  buildBatchSafetyFindingsAttribution,
+  buildBatchSafetyFindingsByCodeAggregation,
+  buildJobCheckEnvelope,
+  buildSafetyFindingsByCode
+} from "./cli/jobCheckEnvelope.js";
+
 export type {
   CliJobCheckEnvelope,
   CliBatchEnvelope,
   CliBatchEntry,
+  CliBatchWalk,
   CliBatchControllerCodeAttribution,
   CliBatchBlockReasonAggregation,
   CliBatchLintIssuesByParseDiagCodeAggregation,
@@ -121,7 +131,14 @@ export type {
   CliParseDiagnosticsByCodeEntry,
   CliSafetyFindingsByCodeEntry,
   CliSafetyFindingSource
-} from "./cli.js";
+} from "./cli/jobCheckEnvelope.js";
+
+export {
+  BATCH_INPUT_EXTENSIONS,
+  classifyBatchRelativePath,
+  compileGlobToRegExp,
+  matchesAnyGlob
+} from "./cli/batchPathGlob.js";
 
 export function isNodeCapable(): boolean {
   return true;

@@ -114,6 +114,8 @@ import {
   formatSafetyFindingsForExport
 } from "./safetyFindingsView";
 import {
+  buildDesktopBatchSetupSheetPdfs,
+  downloadDesktopBatchSetupSheetPdfs,
   filterBatchJobCheckFiles,
   formatDesktopBatchPolicyBreachChip,
   formatDesktopBatchSafetyChip,
@@ -286,6 +288,11 @@ const UI_TEXT: Record<
     batchJobCheckCopiedJson: string;
     batchJobCheckCopyJsonFallback: string;
     batchJobCheckEmpty: string;
+    batchJobCheckRecursive: string;
+    batchJobCheckInclude: string;
+    batchJobCheckExclude: string;
+    batchJobCheckDownloadPdfs: string;
+    batchJobCheckDownloadedPdfs: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -579,9 +586,14 @@ const UI_TEXT: Record<
     batchJobCheckPickFolder: "Wybierz folder…",
     batchJobCheckRunning: "Uruchamianie batch…",
     batchJobCheckCopyJson: "Kopiuj JSON batch",
-    batchJobCheckCopiedJson: "Skopiowano podsumowanie batch",
-    batchJobCheckCopyJsonFallback: "Kopiuj podsumowanie batch ręcznie",
+    batchJobCheckCopiedJson: "Skopiowano envelope batch",
+    batchJobCheckCopyJsonFallback: "Kopiuj envelope batch ręcznie",
     batchJobCheckEmpty: "Brak plików .nc/.tap/.gcode w folderze",
+    batchJobCheckRecursive: "Rekursywnie",
+    batchJobCheckInclude: "Include (glob)",
+    batchJobCheckExclude: "Exclude (glob)",
+    batchJobCheckDownloadPdfs: "Pobierz PDF-y",
+    batchJobCheckDownloadedPdfs: "Pobrano PDF-y batch",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -876,9 +888,14 @@ const UI_TEXT: Record<
     batchJobCheckPickFolder: "Pick folder…",
     batchJobCheckRunning: "Running batch…",
     batchJobCheckCopyJson: "Copy batch JSON",
-    batchJobCheckCopiedJson: "Copied batch summary",
-    batchJobCheckCopyJsonFallback: "Copy batch summary manually",
+    batchJobCheckCopiedJson: "Copied batch envelope",
+    batchJobCheckCopyJsonFallback: "Copy batch envelope manually",
     batchJobCheckEmpty: "No .nc/.tap/.gcode files in folder",
+    batchJobCheckRecursive: "Recursive",
+    batchJobCheckInclude: "Include (glob)",
+    batchJobCheckExclude: "Exclude (glob)",
+    batchJobCheckDownloadPdfs: "Download PDFs",
+    batchJobCheckDownloadedPdfs: "Downloaded batch PDFs",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -1118,6 +1135,9 @@ export function App() {
     null
   );
   const [batchJobCheckBusy, setBatchJobCheckBusy] = useState(false);
+  const [batchRecursive, setBatchRecursive] = useState(false);
+  const [batchIncludeGlobs, setBatchIncludeGlobs] = useState("");
+  const [batchExcludeGlobs, setBatchExcludeGlobs] = useState("");
   const batchFolderInputRef = useRef<HTMLInputElement | null>(null);
   const strictGateSummary = useMemo(() => {
     if (!jobCheckResult || strictGateWatchPatterns.length === 0) {
@@ -1815,54 +1835,71 @@ export function App() {
     if (!fileList || fileList.length === 0 || batchJobCheckBusy) return;
     setBatchJobCheckBusy(true);
     try {
-      const selected = filterBatchJobCheckFiles(
+      const filtered = filterBatchJobCheckFiles(
         Array.from(fileList).map((f) => ({
           name: f.name,
           webkitRelativePath: f.webkitRelativePath
-        }))
+        })),
+        {
+          recursive: batchRecursive,
+          include: batchIncludeGlobs,
+          exclude: batchExcludeGlobs
+        }
       );
-      if (selected.length === 0) {
+      if (filtered.matched.length === 0) {
         setExportStatus(t.batchJobCheckEmpty);
         setBatchJobCheckResult(null);
         return;
       }
-      const byName = new Map(Array.from(fileList).map((f) => [f.name, f]));
+      const byLookup = new Map(
+        Array.from(fileList).map((f) => {
+          const key =
+            typeof f.webkitRelativePath === "string" && f.webkitRelativePath.length > 0
+              ? f.webkitRelativePath.split(/\\/).join("/")
+              : f.name;
+          return [key, f] as const;
+        })
+      );
       const batchFiles: Array<{ input: string; source: string }> = [];
-      for (const item of selected) {
-        const file = byName.get(item.name);
+      for (const item of filtered.matched) {
+        const file = byLookup.get(item.lookupPath);
         if (!file) continue;
         batchFiles.push({ input: item.relativePath, source: await file.text() });
       }
-      const batch = await runDesktopBatchJobCheck(batchFiles, async (source) => {
-        const fileAst = parse(source, haasNgcProfile, { includeExpressionAst: true });
-        return runJobCheck({
-          ast: fileAst,
-          policyPreset: jobCheckPolicyPreset,
-          initialState: {},
-          advisorOptions: {
-            stock: {
-              minX: -10,
-              maxX: 200,
-              minY: -10,
-              maxY: 200,
-              topZ: 0,
-              bottomZ: -80
+      const batch = await runDesktopBatchJobCheck(
+        batchFiles,
+        async (source) => {
+          const fileAst = parse(source, haasNgcProfile, { includeExpressionAst: true });
+          return runJobCheck({
+            ast: fileAst,
+            policyPreset: jobCheckPolicyPreset,
+            initialState: {},
+            advisorOptions: {
+              stock: {
+                minX: -10,
+                maxX: 200,
+                minY: -10,
+                maxY: 200,
+                topZ: 0,
+                bottomZ: -80
+              },
+              clampZones: [
+                { name: "LEFT_VISE_JAW", minX: -5, maxX: 15, minY: -5, maxY: 205, minZ: -10, maxZ: 80 }
+              ]
             },
-            clampZones: [
-              { name: "LEFT_VISE_JAW", minX: -5, maxX: 15, minY: -5, maxY: 205, minZ: -10, maxZ: 80 }
-            ]
-          },
-          simulationLimits: {
-            maxSteps: 10000,
-            maxLoopIterations: 1000,
-            subprogramTargetPolicy,
-            logSemantics
-          },
-          parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy
-        });
-      });
+            simulationLimits: {
+              maxSteps: 10000,
+              maxLoopIterations: 1000,
+              subprogramTargetPolicy,
+              logSemantics
+            },
+            parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy
+          });
+        },
+        { batchWalk: filtered.batchWalk }
+      );
       setBatchJobCheckResult(batch);
-      setExportStatus(formatDesktopBatchSummaryChip(batch.summary));
+      setExportStatus(formatDesktopBatchSummaryChip(batch.envelope));
     } catch (error) {
       setExportStatus(error instanceof Error ? error.message : "Folder batch failed.");
       setBatchJobCheckResult(null);
@@ -1874,12 +1911,23 @@ export function App() {
 
   async function handleCopyBatchJobCheckJson(): Promise<void> {
     if (!batchJobCheckResult) return;
-    const payload = formatDesktopBatchSummaryForExport(batchJobCheckResult.summary);
+    const payload = formatDesktopBatchSummaryForExport(batchJobCheckResult.envelope);
     try {
       await navigator.clipboard.writeText(payload);
       setExportStatus(t.batchJobCheckCopiedJson);
     } catch {
       setExportStatus(`${t.batchJobCheckCopyJsonFallback}: ${payload}`);
+    }
+  }
+
+  async function handleDownloadBatchPdfs(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const items = buildDesktopBatchSetupSheetPdfs(batchJobCheckResult.runResults);
+      const { downloaded } = await downloadDesktopBatchSetupSheetPdfs(items);
+      setExportStatus(`${t.batchJobCheckDownloadedPdfs}: ${downloaded}`);
+    } catch (error) {
+      setExportStatus(error instanceof Error ? error.message : "Batch PDF download failed.");
     }
   }
 
@@ -3526,6 +3574,31 @@ export function App() {
       <section data-testid="folder-batch-job-check" style={{ marginTop: 12 }}>
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
           <span style={{ opacity: 0.85 }}>{`${t.batchJobCheckLabel}:`}</span>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <input
+              type="checkbox"
+              data-testid="folder-batch-recursive"
+              checked={batchRecursive}
+              onChange={(event) => setBatchRecursive(event.target.checked)}
+            />
+            {t.batchJobCheckRecursive}
+          </label>
+          <input
+            type="text"
+            data-testid="folder-batch-include"
+            placeholder={t.batchJobCheckInclude}
+            value={batchIncludeGlobs}
+            onChange={(event) => setBatchIncludeGlobs(event.target.value)}
+            style={{ minWidth: 140 }}
+          />
+          <input
+            type="text"
+            data-testid="folder-batch-exclude"
+            placeholder={t.batchJobCheckExclude}
+            value={batchExcludeGlobs}
+            onChange={(event) => setBatchExcludeGlobs(event.target.value)}
+            style={{ minWidth: 140 }}
+          />
           <button
             type="button"
             data-testid="folder-batch-pick"
@@ -3550,14 +3623,14 @@ export function App() {
                 data-testid="folder-batch-summary-chip"
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >
-                {formatDesktopBatchSummaryChip(batchJobCheckResult.summary)}
+                {formatDesktopBatchSummaryChip(batchJobCheckResult.envelope)}
               </span>
               <span
                 data-testid="folder-batch-safety-chip"
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >
                 {formatDesktopBatchSafetyChip(
-                  batchJobCheckResult.summary.safetyFindingsByCodeAggregated
+                  batchJobCheckResult.envelope.summary.safetyFindingsByCodeAggregated
                 )}
               </span>
               <span
@@ -3565,7 +3638,7 @@ export function App() {
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >
                 {formatDesktopBatchPolicyBreachChip(
-                  batchJobCheckResult.summary.parseDiagnosticsPolicyBreachesAggregated
+                  batchJobCheckResult.envelope.summary.parseDiagnosticsPolicyBreachesAggregated
                 )}
               </span>
               <button
@@ -3574,6 +3647,13 @@ export function App() {
                 onClick={() => void handleCopyBatchJobCheckJson()}
               >
                 {t.batchJobCheckCopyJson}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-pdfs"
+                onClick={() => void handleDownloadBatchPdfs()}
+              >
+                {t.batchJobCheckDownloadPdfs}
               </button>
             </>
           )}
