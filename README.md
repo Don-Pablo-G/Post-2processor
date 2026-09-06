@@ -4404,6 +4404,41 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=34
 ```
 
+## Always-on NDJSON summary + Copy NDJSON + Schema v35
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `ndjsonSummaryPath` (Schema v35)
+
+`CLI_SCHEMA_VERSION` bumps `34 → 35`.
+`batchWalk.export` gains optional `ndjsonSummaryPath`.
+
+### Move 2 — CLI always writes `batch-summary.ndjson`
+
+`--out-dir` always writes `batch-summary.ndjson` (not only when `--format ndjson`),
+records `ndjsonSummaryPath`, packs it into the zip, and rewrites the on-disk
+NDJSON after seal so integrity fields match the JSON summary.
+
+### Move 3 — Desktop Copy NDJSON + zip parity
+
+Folder batch gains **Copy batch NDJSON**. Desktop **Download ZIP** also packs
+`batch-summary.ndjson`.
+
+### Move 4 — Inventory chip shows `ndjson`
+
+When `ndjsonSummaryPath` is present, the batch-export inventory chip includes
+`ndjson`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=35
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

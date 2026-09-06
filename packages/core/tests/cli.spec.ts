@@ -1024,7 +1024,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=34\n");
+    expect(stdout).toBe("cnc-job-check schema=35\n");
     expect(stderr).toBe("");
   });
 
@@ -1785,7 +1785,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 13 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 14 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -2003,7 +2003,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 11 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 12 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2635,8 +2635,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 34", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(34);
+  it("CLI_SCHEMA_VERSION is 35", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(35);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4160,7 +4160,7 @@ describe("Schema v34: byKind on export + verify-batch-export --out-dir", () => {
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(34);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.byKind).toBeDefined();
     expect(summary.summary.batchWalk.export.byKind.manifest).toBe(1);
     expect(summary.summary.batchWalk.export.byKind.zip).toBe(1);
@@ -4189,6 +4189,31 @@ describe("Schema v34: byKind on export + verify-batch-export --out-dir", () => {
     });
     expect(exit).toBe(0);
     expect(stdout).toMatch(/verify-batch-export: sha256 OK/);
+  });
+});
+
+describe("Schema v35: always-on batch-summary.ndjson + ndjsonSummaryPath", () => {
+  it("--out-dir always writes batch-summary.ndjson and records ndjsonSummaryPath", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(35);
+    expect(summary.summary.batchWalk.export.ndjsonSummaryPath).toMatch(/batch-summary\.ndjson$/);
+    const ndjsonRaw = await readFile(path.join(outDir, "batch-summary.ndjson"), "utf8");
+    const ndjsonLines = ndjsonRaw.split("\n").filter((l) => l.length > 0);
+    expect(ndjsonLines).toHaveLength(1);
+    const ndjsonEnv = JSON.parse(ndjsonLines[0]!);
+    expect(ndjsonEnv.schemaVersion).toBe(35);
+    expect(ndjsonEnv.summary.batchWalk.export.sealedAt).toBe(
+      summary.summary.batchWalk.export.sealedAt
+    );
+    expect(summary.summary.batchWalk.export.byKind["summary-ndjson"]).toBe(1);
   });
 });
 

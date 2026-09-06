@@ -361,6 +361,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.patchedNcCount !== undefined) parts.push(`patched=${exp.patchedNcCount}`);
   if (exp.patchedNcDir) parts.push("patchedDir");
   if (exp.exportManifestPath) parts.push("manifest");
+  if (exp.ndjsonSummaryPath) parts.push("ndjson");
   if (exp.writtenFileCount !== undefined) parts.push(`written=${exp.writtenFileCount}`);
   if (exp.zipEntryCount !== undefined) parts.push(`zipEntries=${exp.zipEntryCount}`);
   if (exp.zipSha256) parts.push(`zipSha=${exp.zipSha256.slice(0, 8)}`);
@@ -489,6 +490,7 @@ export function buildDesktopLiveBatchExportManifest(
     "batch-unbound-fixes.sarif.json",
     "batch-summary.csv",
     "batch-summary.json",
+    "batch-summary.ndjson",
     "batch-export-manifest.json",
     "batch-export.zip"
   ];

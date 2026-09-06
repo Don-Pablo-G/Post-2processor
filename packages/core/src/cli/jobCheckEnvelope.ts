@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 34;
+export const CLI_SCHEMA_VERSION = 35;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -818,6 +818,11 @@ export type CliBatchWalkExport = {
    * summary / inventory-chip consumers that do not open the manifest.
    */
   byKind?: Record<string, number>;
+  /**
+   * Schema v35: path of `batch-summary.ndjson` under `--out-dir` when written
+   * (always written for batch `--out-dir` exports from schema v35 onward).
+   */
+  ndjsonSummaryPath?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {

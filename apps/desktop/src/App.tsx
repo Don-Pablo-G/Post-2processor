@@ -314,6 +314,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedJson: string;
     batchJobCheckDownloadNdjson: string;
     batchJobCheckDownloadedNdjson: string;
+    batchJobCheckCopyNdjson: string;
+    batchJobCheckCopiedNdjson: string;
     batchJobCheckEmpty: string;
     batchJobCheckRecursive: string;
     batchJobCheckInclude: string;
@@ -645,6 +647,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedJson: "Pobrano JSON batch",
     batchJobCheckDownloadNdjson: "Pobierz NDJSON batch",
     batchJobCheckDownloadedNdjson: "Pobrano NDJSON batch",
+    batchJobCheckCopyNdjson: "Kopiuj NDJSON batch",
+    batchJobCheckCopiedNdjson: "Skopiowano NDJSON batch",
     batchJobCheckEmpty: "Brak plików .nc/.tap/.gcode w folderze",
     batchJobCheckRecursive: "Rekursywnie",
     batchJobCheckInclude: "Include (glob)",
@@ -977,6 +981,8 @@ const UI_TEXT: Record<
     batchJobCheckDownloadedJson: "Downloaded batch JSON",
     batchJobCheckDownloadNdjson: "Download batch NDJSON",
     batchJobCheckDownloadedNdjson: "Downloaded batch NDJSON",
+    batchJobCheckCopyNdjson: "Copy batch NDJSON",
+    batchJobCheckCopiedNdjson: "Copied batch NDJSON",
     batchJobCheckEmpty: "No .nc/.tap/.gcode files in folder",
     batchJobCheckRecursive: "Recursive",
     batchJobCheckInclude: "Include (glob)",
@@ -2067,6 +2073,17 @@ export function App() {
     }
   }
 
+  async function handleCopyBatchJobCheckNdjson(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    const payload = formatDesktopBatchSummaryAsNdjson(batchJobCheckResult.envelope);
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.batchJobCheckCopiedNdjson);
+    } catch {
+      setExportStatus(payload);
+    }
+  }
+
   async function handleDownloadBatchPdfs(): Promise<void> {
     if (!batchJobCheckResult) return;
     try {
@@ -2130,6 +2147,7 @@ export function App() {
         sourcesByInput
       );
       const summaryJson = formatDesktopBatchSummaryForExport(batchJobCheckResult.envelope);
+      const summaryNdjson = formatDesktopBatchSummaryAsNdjson(batchJobCheckResult.envelope);
       const summaryCsv = formatDesktopBatchAggregationsAsCsv(batchJobCheckResult.envelope);
       const sarifBody = formatDesktopBatchUnboundFixesAsSarifLite(
         batchJobCheckResult.envelope,
@@ -2152,6 +2170,7 @@ export function App() {
         "batch-unbound-fixes.sarif.json",
         "batch-summary.csv",
         "batch-summary.json",
+        "batch-summary.ndjson",
         "batch-export-manifest.json"
       ];
       const manifest = buildDesktopBatchExportManifest(manifestPaths, {
@@ -2181,6 +2200,11 @@ export function App() {
           filename: "batch-summary.json",
           body: summaryJson.endsWith("\n") ? summaryJson : `${summaryJson}\n`,
           mimeType: "application/json;charset=utf-8"
+        },
+        {
+          filename: "batch-summary.ndjson",
+          body: summaryNdjson,
+          mimeType: "application/x-ndjson;charset=utf-8"
         },
         {
           filename: "batch-export-manifest.json",
@@ -4196,6 +4220,13 @@ export function App() {
                 onClick={() => void handleDownloadBatchJobCheckNdjson()}
               >
                 {t.batchJobCheckDownloadNdjson}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-copy-ndjson"
+                onClick={() => void handleCopyBatchJobCheckNdjson()}
+              >
+                {t.batchJobCheckCopyNdjson}
               </button>
               <button
                 type="button"

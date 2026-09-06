@@ -345,7 +345,8 @@ describe("batchJobCheckView", () => {
             zipBytes: 4096,
             totalBytes: 8192,
             sealedAt: "2026-09-06T14:05:30.123Z",
-            byKind: { zip: 1, manifest: 1, "summary-json": 1 }
+            byKind: { zip: 1, manifest: 1, "summary-json": 1 },
+            ndjsonSummaryPath: "/out/batch-summary.ndjson"
           }
         }
       }
@@ -365,6 +366,7 @@ describe("batchJobCheckView", () => {
       /fixPreviews=3/
     );
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/manifest/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/ndjson/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/written=12/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipEntries=10/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/zipSha=abcdef01/);

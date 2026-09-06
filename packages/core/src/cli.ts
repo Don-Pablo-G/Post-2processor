@@ -2193,17 +2193,18 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
-      // Schema v18–v34: summaries + SARIF, then manifest, then zip + sha256.
+      // Schema v18–v35: summaries + SARIF, then manifest, then zip + sha256.
       // Predetermine exportManifestPath / writtenFileCount / zipEntryCount
       // before summary JSON so batchWalk.export in the envelope is complete.
       const manifestPath = path.join(outDir, "batch-export-manifest.json");
-      const willWriteNdjson = parsed.format === "ndjson";
-      // Remaining disk writes: summary.json, csv, sarif, [ndjson], manifest, zip, sha256.
-      const remainingWrites = 6 + (willWriteNdjson ? 1 : 0);
+      const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
+      // Remaining disk writes: summary.json, csv, sarif, ndjson, manifest, zip, sha256.
+      const remainingWrites = 7;
       // Remaining zip entries (not including the zip file itself): same without zip/sha256.
-      const remainingZipEntries = 4 + (willWriteNdjson ? 1 : 0);
+      const remainingZipEntries = 5;
       if (!batchWalk.export) batchWalk.export = { outDir };
       batchWalk.export.exportManifestPath = manifestPath;
+      batchWalk.export.ndjsonSummaryPath = ndjsonSummaryPath;
       batchWalk.export.writtenFileCount = written + remainingWrites;
       batchWalk.export.zipEntryCount = zipEntries.length + remainingZipEntries;
 
@@ -2248,21 +2249,18 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         );
         return 2;
       }
-      // Schema v20: when --format ndjson, also write a streaming-friendly
-      // one-line NDJSON envelope summary (same CliBatchEnvelope body).
-      if (willWriteNdjson) {
-        const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
-        const ndjsonBody = `${JSON.stringify(batchEnvelope)}\n`;
-        try {
-          await writeFn(ndjsonSummaryPath, ndjsonBody);
-          written += 1;
-          zipEntries.push({ path: "batch-summary.ndjson", data: ndjsonBody });
-        } catch (err) {
-          writeErr(
-            `Failed to write --out-dir batch summary ${ndjsonSummaryPath}: ${(err as Error).message}\n`
-          );
-          return 2;
-        }
+      // Schema v20–v35: always write a streaming-friendly one-line NDJSON
+      // envelope summary under --out-dir (same CliBatchEnvelope body).
+      const ndjsonBody = `${JSON.stringify(batchEnvelope)}\n`;
+      try {
+        await writeFn(ndjsonSummaryPath, ndjsonBody);
+        written += 1;
+        zipEntries.push({ path: "batch-summary.ndjson", data: ndjsonBody });
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir batch summary ${ndjsonSummaryPath}: ${(err as Error).message}\n`
+        );
+        return 2;
       }
 
       const utf8ByteLength = (data: string | Uint8Array): number =>
@@ -2306,7 +2304,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         return 2;
       }
 
-      // Schema v31–v34: seal zip integrity sidecar; rewrite disk summary/manifest.
+      // Schema v31–v35: seal zip integrity sidecar; rewrite disk summary/manifest/ndjson.
       try {
         const zipSha256 = await computeSha256Bytes(zipBytes);
         const zipSha256Path = `${zipPath}.sha256`;
@@ -2347,6 +2345,8 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         batchWalk.export.byKind = { ...manifestFinal.byKind };
         const summaryJsonFinal = `${formatBatchJson(entries, { batchWalk })}\n`;
         await writeFn(summaryPath, summaryJsonFinal);
+        const ndjsonBodyFinal = `${JSON.stringify(buildBatchEnvelope(entries, { batchWalk }))}\n`;
+        await writeFn(ndjsonSummaryPath, ndjsonBodyFinal);
         await writeFn(manifestPath, formatBatchExportManifest(manifestFinal));
       } catch (err) {
         writeErr(
