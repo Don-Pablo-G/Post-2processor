@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 128
+Total rules: 138
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -133,6 +133,16 @@ Total rules: 128
 | `haas.m6-and-g53-same-block` | warning | — | — | Do not combine a tool change (M6) with G53 on one block. |
 | `haas.g4-and-g28-same-block` | warning | — | — | Do not combine G4 dwell with G28 on one block. |
 | `haas.g4-and-g30-same-block` | warning | — | — | Do not combine G4 dwell with G30 on one block. |
+| `haas.g4-and-g53-same-block` | warning | — | — | Do not combine G4 dwell with G53 on one block. |
+| `haas.m6-and-m98-same-block` | warning | — | — | Do not combine a tool change (M6) with M98 on one block. |
+| `haas.m6-and-m97-same-block` | warning | — | — | Do not combine a tool change (M6) with M97 on one block. |
+| `haas.m6-and-g65-same-block` | warning | — | — | Do not combine a tool change (M6) with G65 on one block. |
+| `haas.m6-and-m00-same-block` | warning | — | — | Do not combine a tool change (M6) with program stop (M00) on one block. |
+| `haas.m6-and-m01-same-block` | warning | — | — | Do not combine a tool change (M6) with optional stop (M01) on one block. |
+| `haas.m98-and-g28-same-block` | warning | — | — | Do not combine M98 with G28 on one block. |
+| `haas.m97-and-g28-same-block` | warning | — | — | Do not combine M97 with G28 on one block. |
+| `haas.g65-and-g28-same-block` | warning | — | — | Do not combine G65 with G28 on one block. |
+| `haas.m98-and-g53-same-block` | warning | — | — | Do not combine M98 with G53 on one block. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -3561,6 +3571,292 @@ G91
 G30 Z0
 G4 P1.
 G90
+M30
+```
+
+### `haas.g4-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G53 on the same block/`
+- **Summary:** Do not combine G4 dwell with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0 G4 P1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+G4 P1.
+M30
+```
+
+### `haas.m6-and-m98-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and M98 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with M98 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6 M98 P2
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6
+M98 P2
+M30
+```
+
+### `haas.m6-and-m97-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and M97 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with M97 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6 M97 P10
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6
+M97 P10
+M30
+```
+
+### `haas.m6-and-g65-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and G65 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with G65 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6 G65 P9010
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6
+G65 P9010
+M30
+```
+
+### `haas.m6-and-m00-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and M00 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with program stop (M00) on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6 M00
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6
+M00
+M30
+```
+
+### `haas.m6-and-m01-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M6 and M01 on the same block/`
+- **Summary:** Do not combine a tool change (M6) with optional stop (M01) on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6 M01
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6
+M01
+M30
+```
+
+### `haas.m98-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and G28 on the same block/`
+- **Summary:** Do not combine M98 with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+M98 P2 G28 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+M98 P2
+M30
+```
+
+### `haas.m97-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M97 and G28 on the same block/`
+- **Summary:** Do not combine M97 with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+M97 P10 G28 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+M97 P10
+M30
+```
+
+### `haas.g65-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G28 on the same block/`
+- **Summary:** Do not combine G65 with G28 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G65 P9010 G28 Z0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G28 Z0
+G90
+G65 P9010
+M30
+```
+
+### `haas.m98-and-g53-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and G53 on the same block/`
+- **Summary:** Do not combine M98 with G53 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+M98 P2 G53 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+M98 P2
 M30
 ```
 

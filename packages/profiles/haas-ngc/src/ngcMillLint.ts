@@ -1316,6 +1316,87 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG4(block) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and G53 on the same block — dwell and machine move separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasWordM(block, 98)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and M98 on the same block — tool change and subprogram call separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasWordM(block, 97)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and M97 on the same block — tool change and local subprogram call separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasExactG65(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and G65 on the same block — tool change and macro call separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasWordM(block, 0)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and M00 on the same block — tool change and program stop separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasWordM(block, 1)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 and M01 on the same block — tool change and optional stop separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M98 and G28 on the same block — subprogram call and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 97) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M97 and G28 on the same block — local subprogram call and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 and G28 on the same block — macro call and reference return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && hasExactG53(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M98 and G53 on the same block — subprogram call and machine move separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasSpindleDirectionConflict(block)) {
       issues.push({
         severity: "warning",
