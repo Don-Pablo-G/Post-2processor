@@ -344,6 +344,7 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   if (exp.batchExportZip) parts.push("zip");
   if (exp.batchUnboundSarif) parts.push("sarif");
   if (exp.patchedNcCount !== undefined) parts.push(`patched=${exp.patchedNcCount}`);
+  if (exp.patchedNcDir) parts.push("patchedDir");
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;
 }
 

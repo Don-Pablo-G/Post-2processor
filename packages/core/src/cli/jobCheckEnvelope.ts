@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 25;
+export const CLI_SCHEMA_VERSION = 26;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -751,6 +751,11 @@ export type CliBatchWalkExport = {
   batchUnboundSarif?: string;
   /** Schema v25: count of patched NC files packed into `batch-export.zip`. */
   patchedNcCount?: number;
+  /**
+   * Schema v26: directory under `--out-dir` where `*.patched.nc` sidecars were
+   * written (typically `…/patched-nc`). Absent when no patched files were written.
+   */
+  patchedNcDir?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -1546,9 +1551,11 @@ function csvEscapeCell(value: string): string {
  * Schema v20–v22: CSV export of safety, policy-breach, controller-code, and
  * parse-diag aggregated dashboard rows. Shared by desktop clipboard and CLI
  * `--out-dir` `batch-summary.csv`.
+ * Schema v26 adds a trailing optional `firstBlockIndex` column (empty when
+ * the aggregation row has none).
  */
 export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string {
-  const lines: string[] = ["kind,key,count,blockers,warnings,inputs"];
+  const lines: string[] = ["kind,key,count,blockers,warnings,inputs,firstBlockIndex"];
   for (const row of envelope.summary.safetyFindingsByCodeAggregated ?? []) {
     lines.push(
       [
@@ -1557,7 +1564,8 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
         String(row.count),
         String(row.blockers),
         String(row.warnings),
-        csvEscapeCell(row.inputs.join("|"))
+        csvEscapeCell(row.inputs.join("|")),
+        row.firstBlockIndex !== undefined ? String(row.firstBlockIndex) : ""
       ].join(",")
     );
   }
@@ -1569,7 +1577,8 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
         String(row.count),
         row.severity === "blocker" ? String(row.count) : "0",
         row.severity === "warning" ? String(row.count) : "0",
-        csvEscapeCell(row.inputs.join("|"))
+        csvEscapeCell(row.inputs.join("|")),
+        ""
       ].join(",")
     );
   }
@@ -1581,7 +1590,8 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
         String(row.count),
         String(row.blockers),
         String(row.warnings),
-        csvEscapeCell(row.inputs.join("|"))
+        csvEscapeCell(row.inputs.join("|")),
+        row.firstBlockIndex !== undefined ? String(row.firstBlockIndex) : ""
       ].join(",")
     );
   }
@@ -1593,7 +1603,8 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
         String(row.count),
         String(row.errors),
         String(row.warnings),
-        csvEscapeCell(row.inputs.join("|"))
+        csvEscapeCell(row.inputs.join("|")),
+        row.firstBlockIndex !== undefined ? String(row.firstBlockIndex) : ""
       ].join(",")
     );
   }
@@ -1605,7 +1616,8 @@ export function formatBatchAggregationsAsCsv(envelope: CliBatchEnvelope): string
         String(row.count),
         "0",
         "0",
-        csvEscapeCell(row.inputs.join("|"))
+        csvEscapeCell(row.inputs.join("|")),
+        row.firstBlockIndex !== undefined ? String(row.firstBlockIndex) : ""
       ].join(",")
     );
   }

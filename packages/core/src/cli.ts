@@ -1913,8 +1913,10 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         const base = path.basename(sourcePath).replace(/\.(nc|tap|gcode)$/i, "");
         zipEntries.push({ path: `setup-pdf/${base}.pdf`, data: bytes });
       }
-      // Schema v25: include patched NC when @cnc/ide-bridge is available.
+      // Schema v25–v26: include patched NC when @cnc/ide-bridge is available;
+      // write on-disk sidecars under patched-nc/ and pack the same into the zip.
       let patchedNcCount = 0;
+      const patchedNcDir = path.join(outDir, "patched-nc");
       try {
         const bridge = (await import("@cnc/ide-bridge")) as {
           buildIdeBatchPatchedPrograms?: (
@@ -1930,6 +1932,17 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           const patched = bridge.buildIdeBatchPatchedPrograms(prelimEnvelope, sourcesByInput);
           for (const item of patched) {
             zipEntries.push({ path: `patched-nc/${item.filename}`, data: item.body });
+            const diskPath = path.join(patchedNcDir, item.filename);
+            try {
+              await mkdirFn(path.dirname(diskPath));
+              await writeFn(diskPath, item.body);
+              written += 1;
+            } catch (err) {
+              writeErr(
+                `Failed to write --out-dir patched NC ${diskPath}: ${(err as Error).message}\n`
+              );
+              return 2;
+            }
             patchedNcCount += 1;
           }
         }
@@ -1939,6 +1952,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       if (patchedNcCount > 0) {
         if (!batchWalk.export) batchWalk.export = { outDir };
         batchWalk.export.patchedNcCount = patchedNcCount;
+        batchWalk.export.patchedNcDir = patchedNcDir;
       }
 
       // Schema v18–v24: always drop a CLI-shaped batch summary beside per-file

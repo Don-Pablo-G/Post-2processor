@@ -3912,6 +3912,19 @@ export function App() {
                 {formatDesktopBatchSarifChip(batchJobCheckResult.envelope)}
               </span>
               <span
+                data-testid="folder-batch-patched-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchPatchedProgramsChip(
+                  buildDesktopBatchPatchedPrograms(
+                    batchJobCheckResult.envelope,
+                    new Map(
+                      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+                    )
+                  )
+                )}
+              </span>
+              <span
                 data-testid="folder-batch-export-inventory-chip"
                 style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
               >

@@ -4093,6 +4093,39 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=25
 ```
 
+## CSV firstBlockIndex + patched-nc sidecars + desktop patched chip + Schema v26
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — CSV `firstBlockIndex` column (Schema v26)
+
+`CLI_SCHEMA_VERSION` bumps `25 → 26`.
+`batch-summary.csv` / `formatBatchAggregationsAsCsv` gain a trailing
+`firstBlockIndex` column (empty when absent).
+
+### Move 2 — On-disk `patched-nc/` sidecars
+
+`--out-dir` writes `patched-nc/*.patched.nc` beside the zip (not only inside it)
+and records `batchWalk.export.patchedNcDir`.
+
+### Move 3 — Desktop live batch-patched chip
+
+Folder batch shows `batch-patched: files=N` from live apply-edit previews.
+
+### Move 4 — Export inventory includes `patchedDir`
+
+`formatDesktopBatchExportInventoryChip` surfaces `patchedDir` when present.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=26
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

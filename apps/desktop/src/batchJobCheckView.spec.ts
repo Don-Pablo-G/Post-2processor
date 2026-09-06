@@ -325,7 +325,8 @@ describe("batchJobCheckView", () => {
             outDir: "/out",
             batchExportZip: "/out/batch-export.zip",
             batchUnboundSarif: "/out/batch-unbound-fixes.sarif.json",
-            patchedNcCount: 1
+            patchedNcCount: 1,
+            patchedNcDir: "/out/patched-nc"
           }
         }
       }
@@ -337,5 +338,14 @@ describe("batchJobCheckView", () => {
     );
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/sarif/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/patched=1/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/patchedDir/);
+    expect(
+      formatDesktopBatchPatchedProgramsChip(
+        buildDesktopBatchPatchedPrograms(
+          withExport.envelope,
+          new Map([["a.nc", "O1\nG0 Z-5\nM30\n"]])
+        )
+      )
+    ).toMatch(/files=1/);
   });
 });
