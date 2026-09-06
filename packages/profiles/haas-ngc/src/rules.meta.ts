@@ -1485,6 +1485,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nM30\n"
   },
   {
+    id: "haas.g50-and-g92-same-block",
+    severity: "warning",
+    messageMatcher: /G50 and G92 on the same block/,
+    summary: "Do not combine G50 cancel scaling with G92 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50 G92 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50\nM30\n"
+  },
+  {
+    id: "haas.g50-and-g52-same-block",
+    severity: "warning",
+    messageMatcher: /G50 and G52 on the same block/,
+    summary: "Do not combine G50 cancel scaling with G52 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50 G52 X10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG50\nM30\n"
+  },
+  {
+    id: "haas.g43-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G28 on the same block/,
+    summary: "Do not combine G43 length compensation with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G28 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG28 Z0\nM30\n"
+  },
+  {
+    id: "haas.g43-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G30 on the same block/,
+    summary: "Do not combine G43 length compensation with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G30 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG30 Z0\nM30\n"
+  },
+  {
+    id: "haas.g49-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /G49 and G28 on the same block/,
+    summary: "Do not combine G49 cancel length compensation with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G28 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG28 Z0\nM30\n"
+  },
+  {
+    id: "haas.g49-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /G49 and G30 on the same block/,
+    summary: "Do not combine G49 cancel length compensation with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49 G30 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG30 Z0\nM30\n"
+  },
+  {
+    id: "haas.g40-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /G40 and G28 on the same block/,
+    summary: "Do not combine G40 cancel cutter compensation with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G28 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG28 Z0\nM30\n"
+  },
+  {
+    id: "haas.g40-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /G40 and G30 on the same block/,
+    summary: "Do not combine G40 cancel cutter compensation with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40 G30 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG30 Z0\nM30\n"
+  },
+  {
+    id: "haas.g80-and-g28-same-block",
+    severity: "warning",
+    messageMatcher: /G80 and G28 on the same block/,
+    summary: "Do not combine G80 cancel canned cycle with G28 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G28 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG28 Z0\nM30\n"
+  },
+  {
+    id: "haas.g80-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /G80 and G30 on the same block/,
+    summary: "Do not combine G80 cancel canned cycle with G30 on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80 G30 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG80\nG30 Z0\nM30\n"
+  },
+  {
     id: "haas.multiple-m-codes-same-block",
     severity: "warning",
     messageMatcher: /Multiple M codes on the same block/,

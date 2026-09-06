@@ -1704,6 +1704,86 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG50(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G50 and G92 on the same block — cancel scaling and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG50(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G50 and G52 on the same block — cancel scaling and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasG43Classic(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G43 and G28 on the same block — length compensation and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasG43Classic(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G43 and G30 on the same block — length compensation and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG49(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G49 and G28 on the same block — cancel length compensation and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG49(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G49 and G30 on the same block — cancel length compensation and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG40(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G40 and G28 on the same block — cancel cutter compensation and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG40(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G40 and G30 on the same block — cancel cutter compensation and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G80 and G28 on the same block — cancel canned cycle and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G80 and G30 on the same block — cancel canned cycle and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (
