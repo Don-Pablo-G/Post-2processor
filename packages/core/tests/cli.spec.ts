@@ -1019,7 +1019,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=27\n");
+    expect(stdout).toBe("cnc-job-check schema=28\n");
     expect(stderr).toBe("");
   });
 
@@ -1780,7 +1780,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 10 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 11 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -1814,7 +1814,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 9 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 10 files to /);
     const aRaw = await readFile(path.join(outDir, "a.ndjson"), "utf8");
     const aLines = aRaw.split("\n").filter((l) => l.length > 0);
     expect(aLines).toHaveLength(1);
@@ -1998,7 +1998,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 8 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 9 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2630,8 +2630,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 27", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(27);
+  it("CLI_SCHEMA_VERSION is 28", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(28);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3381,7 +3381,10 @@ describe("Schema v18: safety attribution firstBlockIndex + batchWalk.export + sa
     );
     expect(exit).toBe(0);
     const batch = JSON.parse(out.join(""));
-    expect(batch.summary.batchWalk.export).toEqual({ setupSheetPdfDir: pdfDir });
+    expect(batch.summary.batchWalk.export).toEqual({
+      setupSheetPdfDir: pdfDir,
+      setupPdfCount: 1
+    });
   });
 });
 
@@ -3801,13 +3804,68 @@ describe("Schema v27: setup-txt sidecars + setupTxtDir metadata", () => {
     );
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(27);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(summary.summary.batchWalk.export.setupTxtCount).toBe(1);
     expect(summary.summary.batchWalk.export.setupTxtDir).toMatch(/setup-txt$/);
     const txt = await readFile(path.join(outDir, "setup-txt", "a.setup.txt"), "utf8");
     expect(txt.length).toBeGreaterThan(0);
     const zipBytes = await readFile(path.join(outDir, "batch-export.zip"));
     expect(Buffer.from(zipBytes).toString("binary")).toMatch(/setup-txt\/a\.setup\.txt/);
+  });
+});
+
+describe("Schema v28: fix-previews sidecar + setupPdfCount", () => {
+  it("--out-dir writes batch-fix-previews.json when fixes apply", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 Z-5\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(28);
+    expect(summary.summary.batchWalk.export.fixPreviewCount).toBeGreaterThan(0);
+    expect(summary.summary.batchWalk.export.fixPreviewsPath).toMatch(
+      /batch-fix-previews\.json$/
+    );
+    const previews = JSON.parse(
+      await readFile(path.join(outDir, "batch-fix-previews.json"), "utf8")
+    );
+    expect(Array.isArray(previews)).toBe(true);
+    expect(previews.length).toBeGreaterThan(0);
+    const zipAscii = Buffer.from(
+      await readFile(path.join(outDir, "batch-export.zip"))
+    ).toString("binary");
+    expect(zipAscii).toMatch(/batch-fix-previews\.json/);
+  });
+
+  it("--export-setup-sheet-pdf-batch records setupPdfCount on batchWalk.export", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "b.nc"), "O2\nG0 X2\nM30\n", "utf8");
+    const pdfDir = path.join(tmp, "pdfs");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      [
+        "--input-dir",
+        tmp,
+        "--out-dir",
+        outDir,
+        "--export-setup-sheet-pdf-batch",
+        pdfDir,
+        "--format",
+        "json",
+        "--controller",
+        "fanuc"
+      ],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.summary.batchWalk.export.setupPdfCount).toBe(2);
+    expect(summary.summary.batchWalk.export.setupSheetPdfDir).toBe(pdfDir);
   });
 });
 

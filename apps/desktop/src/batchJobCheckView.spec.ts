@@ -328,7 +328,10 @@ describe("batchJobCheckView", () => {
             patchedNcCount: 1,
             patchedNcDir: "/out/patched-nc",
             setupTxtCount: 1,
-            setupTxtDir: "/out/setup-txt"
+            setupTxtDir: "/out/setup-txt",
+            setupPdfCount: 2,
+            fixPreviewsPath: "/out/batch-fix-previews.json",
+            fixPreviewCount: 3
           }
         }
       }
@@ -343,6 +346,10 @@ describe("batchJobCheckView", () => {
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/patchedDir/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/setupTxt=1/);
     expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/setupTxtDir/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(/setupPdf=2/);
+    expect(formatDesktopBatchExportInventoryChip(withExport.envelope)).toMatch(
+      /fixPreviews=3/
+    );
     expect(
       formatDesktopBatchQuickFixPreviewChip(
         buildDesktopBatchQuickFixPreviews(

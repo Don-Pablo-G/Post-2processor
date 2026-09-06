@@ -322,6 +322,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: string;
     batchJobCheckCopyFixPreview: string;
     batchJobCheckCopiedFixPreview: string;
+    batchJobCheckDownloadFixPreview: string;
+    batchJobCheckDownloadedFixPreview: string;
     batchJobCheckCopyPatched: string;
     batchJobCheckCopiedPatched: string;
     batchJobCheckCopySarif: string;
@@ -641,6 +643,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: "Skopiowano CSV agregacji batch",
     batchJobCheckCopyFixPreview: "Kopiuj podgląd fixów",
     batchJobCheckCopiedFixPreview: "Skopiowano podgląd fixów batch",
+    batchJobCheckDownloadFixPreview: "Pobierz podgląd fixów",
+    batchJobCheckDownloadedFixPreview: "Pobrano podgląd fixów batch",
     batchJobCheckCopyPatched: "Kopiuj patched NC",
     batchJobCheckCopiedPatched: "Skopiowano patched NC batch",
     batchJobCheckCopySarif: "Kopiuj SARIF unbound",
@@ -961,6 +965,8 @@ const UI_TEXT: Record<
     batchJobCheckCopiedCsv: "Copied batch aggregation CSV",
     batchJobCheckCopyFixPreview: "Copy fix preview",
     batchJobCheckCopiedFixPreview: "Copied batch fix preview",
+    batchJobCheckDownloadFixPreview: "Download fix preview",
+    batchJobCheckDownloadedFixPreview: "Downloaded batch fix preview",
     batchJobCheckCopyPatched: "Copy patched NC",
     batchJobCheckCopiedPatched: "Copied batch patched NC",
     batchJobCheckCopySarif: "Copy unbound SARIF",
@@ -2097,6 +2103,34 @@ export function App() {
       );
     } catch {
       setExportStatus(payload);
+    }
+  }
+
+  async function handleDownloadBatchFixPreview(): Promise<void> {
+    if (!batchJobCheckResult) return;
+    try {
+      const sourcesByInput = new Map(
+        batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+      );
+      const previews = buildDesktopBatchQuickFixPreviews(
+        batchJobCheckResult.envelope,
+        sourcesByInput
+      );
+      const payload = formatDesktopBatchQuickFixPreviewsForExport(previews);
+      const { downloaded } = await downloadDesktopBatchItems([
+        {
+          filename: "batch-fix-previews.json",
+          body: payload,
+          mimeType: "application/json;charset=utf-8"
+        }
+      ]);
+      setExportStatus(
+        `${t.batchJobCheckDownloadedFixPreview}: ${downloaded} (${formatDesktopBatchQuickFixPreviewChip(previews)})`
+      );
+    } catch (error) {
+      setExportStatus(
+        error instanceof Error ? error.message : "Batch fix-preview download failed."
+      );
     }
   }
 
@@ -3998,6 +4032,13 @@ export function App() {
                 onClick={() => void handleCopyBatchFixPreview()}
               >
                 {t.batchJobCheckCopyFixPreview}
+              </button>
+              <button
+                type="button"
+                data-testid="folder-batch-download-fix-preview"
+                onClick={() => void handleDownloadBatchFixPreview()}
+              >
+                {t.batchJobCheckDownloadFixPreview}
               </button>
               <button
                 type="button"

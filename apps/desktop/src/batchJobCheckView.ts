@@ -341,10 +341,13 @@ export function formatDesktopBatchExportInventoryChip(envelope: CliBatchEnvelope
   const parts: string[] = [];
   if (exp.outDir) parts.push("outDir");
   if (exp.setupSheetPdfDir) parts.push("pdf");
+  if (exp.setupPdfCount !== undefined) parts.push(`setupPdf=${exp.setupPdfCount}`);
   if (exp.setupTxtCount !== undefined) parts.push(`setupTxt=${exp.setupTxtCount}`);
   if (exp.setupTxtDir) parts.push("setupTxtDir");
   if (exp.batchExportZip) parts.push("zip");
   if (exp.batchUnboundSarif) parts.push("sarif");
+  if (exp.fixPreviewCount !== undefined) parts.push(`fixPreviews=${exp.fixPreviewCount}`);
+  else if (exp.fixPreviewsPath) parts.push("fixPreviews");
   if (exp.patchedNcCount !== undefined) parts.push(`patched=${exp.patchedNcCount}`);
   if (exp.patchedNcDir) parts.push("patchedDir");
   return parts.length === 0 ? "batch-export: none" : `batch-export: ${parts.join(",")}`;

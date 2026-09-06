@@ -1867,6 +1867,11 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       if (!parsed.quiet) {
         writeOut(`cnc-job-check: wrote ${writtenPdfs} PDFs to ${pdfOutDir}\n`);
       }
+      if (writtenPdfs > 0) {
+        if (!batchWalk.export) batchWalk.export = {};
+        batchWalk.export.setupSheetPdfDir = pdfOutDir;
+        batchWalk.export.setupPdfCount = writtenPdfs;
+      }
     }
 
     if (parsed.outDir !== undefined) {
@@ -1934,8 +1939,12 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
         const base = path.basename(sourcePath).replace(/\.(nc|tap|gcode)$/i, "");
         zipEntries.push({ path: `setup-pdf/${base}.pdf`, data: bytes });
       }
-      // Schema v25–v26: include patched NC when @cnc/ide-bridge is available;
-      // write on-disk sidecars under patched-nc/ and pack the same into the zip.
+      if (perFilePdfs.length > 0) {
+        if (!batchWalk.export) batchWalk.export = { outDir };
+        batchWalk.export.setupPdfCount = perFilePdfs.length;
+      }
+      // Schema v25–v28: include patched NC + fix previews when @cnc/ide-bridge
+      // is available; write on-disk sidecars and pack into the zip.
       let patchedNcCount = 0;
       const patchedNcDir = path.join(outDir, "patched-nc");
       try {
@@ -1944,12 +1953,16 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
             envelope: ReturnType<typeof buildBatchEnvelope>,
             sources: ReadonlyMap<string, string>
           ) => Array<{ filename: string; body: string }>;
+          buildIdeBatchQuickFixPreviews?: (
+            envelope: ReturnType<typeof buildBatchEnvelope>,
+            sources: ReadonlyMap<string, string>
+          ) => unknown[];
         };
+        const sourcesByInput = new Map(
+          [...sourcesByInputDuringBatch.entries()].filter(([, src]) => src.length > 0)
+        );
+        const prelimEnvelope = buildBatchEnvelope(entries, { batchWalk });
         if (typeof bridge.buildIdeBatchPatchedPrograms === "function") {
-          const sourcesByInput = new Map(
-            [...sourcesByInputDuringBatch.entries()].filter(([, src]) => src.length > 0)
-          );
-          const prelimEnvelope = buildBatchEnvelope(entries, { batchWalk });
           const patched = bridge.buildIdeBatchPatchedPrograms(prelimEnvelope, sourcesByInput);
           for (const item of patched) {
             zipEntries.push({ path: `patched-nc/${item.filename}`, data: item.body });
@@ -1965,6 +1978,29 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
               return 2;
             }
             patchedNcCount += 1;
+          }
+        }
+        if (typeof bridge.buildIdeBatchQuickFixPreviews === "function") {
+          const previews = bridge.buildIdeBatchQuickFixPreviews(
+            prelimEnvelope,
+            sourcesByInput
+          );
+          if (previews.length > 0) {
+            const fixPreviewsPath = path.join(outDir, "batch-fix-previews.json");
+            const body = `${JSON.stringify(previews, null, 2)}\n`;
+            try {
+              await writeFn(fixPreviewsPath, body);
+              written += 1;
+              zipEntries.push({ path: "batch-fix-previews.json", data: body });
+            } catch (err) {
+              writeErr(
+                `Failed to write --out-dir fix previews ${fixPreviewsPath}: ${(err as Error).message}\n`
+              );
+              return 2;
+            }
+            if (!batchWalk.export) batchWalk.export = { outDir };
+            batchWalk.export.fixPreviewsPath = fixPreviewsPath;
+            batchWalk.export.fixPreviewCount = previews.length;
           }
         }
       } catch {

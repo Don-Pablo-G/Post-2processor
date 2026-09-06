@@ -4157,6 +4157,40 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=27
 ```
 
+## Fix-previews sidecar + setupPdfCount + desktop download + Schema v28
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `fixPreviewsPath` / `fixPreviewCount` / `setupPdfCount` (Schema v28)
+
+`CLI_SCHEMA_VERSION` bumps `27 → 28`.
+`batchWalk.export` gains optional `fixPreviewsPath`, `fixPreviewCount`, and
+`setupPdfCount`.
+
+### Move 2 — On-disk `batch-fix-previews.json`
+
+When `@cnc/ide-bridge` is resolvable and previews are non-empty, `--out-dir`
+writes `batch-fix-previews.json` (and packs it into the zip).
+
+### Move 3 — Desktop Download fix preview
+
+Folder batch gains **Download fix preview** (same JSON as clipboard).
+
+### Move 4 — PDF / fix-preview inventory
+
+`setupPdfCount` is recorded when `--export-setup-sheet-pdf-batch` runs;
+export inventory chip surfaces `setupPdf=N` and `fixPreviews=N`.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=28
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -4177,9 +4211,3 @@ next planning wave can pick them up:
 - **IDE-host workspace write from fix preview** — pure apply-edit +
   patched NC download ship; writing expanded templates back into open
   editors remains an IDE-host concern.
-- **On-disk `batch-fix-previews.json` sidecar** — persist expanded fix
-  previews under `--out-dir` (and optional desktop download).
-- **Desktop Download fix preview** — mirror clipboard fix-preview JSON
-  as a downloadable artifact.
-- **`setupPdfCount` / richer PDF export inventory** — when
-  `--export-setup-sheet-pdf-batch` runs, count PDFs on `batchWalk.export`.

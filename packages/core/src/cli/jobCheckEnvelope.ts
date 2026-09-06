@@ -8,7 +8,7 @@ import { getParseDiagnosticFix } from "../parser/parseDiagnosticFixes.js";
 import { getSafetyFindingFix } from "../workshop/safetyFindingFixes.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 27;
+export const CLI_SCHEMA_VERSION = 28;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -763,6 +763,17 @@ export type CliBatchWalkExport = {
   setupTxtDir?: string;
   /** Schema v27: count of setup-sheet TXT sidecars written under `setupTxtDir`. */
   setupTxtCount?: number;
+  /**
+   * Schema v28: path of `batch-fix-previews.json` under `--out-dir` when written.
+   */
+  fixPreviewsPath?: string;
+  /** Schema v28: number of expanded fix-preview rows in that sidecar. */
+  fixPreviewCount?: number;
+  /**
+   * Schema v28: count of setup-sheet PDFs written via
+   * `--export-setup-sheet-pdf-batch` (and/or packed into the zip).
+   */
+  setupPdfCount?: number;
 };
 
 export type CliBatchBlockReasonAggregation = {
