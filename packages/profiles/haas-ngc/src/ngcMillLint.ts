@@ -1540,6 +1540,88 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWorkOffset(block) && hasExactG28(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Work offset (G54-G59/G154) and G28 on the same block — select offset and home return separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWorkOffset(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Work offset (G54-G59/G154) and G30 on the same block — select offset and secondary home separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasG43Classic(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G43 and G92 on the same block — length compensation and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasG43Classic(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G43 and G52 on the same block — length compensation and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG49(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G49 and G92 on the same block — cancel length compensation and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG49(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G49 and G52 on the same block — cancel length compensation and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG40(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G40 and G92 on the same block — cancel cutter compensation and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG40(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G40 and G52 on the same block — cancel cutter compensation and local offset separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block) && hasExactG92(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G80 and G92 on the same block — cancel canned cycle and coordinate shift separately.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block) && hasExactG52(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G80 and G52 on the same block — cancel canned cycle and local offset separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (

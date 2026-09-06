@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 169 (of which 13 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 179 (of which 13 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -173,6 +173,16 @@ Total rules: 169 (of which 13 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g4-and-g52-same-block` | warning | — | — | Do not combine G4 dwell with G52 on one block. |
 | `haas.m6-and-g92-same-block` | warning | — | — | Do not combine a tool change (M6) with G92 on one block. |
 | `haas.m6-and-g52-same-block` | warning | — | — | Do not combine a tool change (M6) with G52 on one block. |
+| `haas.work-offset-and-g28-same-block` | warning | — | — | Do not select a work offset and G28 on the same block. |
+| `haas.work-offset-and-g30-same-block` | warning | — | — | Do not select a work offset and G30 on the same block. |
+| `haas.g43-and-g92-same-block` | warning | — | — | Do not combine G43 length compensation with G92 on one block. |
+| `haas.g43-and-g52-same-block` | warning | — | — | Do not combine G43 length compensation with G52 on one block. |
+| `haas.g49-and-g92-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G92 on one block. |
+| `haas.g49-and-g52-same-block` | warning | — | — | Do not combine G49 cancel length compensation with G52 on one block. |
+| `haas.g40-and-g92-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G92 on one block. |
+| `haas.g40-and-g52-same-block` | warning | — | — | Do not combine G40 cancel cutter compensation with G52 on one block. |
+| `haas.g80-and-g92-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G92 on one block. |
+| `haas.g80-and-g52-same-block` | warning | — | — | Do not combine G80 cancel canned cycle with G52 on one block. |
 | `haas.multiple-m-codes-same-block` | warning | — | — | Haas allows only one M function per block — split M codes onto separate blocks. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
@@ -4770,6 +4780,276 @@ O0001
 T1 M6
 G54
 T2 M6
+M30
+```
+
+### `haas.work-offset-and-g28-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Work offset \(G54-G59\/G154\) and G28 on the same block/`
+- **Summary:** Do not select a work offset and G28 on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54 G28 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G28 Z0
+M30
+```
+
+### `haas.work-offset-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Work offset \(G54-G59\/G154\) and G30 on the same block/`
+- **Summary:** Do not select a work offset and G30 on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54 G30 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G30 Z0
+M30
+```
+
+### `haas.g43-and-g92-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G92 on the same block/`
+- **Summary:** Do not combine G43 length compensation with G92 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G92 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+M30
+```
+
+### `haas.g43-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G52 on the same block/`
+- **Summary:** Do not combine G43 length compensation with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G52 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+M30
+```
+
+### `haas.g49-and-g92-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G49 and G92 on the same block/`
+- **Summary:** Do not combine G49 cancel length compensation with G92 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49 G92 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M30
+```
+
+### `haas.g49-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G49 and G52 on the same block/`
+- **Summary:** Do not combine G49 cancel length compensation with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49 G52 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M30
+```
+
+### `haas.g40-and-g92-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G40 and G92 on the same block/`
+- **Summary:** Do not combine G40 cancel cutter compensation with G92 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40 G92 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40
+M30
+```
+
+### `haas.g40-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G40 and G52 on the same block/`
+- **Summary:** Do not combine G40 cancel cutter compensation with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40 G52 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40
+M30
+```
+
+### `haas.g80-and-g92-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G80 and G92 on the same block/`
+- **Summary:** Do not combine G80 cancel canned cycle with G92 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G80 G92 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G80
+M30
+```
+
+### `haas.g80-and-g52-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G80 and G52 on the same block/`
+- **Summary:** Do not combine G80 cancel canned cycle with G52 on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G80 G52 X10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G80
 M30
 ```
 
