@@ -3651,6 +3651,47 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=14
 ```
 
+## Safety-findings rollup + parse-diag bindings + policy-breach export + Schema v15
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — Per-entry `safetyFindingsByCode` + batch rollup (Schema v15)
+
+`CLI_SCHEMA_VERSION` bumps `14 → 15`. Each envelope gains `safetyFindingsByCode[]`
+(advisor + simulation findings rolled up by `code` with `count` / `blockers` /
+`warnings` / optional `firstBlockIndex`). Batch summary gains
+`safetyFindingsByCodeAggregated` (one row per code with deduped `inputs[]`).
+Sorted `count` desc → `code` asc. Batch field absent when no entry has findings.
+
+### Move 2 — Pure builders for safety-findings rollups
+
+`buildSafetyFindingsByCode` and `buildBatchSafetyFindingsByCodeAggregation` are
+exported pure helpers used by the envelope and batch builders.
+
+### Move 3 — ide-bridge `deriveParseDiagnosticFixBindings`
+
+Heuristic bindings for parse-diag catalogue templates:
+`ADDRESS_MISSING_VALUE` → `{ LETTER }`, `UNKNOWN_TOKEN` → `{ TOKEN }`.
+
+### Move 4 — Desktop policy-breach rollup chip + JSON/CSV clipboard
+
+Job Check breach section gains a rollup-shaped chip and **Copy breach JSON** /
+**Copy breach CSV** buttons.
+
+### Move 5 — Desktop safety-findings chip + JSON clipboard
+
+Job Check card surfaces a safety rollup chip (blockers first) with **Copy safety JSON**.
+
+### Move 6 — Verification
+
+```
+npm run typecheck   # passes across all workspaces
+npm test            # see test run for current count
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=15
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -3668,12 +3709,9 @@ next planning wave can pick them up:
   reorder, embedded LTR islands, and bracket/quote preservation ship;
   deeply nested embeddings and multi-script runs still need ICU or a
   full UAX#9 implementation.
-- **Simulation/advisor findings batch rollup** — per-entry simulation
-  and advisor findings are not yet in the CLI envelope; a structured
-  batch summary would close the remaining safety-dashboard gap.
-- **Desktop policy-breach batch chip parity** — CLI batch rollups ship;
-  desktop could surface `parseDiagnosticsPolicyBreachesAggregated` when
-  running multi-file checks.
-- **Parse-diag fix template binding heuristics** — catalogue templates
-  ship; IDE hosts may want `deriveParseDiagnosticFixBindings` for codes
-  like `ADDRESS_MISSING_VALUE` that need the observed address letter.
+- **Desktop multi-file batch Job Check** — v15 exports are rollup-shaped
+  but desktop still runs single-file; a batch walker UI would close parity.
+- **Simulation/advisor ide-bridge quick-fix catalogue** — rollup ships;
+  no `SIM_*` / advisor fix catalogue yet.
+- **Broader parse-diag binding heuristics** — LETTER/TOKEN ship; additional
+  codes may need message-derived bindings later.

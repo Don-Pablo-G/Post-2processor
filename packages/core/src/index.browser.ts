@@ -141,12 +141,14 @@ export type {
   CliBatchParseDiagnosticsByCodeAggregation,
   CliBatchStrictControllerCodesGatedAggregation,
   CliBatchParseDiagnosticsPolicyBreachesAggregation,
+  CliBatchSafetyFindingsByCodeAggregation,
   CliBatchLintIssuesBySourceAggregation,
   CliBlockReason,
   CliLintIssuesByControllerCodeEntry,
   CliLintIssuesBySourceEntry,
   CliLintIssuesByParseDiagCodeEntry,
-  CliParseDiagnosticsByCodeEntry
+  CliParseDiagnosticsByCodeEntry,
+  CliSafetyFindingsByCodeEntry
 } from "./cli.js";
 
 export function isNodeCapable(): boolean {

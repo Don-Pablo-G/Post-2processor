@@ -52,7 +52,7 @@ import {
 
 export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
 
-export const CLI_SCHEMA_VERSION = 14;
+export const CLI_SCHEMA_VERSION = 15;
 
 const CONTROLLER_NAMES: Record<CliControllerKey, string> = {
   "haas-ngc": "Haas NGC",
@@ -840,6 +840,19 @@ export type CliLintIssuesByControllerCodeEntry = {
   warnings: number;
 };
 
+/**
+ * Schema v15: rollup of advisor + simulation `SafetyFinding` rows by `code`.
+ * Empty array when no safety findings are present. Sorted by `count` desc →
+ * `code` asc. Append-only field.
+ */
+export type CliSafetyFindingsByCodeEntry = {
+  code: string;
+  count: number;
+  blockers: number;
+  warnings: number;
+  firstBlockIndex?: number;
+};
+
 export type CliJobCheckEnvelope = {
   schemaVersion: number;
   readyToRunScore: number;
@@ -873,6 +886,12 @@ export type CliJobCheckEnvelope = {
    * `count` desc, then `source` asc, then `code` asc. Append-only field.
    */
   lintIssuesByControllerCode: CliLintIssuesByControllerCodeEntry[];
+  /**
+   * Schema v15: per-code rollup of advisor `safetyFindings` +
+   * `simulationFindings`. Empty array when none. Sorted `count` desc →
+   * `code` asc. Append-only field.
+   */
+  safetyFindingsByCode: CliSafetyFindingsByCodeEntry[];
   controllerLints: LintIssueWithProvenance[];
   setupSheetExportTxt: string;
   proveoutCode: string;
@@ -1057,6 +1076,55 @@ function buildLintIssuesByControllerCode(
   return entries;
 }
 
+/**
+ * Schema v15: roll up advisor + simulation safety findings by `code`.
+ * Pure function — deterministic given `result`.
+ */
+export function buildSafetyFindingsByCode(
+  result: RunJobCheckResult
+): CliSafetyFindingsByCodeEntry[] {
+  const findings = [
+    ...(result.advisor?.safetyFindings ?? []),
+    ...(result.simulationFindings ?? [])
+  ];
+  if (findings.length === 0) return [];
+  const buckets = new Map<
+    string,
+    { count: number; blockers: number; warnings: number; firstBlockIndex?: number }
+  >();
+  for (const finding of findings) {
+    if (typeof finding.code !== "string" || finding.code.length === 0) continue;
+    let bucket = buckets.get(finding.code);
+    if (!bucket) {
+      bucket = { count: 0, blockers: 0, warnings: 0 };
+      buckets.set(finding.code, bucket);
+    }
+    bucket.count += 1;
+    if (finding.severity === "blocker") bucket.blockers += 1;
+    else bucket.warnings += 1;
+    if (finding.blockIndex !== undefined) {
+      if (bucket.firstBlockIndex === undefined || finding.blockIndex < bucket.firstBlockIndex) {
+        bucket.firstBlockIndex = finding.blockIndex;
+      }
+    }
+  }
+  const entries: CliSafetyFindingsByCodeEntry[] = [];
+  for (const [code, bucket] of buckets) {
+    entries.push({
+      code,
+      count: bucket.count,
+      blockers: bucket.blockers,
+      warnings: bucket.warnings,
+      ...(bucket.firstBlockIndex !== undefined ? { firstBlockIndex: bucket.firstBlockIndex } : {})
+    });
+  }
+  entries.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    return a.code.localeCompare(b.code);
+  });
+  return entries;
+}
+
 export function buildJobCheckEnvelope(result: RunJobCheckResult): CliJobCheckEnvelope {
   const controllerLints = result.lintIssues.filter(
     (issue) => issue.provenance.source === "controller_grammar"
@@ -1076,6 +1144,7 @@ export function buildJobCheckEnvelope(result: RunJobCheckResult): CliJobCheckEnv
     parseDiagnosticsByCode: buildParseDiagnosticsByCode(result),
     lintIssuesByParseDiagCode: buildLintIssuesByParseDiagCode(result),
     lintIssuesByControllerCode: buildLintIssuesByControllerCode(result),
+    safetyFindingsByCode: buildSafetyFindingsByCode(result),
     controllerLints,
     setupSheetExportTxt: result.setupSheet.exportTxt,
     proveoutCode: result.proveout.code
@@ -1308,6 +1377,14 @@ export type CliBatchEnvelope = {
      * `count` desc → `key` asc. Absent when no entry has policy breaches.
      */
     parseDiagnosticsPolicyBreachesAggregated?: CliBatchParseDiagnosticsPolicyBreachesAggregation[];
+    /**
+     * Schema v15: cross-input aggregation of every entry's
+     * `envelope.safetyFindingsByCode`. One row per distinct `code`;
+     * `inputs` lists entry inputs that reported the code (sorted ascending,
+     * deduped). Counts sum across entries. Sort order: `count` desc →
+     * `code` asc. Absent when no entry has safety findings.
+     */
+    safetyFindingsByCodeAggregated?: CliBatchSafetyFindingsByCodeAggregation[];
   };
 };
 
@@ -1386,6 +1463,17 @@ export type CliBatchParseDiagnosticsPolicyBreachesAggregation = {
   severity: "warning" | "blocker";
 };
 
+/**
+ * Schema v15: cross-input rollup of per-entry `safetyFindingsByCode` rows.
+ */
+export type CliBatchSafetyFindingsByCodeAggregation = {
+  code: string;
+  count: number;
+  blockers: number;
+  warnings: number;
+  inputs: string[];
+};
+
 function buildBatchControllerCodeAttribution(
   entries: CliBatchEntry[]
 ): CliBatchControllerCodeAttribution[] {
@@ -1454,6 +1542,10 @@ export function buildBatchEnvelope(entries: CliBatchEntry[]): CliBatchEnvelope {
   const policyBreaches = buildBatchParseDiagnosticsPolicyBreachesAggregation(entries);
   if (policyBreaches.length > 0) {
     summary.parseDiagnosticsPolicyBreachesAggregated = policyBreaches;
+  }
+  const safetyByCode = buildBatchSafetyFindingsByCodeAggregation(entries);
+  if (safetyByCode.length > 0) {
+    summary.safetyFindingsByCodeAggregated = safetyByCode;
   }
   return {
     schemaVersion: CLI_SCHEMA_VERSION,
@@ -1797,6 +1889,49 @@ export function buildBatchParseDiagnosticsPolicyBreachesAggregation(
   rows.sort((a, b) => {
     if (a.count !== b.count) return b.count - a.count;
     return a.key.localeCompare(b.key);
+  });
+  return rows;
+}
+
+/**
+ * Schema v15: walk every entry's `envelope.safetyFindingsByCode` and group
+ * by `code`. Pure function — deterministic given `entries`.
+ */
+export function buildBatchSafetyFindingsByCodeAggregation(
+  entries: CliBatchEntry[]
+): CliBatchSafetyFindingsByCodeAggregation[] {
+  const byCode = new Map<
+    string,
+    { count: number; blockers: number; warnings: number; inputs: Set<string> }
+  >();
+  for (const entry of entries) {
+    const rows = entry.envelope.safetyFindingsByCode;
+    if (!rows || rows.length === 0) continue;
+    for (const row of rows) {
+      let bucket = byCode.get(row.code);
+      if (!bucket) {
+        bucket = { count: 0, blockers: 0, warnings: 0, inputs: new Set<string>() };
+        byCode.set(row.code, bucket);
+      }
+      bucket.count += row.count;
+      bucket.blockers += row.blockers;
+      bucket.warnings += row.warnings;
+      bucket.inputs.add(entry.input);
+    }
+  }
+  const rows: CliBatchSafetyFindingsByCodeAggregation[] = [];
+  for (const [code, bucket] of byCode) {
+    rows.push({
+      code,
+      count: bucket.count,
+      blockers: bucket.blockers,
+      warnings: bucket.warnings,
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+    });
+  }
+  rows.sort((a, b) => {
+    if (a.count !== b.count) return b.count - a.count;
+    return a.code.localeCompare(b.code);
   });
   return rows;
 }

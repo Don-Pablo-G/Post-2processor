@@ -12,6 +12,7 @@ import {
 
 import {
   deriveQuickFixBindings,
+  deriveParseDiagnosticFixBindings,
   expandIdeQuickFixTemplate,
   getQuickFixForLintIssue,
   mapBatchAttributionToFileQuickFixes,
@@ -63,6 +64,7 @@ function makeEnvelope(controllerLints: LintIssueWithProvenance[]): CliJobCheckEn
     parseDiagnosticsByCode: [],
     lintIssuesByParseDiagCode: [],
     lintIssuesByControllerCode: [],
+    safetyFindingsByCode: [],
     controllerLints,
     setupSheetExportTxt: "",
     proveoutCode: ""
@@ -568,6 +570,35 @@ describe("deriveQuickFixBindings", () => {
     // its block tokens — IDE hosts derive the per-letter snippet locally).
     expect(expanded).toContain("{{FIRST_BLOCK_WITH_LETTER}}");
     expect(expanded).toContain("{{SECOND_BLOCK_WITH_LETTER}}");
+  });
+});
+
+describe("deriveParseDiagnosticFixBindings", () => {
+  it("derives LETTER from ADDRESS_MISSING_VALUE message", () => {
+    expect(
+      deriveParseDiagnosticFixBindings({
+        code: "ADDRESS_MISSING_VALUE",
+        message: "Address 'X' has no parseable value in strict mode."
+      })
+    ).toEqual({ LETTER: "X" });
+  });
+
+  it("derives TOKEN from UNKNOWN_TOKEN message", () => {
+    expect(
+      deriveParseDiagnosticFixBindings({
+        code: "UNKNOWN_TOKEN",
+        message: "Unknown token '@@' skipped in strict mode recovery."
+      })
+    ).toEqual({ TOKEN: "@@" });
+  });
+
+  it("returns empty object for codes without heuristics", () => {
+    expect(
+      deriveParseDiagnosticFixBindings({
+        code: "UNMATCHED_OPEN_PAREN",
+        message: "Unmatched '(' found"
+      })
+    ).toEqual({});
   });
 });
 

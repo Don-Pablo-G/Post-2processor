@@ -104,6 +104,15 @@ import {
   strictControllerGatePatternLabel,
   type StrictControllerGateWatchPattern
 } from "./strictControllerGateView";
+import {
+  formatPolicyBreachRollupChip,
+  formatPolicyBreachesForExport
+} from "./policyBreachView";
+import {
+  buildSafetyFindingsByCodeFromFindings,
+  formatSafetyFindingsChip,
+  formatSafetyFindingsForExport
+} from "./safetyFindingsView";
 
 const SAMPLE = `O1001 (NGC SAMPLE)
 G90 G54 G17
@@ -251,6 +260,16 @@ const UI_TEXT: Record<
     parseDiagnosticsBreachCopy: string;
     parseDiagnosticsBreachCopiedStatus: string;
     parseDiagnosticsBreachCopyFallback: string;
+    policyBreachCopyJson: string;
+    policyBreachCopiedJson: string;
+    policyBreachCopyJsonFallback: string;
+    policyBreachCopyCsv: string;
+    policyBreachCopiedCsv: string;
+    policyBreachCopyCsvFallback: string;
+    safetyFindingsChipLabel: string;
+    safetyFindingsCopyJson: string;
+    safetyFindingsCopiedJson: string;
+    safetyFindingsCopyJsonFallback: string;
     parseDiagnosticsPolicyPresetsLabel: string;
     parseDiagnosticsPolicyPresetStrict: string;
     parseDiagnosticsPolicyPresetBalanced: string;
@@ -530,6 +549,16 @@ const UI_TEXT: Record<
     parseDiagnosticsBreachCopy: "Kopiuj kontekst przekroczeń",
     parseDiagnosticsBreachCopiedStatus: "Skopiowano kontekst przekroczeń",
     parseDiagnosticsBreachCopyFallback: "Skopiuj kontekst przekroczeń ręcznie",
+    policyBreachCopyJson: "Kopiuj JSON przekroczeń",
+    policyBreachCopiedJson: "Skopiowano przekroczenia polityki (JSON)",
+    policyBreachCopyJsonFallback: "Kopiuj przekroczenia polityki JSON ręcznie",
+    policyBreachCopyCsv: "Kopiuj CSV przekroczeń",
+    policyBreachCopiedCsv: "Skopiowano przekroczenia polityki (CSV)",
+    policyBreachCopyCsvFallback: "Kopiuj przekroczenia polityki CSV ręcznie",
+    safetyFindingsChipLabel: "Bezpieczeństwo",
+    safetyFindingsCopyJson: "Kopiuj JSON bezpieczeństwa",
+    safetyFindingsCopiedJson: "Skopiowano rollup bezpieczeństwa (JSON)",
+    safetyFindingsCopyJsonFallback: "Kopiuj rollup bezpieczeństwa ręcznie",
     parseDiagnosticsPolicyPresetsLabel: "Szybkie progi",
     parseDiagnosticsPolicyPresetStrict: "Rygorystyczny",
     parseDiagnosticsPolicyPresetBalanced: "Zrównoważony",
@@ -810,6 +839,16 @@ const UI_TEXT: Record<
     parseDiagnosticsBreachCopy: "Copy diagnostics breach context",
     parseDiagnosticsBreachCopiedStatus: "Copied diagnostics breach context",
     parseDiagnosticsBreachCopyFallback: "Copy diagnostics breach context manually",
+    policyBreachCopyJson: "Copy breach JSON",
+    policyBreachCopiedJson: "Copied policy breaches (JSON)",
+    policyBreachCopyJsonFallback: "Copy policy breaches JSON manually",
+    policyBreachCopyCsv: "Copy breach CSV",
+    policyBreachCopiedCsv: "Copied policy breaches (CSV)",
+    policyBreachCopyCsvFallback: "Copy policy breaches CSV manually",
+    safetyFindingsChipLabel: "Safety",
+    safetyFindingsCopyJson: "Copy safety JSON",
+    safetyFindingsCopiedJson: "Copied safety findings rollup (JSON)",
+    safetyFindingsCopyJsonFallback: "Copy safety findings rollup manually",
     parseDiagnosticsPolicyPresetsLabel: "Quick thresholds",
     parseDiagnosticsPolicyPresetStrict: "Strict",
     parseDiagnosticsPolicyPresetBalanced: "Balanced",
@@ -1212,6 +1251,10 @@ export function App() {
       ),
     [jobCheckResult]
   );
+  const policyBreachRollupChip = useMemo(
+    () => formatPolicyBreachRollupChip(jobCheckResult?.parseDiagnosticsPolicyBreaches),
+    [jobCheckResult]
+  );
   const parseDiagnostics = useMemo<ParseDiagnosticLike[]>(
     () => (ast.parseDiagnostics ?? []) as ParseDiagnosticLike[],
     [ast]
@@ -1278,6 +1321,17 @@ export function App() {
         ]
       }),
     [ast]
+  );
+  const safetyFindingsByCodeRows = useMemo(() => {
+    const findings = [
+      ...(advisor.safetyFindings ?? []),
+      ...(jobCheckResult?.simulationFindings ?? [])
+    ];
+    return buildSafetyFindingsByCodeFromFindings(findings);
+  }, [advisor.safetyFindings, jobCheckResult]);
+  const safetyFindingsChip = useMemo(
+    () => formatSafetyFindingsChip(safetyFindingsByCodeRows),
+    [safetyFindingsByCodeRows]
   );
   const templates = useMemo(() => templateLibrary.templates, [templateLibrary]);
   const setupSheet = useMemo(() => buildSetupSheet(ast, {}), [ast]);
@@ -2222,6 +2276,42 @@ export function App() {
       setExportStatus(t.strictGateCopiedCsv);
     } catch {
       setExportStatus(`${t.strictGateCopyCsvFallback}: ${payload}`);
+    }
+  }
+
+  async function handleCopyPolicyBreachJson(): Promise<void> {
+    const payload = formatPolicyBreachesForExport(
+      jobCheckResult?.parseDiagnosticsPolicyBreaches,
+      "json"
+    );
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.policyBreachCopiedJson);
+    } catch {
+      setExportStatus(`${t.policyBreachCopyJsonFallback}: ${payload}`);
+    }
+  }
+
+  async function handleCopyPolicyBreachCsv(): Promise<void> {
+    const payload = formatPolicyBreachesForExport(
+      jobCheckResult?.parseDiagnosticsPolicyBreaches,
+      "csv"
+    );
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.policyBreachCopiedCsv);
+    } catch {
+      setExportStatus(`${t.policyBreachCopyCsvFallback}: ${payload}`);
+    }
+  }
+
+  async function handleCopySafetyFindingsJson(): Promise<void> {
+    const payload = formatSafetyFindingsForExport(safetyFindingsByCodeRows, "json");
+    try {
+      await navigator.clipboard.writeText(payload);
+      setExportStatus(t.safetyFindingsCopiedJson);
+    } catch {
+      setExportStatus(`${t.safetyFindingsCopyJsonFallback}: ${payload}`);
     }
   }
 
@@ -3211,6 +3301,19 @@ export function App() {
               >
                 {parseDiagBreachSeveritiesSummary.chip}
               </span>
+              <span
+                data-testid="job-check-policy-breach-rollup-chip"
+                style={{
+                  display: "inline-block",
+                  marginLeft: 8,
+                  marginTop: 4,
+                  marginBottom: 4,
+                  fontFamily: "Consolas, monospace",
+                  opacity: 0.9
+                }}
+              >
+                {policyBreachRollupChip}
+              </span>
               <ul
                 data-testid="job-check-parse-diag-breach-list"
                 style={{
@@ -3254,17 +3357,54 @@ export function App() {
                 })}
               </ul>
               {!operatorReviewMode && (
-                <button
-                  type="button"
-                  onClick={() => void handleCopyParseDiagnosticsBreachContext()}
-                  data-testid="job-check-parse-diag-breach-copy"
-                  style={{ marginBottom: 8 }}
-                >
-                  {t.parseDiagnosticsBreachCopy}
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyParseDiagnosticsBreachContext()}
+                    data-testid="job-check-parse-diag-breach-copy"
+                    style={{ marginBottom: 8 }}
+                  >
+                    {t.parseDiagnosticsBreachCopy}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyPolicyBreachJson()}
+                    data-testid="job-check-policy-breach-copy-json"
+                    style={{ marginLeft: 8, marginBottom: 8 }}
+                  >
+                    {t.policyBreachCopyJson}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleCopyPolicyBreachCsv()}
+                    data-testid="job-check-policy-breach-copy-csv"
+                    style={{ marginLeft: 8, marginBottom: 8 }}
+                  >
+                    {t.policyBreachCopyCsv}
+                  </button>
+                </>
               )}
             </>
           )}
+          <div
+            data-testid="job-check-safety-findings"
+            style={{ marginTop: 8, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}
+          >
+            <span style={{ opacity: 0.85, marginRight: 4 }}>{`${t.safetyFindingsChipLabel}:`}</span>
+            <span
+              data-testid="job-check-safety-findings-chip"
+              style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+            >
+              {safetyFindingsChip}
+            </span>
+            <button
+              type="button"
+              data-testid="job-check-safety-findings-copy-json"
+              onClick={() => void handleCopySafetyFindingsJson()}
+            >
+              {t.safetyFindingsCopyJson}
+            </button>
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={jumpToBlockers}>{t.jumpToBlockers}</button>
             <button onClick={openExportFolderFromResult} disabled={!jobCheckResult.exportResult}>

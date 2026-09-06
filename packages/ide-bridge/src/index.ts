@@ -471,3 +471,33 @@ export function deriveQuickFixBindings(issue: LintIssue): IdeQuickFixBindings {
   }
   return Object.freeze({});
 }
+
+export type ParseDiagnosticBindingInput = {
+  code: string;
+  message?: string;
+};
+
+/**
+ * Heuristic bindings for parse-diagnostic catalogue templates. Narrow by
+ * design — only values unambiguously extractable from `code` + `message`:
+ *
+ *  - `ADDRESS_MISSING_VALUE` → `{ LETTER }` from `Address 'X' has no...`
+ *  - `UNKNOWN_TOKEN` → `{ TOKEN }` from `Unknown token '...' skipped...`
+ *
+ * All other codes return an empty object.
+ */
+export function deriveParseDiagnosticFixBindings(
+  input: ParseDiagnosticBindingInput
+): IdeQuickFixBindings {
+  const code = typeof input.code === "string" ? input.code : "";
+  const message = typeof input.message === "string" ? input.message : "";
+  if (code === "ADDRESS_MISSING_VALUE") {
+    const match = message.match(/Address\s+'([A-Za-z])'/);
+    if (match?.[1]) return Object.freeze({ LETTER: match[1].toUpperCase() });
+  }
+  if (code === "UNKNOWN_TOKEN") {
+    const match = message.match(/Unknown token\s+'([^']+)'/);
+    if (match?.[1]) return Object.freeze({ TOKEN: match[1] });
+  }
+  return Object.freeze({});
+}
