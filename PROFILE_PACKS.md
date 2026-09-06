@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 98
+Total rules: 103
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -103,6 +103,11 @@ Total rules: 98
 | `haas.g53-multi-axis` | warning | — | — | Prefer single-axis G53 moves for safer machine positioning. |
 | `haas.m97-and-m99-same-block` | warning | — | — | Do not combine M97 local subprogram call and M99 return on one block. |
 | `haas.g4-and-motion-same-block` | warning | — | — | Do not combine G4 dwell with G0/G1/G2/G3 on one block. |
+| `haas.g65-and-m99-same-block` | warning | — | — | Do not combine G65 macro call and M99 return on one block. |
+| `haas.m6-while-incremental` | warning | — | — | Restore absolute mode with G90 before a tool change (M6). |
+| `haas.g4-and-m6-same-block` | warning | — | — | Do not combine G4 dwell with a tool change (M6) on one block. |
+| `haas.negative-feed-rate` | warning | — | — | Feed rate F must not be negative. |
+| `haas.negative-spindle-speed` | warning | — | — | Spindle speed S must not be negative. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -2605,6 +2610,143 @@ G54
 G90
 G4 P1.
 G0 X10.
+M30
+```
+
+### `haas.g65-and-m99-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and M99 on the same block/`
+- **Summary:** Do not combine G65 macro call and M99 return on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G65 P9010 M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G65 P9010
+M30
+```
+
+### `haas.m6-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while incremental mode \(G91\) is active/`
+- **Summary:** Restore absolute mode with G90 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+T2 M6
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+T2 M6
+M30
+```
+
+### `haas.g4-and-m6-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and M6 on the same block/`
+- **Summary:** Do not combine G4 dwell with a tool change (M6) on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G4 P1. T2 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G4 P1.
+T2 M6
+M30
+```
+
+### `haas.negative-feed-rate`
+
+- **Severity:** warning
+- **Matcher:** `/Negative feed rate \(F\)/`
+- **Summary:** Feed rate F must not be negative.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+S1200 M3
+G1 X10. F-100.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+S1200 M3
+G1 X10. F100.
+M5
+M30
+```
+
+### `haas.negative-spindle-speed`
+
+- **Severity:** warning
+- **Matcher:** `/Negative spindle speed \(S\)/`
+- **Summary:** Spindle speed S must not be negative.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S-1200 M3
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M5
 M30
 ```
 

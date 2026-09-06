@@ -739,6 +739,46 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG4 P1.\nG0 X10.\nM30\n"
   },
   {
+    id: "haas.g65-and-m99-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and M99 on the same block/,
+    summary: "Do not combine G65 macro call and M99 return on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG65 P9010 M99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG65 P9010\nM30\n"
+  },
+  {
+    id: "haas.m6-while-incremental",
+    severity: "warning",
+    messageMatcher: /M6 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nT2 M6\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG90\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.g4-and-m6-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and M6 on the same block/,
+    summary: "Do not combine G4 dwell with a tool change (M6) on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG4 P1. T2 M6\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG4 P1.\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.negative-feed-rate",
+    severity: "warning",
+    messageMatcher: /Negative feed rate \(F\)/,
+    summary: "Feed rate F must not be negative.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nS1200 M3\nG1 X10. F-100.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nS1200 M3\nG1 X10. F100.\nM5\nM30\n"
+  },
+  {
+    id: "haas.negative-spindle-speed",
+    severity: "warning",
+    messageMatcher: /Negative spindle speed \(S\)/,
+    summary: "Spindle speed S must not be negative.",
+    positiveSnippet: "O0001\nT1 M6\nS-1200 M3\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

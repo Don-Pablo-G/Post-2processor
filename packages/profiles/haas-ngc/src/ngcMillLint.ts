@@ -529,6 +529,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (isLiteralNegativeAxis(sVal)) {
+      issues.push({
+        severity: "warning",
+        message: "Negative spindle speed (S) — RPM cannot be negative.",
+        blockIndex: index
+      });
+    }
+
     if (hasCoolantOn(block) && !sawSpindleOn && !hasSpindleOn(block)) {
       issues.push({
         severity: "warning",
@@ -833,6 +841,23 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 6) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M6 while incremental mode (G91) is active — restore G90 before the tool change.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && hasExactG4(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G4 dwell and M6 on the same block — dwell and tool change separately.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactFeedMotion(block) && !spindleActive) {
       issues.push({
         severity: "warning",
@@ -914,6 +939,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G65 and M97 on the same block — pick one call style (macro or local subprogram).",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && hasWordM(block, 99)) {
+      issues.push({
+        severity: "warning",
+        message: "G65 and M99 on the same block — macro call and return conflict.",
         blockIndex: index
       });
     }
@@ -1173,6 +1206,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "F0 feed rate — verify intentional zero feed or missing feed value.",
+          blockIndex: index
+        });
+      }
+      if (isLiteralNegativeAxis(lastWordValue(block, "F"))) {
+        issues.push({
+          severity: "warning",
+          message: "Negative feed rate (F) — feed cannot be negative.",
           blockIndex: index
         });
       }

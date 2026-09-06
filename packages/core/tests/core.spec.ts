@@ -2947,6 +2947,52 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns G65 and M99 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG65 P9010 M99\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G65 and M99 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M6 while incremental mode is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nT2 M6\nG90\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M6 while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G4 dwell and M6 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG4 P1. T2 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G4 dwell and M6 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns negative feed rate", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG90\nS1200 M3\nG1 X10. F-100.\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("Negative feed rate (F)"))
+    ).toBe(true);
+  });
+
+  it("warns negative spindle speed", () => {
+    const ast = parse("O1\nT1 M6\nS-1200 M3\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Negative spindle speed (S)")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(
