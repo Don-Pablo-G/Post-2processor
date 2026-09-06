@@ -314,6 +314,10 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "text `csvRows=N/M` when both actual and expected are known, and optional",
   "`fixPreviewsPath` when sibling `batch-fix-previews.json` is present.",
   "",
+  "Schema v46: reports optional `sarifPath` when sibling",
+  "`batch-unbound-fixes.sarif.json` is present, and optional `fixPreviewCount`",
+  "from sealed summary export when known.",
+  "",
   "Exit codes:",
   "  0   digest matches (and summary/manifest/ndjson/csv seal checks pass when present)",
   "  1   digest mismatch or summary/manifest/ndjson zipSha256/zipBytes or CSV header/row mismatch",
@@ -335,7 +339,8 @@ export const CLI_USAGE_VERIFY_BATCH_EXPORT = [
   "                            optional csvPath and sealSources. Schema v43 adds optional",
   "                            csvMatched and kindCount. Schema v44 adds optional",
   "                            csvRowCount. Schema v45 adds optional expectedCsvRowCount",
-  "                            and fixPreviewsPath.",
+  "                            and fixPreviewsPath. Schema v46 adds optional sarifPath",
+  "                            and fixPreviewCount.",
   "  --quiet                    Suppress the per-success `OK` line on stdout (text mode).",
   "                            In JSON mode, --quiet is ignored (result always printed).",
   "  --help, -h                 Show this message"
@@ -350,17 +355,18 @@ export type VerifyBatchExportArgs = {
   help: boolean;
 };
 
-/** Schema v42–v45: seal artifacts consulted during verify-batch-export. */
+/** Schema v42–v46: seal artifacts consulted during verify-batch-export. */
 export type VerifyBatchExportSealSource =
   | "sidecar"
   | "summary"
   | "manifest"
   | "ndjson"
   | "csv"
-  | "fixPreviews";
+  | "fixPreviews"
+  | "sarif";
 
 /**
- * Schema v38–v45: machine-readable verify-batch-export result (--format json).
+ * Schema v38–v46: machine-readable verify-batch-export result (--format json).
  * Schema v39 adds optional sealed-summary cross-check fields when
  * `batch-summary.json` is found beside the zip / under --out-dir.
  * Schema v40 adds optional sealed-manifest cross-check fields when
@@ -372,6 +378,7 @@ export type VerifyBatchExportSealSource =
  * Schema v44 adds optional csvRowCount; csvMatched also considers aggregation
  * row totals from the sealed summary when present.
  * Schema v45 adds optional expectedCsvRowCount and fixPreviewsPath.
+ * Schema v46 adds optional sarifPath and fixPreviewCount.
  */
 export type VerifyBatchExportResult = {
   schemaVersion: number;
@@ -434,6 +441,12 @@ export type VerifyBatchExportResult = {
   expectedCsvRowCount?: number;
   /** Schema v45: path of `batch-fix-previews.json` when present beside the zip. */
   fixPreviewsPath?: string;
+  /**
+   * Schema v46: `export.fixPreviewCount` from sealed summary when present.
+   */
+  fixPreviewCount?: number;
+  /** Schema v46: path of `batch-unbound-fixes.sarif.json` when present beside the zip. */
+  sarifPath?: string;
   /**
    * Schema v42: which seal artifacts were found/consulted for this verify
    * (always includes `sidecar` on a successful read path).
@@ -515,6 +528,8 @@ type SealedSummaryExportMeta = {
   zipEntryCount?: number;
   /** Schema v44: sum of aggregation array lengths that feed batch-summary.csv. */
   aggregationRowCount?: number;
+  /** Schema v46: export.fixPreviewCount when present. */
+  fixPreviewCount?: number;
 };
 
 type SealedManifestMeta = {
@@ -580,6 +595,9 @@ async function tryLoadSealedBatchSummaryExport(
         ? { writtenFileCount: exp.writtenFileCount }
         : {}),
       ...(typeof exp.zipEntryCount === "number" ? { zipEntryCount: exp.zipEntryCount } : {}),
+      ...(typeof exp.fixPreviewCount === "number"
+        ? { fixPreviewCount: exp.fixPreviewCount }
+        : {}),
       ...(aggregationRowCount !== undefined ? { aggregationRowCount } : {})
     };
   } catch {
@@ -699,6 +717,23 @@ async function tryLoadSealedBatchFixPreviews(
   }
 }
 
+async function tryLoadSealedBatchUnboundSarif(
+  zipPath: string,
+  outDir: string | undefined,
+  readText: (filePath: string) => Promise<string>
+): Promise<{ sarifPath: string } | undefined> {
+  const sarifPath =
+    outDir !== undefined
+      ? path.join(outDir, "batch-unbound-fixes.sarif.json")
+      : path.join(path.dirname(zipPath), "batch-unbound-fixes.sarif.json");
+  try {
+    await readText(sarifPath);
+    return { sarifPath };
+  } catch {
+    return undefined;
+  }
+}
+
 export async function runVerifyBatchExport(
   parsed: VerifyBatchExportArgs,
   io: VerifyBatchExportIo = {}
@@ -773,6 +808,7 @@ export async function runVerifyBatchExport(
     parsed.outDir,
     readText
   );
+  const sarifMeta = await tryLoadSealedBatchUnboundSarif(parsed.zip!, parsed.outDir, readText);
 
   let summaryMatched: boolean | undefined;
   let summaryMismatch = false;
@@ -829,12 +865,14 @@ export async function runVerifyBatchExport(
   const kindCount =
     manifestMeta?.byKind !== undefined ? Object.keys(manifestMeta.byKind).length : undefined;
   const expectedCsvRowCount = summaryMeta?.aggregationRowCount;
+  const fixPreviewCount = summaryMeta?.fixPreviewCount;
   const sealSources: VerifyBatchExportSealSource[] = ["sidecar"];
   if (summaryMeta) sealSources.push("summary");
   if (manifestMeta) sealSources.push("manifest");
   if (ndjsonMeta) sealSources.push("ndjson");
   if (csvMeta) sealSources.push("csv");
   if (fixPreviewsMeta) sealSources.push("fixPreviews");
+  if (sarifMeta) sealSources.push("sarif");
 
   if (parsed.format === "json") {
     const result: VerifyBatchExportResult = {
@@ -858,6 +896,7 @@ export async function runVerifyBatchExport(
       ...(zipEntryCount !== undefined ? { zipEntryCount } : {}),
       ...(kindCount !== undefined ? { kindCount } : {}),
       ...(expectedCsvRowCount !== undefined ? { expectedCsvRowCount } : {}),
+      ...(fixPreviewCount !== undefined ? { fixPreviewCount } : {}),
       ...(manifestMeta
         ? {
             manifestPath: manifestMeta.manifestPath,
@@ -878,7 +917,8 @@ export async function runVerifyBatchExport(
             ...(csvMatched !== undefined ? { csvMatched } : {})
           }
         : {}),
-      ...(fixPreviewsMeta ? { fixPreviewsPath: fixPreviewsMeta.fixPreviewsPath } : {})
+      ...(fixPreviewsMeta ? { fixPreviewsPath: fixPreviewsMeta.fixPreviewsPath } : {}),
+      ...(sarifMeta ? { sarifPath: sarifMeta.sarifPath } : {})
     };
     writeOut(`${JSON.stringify(result)}\n`);
     return ok ? 0 : 1;
@@ -952,6 +992,9 @@ export async function runVerifyBatchExport(
         : `; csvRows=${csvMeta.rowCount}`
       : "";
     const fixPreviewsPart = fixPreviewsMeta ? "; fixPreviewsLoaded" : "";
+    const fixPreviewCountPart =
+      fixPreviewCount !== undefined ? `; fixPreviews=${fixPreviewCount}` : "";
+    const sarifPart = sarifMeta ? "; sarifLoaded" : "";
     const kindsPart = kindCount !== undefined ? `; kinds=${kindCount}` : "";
     const writtenPart =
       writtenFileCount !== undefined ? `; written=${writtenFileCount}` : "";
@@ -959,7 +1002,7 @@ export async function runVerifyBatchExport(
       zipEntryCount !== undefined ? `; zipEntries=${zipEntryCount}` : "";
     const sourcesPart = `; sources=${sealSources.join("+")}`;
     writeOut(
-      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${fixPreviewsPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
+      `cnc-job-check verify-batch-export: sha256 OK (${actual})${sealedPart}${summaryPart}${manifestPart}${ndjsonPart}${csvPart}${csvRowsPart}${fixPreviewsPart}${fixPreviewCountPart}${sarifPart}${kindsPart}${writtenPart}${zipEntriesPart}${sourcesPart}\n`
     );
   }
   return 0;

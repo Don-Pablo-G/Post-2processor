@@ -153,10 +153,10 @@ export async function runDesktopBatchJobCheck(
 }
 
 /**
- * Schema v36–v45: ensure live desktop batchWalk.export carries relative logical
+ * Schema v36–v46: ensure live desktop batchWalk.export carries relative logical
  * paths for always-on summary sidecars, export zip, manifest, unbound SARIF,
- * fix-previews (path + count), outDir, setup-txt / patched-nc / setup-pdf dirs,
- * and the zip SHA-256 sidecar so inventory chips can surface them.
+ * fix-previews (path + count), outDir, setup-txt / patched-nc / setup-pdf dirs
+ * and counts, and the zip SHA-256 sidecar so inventory chips can surface them.
  */
 export function stampDesktopBatchExportSummaryPaths(
   batchWalk: CliBatchWalk | undefined
@@ -168,8 +168,11 @@ export function stampDesktopBatchExportSummaryPaths(
       ...batchWalk.export,
       outDir: batchWalk.export?.outDir ?? ".",
       setupSheetPdfDir: batchWalk.export?.setupSheetPdfDir ?? "setup-pdf",
+      setupPdfCount: batchWalk.export?.setupPdfCount ?? 0,
       setupTxtDir: batchWalk.export?.setupTxtDir ?? "setup-txt",
+      setupTxtCount: batchWalk.export?.setupTxtCount ?? 0,
       patchedNcDir: batchWalk.export?.patchedNcDir ?? "patched-nc",
+      patchedNcCount: batchWalk.export?.patchedNcCount ?? 0,
       csvSummaryPath: batchWalk.export?.csvSummaryPath ?? "batch-summary.csv",
       ndjsonSummaryPath: batchWalk.export?.ndjsonSummaryPath ?? "batch-summary.ndjson",
       jsonSummaryPath: batchWalk.export?.jsonSummaryPath ?? "batch-summary.json",

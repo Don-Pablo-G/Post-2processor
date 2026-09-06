@@ -179,8 +179,11 @@ describe("batchJobCheckView", () => {
     expect(exported.summary.batchWalk.export.fixPreviewCount).toBe(0);
     expect(exported.summary.batchWalk.export.outDir).toBe(".");
     expect(exported.summary.batchWalk.export.setupSheetPdfDir).toBe("setup-pdf");
+    expect(exported.summary.batchWalk.export.setupPdfCount).toBe(0);
     expect(exported.summary.batchWalk.export.setupTxtDir).toBe("setup-txt");
+    expect(exported.summary.batchWalk.export.setupTxtCount).toBe(0);
     expect(exported.summary.batchWalk.export.patchedNcDir).toBe("patched-nc");
+    expect(exported.summary.batchWalk.export.patchedNcCount).toBe(0);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/csv/);
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/ndjson/);
     expect(
@@ -209,6 +212,9 @@ describe("batchJobCheckView", () => {
         .split(",")
     ).toContain("sarif");
     expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/fixPreviews=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/setupPdf=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/setupTxt=0/);
+    expect(formatDesktopBatchExportInventoryChip(batch.envelope)).toMatch(/patched=0/);
     expect(
       formatDesktopBatchExportInventoryChip(batch.envelope)
         .replace(/^batch-export:\s*/, "")
@@ -244,16 +250,22 @@ describe("batchJobCheckView", () => {
         csvSummaryPath: "/abs/batch-summary.csv",
         outDir: "/abs/out",
         setupSheetPdfDir: "/abs/setup-pdf",
+        setupPdfCount: 2,
         setupTxtDir: "/abs/setup-txt",
+        setupTxtCount: 3,
         patchedNcDir: "/abs/patched-nc",
+        patchedNcCount: 1,
         fixPreviewCount: 4
       }
     });
     expect(stamped?.export?.csvSummaryPath).toBe("/abs/batch-summary.csv");
     expect(stamped?.export?.outDir).toBe("/abs/out");
     expect(stamped?.export?.setupSheetPdfDir).toBe("/abs/setup-pdf");
+    expect(stamped?.export?.setupPdfCount).toBe(2);
     expect(stamped?.export?.setupTxtDir).toBe("/abs/setup-txt");
+    expect(stamped?.export?.setupTxtCount).toBe(3);
     expect(stamped?.export?.patchedNcDir).toBe("/abs/patched-nc");
+    expect(stamped?.export?.patchedNcCount).toBe(1);
     expect(stamped?.export?.fixPreviewCount).toBe(4);
     expect(stamped?.export?.ndjsonSummaryPath).toBe("batch-summary.ndjson");
     expect(stamped?.export?.jsonSummaryPath).toBe("batch-summary.json");

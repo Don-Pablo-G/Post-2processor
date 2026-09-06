@@ -4795,6 +4795,42 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=45
 ```
 
+## Verify SARIF path + fixPreviewCount + sidecar count stamps + Schema v46
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — `sarifPath` + `fixPreviewCount` (Schema v46)
+
+`CLI_SCHEMA_VERSION` bumps `45 → 46`.
+`VerifyBatchExportResult` gains optional `sarifPath` and `fixPreviewCount`.
+`sealSources` may include `sarif`.
+
+### Move 2 — CLI SARIF presence + summary fix-preview count
+
+When sibling `batch-unbound-fixes.sarif.json` is present, verify reports
+`sarifPath`. When sealed summary `export.fixPreviewCount` is present, verify
+reports that count.
+
+### Move 3 — JSON/text reporting
+
+JSON emits `sarifPath` / `fixPreviewCount`; text reports `sarifLoaded` and
+optional `fixPreviews=N`.
+
+### Move 4 — Desktop live sidecar count stamps
+
+`runDesktopBatchJobCheck` stamps `setupPdfCount`, `setupTxtCount`, and
+`patchedNcCount` (default `0`) so inventory chips show count tokens.
+
+### Move 5 — Verification
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=46
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the

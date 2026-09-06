@@ -1026,7 +1026,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=45\n");
+    expect(stdout).toBe("cnc-job-check schema=46\n");
     expect(stderr).toBe("");
   });
 
@@ -2637,8 +2637,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 45", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(45);
+  it("CLI_SCHEMA_VERSION is 46", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(46);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -4849,7 +4849,7 @@ describe("Schema v45: expectedCsvRowCount + fixPreviewsPath", () => {
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(45);
+    expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     const expectedRows = countBatchAggregationCsvRows(summary.summary);
     const out: string[] = [];
     const exit = await main(
@@ -4858,7 +4858,7 @@ describe("Schema v45: expectedCsvRowCount + fixPreviewsPath", () => {
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(45);
+    expect(result.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(result.ok).toBe(true);
     expect(result.expectedCsvRowCount).toBe(expectedRows);
     expect(result.csvRowCount).toBe(expectedRows);
@@ -4907,6 +4907,56 @@ describe("Schema v45: expectedCsvRowCount + fixPreviewsPath", () => {
     });
     expect(exit).toBe(0);
     expect(out.join("")).toMatch(new RegExp(`csvRows=${expectedRows}/${expectedRows}`));
+  });
+});
+
+describe("Schema v46: sarifPath + fixPreviewCount", () => {
+  it("verify-batch-export --format json includes sarifPath from --out-dir", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.schemaVersion).toBe(46);
+    const out: string[] = [];
+    const exit = await main(
+      ["verify-batch-export", "--out-dir", outDir, "--format", "json"],
+      { stdout: (c) => out.push(c), stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const result = JSON.parse(out.join(""));
+    expect(result.schemaVersion).toBe(46);
+    expect(result.ok).toBe(true);
+    expect(result.sarifPath).toMatch(/batch-unbound-fixes\.sarif\.json$/);
+    expect(result.sealSources).toContain("sarif");
+    if (summary.summary.batchWalk.export.fixPreviewCount !== undefined) {
+      expect(result.fixPreviewCount).toBe(summary.summary.batchWalk.export.fixPreviewCount);
+    }
+  });
+
+  it("verify-batch-export text mode reports sarifLoaded", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    expect(
+      await main(
+        ["--input-dir", tmp, "--out-dir", outDir, "--format", "json", "--controller", "fanuc"],
+        { stdout: () => {}, stderr: () => {} }
+      )
+    ).toBe(0);
+    const out: string[] = [];
+    const exit = await main(["verify-batch-export", "--out-dir", outDir], {
+      stdout: (c) => out.push(c),
+      stderr: () => {}
+    });
+    expect(exit).toBe(0);
+    expect(out.join("")).toMatch(/sarifLoaded/);
+    expect(out.join("")).toMatch(/sources=.*sarif/);
   });
 });
 
