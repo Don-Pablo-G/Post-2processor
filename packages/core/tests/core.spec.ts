@@ -2447,6 +2447,94 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(false);
   });
 
+  it("warns G30 with multiple axes on one block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG30 X0 Y0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G30 with multiple axes on one block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G2/G3 with both R and I/J/K", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nG2 X10. Y10. R5. I1. F100.\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("both R and I/J/K"))
+    ).toBe(true);
+  });
+
+  it("warns when both G94 and G95 appear", () => {
+    const ast = parse("O1\nG94\nG95\nT1 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("both G94 and G95"))
+    ).toBe(true);
+  });
+
+  it("warns when program has no O header", () => {
+    const ast = parse("T1 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("no O header"))
+    ).toBe(true);
+  });
+
+  it("does not warn missing O when O header is present", () => {
+    const ast = parse("O1\nT1 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("no O header"))
+    ).toBe(false);
+  });
+
+  it("warns conflicting spindle directions on one block", () => {
+    const ast = parse("O1\nT1 M6\nS1200 M3 M4\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Conflicting spindle directions")
+      )
+    ).toBe(true);
+  });
+
+  it("warns canned cycle without F", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nG81 X10. Y10. Z-5. R2.\nG80\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without F and no prior F"))
+    ).toBe(true);
+  });
+
+  it("warns peck cycle without Q", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG83 X10. Y10. Z-5. R2. F100.\nG80\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without Q"))
+    ).toBe(true);
+  });
+
+  it("warns when G68 is still active at program end", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("coordinate rotation (G68) still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns cutter compensation side flip without G40", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG41 D1\nG42 D1\nG40\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without G40"))
+    ).toBe(true);
+  });
+
+  it("warns G43 before any tool selection", () => {
+    const ast = parse("O1\nG54\nG43 H1 Z25.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G43 before any tool selection")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(

@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 5,
   "lintIssues": [
     {
       "severity": "warning",
@@ -14,6 +14,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before any work offset (G54-G59/G154) — select a work coordinate system first."
+    },
+    {
+      "severity": "warning",
+      "message": "Peck canned cycle (G73/G83) without Q — set peck depth Q explicitly."
     },
     {
       "severity": "warning",

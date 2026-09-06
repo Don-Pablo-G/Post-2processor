@@ -299,6 +299,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG28 Z0\nM30\n"
   },
   {
+    id: "haas.g30-multi-axis",
+    severity: "warning",
+    messageMatcher: /G30 with multiple axes on one block/,
+    summary: "Prefer single-axis G30 moves instead of combined XYZ secondary home returns.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG30 X0 Y0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG30 Z0\nM30\n"
+  },
+  {
+    id: "haas.arc-r-and-ijk",
+    severity: "warning",
+    messageMatcher: /G2\/G3 arc specifies both R and I\/J\/K/,
+    summary: "Arcs should use either R or I/J/K, not both on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG2 X10. Y10. R5. I1. F100.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG2 X10. Y10. R5. F100.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g94-and-g95-mixed",
+    severity: "warning",
+    messageMatcher: /Program contains both G94 and G95/,
+    summary: "Mixing G94 and G95 feed modes in one program is ambiguous — pick one.",
+    positiveSnippet: "O0001\nG94\nG95\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG94\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.missing-o-header",
+    severity: "warning",
+    messageMatcher: /Program has no O header/,
+    summary: "Haas NGC programs usually begin with an O#### program number.",
+    positiveSnippet: "T1 M6\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.spindle-direction-conflict",
+    severity: "warning",
+    messageMatcher: /Conflicting spindle directions on one block/,
+    summary: "Do not combine M3/M13 with M4/M14 on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3 M4\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM30\n"
+  },
+  {
+    id: "haas.canned-without-f",
+    severity: "warning",
+    messageMatcher: /Canned cycle \(G73\/G74\/G76\/G81-G89\) without F and no prior F/,
+    summary: "Canned cycle activation needs a feed F on the block or earlier in the program.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 X10. Y10. Z-5. R2.\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.peck-without-q",
+    severity: "warning",
+    messageMatcher: /Peck canned cycle \(G73\/G83\) without Q/,
+    summary: "G73/G83 peck cycles need an explicit Q peck depth.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG83 X10. Y10. Z-5. R2. F100.\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG83 X10. Y10. Z-5. R2. Q2. F100.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.g68-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with coordinate rotation \(G68\) still active/,
+    summary: "Cancel coordinate rotation with G69 before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nM30\n"
+  },
+  {
+    id: "haas.cutter-side-flip-without-g40",
+    severity: "warning",
+    messageMatcher: /Cutter compensation flipped G4[12] to G4[12] without G40/,
+    summary: "Cancel with G40 before switching between G41 and G42.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG42 D1\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nG42 D1\nG40\nM30\n"
+  },
+  {
+    id: "haas.g43-without-prior-tool",
+    severity: "warning",
+    messageMatcher: /G43 before any tool selection \(T\)/,
+    summary: "Select a tool (Tn) before applying G43 tool length compensation.",
+    positiveSnippet: "O0001\nG54\nG43 H1 Z25.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

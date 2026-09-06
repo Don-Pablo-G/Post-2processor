@@ -174,6 +174,68 @@ function hasExactG28(block: { words: Word[] }): boolean {
   });
 }
 
+function hasExactG30(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 30;
+  });
+}
+
+function hasExactG68(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 68;
+  });
+}
+
+function hasExactG69(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 69;
+  });
+}
+
+function hasExactPeckCycle(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    const v = Number.parseFloat(w.value);
+    return v === 73 || v === 83;
+  });
+}
+
+function exactCutterSide(block: { words: Word[] }): 41 | 42 | undefined {
+  let side: 41 | 42 | undefined;
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 41) side = 41;
+    if (v === 42) side = 42;
+  }
+  return side;
+}
+
+function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 94) return 94;
+    if (v === 95) return 95;
+  }
+  return undefined;
+}
+
+function hasSpindleDirectionConflict(block: { words: Word[] }): boolean {
+  let cw = false;
+  let ccw = false;
+  for (const w of block.words) {
+    if (w.letter !== "M") continue;
+    const m = Math.trunc(Number.parseFloat(w.value));
+    if (m === 3 || m === 13) cw = true;
+    if (m === 4 || m === 14) ccw = true;
+  }
+  return cw && ccw;
+}
+
 function workOffsetCode(block: { words: Word[] }): number | undefined {
   for (const w of block.words) {
     if (w.letter !== "G") continue;
@@ -253,8 +315,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let cannedActive = false;
   let cannedHasZ = false;
   let cannedHasR = false;
+  let rotationActive = false;
+  let cutterSide: 41 | 42 | undefined;
   let firstG20Block = -1;
   let firstG21Block = -1;
+  let firstG94Block = -1;
+  let firstG95Block = -1;
+  let sawProgramO = false;
   let activeStopResumeSafety:
     | {
         stopBlockIndex: number;
@@ -533,6 +600,23 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG30(block) && axisWordCount(block) > 1) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 with multiple axes on one block — prefer single-axis G30 moves for safer secondary homing.",
+        blockIndex: index
+      });
+    }
+
+    if (hasSpindleDirectionConflict(block)) {
+      issues.push({
+        severity: "warning",
+        message: "Conflicting spindle directions on one block (M3/M13 with M4/M14).",
+        blockIndex: index
+      });
+    }
+
     if (hasG43Classic(block)) {
       const hNum = literalToolNumber(lastWordValue(block, "H"));
       if (
@@ -545,6 +629,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: `G43 H${hNum} does not match last tool T${lastToolNumber} — verify H offset pairing.`,
+          blockIndex: index
+        });
+      }
+      if (lastToolNumber === undefined || lastToolNumber <= 0) {
+        issues.push({
+          severity: "warning",
+          message: "G43 before any tool selection (T) — select Tn before applying tool length compensation.",
           blockIndex: index
         });
       }
@@ -572,16 +663,26 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       sawAnyDOffset = true;
     }
 
-    if (hasExactG41Or42(block)) {
-      cutterCompActive = true;
-    }
-    if (
-      block.words.some((w) => {
-        if (w.letter !== "G") return false;
-        return Number.parseFloat(w.value) === 40;
-      })
-    ) {
+    const hasG40 = block.words.some((w) => {
+      if (w.letter !== "G") return false;
+      return Number.parseFloat(w.value) === 40;
+    });
+    if (hasG40) {
       cutterCompActive = false;
+      cutterSide = undefined;
+    }
+
+    const nextCutterSide = exactCutterSide(block);
+    if (nextCutterSide !== undefined) {
+      if (cutterSide !== undefined && cutterSide !== nextCutterSide && !hasG40) {
+        issues.push({
+          severity: "warning",
+          message: `Cutter compensation flipped G${cutterSide} to G${nextCutterSide} without G40 — cancel compensation before changing sides.`,
+          blockIndex: index
+        });
+      }
+      cutterSide = nextCutterSide;
+      cutterCompActive = true;
     }
 
     if (hasExactG0(block) && cutterCompActive) {
@@ -626,6 +727,18 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (
+      hasExactArcMotion(block) &&
+      hasLetter(block, "R") &&
+      (hasLetter(block, "I") || hasLetter(block, "J") || hasLetter(block, "K"))
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "G2/G3 arc specifies both R and I/J/K — use one arc center style, not both.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG80(block)) {
       cannedActive = false;
       cannedHasZ = false;
@@ -647,9 +760,32 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (!hasLetter(block, "F") && !sawAnyFeedRate) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Canned cycle (G73/G74/G76/G81-G89) without F and no prior F — set feed on the cycle block or earlier.",
+          blockIndex: index
+        });
+      }
+      if (hasExactPeckCycle(block) && !hasLetter(block, "Q")) {
+        issues.push({
+          severity: "warning",
+          message: "Peck canned cycle (G73/G83) without Q — set peck depth Q explicitly.",
+          blockIndex: index
+        });
+      }
       if (hasLetter(block, "Z")) cannedHasZ = true;
       if (hasLetter(block, "R")) cannedHasR = true;
+      if (hasLetter(block, "F")) sawAnyFeedRate = true;
       cannedActive = true;
+    }
+
+    if (hasExactG68(block)) {
+      rotationActive = true;
+    }
+    if (hasExactG69(block)) {
+      rotationActive = false;
     }
 
     if (hasWordM(block, 6) && cannedActive) {
@@ -663,6 +799,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     const unitMode = hasExactG20Or21(block);
     if (unitMode === 20 && firstG20Block < 0) firstG20Block = index;
     if (unitMode === 21 && firstG21Block < 0) firstG21Block = index;
+
+    const feedMode = hasExactG94Or95(block);
+    if (feedMode === 94 && firstG94Block < 0) firstG94Block = index;
+    if (feedMode === 95 && firstG95Block < 0) firstG95Block = index;
+
+    if (block.words.some((w) => w.letter === "O")) {
+      sawProgramO = true;
+    }
 
     if (
       cutterCompActive &&
@@ -748,6 +892,18 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (
+      rotationActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with coordinate rotation (G68) still active — cancel with G69 before end.",
+        blockIndex: index
+      });
+    }
+
     const tWord = block.words.filter((w) => w.letter === "T").at(-1);
     if (tWord && Math.trunc(Number.parseFloat(tWord.value)) === 0) {
       issues.push({
@@ -763,6 +919,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       severity: "warning",
       message: "Program contains both G20 and G21 — pick one unit mode (inch or metric).",
       blockIndex: Math.min(firstG20Block, firstG21Block)
+    });
+  }
+
+  if (firstG94Block >= 0 && firstG95Block >= 0) {
+    issues.push({
+      severity: "warning",
+      message: "Program contains both G94 and G95 — pick one feed mode (per-minute or per-revolution).",
+      blockIndex: Math.min(firstG94Block, firstG95Block)
+    });
+  }
+
+  if (!sawProgramO && ast.blocks.length > 0) {
+    issues.push({
+      severity: "warning",
+      message: "Program has no O header — Haas NGC programs usually start with O####.",
+      blockIndex: 0
     });
   }
 

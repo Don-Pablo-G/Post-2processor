@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 43
+Total rules: 53
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -48,6 +48,16 @@ Total rules: 43
 | `haas.g43-h-mismatched-t` | warning | — | — | G43 H offset should usually match the active tool number T. |
 | `haas.work-offset-change-after-motion` | warning | — | — | Changing G54-G59/G154 after motion may be unintentional — verify the switch. |
 | `haas.g28-multi-axis` | warning | — | — | Prefer single-axis G28 moves instead of combined XYZ home returns. |
+| `haas.g30-multi-axis` | warning | — | — | Prefer single-axis G30 moves instead of combined XYZ secondary home returns. |
+| `haas.arc-r-and-ijk` | warning | — | — | Arcs should use either R or I/J/K, not both on the same block. |
+| `haas.g94-and-g95-mixed` | warning | — | — | Mixing G94 and G95 feed modes in one program is ambiguous — pick one. |
+| `haas.missing-o-header` | warning | — | — | Haas NGC programs usually begin with an O#### program number. |
+| `haas.spindle-direction-conflict` | warning | — | — | Do not combine M3/M13 with M4/M14 on the same block. |
+| `haas.canned-without-f` | warning | — | — | Canned cycle activation needs a feed F on the block or earlier in the program. |
+| `haas.peck-without-q` | warning | — | — | G73/G83 peck cycles need an explicit Q peck depth. |
+| `haas.g68-active-at-end` | warning | — | — | Cancel coordinate rotation with G69 before M02/M30. |
+| `haas.cutter-side-flip-without-g40` | warning | — | — | Cancel with G40 before switching between G41 and G42. |
+| `haas.g43-without-prior-tool` | warning | — | — | Select a tool (Tn) before applying G43 tool length compensation. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -1009,6 +1019,279 @@ O0001
 T1 M6
 G54
 G28 Z0
+M30
+```
+
+### `haas.g30-multi-axis`
+
+- **Severity:** warning
+- **Matcher:** `/G30 with multiple axes on one block/`
+- **Summary:** Prefer single-axis G30 moves instead of combined XYZ secondary home returns.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G30 X0 Y0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G30 Z0
+M30
+```
+
+### `haas.arc-r-and-ijk`
+
+- **Severity:** warning
+- **Matcher:** `/G2\/G3 arc specifies both R and I\/J\/K/`
+- **Summary:** Arcs should use either R or I/J/K, not both on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G2 X10. Y10. R5. I1. F100.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G2 X10. Y10. R5. F100.
+M5
+M30
+```
+
+### `haas.g94-and-g95-mixed`
+
+- **Severity:** warning
+- **Matcher:** `/Program contains both G94 and G95/`
+- **Summary:** Mixing G94 and G95 feed modes in one program is ambiguous — pick one.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G94
+G95
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G94
+T1 M6
+M30
+```
+
+### `haas.missing-o-header`
+
+- **Severity:** warning
+- **Matcher:** `/Program has no O header/`
+- **Summary:** Haas NGC programs usually begin with an O#### program number.
+
+**Triggers (positive):**
+
+```gcode
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+M30
+```
+
+### `haas.spindle-direction-conflict`
+
+- **Severity:** warning
+- **Matcher:** `/Conflicting spindle directions on one block/`
+- **Summary:** Do not combine M3/M13 with M4/M14 on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3 M4
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M30
+```
+
+### `haas.canned-without-f`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle \(G73\/G74\/G76\/G81-G89\) without F and no prior F/`
+- **Summary:** Canned cycle activation needs a feed F on the block or earlier in the program.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 X10. Y10. Z-5. R2.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+M5
+M30
+```
+
+### `haas.peck-without-q`
+
+- **Severity:** warning
+- **Matcher:** `/Peck canned cycle \(G73\/G83\) without Q/`
+- **Summary:** G73/G83 peck cycles need an explicit Q peck depth.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G83 X10. Y10. Z-5. R2. F100.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G83 X10. Y10. Z-5. R2. Q2. F100.
+G80
+M5
+M30
+```
+
+### `haas.g68-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with coordinate rotation \(G68\) still active/`
+- **Summary:** Cancel coordinate rotation with G69 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G69
+M30
+```
+
+### `haas.cutter-side-flip-without-g40`
+
+- **Severity:** warning
+- **Matcher:** `/Cutter compensation flipped G4[12] to G4[12] without G40/`
+- **Summary:** Cancel with G40 before switching between G41 and G42.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G42 D1
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40
+G42 D1
+G40
+M30
+```
+
+### `haas.g43-without-prior-tool`
+
+- **Severity:** warning
+- **Matcher:** `/G43 before any tool selection \(T\)/`
+- **Summary:** Select a tool (Tn) before applying G43 tool length compensation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G54
+G43 H1 Z25.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
 M30
 ```
 
