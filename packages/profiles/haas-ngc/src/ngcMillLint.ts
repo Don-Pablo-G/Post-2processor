@@ -34,6 +34,50 @@ function hasExactFeedMotion(block: { words: Word[] }): boolean {
   });
 }
 
+/** True for plain G2 / G3 arc motion (not G20/G21/…). */
+function hasExactArcMotion(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    const v = Number.parseFloat(w.value);
+    return v === 2 || v === 3;
+  });
+}
+
+const CANNED_CYCLE_G_CODES = new Set([73, 74, 76, 81, 82, 83, 84, 85, 86, 87, 88, 89]);
+
+/** Haas/Fanuc-style drilling/tapping canned cycles (exact Gnn, not G73.1). */
+function hasCannedCycle(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return CANNED_CYCLE_G_CODES.has(Number.parseFloat(w.value));
+  });
+}
+
+function hasExactG80(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 80;
+  });
+}
+
+function hasExactG20Or21(block: { words: Word[] }): 20 | 21 | undefined {
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 20) return 20;
+    if (v === 21) return 21;
+  }
+  return undefined;
+}
+
+function hasCoolantOn(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "M") return false;
+    const m = Math.trunc(Number.parseFloat(w.value));
+    return m === 7 || m === 8;
+  });
+}
+
 function hasSpindleOn(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "M") return false;
@@ -45,6 +89,14 @@ function hasSpindleOn(block: { words: Word[] }): boolean {
 function lastWordValue(block: { words: Word[] }, letter: string): string | undefined {
   const w = block.words.filter((x) => x.letter === letter).at(-1);
   return w?.value;
+}
+
+function isZeroOffsetWord(raw: string | undefined): boolean {
+  if (raw === undefined) return false;
+  const t = raw.trim().toUpperCase();
+  if (t.includes("#") || t.includes("[")) return false;
+  const n = Number.parseFloat(t);
+  return Number.isFinite(n) && n === 0;
 }
 
 function isMeaningfulFirstG43Z(zWordRaw: string | undefined): boolean {
@@ -65,6 +117,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let sawFirstG43Activation = false;
   let sawAnyDOffset = false;
   let sawAnyFeedRate = false;
+  let sawSpindleOn = false;
+  let cutterCompActive = false;
+  let cannedActive = false;
+  let cannedHasZ = false;
+  let cannedHasR = false;
+  let firstG20Block = -1;
+  let firstG21Block = -1;
   let activeStopResumeSafety:
     | {
         stopBlockIndex: number;
@@ -130,6 +189,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         blockIndex: index
       });
     }
+    if (hasG43Classic(block) && isZeroOffsetWord(lastWordValue(block, "H"))) {
+      issues.push({
+        severity: "warning",
+        message: "G43 with H0 — tool length offset zero is usually invalid for a real tool.",
+        blockIndex: index
+      });
+    }
     if (hasG43Classic(block) && !sawFirstG43Activation) {
       sawFirstG43Activation = true;
       const zWordRaw = lastWordValue(block, "Z");
@@ -168,6 +234,18 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasCoolantOn(block) && !sawSpindleOn && !hasSpindleOn(block)) {
+      issues.push({
+        severity: "warning",
+        message: "Coolant on (M7/M8) before any spindle start (M3/M4/M13/M14) — verify intentional order.",
+        blockIndex: index
+      });
+    }
+
+    if (hasSpindleOn(block)) {
+      sawSpindleOn = true;
+    }
+
     if (hasExactG41Or42(block) && !hasLetter(block, "D")) {
       if (!sawAnyDOffset) {
         issues.push({
@@ -178,8 +256,28 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       }
     }
 
+    if (hasExactG41Or42(block) && isZeroOffsetWord(lastWordValue(block, "D"))) {
+      issues.push({
+        severity: "warning",
+        message: "G41/G42 with D0 — cutter comp offset zero is usually invalid.",
+        blockIndex: index
+      });
+    }
+
     if (hasLetter(block, "D")) {
       sawAnyDOffset = true;
+    }
+
+    if (hasExactG41Or42(block)) {
+      cutterCompActive = true;
+    }
+    if (
+      block.words.some((w) => {
+        if (w.letter !== "G") return false;
+        return Number.parseFloat(w.value) === 40;
+      })
+    ) {
+      cutterCompActive = false;
     }
 
     if (hasExactFeedMotion(block) && !hasLetter(block, "F") && !sawAnyFeedRate) {
@@ -193,6 +291,89 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     if (hasLetter(block, "F")) {
       sawAnyFeedRate = true;
+      if (isZeroOffsetWord(lastWordValue(block, "F"))) {
+        issues.push({
+          severity: "warning",
+          message: "F0 feed rate — verify intentional zero feed or missing feed value.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (
+      hasExactArcMotion(block) &&
+      !hasLetter(block, "R") &&
+      !hasLetter(block, "I") &&
+      !hasLetter(block, "J") &&
+      !hasLetter(block, "K")
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "G2/G3 arc without R or I/J/K — arc center/radius is required.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG80(block)) {
+      cannedActive = false;
+      cannedHasZ = false;
+      cannedHasR = false;
+    }
+
+    if (hasCannedCycle(block)) {
+      if (!hasLetter(block, "Z") && !cannedHasZ) {
+        issues.push({
+          severity: "warning",
+          message: "Canned cycle (G73/G74/G76/G81-G89) without Z depth — set Z on the cycle block or earlier in the cycle.",
+          blockIndex: index
+        });
+      }
+      if (!hasLetter(block, "R") && !cannedHasR) {
+        issues.push({
+          severity: "warning",
+          message: "Canned cycle (G73/G74/G76/G81-G89) without R plane — set R on the cycle block or earlier in the cycle.",
+          blockIndex: index
+        });
+      }
+      if (hasLetter(block, "Z")) cannedHasZ = true;
+      if (hasLetter(block, "R")) cannedHasR = true;
+      cannedActive = true;
+    }
+
+    if (hasWordM(block, 6) && cannedActive) {
+      issues.push({
+        severity: "warning",
+        message: "M6 while a canned cycle is still active — cancel with G80 before the tool change.",
+        blockIndex: index
+      });
+    }
+
+    const unitMode = hasExactG20Or21(block);
+    if (unitMode === 20 && firstG20Block < 0) firstG20Block = index;
+    if (unitMode === 21 && firstG21Block < 0) firstG21Block = index;
+
+    if (
+      cutterCompActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with cutter compensation (G41/G42) still active — cancel with G40 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      cannedActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with a canned cycle still active — cancel with G80 before end.",
+        blockIndex: index
+      });
     }
 
     const tWord = block.words.filter((w) => w.letter === "T").at(-1);
@@ -204,6 +385,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
   });
+
+  if (firstG20Block >= 0 && firstG21Block >= 0) {
+    issues.push({
+      severity: "warning",
+      message: "Program contains both G20 and G21 — pick one unit mode (inch or metric).",
+      blockIndex: Math.min(firstG20Block, firstG21Block)
+    });
+  }
 
   const nOcc = new Map<string, number[]>();
   const oOcc = new Map<string, number[]>();

@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_g41_without_d_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 3,
+  "lintIssueCount": 4,
   "lintIssues": [
     {
       "severity": "warning",
@@ -14,6 +14,10 @@
     {
       "severity": "warning",
       "message": "G41/G42 without D and no prior D offset active — set D explicitly or confirm carried offset state."
+    },
+    {
+      "severity": "warning",
+      "message": "Program ends with cutter compensation (G41/G42) still active — cancel with G40 before end."
     }
   ],
   "simulation": {

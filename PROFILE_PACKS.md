@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 11
+Total rules: 25
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -16,11 +16,25 @@ Total rules: 11
 | `haas.spindle-on-without-s` | warning | — | — | Spindle on (M3/M4/M13/M14) must specify an explicit S RPM. |
 | `haas.spindle-on-with-s0` | warning | — | — | Spindle start with S0 — verify intentional stop or missing speed. |
 | `haas.g43-without-h` | warning | — | — | G43 (tool length comp) requires an H offset on the same block. |
+| `haas.g43-with-h0` | warning | — | — | G43 with H0 — tool length offset zero is usually invalid for a real tool. |
+| `haas.first-g43-without-z` | warning | — | — | First G43 should include a meaningful clearance/retract Z on the same block. |
 | `haas.g41-g42-without-d` | warning | — | — | G41/G42 (cutter comp) requires a D offset (or a prior D in scope). |
+| `haas.g41-g42-with-d0` | warning | — | — | G41/G42 with D0 — cutter comp offset zero is usually invalid. |
+| `haas.cutter-comp-active-at-end` | warning | — | — | Cancel cutter compensation with G40 before M02/M30. |
 | `haas.feed-motion-without-f` | warning | — | — | G1/G2/G3 feed motion needs an explicit F (on the block or earlier in the program). |
+| `haas.feed-f0` | warning | — | — | F0 feed rate — verify intentional zero feed or missing feed value. |
+| `haas.arc-without-center-or-radius` | warning | — | — | G2/G3 arcs require R or I/J/K center offsets. |
+| `haas.coolant-without-spindle` | warning | — | — | Coolant (M7/M8) before any spindle start — verify intentional order. |
+| `haas.canned-without-z` | warning | — | — | Canned cycle activation needs a Z depth on the block or earlier in the active cycle. |
+| `haas.canned-without-r` | warning | — | — | Canned cycle activation needs an R plane on the block or earlier in the active cycle. |
+| `haas.canned-active-at-end` | warning | — | — | Cancel canned cycles with G80 before M02/M30. |
+| `haas.m6-while-canned-active` | warning | — | — | Cancel canned cycles with G80 before a tool change (M6). |
+| `haas.g20-and-g21-mixed` | warning | — | — | Mixing G20 and G21 in one program is ambiguous — pick inch or metric. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
+| `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
 | `haas.m02-and-m30-mixed` | warning | — | — | Mixing M02 and M30 program-end commands is ambiguous — pick one. |
+| `haas.duplicate-sequence-n` | warning | — | — | Duplicate N numbers make GOTO/M97 targets ambiguous. |
 | `haas.duplicate-program-label-o` | warning | — | — | Two O#### headers with the same number — subprogram targets become ambiguous. |
 | `haas.missing-program-end` | warning | — | — | The last block must contain M02, M30, or M99 to close the program cleanly. |
 
@@ -120,6 +134,58 @@ G43 H1 Z25.
 M30
 ```
 
+### `haas.g43-with-h0`
+
+- **Severity:** warning
+- **Matcher:** `/G43 with H0/`
+- **Summary:** G43 with H0 — tool length offset zero is usually invalid for a real tool.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H0 Z25.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M30
+```
+
+### `haas.first-g43-without-z`
+
+- **Severity:** warning
+- **Matcher:** `/First G43 activation has no meaningful Z move/`
+- **Summary:** First G43 should include a meaningful clearance/retract Z on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M30
+```
+
 ### `haas.g41-g42-without-d`
 
 - **Severity:** warning
@@ -145,6 +211,63 @@ T1 M6
 S1200 M3
 G43 H1 Z25.
 G41 D1 X10. Y10.
+M30
+```
+
+### `haas.g41-g42-with-d0`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 with D0/`
+- **Summary:** G41/G42 with D0 — cutter comp offset zero is usually invalid.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G41 D0 X10. Y10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G41 D1 X10. Y10.
+M30
+```
+
+### `haas.cutter-comp-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with cutter compensation \(G41\/G42\) still active/`
+- **Summary:** Cancel cutter compensation with G40 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G41 D1 X10. Y10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G41 D1 X10. Y10.
+G40
 M30
 ```
 
@@ -174,6 +297,221 @@ G1 X10. Y10. F200.
 M30
 ```
 
+### `haas.feed-f0`
+
+- **Severity:** warning
+- **Matcher:** `/F0 feed rate/`
+- **Summary:** F0 feed rate — verify intentional zero feed or missing feed value.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G1 X10. F0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G1 X10. F200.
+M30
+```
+
+### `haas.arc-without-center-or-radius`
+
+- **Severity:** warning
+- **Matcher:** `/G2\/G3 arc without R or I\/J\/K/`
+- **Summary:** G2/G3 arcs require R or I/J/K center offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G2 X10. Y10. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G2 X10. Y10. R5. F100.
+M30
+```
+
+### `haas.coolant-without-spindle`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant on \(M7\/M8\) before any spindle start/`
+- **Summary:** Coolant (M7/M8) before any spindle start — verify intentional order.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+M8
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M30
+```
+
+### `haas.canned-without-z`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle \(G73\/G74\/G76\/G81-G89\) without Z depth/`
+- **Summary:** Canned cycle activation needs a Z depth on the block or earlier in the active cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. R2. F100.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+M30
+```
+
+### `haas.canned-without-r`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle \(G73\/G74\/G76\/G81-G89\) without R plane/`
+- **Summary:** Canned cycle activation needs an R plane on the block or earlier in the active cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. F100.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+M30
+```
+
+### `haas.canned-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with a canned cycle still active/`
+- **Summary:** Cancel canned cycles with G80 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+M30
+```
+
+### `haas.m6-while-canned-active`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+T2 M6
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+T2 M6
+M30
+```
+
+### `haas.g20-and-g21-mixed`
+
+- **Severity:** warning
+- **Matcher:** `/Program contains both G20 and G21/`
+- **Summary:** Mixing G20 and G21 in one program is ambiguous — pick inch or metric.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G20
+G21
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G21
+T1 M6
+M30
+```
+
 ### `haas.t0-selected`
 
 - **Severity:** warning
@@ -186,6 +524,29 @@ M30
 O0001
 T0 M6
 M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+M30
+```
+
+### `haas.m30-before-last-block`
+
+- **Severity:** warning
+- **Matcher:** `/M30 appears before the last block/`
+- **Summary:** M30 before the final block usually means trailing unreachable code.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+M30
+G0 X0
 ```
 
 **Does not trigger (negative):**
@@ -239,6 +600,30 @@ M30
 ```gcode
 O0001
 T1 M6
+M30
+```
+
+### `haas.duplicate-sequence-n`
+
+- **Severity:** warning
+- **Matcher:** `/Duplicate sequence number N/`
+- **Summary:** Duplicate N numbers make GOTO/M97 targets ambiguous.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+N10 G0 X0
+N10 G0 Y0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+N10 G0 X0
+N20 G0 Y0
 M30
 ```
 

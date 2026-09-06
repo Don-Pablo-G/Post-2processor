@@ -2101,6 +2101,122 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(false);
   });
 
+  it("warns G43 with H0", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG43 H0 Z25.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G43 with H0"))).toBe(true);
+  });
+
+  it("warns G41/G42 with D0", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG43 H1 Z25.\nG41 D0 X10.\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G41/G42 with D0"))).toBe(true);
+  });
+
+  it("warns coolant on before any spindle start", () => {
+    const ast = parse("T1 M6\nM8\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) before any spindle start")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn coolant when spindle started earlier", () => {
+    const ast = parse("T1 M6\nS1200 M3\nM8\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) before any spindle start")
+      )
+    ).toBe(false);
+  });
+
+  it("warns F0 feed rate", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG1 X10. F0\nM30", haasNgcProfilePackaged);
+    expect(lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("F0 feed rate"))).toBe(true);
+  });
+
+  it("warns G2/G3 without R or I/J/K", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG2 X10. Y10. F100.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G2/G3 arc without R or I/J/K"))
+    ).toBe(true);
+  });
+
+  it("does not warn G2 with R", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG2 X10. Y10. R5. F100.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("G2/G3 arc without R or I/J/K"))
+    ).toBe(false);
+  });
+
+  it("warns when cutter compensation is still active at program end", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG43 H1 Z25.\nG41 D1 X10.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("cutter compensation (G41/G42) still active")
+      )
+    ).toBe(true);
+  });
+
+  it("does not warn cutter comp at end after G40", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG43 H1 Z25.\nG41 D1 X10.\nG40\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("cutter compensation (G41/G42) still active")
+      )
+    ).toBe(false);
+  });
+
+  it("warns canned cycle without Z depth", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG81 X10. Y10. R2. F100.\nG80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without Z depth"))
+    ).toBe(true);
+  });
+
+  it("warns canned cycle without R plane", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG81 X10. Y10. Z-5. F100.\nG80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("without R plane"))
+    ).toBe(true);
+  });
+
+  it("does not warn canned cycle when Z and R are present", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some(
+        (i) => i.message.includes("without Z depth") || i.message.includes("without R plane")
+      )
+    ).toBe(false);
+  });
+
+  it("warns when canned cycle is still active at program end", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("canned cycle still active"))
+    ).toBe(true);
+  });
+
+  it("warns M6 while canned cycle is active", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nT2 M6\nG80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 while a canned cycle is still active"))
+    ).toBe(true);
+  });
+
+  it("does not warn M6 after G80 cancels canned cycle", () => {
+    const ast = parse("T1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nT2 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("M6 while a canned cycle is still active"))
+    ).toBe(false);
+  });
+
+  it("warns when both G20 and G21 appear", () => {
+    const ast = parse("G20\nG21\nT1 M6\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("both G20 and G21"))
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(
