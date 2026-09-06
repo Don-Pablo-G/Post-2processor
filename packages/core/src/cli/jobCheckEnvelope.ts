@@ -5,7 +5,7 @@ import type {
 } from "../types.js";
 import { matchesAnyStrictControllerCodePattern } from "./strictControllerCodesGate.js";
 
-export const CLI_SCHEMA_VERSION = 22;
+export const CLI_SCHEMA_VERSION = 23;
 
 export type CliLintIssuesBySourceEntry = {
   source: LintIssueProvenanceSource;
@@ -735,12 +735,15 @@ export type CliBatchWalk = {
 
 /**
  * Schema v18: optional export roots recorded on `summary.batchWalk`.
+ * Schema v23 adds optional `batchExportZip` when `--out-dir` wrote a zip.
  */
 export type CliBatchWalkExport = {
   /** `--out-dir` root when set. */
   outDir?: string;
   /** `--export-setup-sheet-pdf-batch` root when set. */
   setupSheetPdfDir?: string;
+  /** Schema v23: absolute or CLI-resolved path of `batch-export.zip` when written. */
+  batchExportZip?: string;
 };
 
 export type CliBatchBlockReasonAggregation = {
@@ -781,6 +784,8 @@ export type CliBatchLintIssuesByParseDiagCodeAggregation = {
 /**
  * Schema v11: cross-input rollup of per-entry `lintIssuesByControllerCode`
  * rows. One row per distinct `(source, code)` pair.
+ * Schema v23 adds optional `firstBlockIndex` (earliest across contributing
+ * per-entry rows).
  */
 export type CliBatchLintIssuesByControllerCodeAggregation = {
   source: LintIssueProvenanceSource;
@@ -789,6 +794,8 @@ export type CliBatchLintIssuesByControllerCodeAggregation = {
   blockers: number;
   warnings: number;
   inputs: string[];
+  /** Schema v23: earliest `firstBlockIndex` among contributing entry rows. */
+  firstBlockIndex?: number;
 };
 
 /**
@@ -1138,6 +1145,7 @@ export function buildBatchLintIssuesByControllerCodeAggregation(
       blockers: number;
       warnings: number;
       inputs: Set<string>;
+      firstBlockIndex?: number;
     }
   >();
   for (const entry of entries) {
@@ -1153,7 +1161,10 @@ export function buildBatchLintIssuesByControllerCodeAggregation(
           count: 0,
           blockers: 0,
           warnings: 0,
-          inputs: new Set<string>()
+          inputs: new Set<string>(),
+          ...(row.firstBlockIndex !== undefined
+            ? { firstBlockIndex: row.firstBlockIndex }
+            : {})
         };
         byKey.set(key, bucket);
       }
@@ -1161,6 +1172,14 @@ export function buildBatchLintIssuesByControllerCodeAggregation(
       bucket.blockers += row.blockers;
       bucket.warnings += row.warnings;
       bucket.inputs.add(entry.input);
+      if (row.firstBlockIndex !== undefined) {
+        if (
+          bucket.firstBlockIndex === undefined ||
+          row.firstBlockIndex < bucket.firstBlockIndex
+        ) {
+          bucket.firstBlockIndex = row.firstBlockIndex;
+        }
+      }
     }
   }
   const rows: CliBatchLintIssuesByControllerCodeAggregation[] = [];
@@ -1171,7 +1190,10 @@ export function buildBatchLintIssuesByControllerCodeAggregation(
       count: bucket.count,
       blockers: bucket.blockers,
       warnings: bucket.warnings,
-      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b))
+      inputs: [...bucket.inputs].sort((a, b) => a.localeCompare(b)),
+      ...(bucket.firstBlockIndex !== undefined
+        ? { firstBlockIndex: bucket.firstBlockIndex }
+        : {})
     });
   }
   rows.sort((a, b) => {

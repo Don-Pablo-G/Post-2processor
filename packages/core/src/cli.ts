@@ -18,6 +18,7 @@ import {
   type ParseDiagnosticsPolicyPresetId
 } from "./workshop/parseDiagnosticsPresets.js";
 import { buildSetupSheetPdf } from "./workshop/setupSheetPdf.js";
+import { createZip } from "./workshop/storeZip.js";
 import {
   computeHmacSha256,
   computeSha256,
@@ -1866,6 +1867,7 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       const outDir = parsed.outDir;
       const ext = outputExtensionForFormat(parsed.format, parsed.outDirFormat);
       let written = 0;
+      const zipEntries: Array<{ path: string; data: string | Uint8Array }> = [];
       for (const { sourcePath, rendered } of perFileOutputs) {
         const targetPath = resolveOutDirTarget(parsed.inputDir, sourcePath, outDir, ext);
         if (targetPath === undefined) {
@@ -1878,6 +1880,8 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           await mkdirFn(path.dirname(targetPath));
           await writeFn(targetPath, rendered);
           written += 1;
+          const rel = path.relative(outDir, targetPath).split(path.sep).join("/");
+          zipEntries.push({ path: rel, data: rendered });
         } catch (err) {
           writeErr(
             `Failed to write --out-dir entry ${targetPath}: ${(err as Error).message}\n`
@@ -1885,27 +1889,35 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
           return 2;
         }
       }
-      // Schema v18–v21: always drop a CLI-shaped batch summary beside per-file
+      // Schema v23: record batch-export.zip path on walk.export before summaries.
+      const zipPath = path.join(outDir, "batch-export.zip");
+      if (!batchWalk.export) batchWalk.export = { outDir };
+      batchWalk.export.batchExportZip = zipPath;
+
+      // Schema v18–v23: always drop a CLI-shaped batch summary beside per-file
       // outputs so `batchWalk.export.outDir` is inspectable without stdout.
       // JSON envelope summary ships for every --format (including ndjson).
       const summaryPath = path.join(outDir, "batch-summary.json");
+      const summaryJson = `${formatBatchJson(entries, { batchWalk })}\n`;
       try {
-        await writeFn(summaryPath, `${formatBatchJson(entries, { batchWalk })}\n`);
+        await writeFn(summaryPath, summaryJson);
         written += 1;
+        zipEntries.push({ path: "batch-summary.json", data: summaryJson });
       } catch (err) {
         writeErr(
           `Failed to write --out-dir batch summary ${summaryPath}: ${(err as Error).message}\n`
         );
         return 2;
       }
-      // Schema v21: dashboard CSV of safety + policy-breach aggregations.
+      // Schema v21: dashboard CSV of aggregations.
       const csvSummaryPath = path.join(outDir, "batch-summary.csv");
+      const summaryCsv = formatBatchAggregationsAsCsv(
+        buildBatchEnvelope(entries, { batchWalk })
+      );
       try {
-        await writeFn(
-          csvSummaryPath,
-          formatBatchAggregationsAsCsv(buildBatchEnvelope(entries, { batchWalk }))
-        );
+        await writeFn(csvSummaryPath, summaryCsv);
         written += 1;
+        zipEntries.push({ path: "batch-summary.csv", data: summaryCsv });
       } catch (err) {
         writeErr(
           `Failed to write --out-dir batch summary ${csvSummaryPath}: ${(err as Error).message}\n`
@@ -1916,18 +1928,28 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       // one-line NDJSON envelope summary (same CliBatchEnvelope body).
       if (parsed.format === "ndjson") {
         const ndjsonSummaryPath = path.join(outDir, "batch-summary.ndjson");
+        const ndjsonBody = `${JSON.stringify(buildBatchEnvelope(entries, { batchWalk }))}\n`;
         try {
-          await writeFn(
-            ndjsonSummaryPath,
-            `${JSON.stringify(buildBatchEnvelope(entries, { batchWalk }))}\n`
-          );
+          await writeFn(ndjsonSummaryPath, ndjsonBody);
           written += 1;
+          zipEntries.push({ path: "batch-summary.ndjson", data: ndjsonBody });
         } catch (err) {
           writeErr(
             `Failed to write --out-dir batch summary ${ndjsonSummaryPath}: ${(err as Error).message}\n`
           );
           return 2;
         }
+      }
+      // Schema v23: pack per-file outputs + summaries into batch-export.zip.
+      try {
+        const zipBytes = await createZip(zipEntries, { method: "deflate" });
+        await writeFn(zipPath, zipBytes);
+        written += 1;
+      } catch (err) {
+        writeErr(
+          `Failed to write --out-dir batch export zip ${zipPath}: ${(err as Error).message}\n`
+        );
+        return 2;
       }
       if (!parsed.quiet) {
         writeOut(`cnc-job-check: wrote ${written} files to ${outDir}\n`);

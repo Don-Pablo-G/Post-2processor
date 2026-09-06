@@ -9,6 +9,7 @@ import {
   createZip,
   formatBatchAggregationsAsCsv,
   getControllerGrammarFix,
+  getParseDiagnosticFix,
   getSafetyFindingFix,
   type CliBatchEnvelope,
   type CliBatchWalk,
@@ -19,6 +20,7 @@ import {
 import {
   applyIdeQuickFixEdits,
   deriveControllerGrammarFixBindings,
+  deriveParseDiagnosticFixBindings,
   deriveSafetyFindingFixBindings,
   expandIdeQuickFixTemplate,
   resolveQuickFixSpan
@@ -184,8 +186,10 @@ export function formatDesktopBatchWalkChip(envelope: CliBatchEnvelope): string {
   const walk = envelope.summary.batchWalk;
   if (!walk) return "batch-walk: none";
   const exportPart =
-    walk.export?.outDir || walk.export?.setupSheetPdfDir
-      ? ` export outDir=${walk.export.outDir ?? "-"} pdf=${walk.export.setupSheetPdfDir ?? "-"}`
+    walk.export?.outDir || walk.export?.setupSheetPdfDir || walk.export?.batchExportZip
+      ? ` export outDir=${walk.export.outDir ?? "-"} pdf=${walk.export.setupSheetPdfDir ?? "-"}${
+          walk.export.batchExportZip ? " zip=yes" : ""
+        }`
       : "";
   return `batch-walk: matched=${walk.matched} skipped=${walk.skipped}${
     walk.recursive ? " recursive" : ""
@@ -223,8 +227,8 @@ export type DesktopBatchQuickFixPreview = {
   input: string;
   code: string;
   title: string;
-  /** Schema v22: which catalogue produced this preview. */
-  kind?: "safety" | "controller";
+  /** Schema v22–v23: which catalogue produced this preview. */
+  kind?: "safety" | "controller" | "parse-diag";
   expanded?: string;
   unbound?: boolean;
   firstBlockIndex?: number;
@@ -327,6 +331,69 @@ export function buildDesktopBatchQuickFixPreviews(
     });
   }
 
+  for (const row of envelope.summary.parseDiagnosticsByCodePerInputFile) {
+    const key = `parse-diag::${row.input}::${row.code}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const fix = getParseDiagnosticFix(row.code);
+    if (!fix) continue;
+    const source = sourcesByInput.get(row.input);
+    const bindings = deriveParseDiagnosticFixBindings({
+      code: row.code,
+      source,
+      blockIndex: row.firstBlockIndex
+    });
+    let expanded: { expanded?: string; unbound?: boolean } = {};
+    // Append closers onto the block instead of replacing the block with ")" / "]".
+    if (
+      (row.code === "UNMATCHED_OPEN_PAREN" || row.code === "UNMATCHED_BRACKET") &&
+      bindings.BLOCK
+    ) {
+      const closer =
+        row.code === "UNMATCHED_OPEN_PAREN" ? ")" : (bindings.CLOSER ?? "]");
+      expanded = { expanded: `${bindings.BLOCK}${closer}` };
+    } else if (row.code === "ADDRESS_MISSING_VALUE" && bindings.LETTER && bindings.BLOCK) {
+      const letter = bindings.LETTER;
+      const patched = bindings.BLOCK.replace(
+        new RegExp(`\\b${letter}\\b(?!\\s*-?\\d)`, "i"),
+        `${letter}0`
+      );
+      expanded =
+        patched !== bindings.BLOCK
+          ? { expanded: patched }
+          : expandPreviewTemplate(
+              {
+                code: fix.code,
+                title: fix.title,
+                rationale: fix.rationale,
+                ...(fix.replacementTemplate !== undefined
+                  ? { replacementTemplate: fix.replacementTemplate }
+                  : {})
+              },
+              bindings,
+              options
+            );
+    } else {
+      const qf = {
+        code: fix.code,
+        title: fix.title,
+        rationale: fix.rationale,
+        ...(fix.replacementTemplate !== undefined
+          ? { replacementTemplate: fix.replacementTemplate }
+          : {})
+      };
+      expanded = expandPreviewTemplate(qf, bindings, options);
+    }
+    out.push({
+      input: row.input,
+      code: row.code,
+      title: fix.title,
+      kind: "parse-diag",
+      ...(row.firstBlockIndex !== undefined ? { firstBlockIndex: row.firstBlockIndex } : {}),
+      ...expanded
+    });
+  }
+
   out.sort((a, b) => {
     if (a.input !== b.input) return a.input.localeCompare(b.input);
     if (a.kind !== b.kind) return (a.kind ?? "").localeCompare(b.kind ?? "");
@@ -345,6 +412,19 @@ export function formatDesktopBatchQuickFixPreviewChip(
     .map((p) => p.code)
     .join(",");
   return `batch-fix-preview: fixes=${previews.length} unbound=${unbound} | top=${top || "n/a"}`;
+}
+
+/** Schema v23: chip summarizing unbound (still-templated) fix previews. */
+export function formatDesktopBatchUnboundFixChip(
+  previews: readonly DesktopBatchQuickFixPreview[]
+): string {
+  const unbound = previews.filter((p) => p.unbound);
+  if (unbound.length === 0) return "batch-unbound-fixes: none";
+  const top = unbound
+    .slice(0, 3)
+    .map((p) => p.code)
+    .join(",");
+  return `batch-unbound-fixes: ${unbound.length} | top=${top || "n/a"}`;
 }
 
 export function formatDesktopBatchQuickFixPreviewsForExport(

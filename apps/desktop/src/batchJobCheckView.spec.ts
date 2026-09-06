@@ -14,6 +14,7 @@ import {
   formatDesktopBatchQuickFixPreviewChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
+  formatDesktopBatchUnboundFixChip,
   formatDesktopBatchWalkChip,
   runDesktopBatchJobCheck
 } from "./batchJobCheckView";
@@ -257,6 +258,7 @@ describe("batchJobCheckView", () => {
     expect(previews[0]!.code).toBe("MISSING_G43_BEFORE_NEGATIVE_Z");
     expect(previews[0]!.expanded).toMatch(/Z-5/);
     expect(formatDesktopBatchQuickFixPreviewChip(previews)).toMatch(/fixes=/);
+    expect(formatDesktopBatchUnboundFixChip(previews)).toMatch(/batch-unbound-fixes/);
     const patched = buildDesktopBatchPatchedPrograms(
       batch.envelope,
       new Map([["a.nc", "O1\nG0 Z-5\nM30\n"]])

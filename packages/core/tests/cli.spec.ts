@@ -1018,7 +1018,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=22\n");
+    expect(stdout).toBe("cnc-job-check schema=23\n");
     expect(stderr).toBe("");
   });
 
@@ -1779,7 +1779,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 5 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 6 files to /);
     const top = JSON.parse(await readFile(path.join(outDir, "top.json"), "utf8"));
     expect(top.schemaVersion).toBe(CLI_SCHEMA_VERSION);
     expect(typeof top.proveoutCode).toBe("string");
@@ -1813,7 +1813,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 5 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 6 files to /);
     const aRaw = await readFile(path.join(outDir, "a.ndjson"), "utf8");
     const aLines = aRaw.split("\n").filter((l) => l.length > 0);
     expect(aLines).toHaveLength(1);
@@ -1997,7 +1997,7 @@ describe("main()", () => {
       }
     );
     expect(exitCode).toBe(0);
-    expect(stdout).toMatch(/cnc-job-check: wrote 4 files to /);
+    expect(stdout).toMatch(/cnc-job-check: wrote 5 files to /);
     const alpha = JSON.parse(
       await readFile(path.join(outDir, "alpha.envelope.json"), "utf8")
     );
@@ -2629,8 +2629,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 22", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(22);
+  it("CLI_SCHEMA_VERSION is 23", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(23);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -3354,7 +3354,8 @@ describe("Schema v18: safety attribution firstBlockIndex + batchWalk.export + sa
     expect(exit).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
     expect(summary.schemaVersion).toBe(CLI_SCHEMA_VERSION);
-    expect(summary.summary.batchWalk.export).toEqual({ outDir });
+    expect(summary.summary.batchWalk.export.outDir).toBe(outDir);
+    expect(summary.summary.batchWalk.export.batchExportZip).toMatch(/batch-export\.zip$/);
   });
 
   it("batchWalk.export records setupSheetPdfDir on JSON batch", async () => {
@@ -3572,6 +3573,64 @@ describe("Schema v22: parse-diag aggregated firstBlockIndex + expanded CSV", () 
     expect(exit).toBe(0);
     const csv = await readFile(path.join(outDir, "batch-summary.csv"), "utf8");
     expect(csv).toMatch(/controller,/);
+  });
+});
+
+describe("Schema v23: controller aggregated firstBlockIndex + batch-export.zip", () => {
+  it("buildBatchLintIssuesByControllerCodeAggregation propagates firstBlockIndex", () => {
+    const entries = [
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "a.nc",
+        envelope: {
+          lintIssuesByControllerCode: [
+            {
+              source: "controller_grammar",
+              code: "CG_N_AND_O_MIXED",
+              count: 1,
+              blockers: 1,
+              warnings: 0,
+              firstBlockIndex: 3
+            }
+          ]
+        }
+      },
+      {
+        schemaVersion: CLI_SCHEMA_VERSION,
+        input: "b.nc",
+        envelope: {
+          lintIssuesByControllerCode: [
+            {
+              source: "controller_grammar",
+              code: "CG_N_AND_O_MIXED",
+              count: 1,
+              blockers: 1,
+              warnings: 0,
+              firstBlockIndex: 1
+            }
+          ]
+        }
+      }
+    ] as Parameters<typeof buildBatchLintIssuesByControllerCodeAggregation>[0];
+    const rows = buildBatchLintIssuesByControllerCodeAggregation(entries);
+    expect(rows[0]!.firstBlockIndex).toBe(1);
+    expect(rows[0]!.count).toBe(2);
+  });
+
+  it("--out-dir writes batch-export.zip and records it on batchWalk.export", async () => {
+    const tmp = await setupTmpDir();
+    await writeFile(path.join(tmp, "a.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    const outDir = path.join(tmp, "out");
+    const exit = await main(
+      ["--input-dir", tmp, "--out-dir", outDir, "--format", "json"],
+      { stdout: () => {}, stderr: () => {} }
+    );
+    expect(exit).toBe(0);
+    const zipBytes = await readFile(path.join(outDir, "batch-export.zip"));
+    expect(zipBytes[0]).toBe(0x50);
+    expect(zipBytes[1]).toBe(0x4b);
+    const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
+    expect(summary.summary.batchWalk.export.batchExportZip).toMatch(/batch-export\.zip$/);
   });
 });
 

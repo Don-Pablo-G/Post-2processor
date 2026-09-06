@@ -131,6 +131,7 @@ import {
   formatDesktopBatchSafetyChip,
   formatDesktopBatchSummaryChip,
   formatDesktopBatchSummaryForExport,
+  formatDesktopBatchUnboundFixChip,
   formatDesktopBatchWalkChip,
   buildDesktopBatchQuickFixPreviews,
   runDesktopBatchJobCheck,
@@ -3797,6 +3798,19 @@ export function App() {
               >
                 {formatDesktopBatchPolicyBreachChip(
                   batchJobCheckResult.envelope.summary.parseDiagnosticsPolicyBreachesAggregated
+                )}
+              </span>
+              <span
+                data-testid="folder-batch-unbound-fix-chip"
+                style={{ fontFamily: "Consolas, monospace", opacity: 0.9 }}
+              >
+                {formatDesktopBatchUnboundFixChip(
+                  buildDesktopBatchQuickFixPreviews(
+                    batchJobCheckResult.envelope,
+                    new Map(
+                      batchJobCheckResult.runResults.map((r) => [r.input, r.source] as const)
+                    )
+                  )
                 )}
               </span>
               <button

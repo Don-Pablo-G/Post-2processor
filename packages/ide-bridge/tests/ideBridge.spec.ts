@@ -643,6 +643,26 @@ describe("deriveControllerGrammarFixBindings", () => {
       O_BLOCK: "O0001"
     });
   });
+
+  it("fills PROG/I/J/K for CG_FANUC_MACRO_IJK_ORDER from source", () => {
+    expect(
+      deriveControllerGrammarFixBindings({
+        code: "CG_FANUC_MACRO_IJK_ORDER",
+        source: "O1\nG65 P9010 K1 I2 J3\nM30\n",
+        blockIndex: 1
+      })
+    ).toEqual({ PROG: "9010", I: "2", J: "3", K: "1" });
+  });
+
+  it("fills UNIQUE_PROGRAM_NUMBER for CG_DUPLICATE_O_HEADER", () => {
+    expect(
+      deriveControllerGrammarFixBindings({
+        code: "CG_DUPLICATE_O_HEADER",
+        source: "O100\nG0 X1\nO100\nM30\n",
+        blockIndex: 2
+      })
+    ).toEqual({ UNIQUE_PROGRAM_NUMBER: "101" });
+  });
 });
 
 describe("deriveParseDiagnosticFixBindings", () => {

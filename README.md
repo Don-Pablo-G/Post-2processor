@@ -3984,6 +3984,44 @@ node packages/core/dist/cli.js --schema-version
 # => cnc-job-check schema=22
 ```
 
+## CG bindings + parse-diag patched NC + controller aggregated firstBlockIndex + batch-export.zip + Schema v23
+
+This wave drains five Known Gaps from the prior wave in one motion — all changes
+are append-only with no new runtime dependencies.
+
+### Move 1 — More controller-grammar program-source bindings
+
+`deriveControllerGrammarFixBindings` fills `PROG`/`I`/`J`/`K`,
+`UNIQUE_PROGRAM_NUMBER`, `PROGRAM_NUMBER`/`EXECUTABLE_BLOCKS`, and invalid
+N/O format tokens from program text.
+
+### Move 2 — Controller aggregated `firstBlockIndex` (Schema v23)
+
+`CLI_SCHEMA_VERSION` bumps `22 → 23`.
+`summary.lintIssuesByControllerCodeAggregated[]` gains optional `firstBlockIndex`.
+`batchWalk.export.batchExportZip` records the CLI zip path when written.
+
+### Move 3 — Parse-diag fix preview + patched NC
+
+Desktop previews and patched NC cover parse-diagnostic codes (append `)` / `]`
+onto the block; address-missing patches the letter in-place).
+
+### Move 4 — CLI `--out-dir` `batch-export.zip`
+
+`--out-dir` packs per-file outputs + summary sidecars into `batch-export.zip`
+(DEFLATE when available).
+
+### Move 5 — Unbound-fix chip + verification
+
+Desktop folder batch shows an unbound-fix chip. Tests + README updated.
+
+```
+npm run typecheck
+npm test
+node packages/core/dist/cli.js --schema-version
+# => cnc-job-check schema=23
+```
+
 ## Known Gaps / Next Increments
 
 The following deferred items are intentionally tracked here so the
@@ -4004,7 +4042,3 @@ next planning wave can pick them up:
 - **IDE-host workspace write from fix preview** — pure apply-edit +
   patched NC download ship; writing expanded templates back into open
   editors remains an IDE-host concern.
-- **Remaining controller-grammar template bindings** — N/O-mixed and
-  duplicate-address program-source heuristics ship; other CG templates
-  (`PROG`/`IJK`, envelope reorder, unique O) still need richer context
-  or operator input.

@@ -776,9 +776,9 @@ function splitDuplicateAddressBlock(
  * Heuristic bindings for controller-grammar catalogue templates.
  *
  * Code pass: `LETTER` from `CG_DUPLICATE_ADDRESSES_*`.
- * Program-source pass (v22): when `source` + `blockIndex` are supplied,
- * fill `FIRST_BLOCK_WITH_LETTER` / `SECOND_BLOCK_WITH_LETTER` for duplicate
- * addresses and `N_BLOCK` / `O_BLOCK` for `CG_N_AND_O_MIXED`.
+ * Program-source pass (v22–v23): when `source` + `blockIndex` are supplied,
+ * fill duplicate-address / N-O-mixed / macro IJK / duplicate-O / envelope
+ * / invalid N-O format tokens from the program text.
  */
 export function deriveControllerGrammarFixBindings(
   input: ControllerGrammarBindingInput
@@ -792,24 +792,72 @@ export function deriveControllerGrammarFixBindings(
     if (letter.length > 0) bindings.LETTER = letter;
   }
 
-  if (
-    input.source !== undefined &&
-    input.blockIndex !== undefined &&
-    (code.startsWith(DUPLICATE_ADDRESSES_PREFIX) || code === "CG_N_AND_O_MIXED")
-  ) {
-    const block = blockTextAtIndex(input.source, input.blockIndex, input.rangeOptions);
-    if (block) {
-      if (code.startsWith(DUPLICATE_ADDRESSES_PREFIX) && bindings.LETTER) {
-        const split = splitDuplicateAddressBlock(block, bindings.LETTER);
-        if (split.first) bindings.FIRST_BLOCK_WITH_LETTER = split.first;
-        if (split.second) bindings.SECOND_BLOCK_WITH_LETTER = split.second;
+  if (input.source === undefined || input.blockIndex === undefined) {
+    return Object.freeze(bindings);
+  }
+
+  const block = blockTextAtIndex(input.source, input.blockIndex, input.rangeOptions);
+  const blocks = splitProgramIntoBlocks(input.source, input.rangeOptions);
+
+  if (block) {
+    if (code.startsWith(DUPLICATE_ADDRESSES_PREFIX) && bindings.LETTER) {
+      const split = splitDuplicateAddressBlock(block, bindings.LETTER);
+      if (split.first) bindings.FIRST_BLOCK_WITH_LETTER = split.first;
+      if (split.second) bindings.SECOND_BLOCK_WITH_LETTER = split.second;
+    }
+    if (code === "CG_N_AND_O_MIXED") {
+      const n = block.match(/\bN\s*\d+\b/i);
+      const o = block.match(/\bO\s*\d+\b/i);
+      if (n) bindings.N_BLOCK = n[0]!.replace(/\s+/g, "");
+      if (o) bindings.O_BLOCK = o[0]!.replace(/\s+/g, "");
+    }
+    if (code === "CG_FANUC_MACRO_IJK_ORDER") {
+      const p = extractAddressValue(block, "P");
+      const i = extractAddressValue(block, "I");
+      const j = extractAddressValue(block, "J");
+      const k = extractAddressValue(block, "K");
+      if (p) bindings.PROG = p;
+      if (i) bindings.I = i;
+      if (j) bindings.J = j;
+      if (k) bindings.K = k;
+    }
+    if (code === "CG_FANUC_INVALID_N_O_FORMAT") {
+      const n = block.match(/\bN\s*(-?\d+(?:\.\d+)?)\b/i);
+      const o = block.match(/\bO\s*(-?\d+(?:\.\d+)?)\b/i);
+      const hit = n ?? o;
+      if (hit) {
+        bindings.LETTER = n ? "N" : "O";
+        const raw = Number(hit[1]);
+        const clamped =
+          Number.isFinite(raw) && raw >= 1 && raw <= 99999999 && Number.isInteger(raw)
+            ? String(raw)
+            : "1";
+        bindings.INTEGER_1_TO_99999999 = clamped;
       }
-      if (code === "CG_N_AND_O_MIXED") {
-        const n = block.match(/\bN\s*\d+\b/i);
-        const o = block.match(/\bO\s*\d+\b/i);
-        if (n) bindings.N_BLOCK = n[0]!.replace(/\s+/g, "");
-        if (o) bindings.O_BLOCK = o[0]!.replace(/\s+/g, "");
-      }
+    }
+  }
+
+  if (code === "CG_DUPLICATE_O_HEADER") {
+    const oNums = blocks
+      .map((b) => b.match(/\bO\s*(\d+)\b/i)?.[1])
+      .filter((v): v is string => typeof v === "string")
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
+    if (oNums.length > 0) {
+      const next = Math.min(99999999, Math.max(...oNums) + 1);
+      bindings.UNIQUE_PROGRAM_NUMBER = String(next);
+    }
+  }
+
+  if (code === "CG_FANUC_PROGRAM_ENVELOPE") {
+    const oIdx = blocks.findIndex((b) => /\bO\s*\d+\b/i.test(b));
+    if (oIdx >= 0) {
+      const oMatch = blocks[oIdx]!.match(/\bO\s*(\d+)\b/i);
+      if (oMatch?.[1]) bindings.PROGRAM_NUMBER = oMatch[1];
+      const before = blocks.slice(0, oIdx).filter((b) => !/\bO\s*\d+\b/i.test(b));
+      const after = blocks.slice(oIdx + 1);
+      const executable = [...before, ...after];
+      if (executable.length > 0) bindings.EXECUTABLE_BLOCKS = executable.join("\n");
     }
   }
 
@@ -819,6 +867,10 @@ export function deriveControllerGrammarFixBindings(
 export type ParseDiagnosticBindingInput = {
   code: string;
   message?: string;
+  /** Optional program source for Schema v23 append/replace heuristics. */
+  source?: string;
+  blockIndex?: number;
+  rangeOptions?: BlockSplitOptions;
 };
 
 /**
@@ -827,6 +879,8 @@ export type ParseDiagnosticBindingInput = {
  *
  *  - `ADDRESS_MISSING_VALUE` → `{ LETTER }` from `Address 'X' has no...`
  *  - `UNKNOWN_TOKEN` → `{ TOKEN }` from `Unknown token '...' skipped...`
+ *  - Schema v23: with `source` + `blockIndex`, `BLOCK` is the block text
+ *    (used by desktop apply to append closers safely).
  *
  * All other codes return an empty object.
  */
@@ -835,24 +889,35 @@ export function deriveParseDiagnosticFixBindings(
 ): IdeQuickFixBindings {
   const code = typeof input.code === "string" ? input.code : "";
   const message = typeof input.message === "string" ? input.message : "";
+  const bindings: Record<string, string> = {};
   if (code === "ADDRESS_MISSING_VALUE") {
     const match = message.match(/Address\s+'([A-Za-z])'/);
-    if (match?.[1]) return Object.freeze({ LETTER: match[1].toUpperCase() });
+    if (match?.[1]) bindings.LETTER = match[1].toUpperCase();
   }
   if (code === "UNKNOWN_TOKEN") {
     const match = message.match(/Unknown token\s+'([^']+)'/);
-    if (match?.[1]) return Object.freeze({ TOKEN: match[1] });
+    if (match?.[1]) bindings.TOKEN = match[1];
   }
   if (code === "INVALID_CHARACTER") {
     const match = message.match(/character\s+'([^']+)'/i) ?? message.match(/'([^']+)'/);
-    if (match?.[1]) return Object.freeze({ CHAR: match[1] });
+    if (match?.[1]) bindings.CHAR = match[1];
   }
   if (code === "UNMATCHED_BRACKET") {
     if (/missing\s+'\]'|Add missing '\]'/i.test(message) || /opens?\s*>\s*closes?/i.test(message)) {
-      return Object.freeze({ CLOSER: "]" });
+      bindings.CLOSER = "]";
     }
   }
-  return Object.freeze({});
+  if (
+    input.source !== undefined &&
+    input.blockIndex !== undefined &&
+    (code === "UNMATCHED_OPEN_PAREN" ||
+      code === "UNMATCHED_BRACKET" ||
+      code === "ADDRESS_MISSING_VALUE")
+  ) {
+    const block = blockTextAtIndex(input.source, input.blockIndex, input.rangeOptions);
+    if (block) bindings.BLOCK = block;
+  }
+  return Object.freeze(bindings);
 }
 
 export type SafetyFindingBindingInput = {
