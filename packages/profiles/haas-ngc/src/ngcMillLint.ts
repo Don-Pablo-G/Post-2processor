@@ -1764,6 +1764,28 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
     if (hasG40) {
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G40 while a canned cycle is still active — cancel with G80 before canceling cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G40 while coordinate rotation (G68) is still active — cancel with G69 before canceling cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G40 while scaling (G51) is still active — cancel with G50 before canceling cutter compensation.",
+          blockIndex: index
+        });
+      }
       cutterCompActive = false;
       cutterSide = undefined;
     }
@@ -1932,9 +1954,40 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G68 while tool length compensation (G43) is still active — cancel with G49 before coordinate rotation.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G68 while scaling (G51) is still active — cancel with G50 before coordinate rotation.",
+          blockIndex: index
+        });
+      }
       rotationActive = true;
     }
     if (hasExactG69(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G69 while cutter compensation (G41/G42) is still active — cancel with G40 before canceling coordinate rotation.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G69 while a canned cycle is still active — cancel with G80 before canceling coordinate rotation.",
+          blockIndex: index
+        });
+      }
       rotationActive = false;
     }
 
@@ -1962,9 +2015,33 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G51 while tool length compensation (G43) is still active — cancel with G49 before scaling.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G51 while coordinate rotation (G68) is still active — cancel with G69 before scaling.",
+          blockIndex: index
+        });
+      }
       scalingActive = true;
     }
     if (hasExactG50(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G50 while cutter compensation (G41/G42) is still active — cancel with G40 before canceling scaling.",
+          blockIndex: index
+        });
+      }
       scalingActive = false;
     }
 
