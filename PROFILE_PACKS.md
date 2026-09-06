@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 68
+Total rules: 78
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -73,6 +73,16 @@ Total rules: 68
 | `haas.g80-and-canned-same-block` | warning | — | — | Do not cancel and start a canned cycle on the same block. |
 | `haas.m6-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a tool change (M6). |
 | `haas.m6-while-tool-length` | warning | — | — | Cancel tool length with G49 before a tool change (M6). |
+| `haas.path-mode-change-after-motion` | warning | — | — | Changing G61/G64 after motion may be unintentional — verify the switch. |
+| `haas.g41-and-g42-same-block` | warning | — | — | Do not combine G41 and G42 on one block — pick one cutter side. |
+| `haas.m6-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a tool change (M6). |
+| `haas.g53-with-work-offset` | warning | — | — | Do not combine G53 machine coordinates with a work offset on one block. |
+| `haas.coolant-m7-and-m8-same-block` | warning | — | — | Do not combine mist (M7) and flood (M8) coolant on one block. |
+| `haas.g68-and-g69-same-block` | warning | — | — | Do not apply and cancel coordinate rotation on the same block. |
+| `haas.g50-and-g51-same-block` | warning | — | — | Do not apply and cancel scaling on the same block. |
+| `haas.g28-and-g30-same-block` | warning | — | — | Do not combine G28 and G30 reference-return on one block. |
+| `haas.spindle-reverse-without-stop` | warning | — | — | Stop the spindle with M5 before reversing M3/M4 (or M13/M14). |
+| `haas.coolant-while-spindle-off` | warning | — | — | Do not turn coolant on after the spindle has been stopped — restart spindle first. |
 | `haas.t0-selected` | warning | — | — | T0 selects tool zero — usually invalid for a real tool change. |
 | `haas.m30-before-last-block` | warning | — | — | M30 before the final block usually means trailing unreachable code. |
 | `haas.duplicate-m30` | error | — | — | A program should end exactly once with M30; duplicates indicate a copy/paste mistake. |
@@ -1745,6 +1755,297 @@ G90
 G43 H1 Z25.
 G49
 T2 M6
+M30
+```
+
+### `haas.path-mode-change-after-motion`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode changed after axis motion/`
+- **Summary:** Changing G61/G64 after motion may be unintentional — verify the switch.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G61
+G0 X0
+G64
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G61
+G0 X0
+M30
+```
+
+### `haas.g41-and-g42-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G41 and G42 on the same block/`
+- **Summary:** Do not combine G41 and G42 on one block — pick one cutter side.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 G42 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G40
+M30
+```
+
+### `haas.m6-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+T2 M6
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+T2 M6
+M5
+M30
+```
+
+### `haas.g53-with-work-offset`
+
+- **Severity:** warning
+- **Matcher:** `/G53 and a work offset \(G54-G59\/G154\) on the same block/`
+- **Summary:** Do not combine G53 machine coordinates with a work offset on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 G54 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G53 Z0
+M30
+```
+
+### `haas.coolant-m7-and-m8-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant mist and flood on the same block/`
+- **Summary:** Do not combine mist (M7) and flood (M8) coolant on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M7 M8
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M9
+M5
+M30
+```
+
+### `haas.g68-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G68 and G69 on the same block/`
+- **Summary:** Do not apply and cancel coordinate rotation on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G69
+M30
+```
+
+### `haas.g50-and-g51-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G51 and G50 on the same block/`
+- **Summary:** Do not apply and cancel scaling on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G50
+M30
+```
+
+### `haas.g28-and-g30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G28 and G30 on the same block/`
+- **Summary:** Do not combine G28 and G30 reference-return on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G28 G30 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G28 Z0
+M30
+```
+
+### `haas.spindle-reverse-without-stop`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle direction reversed without M5 stop/`
+- **Summary:** Stop the spindle with M5 before reversing M3/M4 (or M13/M14).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+S1200 M4
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M5
+S1200 M4
+M5
+M30
+```
+
+### `haas.coolant-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant on \(M7\/M8\) while spindle is off/`
+- **Summary:** Do not turn coolant on after the spindle has been stopped — restart spindle first.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M5
+M8
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+M8
+M9
+M5
 M30
 ```
 

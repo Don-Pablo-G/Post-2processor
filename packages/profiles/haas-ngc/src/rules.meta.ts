@@ -499,6 +499,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG43 H1 Z25.\nG49\nT2 M6\nM30\n"
   },
   {
+    id: "haas.path-mode-change-after-motion",
+    severity: "warning",
+    messageMatcher: /Path mode changed after axis motion/,
+    summary: "Changing G61/G64 after motion may be unintentional — verify the switch.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG61\nG0 X0\nG64\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG61\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.g41-and-g42-same-block",
+    severity: "warning",
+    messageMatcher: /G41 and G42 on the same block/,
+    summary: "Do not combine G41 and G42 on one block — pick one cutter side.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 G42 D1\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG40\nM30\n"
+  },
+  {
+    id: "haas.m6-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M6 while coolant is still on/,
+    summary: "Turn coolant off with M9 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nT2 M6\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nT2 M6\nM5\nM30\n"
+  },
+  {
+    id: "haas.g53-with-work-offset",
+    severity: "warning",
+    messageMatcher: /G53 and a work offset \(G54-G59\/G154\) on the same block/,
+    summary: "Do not combine G53 machine coordinates with a work offset on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG53 G54 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG53 Z0\nM30\n"
+  },
+  {
+    id: "haas.coolant-m7-and-m8-same-block",
+    severity: "warning",
+    messageMatcher: /Coolant mist and flood on the same block/,
+    summary: "Do not combine mist (M7) and flood (M8) coolant on one block.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM7 M8\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.g68-and-g69-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G69 on the same block/,
+    summary: "Do not apply and cancel coordinate rotation on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 G69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nM30\n"
+  },
+  {
+    id: "haas.g50-and-g51-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G50 on the same block/,
+    summary: "Do not apply and cancel scaling on the same block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 G50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nM30\n"
+  },
+  {
+    id: "haas.g28-and-g30-same-block",
+    severity: "warning",
+    messageMatcher: /G28 and G30 on the same block/,
+    summary: "Do not combine G28 and G30 reference-return on one block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG28 G30 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG28 Z0\nM30\n"
+  },
+  {
+    id: "haas.spindle-reverse-without-stop",
+    severity: "warning",
+    messageMatcher: /Spindle direction reversed without M5 stop/,
+    summary: "Stop the spindle with M5 before reversing M3/M4 (or M13/M14).",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nS1200 M4\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nS1200 M4\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while spindle is off/,
+    summary: "Do not turn coolant on after the spindle has been stopped — restart spindle first.",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nM5\nM8\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
+  },
+  {
     id: "haas.t0-selected",
     severity: "warning",
     messageMatcher: /T0 selects tool zero/,

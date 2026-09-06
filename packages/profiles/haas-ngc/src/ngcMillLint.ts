@@ -96,6 +96,18 @@ function hasCoolantOn(block: { words: Word[] }): boolean {
   });
 }
 
+function hasCoolantMistAndFlood(block: { words: Word[] }): boolean {
+  let mist = false;
+  let flood = false;
+  for (const w of block.words) {
+    if (w.letter !== "M") continue;
+    const m = Math.trunc(Number.parseFloat(w.value));
+    if (m === 7) mist = true;
+    if (m === 8) flood = true;
+  }
+  return mist && flood;
+}
+
 function hasSpindleOn(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "M") return false;
@@ -240,6 +252,18 @@ function exactCutterSide(block: { words: Word[] }): 41 | 42 | undefined {
   return side;
 }
 
+function hasBothG41AndG42(block: { words: Word[] }): boolean {
+  let g41 = false;
+  let g42 = false;
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 41) g41 = true;
+    if (v === 42) g42 = true;
+  }
+  return g41 && g42;
+}
+
 function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
   for (const w of block.words) {
     if (w.letter !== "G") continue;
@@ -251,13 +275,14 @@ function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
 }
 
 function hasExactG61Or64(block: { words: Word[] }): 61 | 64 | undefined {
+  let mode: 61 | 64 | undefined;
   for (const w of block.words) {
     if (w.letter !== "G") continue;
     const v = Number.parseFloat(w.value);
-    if (v === 61) return 61;
-    if (v === 64) return 64;
+    if (v === 61) mode = 61;
+    if (v === 64) mode = 64;
   }
-  return undefined;
+  return mode;
 }
 
 function hasSpindleDirectionConflict(block: { words: Word[] }): boolean {
@@ -270,6 +295,17 @@ function hasSpindleDirectionConflict(block: { words: Word[] }): boolean {
     if (m === 4 || m === 14) ccw = true;
   }
   return cw && ccw;
+}
+
+function spindleDirectionOf(block: { words: Word[] }): "cw" | "ccw" | undefined {
+  let dir: "cw" | "ccw" | undefined;
+  for (const w of block.words) {
+    if (w.letter !== "M") continue;
+    const m = Math.trunc(Number.parseFloat(w.value));
+    if (m === 3 || m === 13) dir = "cw";
+    if (m === 4 || m === 14) dir = "ccw";
+  }
+  return dir;
 }
 
 function workOffsetCode(block: { words: Word[] }): number | undefined {
@@ -338,6 +374,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let sawAnyFeedRate = false;
   let sawSpindleOn = false;
   let spindleActive = false;
+  let activeSpindleDirection: "cw" | "ccw" | undefined;
   let coolantActive = false;
   let toolLengthActive = false;
   let incrementalActive = false;
@@ -365,6 +402,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let firstG61Block = -1;
   let firstG64Block = -1;
   let activeFeedMode: 94 | 95 | undefined;
+  let activePathMode: 61 | 64 | undefined;
   let sawFeedOrCanned = false;
   let sawProgramO = false;
   let activeStopResumeSafety:
@@ -491,18 +529,46 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       lastToolNumber = tNumEarly;
     }
 
+    const nextSpindleDirection = spindleDirectionOf(block);
+    if (
+      nextSpindleDirection !== undefined &&
+      spindleActive &&
+      activeSpindleDirection !== undefined &&
+      nextSpindleDirection !== activeSpindleDirection &&
+      !hasSpindleOff(block)
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Spindle direction reversed without M5 stop — stop the spindle before switching M3/M4 (or M13/M14).",
+        blockIndex: index
+      });
+    }
+
     if (hasSpindleOn(block)) {
       sawSpindleOn = true;
       spindleActive = true;
+      if (nextSpindleDirection !== undefined) {
+        activeSpindleDirection = nextSpindleDirection;
+      }
     }
     if (hasSpindleOff(block)) {
       spindleActive = false;
+      activeSpindleDirection = undefined;
     }
 
     if (hasSpindleOn(block) && hasSpindleOff(block)) {
       issues.push({
         severity: "warning",
         message: "Spindle start and stop on the same block (M3/M4/M13/M14 with M5).",
+        blockIndex: index
+      });
+    }
+
+    if (hasCoolantOn(block) && sawSpindleOn && !spindleActive && !hasSpindleOn(block)) {
+      issues.push({
+        severity: "warning",
+        message: "Coolant on (M7/M8) while spindle is off — restart spindle or turn coolant off.",
         blockIndex: index
       });
     }
@@ -518,6 +584,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "Coolant on and off on the same block (M7/M8 with M9).",
+        blockIndex: index
+      });
+    }
+
+    if (hasCoolantMistAndFlood(block)) {
+      issues.push({
+        severity: "warning",
+        message: "Coolant mist and flood on the same block (M7 with M8) — pick one coolant mode.",
         blockIndex: index
       });
     }
@@ -660,10 +734,36 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       activeFeedMode = feedModeEarly;
     }
 
+    const pathModeEarly = hasExactG61Or64(block);
+    if (pathModeEarly !== undefined) {
+      if (
+        sawAxisMotion &&
+        activePathMode !== undefined &&
+        activePathMode !== pathModeEarly
+      ) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode changed after axis motion — verify intentional G61/G64 switch mid-program.",
+          blockIndex: index
+        });
+      }
+      activePathMode = pathModeEarly;
+    }
+
     if (hasExactG53(block) && incrementalActive) {
       issues.push({
         severity: "warning",
         message: "G53 with incremental mode (G91) active — use G90 with G53 machine coordinates.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && hasWorkOffset(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G53 and a work offset (G54-G59/G154) on the same block — machine and work coordinates conflict.",
         blockIndex: index
       });
     }
@@ -690,6 +790,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         severity: "warning",
         message:
           "M6 while tool length compensation (G43) is still active — cancel with G49 before the tool change.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 6) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "M6 while coolant is still on — turn coolant off with M9 before the tool change.",
         blockIndex: index
       });
     }
@@ -751,6 +859,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G4 dwell without P or X — specify dwell time explicitly.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && hasExactG30(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G28 and G30 on the same block — pick one reference-return command.",
         blockIndex: index
       });
     }
@@ -832,6 +948,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G40 and G41/G42 on the same block — cancel or apply cutter compensation, not both.",
+        blockIndex: index
+      });
+    }
+    if (hasBothG41AndG42(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G41 and G42 on the same block — pick one cutter compensation side.",
         blockIndex: index
       });
     }
@@ -957,11 +1080,27 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       cannedActive = true;
     }
 
+    if (hasExactG68(block) && hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G68 and G69 on the same block — cancel or apply coordinate rotation, not both.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactG68(block)) {
       rotationActive = true;
     }
     if (hasExactG69(block)) {
       rotationActive = false;
+    }
+
+    if (hasExactG51(block) && hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G51 and G50 on the same block — cancel or apply scaling, not both.",
+        blockIndex: index
+      });
     }
 
     if (hasExactG51(block)) {

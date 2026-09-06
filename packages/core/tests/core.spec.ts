@@ -2675,6 +2675,96 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns path mode change after axis motion", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG61\nG0 X0\nG64\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Path mode changed after axis motion")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G41 and G42 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG41 G42 D1\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G41 and G42 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns M6 while coolant is still on", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nM8\nT2 M6\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("M6 while coolant is still on")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G53 with a work offset on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG53 G54 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G53 and a work offset (G54-G59/G154) on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant mist and flood on the same block", () => {
+    const ast = parse("O1\nT1 M6\nS1200 M3\nM7 M8\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant mist and flood on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G68 and G69 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG68 G69\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G68 and G69 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G51 and G50 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG51 G50\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G51 and G50 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns G28 and G30 on the same block", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG28 G30 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G28 and G30 on the same block")
+      )
+    ).toBe(true);
+  });
+
+  it("warns spindle direction reverse without M5 stop", () => {
+    const ast = parse("O1\nT1 M6\nS1200 M3\nS1200 M4\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle direction reversed without M5 stop")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant on while spindle is off after prior spindle use", () => {
+    const ast = parse("O1\nT1 M6\nS1200 M3\nM5\nM8\nM9\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) while spindle is off")
+      )
+    ).toBe(true);
+  });
+
   it("warns first G43 activation with no same-block Z", () => {
     const ast = parse("T1 M6\nG43 H1\nG0 Z20.\nM30", haasNgcProfilePackaged);
     expect(
