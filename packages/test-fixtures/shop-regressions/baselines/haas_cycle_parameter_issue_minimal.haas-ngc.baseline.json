@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 8,
+  "lintIssueCount": 10,
   "lintIssues": [
     {
       "severity": "warning",
@@ -22,6 +22,14 @@
     {
       "severity": "warning",
       "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any feed mode (G93/G94/G95) — select inverse-time, per-minute, or per-rev feed mode first."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any plane mode (G17/G18/G19) — select XY/XZ/YZ plane first."
     },
     {
       "severity": "warning",

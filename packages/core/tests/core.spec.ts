@@ -2274,14 +2274,18 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
   it("warns when program ends in G91", () => {
     const ast = parse("T1 M6\nG54\nG91\nG0 X1.\nM30", haasNgcProfilePackaged);
     expect(
-      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("incremental mode (G91)"))
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Program ends in incremental mode (G91)")
+      )
     ).toBe(true);
   });
 
   it("does not warn G91 at end after G90 restore", () => {
     const ast = parse("T1 M6\nG54\nG91\nG0 X1.\nG90\nM30", haasNgcProfilePackaged);
     expect(
-      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("incremental mode (G91)"))
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Program ends in incremental mode (G91)")
+      )
     ).toBe(false);
   });
 

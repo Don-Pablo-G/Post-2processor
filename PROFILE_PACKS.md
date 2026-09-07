@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 511 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 521 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -523,6 +523,16 @@ Total rules: 511 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.a-while-tool-length` | warning | — | — | Cancel tool length compensation before an orphan A rotary word. |
 | `haas.h-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before changing H offsets. |
 | `haas.d-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before changing D offsets. |
+| `haas.s-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before changing spindle speed. |
+| `haas.g0-while-incremental` | warning | — | — | Restore G90 before G0 rapid moves. |
+| `haas.distance-mode-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before changing distance mode. |
+| `haas.canned-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before a canned cycle. |
+| `haas.canned-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a canned cycle. |
+| `haas.missing-feed-mode` | warning | — | — | Select G93/G94/G95 feed mode before axis motion (parallel to missing unit mode). |
+| `haas.g93-and-g94-same-block` | warning | — | — | Do not select inverse-time (G93) and per-minute (G94) feed on one block. |
+| `haas.g93-and-g95-same-block` | warning | — | — | Do not select inverse-time (G93) and per-rev (G95) feed on one block. |
+| `haas.g93-and-g94-mixed` | warning | — | — | Mixing G93 and G94 feed modes in one program is ambiguous — pick one. |
+| `haas.missing-plane-mode` | warning | — | — | Select G17/G18/G19 plane before axis motion (parallel to missing unit mode). |
 
 ### `haas.m6-without-t`
 
@@ -16654,6 +16664,274 @@ O0001
 G43 H1 Z1.
 G49
 D2
+M30
+```
+
+### `haas.s-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+S1200
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+S1200
+M30
+```
+
+### `haas.g0-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G0 rapid moves.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G91
+G0 X1.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G90
+G0 X1.
+M30
+```
+
+### `haas.distance-mode-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before changing distance mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G90
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+G90
+M30
+```
+
+### `haas.canned-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before a canned cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G81 X1. Y1. Z-1. R.1 F10.
+G80
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+G81 X1. Y1. Z-1. R.1 F10.
+G80
+M30
+```
+
+### `haas.canned-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before a canned cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M8
+G81 X1. Y1. Z-1. R.1 F10.
+G80
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M8
+M9
+G81 X1. Y1. Z-1. R.1 F10.
+G80
+M30
+```
+
+### `haas.missing-feed-mode`
+
+- **Severity:** warning
+- **Matcher:** `/Axis motion before any feed mode \(G93\/G94\/G95\)/`
+- **Summary:** Select G93/G94/G95 feed mode before axis motion (parallel to missing unit mode).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G20
+G17
+G0 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G20
+G17
+G94
+G0 X0
+M30
+```
+
+### `haas.g93-and-g94-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G93 and G94 on the same block/`
+- **Summary:** Do not select inverse-time (G93) and per-minute (G94) feed on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G93 G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G93
+G94
+M30
+```
+
+### `haas.g93-and-g95-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G93 and G95 on the same block/`
+- **Summary:** Do not select inverse-time (G93) and per-rev (G95) feed on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G93 G95
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G93
+G95
+M30
+```
+
+### `haas.g93-and-g94-mixed`
+
+- **Severity:** warning
+- **Matcher:** `/Program contains both G93 and G94/`
+- **Summary:** Mixing G93 and G94 feed modes in one program is ambiguous — pick one.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G93
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G93
+M30
+```
+
+### `haas.missing-plane-mode`
+
+- **Severity:** warning
+- **Matcher:** `/Axis motion before any plane mode \(G17\/G18\/G19\)/`
+- **Summary:** Select G17/G18/G19 plane before axis motion (parallel to missing unit mode).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G20
+G94
+G0 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G20
+G94
+G17
+G0 X0
 M30
 ```
 

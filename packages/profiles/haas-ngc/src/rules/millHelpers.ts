@@ -221,6 +221,27 @@ export function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
   return undefined;
 }
 
+export function hasExactG93(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 93;
+  });
+}
+
+export function hasExactG94(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 94;
+  });
+}
+
+export function hasExactG95(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 95;
+  });
+}
+
 export function hasExactG93Or94Or95(block: { words: Word[] }): 93 | 94 | 95 | undefined {
   let mode: 93 | 94 | 95 | undefined;
   for (const w of block.words) {

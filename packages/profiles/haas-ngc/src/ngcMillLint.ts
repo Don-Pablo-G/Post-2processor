@@ -20,7 +20,11 @@ import {
   hasExactG80,
   hasExactG90Or91,
   hasExactG92,
+  hasExactG93,
+  hasExactG94,
+  hasExactG95,
   hasExactG94Or95,
+  hasExactG93Or94Or95,
   hasExactG20Or21,
   hasExactPeckCycle,
   hasExactPlane,
@@ -196,6 +200,10 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let warnedMissingDistanceMode = false;
   let sawUnitMode = false;
   let warnedMissingUnitMode = false;
+  let sawFeedMode = false;
+  let warnedMissingFeedMode = false;
+  let sawPlaneMode = false;
+  let warnedMissingPlaneMode = false;
   let activeWorkOffset: number | undefined;
   let activeUnitMode: 20 | 21 | undefined;
   let lastToolNumber: number | undefined;
@@ -209,6 +217,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let cutterSide: 41 | 42 | undefined;
   let firstG20Block = -1;
   let firstG21Block = -1;
+  let firstG93Block = -1;
   let firstG94Block = -1;
   let firstG95Block = -1;
   let firstG61Block = -1;
@@ -866,6 +875,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode select (G90/G91) while tool length compensation (G43) is still active — cancel with G49 before changing distance mode.",
+          blockIndex: index
+        });
+      }
       activeDistanceMode = distanceMode;
       incrementalActive = distanceMode === 91;
       sawDistanceMode = true;
@@ -873,6 +890,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     const plane = hasExactPlane(block);
     if (plane !== undefined) {
+      sawPlaneMode = true;
       if (sawAxisMotion && activePlane !== undefined && activePlane !== plane) {
         issues.push({
           severity: "warning",
@@ -1131,6 +1149,40 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       warnedMissingUnitMode = true;
     }
 
+    if (hasExactG93Or94Or95(block) !== undefined) {
+      sawFeedMode = true;
+    }
+
+    if (
+      !warnedMissingFeedMode &&
+      (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
+      hasAxisWord(block) &&
+      !sawFeedMode
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Axis motion before any feed mode (G93/G94/G95) — select inverse-time, per-minute, or per-rev feed mode first.",
+        blockIndex: index
+      });
+      warnedMissingFeedMode = true;
+    }
+
+    if (
+      !warnedMissingPlaneMode &&
+      (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
+      hasAxisWord(block) &&
+      !sawPlaneMode
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Axis motion before any plane mode (G17/G18/G19) — select XY/XZ/YZ plane first.",
+        blockIndex: index
+      });
+      warnedMissingPlaneMode = true;
+    }
+
     if (hasExactFeedMotion(block) || hasCannedCycle(block)) {
       sawFeedOrCanned = true;
     }
@@ -1205,6 +1257,24 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         });
       }
       activeFeedMode = feedModeEarly;
+    }
+
+    if (hasExactG93(block) && hasExactG94(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G93 and G94 on the same block — pick one feed mode (inverse-time or per-minute).",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG93(block) && hasExactG95(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G93 and G95 on the same block — pick one feed mode (inverse-time or per-revolution).",
+        blockIndex: index
+      });
     }
 
     const pathModeEarly = hasExactG61Or64(block);
@@ -1434,6 +1504,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Spindle speed (S) while coolant is still on — turn coolant off with M9 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while tool length compensation (G43) is still active — cancel with G49 before changing spindle speed.",
           blockIndex: index
         });
       }
@@ -2586,6 +2664,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG0(block) && incrementalActive) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G0 rapid while incremental mode (G91) is active — restore G90 before rapid moves.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactFeedMotion(block) && !hasLetter(block, "F") && !sawAnyFeedRate) {
       issues.push({
         severity: "warning",
@@ -2699,6 +2786,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasCannedCycle(block)) {
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Canned cycle while tool length compensation (G43) is still active — cancel with G49 before the cycle.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Canned cycle while coolant is still on — turn coolant off with M9 before the cycle.",
+          blockIndex: index
+        });
+      }
       if (cutterCompActive && !hasExactG40(block)) {
         issues.push({
           severity: "warning",
@@ -2986,6 +3089,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     if (unitMode === 20 && firstG20Block < 0) firstG20Block = index;
     if (unitMode === 21 && firstG21Block < 0) firstG21Block = index;
 
+    if (hasExactG93(block) && firstG93Block < 0) firstG93Block = index;
     const feedMode = hasExactG94Or95(block);
     if (feedMode === 94 && firstG94Block < 0) firstG94Block = index;
     if (feedMode === 95 && firstG95Block < 0) firstG95Block = index;
@@ -3021,6 +3125,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       severity: "warning",
       message: "Program contains both G94 and G95 — pick one feed mode (per-minute or per-revolution).",
       blockIndex: Math.min(firstG94Block, firstG95Block)
+    });
+  }
+
+  if (firstG93Block >= 0 && firstG94Block >= 0) {
+    issues.push({
+      severity: "warning",
+      message: "Program contains both G93 and G94 — pick one feed mode (inverse-time or per-minute).",
+      blockIndex: Math.min(firstG93Block, firstG94Block)
     });
   }
 

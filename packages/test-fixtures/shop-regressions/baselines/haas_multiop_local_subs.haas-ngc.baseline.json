@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_multiop_local_subs.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 16,
+  "lintIssueCount": 19,
   "lintIssues": [
     {
       "severity": "warning",
@@ -14,6 +14,10 @@
     {
       "severity": "warning",
       "message": "Cancel family conflict on the same block — split G40/G49/G80/G69/G50 cancels into separate blocks."
+    },
+    {
+      "severity": "warning",
+      "message": "D offset word while tool length compensation (G43) is still active — cancel with G49 before changing D offsets."
     },
     {
       "severity": "warning",
@@ -30,6 +34,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any feed mode (G93/G94/G95) — select inverse-time, per-minute, or per-rev feed mode first."
     },
     {
       "severity": "warning",
@@ -54,6 +62,10 @@
     {
       "severity": "warning",
       "message": "Canned cycle (G73/G76/G81-G83/G85-G89) while spindle is off — start spindle before the cycle."
+    },
+    {
+      "severity": "warning",
+      "message": "Canned cycle while tool length compensation (G43) is still active — cancel with G49 before the cycle."
     },
     {
       "severity": "warning",

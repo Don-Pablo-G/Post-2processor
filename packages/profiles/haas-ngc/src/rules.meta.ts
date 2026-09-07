@@ -4285,5 +4285,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Cancel tool length compensation with G49 before changing D offsets.",
     positiveSnippet: "O0001\nG43 H1 Z1.\nD2\nG49\nM30\n",
     negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nD2\nM30\n"
+  },
+  {
+    id: "haas.s-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Spindle speed \(S\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before changing spindle speed.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nS1200\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nS1200\nM30\n"
+  },
+  {
+    id: "haas.g0-while-incremental",
+    severity: "warning",
+    messageMatcher: /G0 rapid while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G0 rapid moves.",
+    positiveSnippet: "O0001\nG91\nG0 X1.\nG90\nM30\n",
+    negativeSnippet: "O0001\nG90\nG0 X1.\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before changing distance mode.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nG90\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nG90\nM30\n"
+  },
+  {
+    id: "haas.canned-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Canned cycle while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before a canned cycle.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nG81 X1. Y1. Z-1. R.1 F10.\nG80\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nG81 X1. Y1. Z-1. R.1 F10.\nG80\nM30\n"
+  },
+  {
+    id: "haas.canned-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Canned cycle while coolant is still on/,
+    summary: "Turn coolant off with M9 before a canned cycle.",
+    positiveSnippet: "O0001\nM8\nG81 X1. Y1. Z-1. R.1 F10.\nG80\nM9\nM30\n",
+    negativeSnippet: "O0001\nM8\nM9\nG81 X1. Y1. Z-1. R.1 F10.\nG80\nM30\n"
+  },
+  {
+    id: "haas.missing-feed-mode",
+    severity: "warning",
+    messageMatcher: /Axis motion before any feed mode \(G93\/G94\/G95\)/,
+    summary: "Select G93/G94/G95 feed mode before axis motion (parallel to missing unit mode).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG20\nG17\nG0 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG20\nG17\nG94\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.g93-and-g94-same-block",
+    severity: "warning",
+    messageMatcher: /G93 and G94 on the same block/,
+    summary: "Do not select inverse-time (G93) and per-minute (G94) feed on one block.",
+    positiveSnippet: "O0001\nG93 G94\nM30\n",
+    negativeSnippet: "O0001\nG93\nG94\nM30\n"
+  },
+  {
+    id: "haas.g93-and-g95-same-block",
+    severity: "warning",
+    messageMatcher: /G93 and G95 on the same block/,
+    summary: "Do not select inverse-time (G93) and per-rev (G95) feed on one block.",
+    positiveSnippet: "O0001\nG93 G95\nM30\n",
+    negativeSnippet: "O0001\nG93\nG95\nM30\n"
+  },
+  {
+    id: "haas.g93-and-g94-mixed",
+    severity: "warning",
+    messageMatcher: /Program contains both G93 and G94/,
+    summary: "Mixing G93 and G94 feed modes in one program is ambiguous — pick one.",
+    positiveSnippet: "O0001\nG93\nG94\nM30\n",
+    negativeSnippet: "O0001\nG93\nM30\n"
+  },
+  {
+    id: "haas.missing-plane-mode",
+    severity: "warning",
+    messageMatcher: /Axis motion before any plane mode \(G17\/G18\/G19\)/,
+    summary: "Select G17/G18/G19 plane before axis motion (parallel to missing unit mode).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG20\nG94\nG0 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG20\nG94\nG17\nG0 X0\nM30\n"
   }
 ];

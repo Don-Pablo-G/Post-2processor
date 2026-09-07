@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_if_goto_macro_branch.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 10,
+  "lintIssueCount": 11,
   "lintIssues": [
     {
       "severity": "warning",
@@ -22,6 +22,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any feed mode (G93/G94/G95) — select inverse-time, per-minute, or per-rev feed mode first."
     },
     {
       "severity": "warning",
