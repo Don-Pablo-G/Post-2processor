@@ -4769,5 +4769,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Stop the spindle with M5 before canceling the canned cycle with G80.",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG80\nM5\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG80\nM30\n"
+  },
+  {
+    id: "haas.m88-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M88 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG41 D1\nM88\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG41 D1\nG40\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-canned",
+    severity: "warning",
+    messageMatcher: /M88 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nM88\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-rotation",
+    severity: "warning",
+    messageMatcher: /M88 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68\nM88\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68\nG69\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-scaling",
+    severity: "warning",
+    messageMatcher: /M88 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51\nM88\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51\nG50\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-incremental",
+    severity: "warning",
+    messageMatcher: /M88 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91\nM88\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91\nG90\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M88 while flood\/mist coolant is still on/,
+    summary: "Turn flood/mist coolant off with M9 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM88\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M88 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before through-spindle coolant (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG43 H1 Z25.\nM88\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG43 H1 Z25.\nG49\nM88\nM30\n"
+  },
+  {
+    id: "haas.m88-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /M88 while spindle is off/,
+    summary: "Start the spindle (M3/M4) before turning through-spindle coolant on (M88).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM88\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM30\n"
+  },
+  {
+    id: "haas.m89-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M89 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG41 D1\nM89\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG41 D1\nG40\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-canned",
+    severity: "warning",
+    messageMatcher: /M89 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nM89\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM89\nM30\n"
   }
 ];

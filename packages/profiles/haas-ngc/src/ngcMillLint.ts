@@ -1688,6 +1688,78 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       }
     }
 
+    if (hasWordM(block, 88)) {
+      const m88Guards: Array<{ test: boolean; message: string }> = [
+        {
+          test: cutterCompActive && !hasExactG40(block),
+          message:
+            "M88 while cutter compensation (G41/G42) is still active — cancel with G40 before through-spindle coolant."
+        },
+        {
+          test: cannedActive && !hasExactG80(block),
+          message:
+            "M88 while a canned cycle is still active — cancel with G80 before through-spindle coolant."
+        },
+        {
+          test: rotationActive && !hasExactG69(block),
+          message:
+            "M88 while coordinate rotation (G68) is still active — cancel with G69 before through-spindle coolant."
+        },
+        {
+          test: scalingActive && !hasExactG50(block),
+          message:
+            "M88 while scaling (G51) is still active — cancel with G50 before through-spindle coolant."
+        },
+        {
+          test: incrementalActive,
+          message:
+            "M88 while incremental mode (G91) is active — restore G90 before through-spindle coolant."
+        },
+        {
+          test: coolantActive && !hasCoolantOff(block),
+          message:
+            "M88 while flood/mist coolant is still on — turn coolant off with M9 before through-spindle coolant."
+        },
+        {
+          test: toolLengthActive && !hasExactG49(block),
+          message:
+            "M88 while tool length compensation (G43) is still active — cancel with G49 before through-spindle coolant."
+        }
+      ];
+      for (const guard of m88Guards) {
+        if (guard.test) {
+          issues.push({ severity: "warning", message: guard.message, blockIndex: index });
+        }
+      }
+      if (!spindleActive && !hasSpindleOn(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M88 while spindle is off — start spindle (M3/M4) before through-spindle coolant.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasWordM(block, 89)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while cutter compensation (G41/G42) is still active — cancel with G40 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while a canned cycle is still active — cancel with G80 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+    }
+
     if (hasExactFeedMotion(block) && !spindleActive) {
       issues.push({
         severity: "warning",
