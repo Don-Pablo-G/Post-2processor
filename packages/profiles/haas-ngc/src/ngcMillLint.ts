@@ -703,6 +703,35 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G43 while coordinate rotation (G68) is still active — cancel with G69 before applying tool length.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G43 while scaling (G51) is still active — cancel with G50 before applying tool length.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G43 while coolant is still on — turn coolant off with M9 before applying tool length.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G43 while incremental mode (G91) is active — restore G90 before applying tool length.",
+          blockIndex: index
+        });
+      }
       toolLengthActive = true;
     }
     if (hasExactG49(block)) {
@@ -786,6 +815,36 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "Plane mode changed after axis motion — verify intentional G17/G18/G19 switch mid-program.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Plane select (G17/G18/G19) while cutter compensation (G41/G42) is still active — cancel with G40 before changing plane.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Plane select (G17/G18/G19) while a canned cycle is still active — cancel with G80 before changing plane.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Plane select (G17/G18/G19) while coordinate rotation (G68) is still active — cancel with G69 before changing plane.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Plane select (G17/G18/G19) while scaling (G51) is still active — cancel with G50 before changing plane.",
           blockIndex: index
         });
       }
@@ -2021,6 +2080,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Canned cycle while coordinate rotation (G68) is still active — cancel with G69 before the cycle.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Canned cycle while scaling (G51) is still active — cancel with G50 before the cycle.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "Canned cycle while incremental mode (G91) is active — restore G90 before the cycle.",
           blockIndex: index
         });
       }

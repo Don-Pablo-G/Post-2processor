@@ -1863,6 +1863,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
   },
   {
+    id: "haas.g43-while-rotation",
+    severity: "warning",
+    messageMatcher: /G43 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before applying G43 tool length.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG43 H1 Z25.\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG69\nG43 H1 Z25.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g43-while-scaling",
+    severity: "warning",
+    messageMatcher: /G43 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before applying G43 tool length.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG43 H1 Z25.\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG50\nG43 H1 Z25.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g43-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G43 while coolant is still on/,
+    summary: "Turn coolant off with M9 before applying G43 tool length.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG43 H1 Z25.\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG43 H1 Z25.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g43-while-incremental",
+    severity: "warning",
+    messageMatcher: /G43 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before applying G43 tool length.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG43 H1 Z25.\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG43 H1 Z25.\nM5\nM30\n"
+  },
+  {
+    id: "haas.canned-while-scaling",
+    severity: "warning",
+    messageMatcher: /Canned cycle while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before a canned cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG81 Z-1. R0.1 F10.\nG50\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.canned-while-incremental",
+    severity: "warning",
+    messageMatcher: /Canned cycle while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before a canned cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG81 Z-1. R0.1 F10.\nG90\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.plane-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG18\nG40\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG18\nG17\nM5\nM30\n"
+  },
+  {
+    id: "haas.plane-while-canned",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG18\nG80\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG18\nG17\nM5\nM30\n"
+  },
+  {
+    id: "haas.plane-while-rotation",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG18\nG69\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG18\nG17\nM5\nM30\n"
+  },
+  {
+    id: "haas.plane-while-scaling",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG18\nG50\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG18\nG17\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,
