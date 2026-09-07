@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 491 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 501 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -503,6 +503,16 @@ Total rules: 491 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.a-while-scaling` | warning | — | — | Cancel scaling before an orphan A rotary word. |
 | `haas.a-while-incremental` | warning | — | — | Restore G90 before an orphan A rotary word. |
 | `haas.a-while-coolant-on` | warning | — | — | Turn coolant off before an orphan A rotary word. |
+| `haas.b-while-rotation` | warning | — | — | Cancel coordinate rotation before an orphan B rotary word. |
+| `haas.b-while-scaling` | warning | — | — | Cancel scaling before an orphan B rotary word. |
+| `haas.b-while-incremental` | warning | — | — | Restore G90 before an orphan B rotary word. |
+| `haas.b-while-coolant-on` | warning | — | — | Turn coolant off before an orphan B rotary word. |
+| `haas.b-while-tool-length` | warning | — | — | Cancel tool length compensation before an orphan B rotary word. |
+| `haas.c-while-rotation` | warning | — | — | Cancel coordinate rotation before an orphan C rotary word. |
+| `haas.c-while-scaling` | warning | — | — | Cancel scaling before an orphan C rotary word. |
+| `haas.c-while-incremental` | warning | — | — | Restore G90 before an orphan C rotary word. |
+| `haas.c-while-coolant-on` | warning | — | — | Turn coolant off before an orphan C rotary word. |
+| `haas.c-while-tool-length` | warning | — | — | Cancel tool length compensation before an orphan C rotary word. |
 
 ### `haas.m6-without-t`
 
@@ -16114,6 +16124,266 @@ O0001
 M8
 G1 A10.
 M9
+M30
+```
+
+### `haas.b-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+B10.
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+G1 B10.
+G69
+M30
+```
+
+### `haas.b-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G51 P2.
+B10.
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G51 P2.
+G1 B10.
+G50
+M30
+```
+
+### `haas.b-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G91
+B10.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G91
+G1 B10.
+G90
+M30
+```
+
+### `haas.b-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while coolant is still on/`
+- **Summary:** Turn coolant off before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M8
+B10.
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M8
+G1 B10.
+M9
+M30
+```
+
+### `haas.b-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+B10.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G1 B10.
+G49
+M30
+```
+
+### `haas.c-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+C10.
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+G1 C10.
+G69
+M30
+```
+
+### `haas.c-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G51 P2.
+C10.
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G51 P2.
+G1 C10.
+G50
+M30
+```
+
+### `haas.c-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G91
+C10.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G91
+G1 C10.
+G90
+M30
+```
+
+### `haas.c-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while coolant is still on/`
+- **Summary:** Turn coolant off before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M8
+C10.
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M8
+G1 C10.
+M9
+M30
+```
+
+### `haas.c-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+C10.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G1 C10.
+G49
 M30
 ```
 

@@ -4125,5 +4125,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Turn coolant off before an orphan A rotary word.",
     positiveSnippet: "O0001\nM8\nA10.\nM9\nM30\n",
     negativeSnippet: "O0001\nM8\nG1 A10.\nM9\nM30\n"
+  },
+  {
+    id: "haas.b-while-rotation",
+    severity: "warning",
+    messageMatcher: /B rotary word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation before an orphan B rotary word.",
+    positiveSnippet: "O0001\nG68 X0 Y0 R45.\nB10.\nG69\nM30\n",
+    negativeSnippet: "O0001\nG68 X0 Y0 R45.\nG1 B10.\nG69\nM30\n"
+  },
+  {
+    id: "haas.b-while-scaling",
+    severity: "warning",
+    messageMatcher: /B rotary word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling before an orphan B rotary word.",
+    positiveSnippet: "O0001\nG51 P2.\nB10.\nG50\nM30\n",
+    negativeSnippet: "O0001\nG51 P2.\nG1 B10.\nG50\nM30\n"
+  },
+  {
+    id: "haas.b-while-incremental",
+    severity: "warning",
+    messageMatcher: /B rotary word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before an orphan B rotary word.",
+    positiveSnippet: "O0001\nG91\nB10.\nG90\nM30\n",
+    negativeSnippet: "O0001\nG91\nG1 B10.\nG90\nM30\n"
+  },
+  {
+    id: "haas.b-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /B rotary word while coolant is still on/,
+    summary: "Turn coolant off before an orphan B rotary word.",
+    positiveSnippet: "O0001\nM8\nB10.\nM9\nM30\n",
+    negativeSnippet: "O0001\nM8\nG1 B10.\nM9\nM30\n"
+  },
+  {
+    id: "haas.b-while-tool-length",
+    severity: "warning",
+    messageMatcher: /B rotary word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation before an orphan B rotary word.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nB10.\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG1 B10.\nG49\nM30\n"
+  },
+  {
+    id: "haas.c-while-rotation",
+    severity: "warning",
+    messageMatcher: /C rotary word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation before an orphan C rotary word.",
+    positiveSnippet: "O0001\nG68 X0 Y0 R45.\nC10.\nG69\nM30\n",
+    negativeSnippet: "O0001\nG68 X0 Y0 R45.\nG1 C10.\nG69\nM30\n"
+  },
+  {
+    id: "haas.c-while-scaling",
+    severity: "warning",
+    messageMatcher: /C rotary word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling before an orphan C rotary word.",
+    positiveSnippet: "O0001\nG51 P2.\nC10.\nG50\nM30\n",
+    negativeSnippet: "O0001\nG51 P2.\nG1 C10.\nG50\nM30\n"
+  },
+  {
+    id: "haas.c-while-incremental",
+    severity: "warning",
+    messageMatcher: /C rotary word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before an orphan C rotary word.",
+    positiveSnippet: "O0001\nG91\nC10.\nG90\nM30\n",
+    negativeSnippet: "O0001\nG91\nG1 C10.\nG90\nM30\n"
+  },
+  {
+    id: "haas.c-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /C rotary word while coolant is still on/,
+    summary: "Turn coolant off before an orphan C rotary word.",
+    positiveSnippet: "O0001\nM8\nC10.\nM9\nM30\n",
+    negativeSnippet: "O0001\nM8\nG1 C10.\nM9\nM30\n"
+  },
+  {
+    id: "haas.c-while-tool-length",
+    severity: "warning",
+    messageMatcher: /C rotary word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation before an orphan C rotary word.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nC10.\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG1 C10.\nG49\nM30\n"
   }
 ];

@@ -68,8 +68,16 @@ const ROTARY_ORPHAN_FAMILIES = [
     prefix: "a",
     modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on"]
   },
-  { letter: "B", prefix: "b", modes: ["cutter-comp", "canned"] },
-  { letter: "C", prefix: "c", modes: ["cutter-comp", "canned"] }
+  {
+    letter: "B",
+    prefix: "b",
+    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on", "tool-length"]
+  },
+  {
+    letter: "C",
+    prefix: "c",
+    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on", "tool-length"]
+  }
 ] as const;
 
 const ROTARY_WHILE_CODES = ROTARY_ORPHAN_FAMILIES.flatMap(({ prefix, modes }) =>
