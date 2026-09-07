@@ -1285,6 +1285,49 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG93(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while cutter compensation (G41/G42) is still active — cancel with G40 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while a canned cycle is still active — cancel with G80 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while coordinate rotation (G68) is still active — cancel with G69 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while scaling (G51) is still active — cancel with G50 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while tool length compensation (G43) is still active — cancel with G49 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
+    }
+
     const exactGCodes = exactGCodesOnBlock(block);
     const pushExclusiveGPair = (a: number, b: number, message: string) => {
       if (exactGCodes.has(a) && exactGCodes.has(b)) {
@@ -1329,6 +1372,46 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "G10 while a canned cycle is still active — cancel with G80 before G10 data setting.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while coordinate rotation (G68) is still active — cancel with G69 before G10 data setting.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while scaling (G51) is still active — cancel with G50 before G10 data setting.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while incremental mode (G91) is active — restore G90 before G10 data setting.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while coolant is still on — turn coolant off with M9 before G10 data setting.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while tool length compensation (G43) is still active — cancel with G49 before G10 data setting.",
           blockIndex: index
         });
       }

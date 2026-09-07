@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 541 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 551 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -553,6 +553,16 @@ Total rules: 541 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g93-and-g95-mixed` | warning | — | — | Mixing G93 and G95 feed modes in one program is ambiguous — pick one. |
 | `haas.g10-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a G10 data setting block. |
 | `haas.g10-while-canned` | warning | — | — | Cancel canned cycles with G80 before a G10 data setting block. |
+| `haas.g10-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before a G10 data setting block. |
+| `haas.g10-while-scaling` | warning | — | — | Cancel scaling with G50 before a G10 data setting block. |
+| `haas.g10-while-incremental` | warning | — | — | Restore G90 absolute mode before a G10 data setting block. |
+| `haas.g10-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a G10 data setting block. |
+| `haas.g10-while-tool-length` | warning | — | — | Cancel tool length with G49 before a G10 data setting block. |
+| `haas.g93-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before selecting inverse-time feed (G93). |
+| `haas.g93-while-canned` | warning | — | — | Cancel canned cycles with G80 before selecting inverse-time feed (G93). |
+| `haas.g93-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before selecting inverse-time feed (G93). |
+| `haas.g93-while-scaling` | warning | — | — | Cancel scaling with G50 before selecting inverse-time feed (G93). |
+| `haas.g93-while-tool-length` | warning | — | — | Cancel tool length with G49 before selecting inverse-time feed (G93). |
 
 ### `haas.m6-without-t`
 
@@ -17526,6 +17536,316 @@ S1200 M3
 G81 Z-1. R0.1 F10.
 G80
 G10 L2 P1 X0
+M30
+```
+
+### `haas.g10-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G10 L2 P1 X0
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G69
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g10-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G10 L2 P1 X0
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G50
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g10-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 absolute mode before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G10 L2 P1 X0
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g10-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G10 L2 P1 X0
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G10 L2 P1 X0
+M5
+M30
+```
+
+### `haas.g10-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G10 L2 P1 X0
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g93-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1 X0 Y0
+G93
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1 X0 Y0
+G40
+G93
+M30
+```
+
+### `haas.g93-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G93
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G93
+M30
+```
+
+### `haas.g93-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G93
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G69
+G93
+M30
+```
+
+### `haas.g93-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G93
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G50
+G93
+M30
+```
+
+### `haas.g93-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G93
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G49
+G93
 M30
 ```
 

@@ -4527,5 +4527,87 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Cancel canned cycles with G80 before a G10 data setting block.",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG10 L2 P1 X0\nG80\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g10-while-rotation",
+    severity: "warning",
+    messageMatcher: /G10 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68\nG10 L2 P1 X0\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g10-while-scaling",
+    severity: "warning",
+    messageMatcher: /G10 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51\nG10 L2 P1 X0\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g10-while-incremental",
+    severity: "warning",
+    messageMatcher: /G10 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 absolute mode before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nG10 L2 P1 X0\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG90\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g10-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G10 while coolant is still on/,
+    summary: "Turn coolant off with M9 before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG10 L2 P1 X0\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG10 L2 P1 X0\nM5\nM30\n"
+  },
+  {
+    id: "haas.g10-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G10 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG10 L2 P1 X0\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g93-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G93 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before selecting inverse-time feed (G93).",
+    positiveSnippet:
+      "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1 X0 Y0\nG93\nG40\nM30\n",
+    negativeSnippet:
+      "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1 X0 Y0\nG40\nG93\nM30\n"
+  },
+  {
+    id: "haas.g93-while-canned",
+    severity: "warning",
+    messageMatcher: /G93 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before selecting inverse-time feed (G93).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG93\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG93\nM30\n"
+  },
+  {
+    id: "haas.g93-while-rotation",
+    severity: "warning",
+    messageMatcher: /G93 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before selecting inverse-time feed (G93).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68\nG93\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nG93\nM30\n"
+  },
+  {
+    id: "haas.g93-while-scaling",
+    severity: "warning",
+    messageMatcher: /G93 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before selecting inverse-time feed (G93).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51\nG93\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nG93\nM30\n"
+  },
+  {
+    id: "haas.g93-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G93 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before selecting inverse-time feed (G93).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG93\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG93\nM30\n"
   }
 ];
