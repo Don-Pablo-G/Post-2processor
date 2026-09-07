@@ -371,6 +371,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let spindleActive = false;
   let activeSpindleDirection: "cw" | "ccw" | undefined;
   let coolantActive = false;
+  let sawCoolantOnEver = false;
   let toolLengthActive = false;
   let incrementalActive = false;
   let activeDistanceMode: 90 | 91 | undefined;
@@ -589,6 +590,40 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     const tWordEarly = block.words.filter((w) => w.letter === "T").at(-1);
     const tNumEarly = literalToolNumber(tWordEarly?.value);
     if (tNumEarly !== undefined && tNumEarly > 0) {
+      if (!hasWordM(block, 6)) {
+        if (cutterCompActive && !hasExactG40(block)) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while cutter compensation (G41/G42) is still active — cancel with G40 before staging the next tool.",
+            blockIndex: index
+          });
+        }
+        if (cannedActive && !hasExactG80(block)) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while a canned cycle is still active — cancel with G80 before staging the next tool.",
+            blockIndex: index
+          });
+        }
+        if (toolLengthActive && !hasExactG49(block)) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while tool length compensation (G43) is still active — cancel with G49 before staging the next tool.",
+            blockIndex: index
+          });
+        }
+        if (rotationActive && !hasExactG69(block)) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while coordinate rotation (G68) is still active — cancel with G69 before staging the next tool.",
+            blockIndex: index
+          });
+        }
+      }
       lastToolNumber = tNumEarly;
     }
 
@@ -759,7 +794,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Coolant on (M7/M8) while a canned cycle is still active — cancel with G80 before coolant.",
+          blockIndex: index
+        });
+      }
       coolantActive = true;
+      sawCoolantOnEver = true;
     }
     if (hasCoolantOff(block)) {
       if (cutterCompActive && !hasExactG40(block)) {
@@ -1459,6 +1502,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (
+      hasExactFeedMotion(block) &&
+      spindleActive &&
+      !coolantActive &&
+      sawCoolantOnEver &&
+      !hasCoolantOn(block)
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G1/G2/G3 while coolant is off after coolant was used earlier — turn coolant on (M7/M8) before feed motion.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactTappingCycle(block) && !spindleActive) {
       issues.push({
         severity: "warning",
@@ -1837,6 +1895,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G92 while coolant is still on — turn coolant off with M9 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G92 while incremental mode (G91) is active — restore G90 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactG52(block)) {
@@ -1881,6 +1953,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "G52 while tool length compensation (G43) is still active — cancel with G49 before a local offset.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G52 while coolant is still on — turn coolant off with M9 before a local offset.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G52 while incremental mode (G91) is active — restore G90 before a local offset.",
           blockIndex: index
         });
       }

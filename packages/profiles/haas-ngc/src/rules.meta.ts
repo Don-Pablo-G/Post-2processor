@@ -2423,6 +2423,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nG52 X10.\nM5\nM30\n"
   },
   {
+    id: "haas.g92-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G92 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G92.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG92 X0\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG92 X0\nM5\nM30\n"
+  },
+  {
+    id: "haas.g92-while-incremental",
+    severity: "warning",
+    messageMatcher: /G92 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G92.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG92 X0\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG92 X0\nM5\nM30\n"
+  },
+  {
+    id: "haas.g52-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G52 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G52.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG52 X10.\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG52 X10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g52-while-incremental",
+    severity: "warning",
+    messageMatcher: /G52 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G52.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG52 X10.\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG52 X10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-while-canned",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before coolant.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM8\nG80\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-while-coolant-off",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 while coolant is off after coolant was used earlier/,
+    summary: "Turn coolant back on before feed motion after coolant was used earlier.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG1 X1. F10.\nM9\nG1 X2. F10.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG1 X1. F10.\nM9\nM8\nG1 X2. F10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.t-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Tool select \(T\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before staging the next tool.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nT2\nG40\nM6\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nT2\nM6\nM5\nM30\n"
+  },
+  {
+    id: "haas.t-while-canned",
+    severity: "warning",
+    messageMatcher: /Tool select \(T\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before staging the next tool.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nT2\nG80\nM6\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nT2\nM6\nM5\nM30\n"
+  },
+  {
+    id: "haas.t-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Tool select \(T\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before staging the next tool.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nT2\nG49\nM6\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nT2\nM6\nM5\nM30\n"
+  },
+  {
+    id: "haas.t-while-rotation",
+    severity: "warning",
+    messageMatcher: /Tool select \(T\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before staging the next tool.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nT2\nG69\nM6\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nT2\nM6\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,
