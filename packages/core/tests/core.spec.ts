@@ -5582,6 +5582,51 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(false);
   });
 
+  it("emits one cancel-family issue for any same-block cancel pair", () => {
+    const cancels = ["G40", "G49", "G80", "G69", "G50"];
+    for (let i = 0; i < cancels.length; i += 1) {
+      for (let j = i + 1; j < cancels.length; j += 1) {
+        const ast = parse(`O1\n${cancels[i]} ${cancels[j]}\nM30`, haasNgcProfilePackaged);
+        const familyIssues = lint(ast, haasNgcProfilePackaged).filter(
+          (issue) => issue.code === "haas.cancel-conflict-same-block"
+        );
+        expect(familyIssues).toHaveLength(1);
+      }
+    }
+  });
+
+  it("emits only one cancel-family issue for three cancels on a block", () => {
+    const ast = parse("O1\nG40 G49 G80\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).filter(
+        (issue) => issue.code === "haas.cancel-conflict-same-block"
+      )
+    ).toHaveLength(1);
+  });
+
+  it("warns for G40, G80, G0, spindle, and coolant actions while G43 is active", () => {
+    const ast = parse(
+      "O1\nG43 H1 Z1.\nG40\nG80\nG0 X1.\nS1000 M3\nM8\nG49\nM9\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    const messages = lint(ast, haasNgcProfilePackaged).map((i) => i.message);
+    for (const prefix of ["G40", "G80", "G0 rapid", "Spindle start (M3/M4)", "Coolant on (M7/M8)"]) {
+      expect(messages.some((m) => m.includes(`${prefix} while tool length compensation`))).toBe(true);
+    }
+  });
+
+  it("warns for G0 while coolant and orphan A while scaling, G91, or coolant", () => {
+    const ast = parse(
+      "O1\nM8\nG0 X1.\nG51 P2.\nA10.\nG50\nG91\nA20.\nG90\nA30.\nM9\nM30",
+      haasNgcProfilePackaged
+    );
+    const messages = lint(ast, haasNgcProfilePackaged).map((i) => i.message);
+    expect(messages.some((m) => m.includes("G0 rapid while coolant is still on"))).toBe(true);
+    expect(messages.some((m) => m.includes("A rotary word while scaling"))).toBe(true);
+    expect(messages.some((m) => m.includes("A rotary word while incremental"))).toBe(true);
+    expect(messages.some((m) => m.includes("A rotary word while coolant"))).toBe(true);
+  });
+
   it("warns R word while cutter compensation is active", () => {
     const ast = parse(
       "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nR0.1\nG40\nM5\nM30",

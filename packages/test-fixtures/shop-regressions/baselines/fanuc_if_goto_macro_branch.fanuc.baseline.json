@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_if_goto_macro_branch.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 8,
+  "lintIssueCount": 10,
   "lintIssues": [
     {
       "severity": "warning",
@@ -10,6 +10,10 @@
     {
       "severity": "warning",
       "message": "Program must end with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Cancel family conflict on the same block — split G40/G49/G80/G69/G50 cancels into separate blocks."
     },
     {
       "severity": "warning",
@@ -30,6 +34,10 @@
     {
       "severity": "warning",
       "message": "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion."
+    },
+    {
+      "severity": "warning",
+      "message": "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves."
     },
     {
       "severity": "warning",

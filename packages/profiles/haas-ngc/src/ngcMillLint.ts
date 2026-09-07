@@ -484,6 +484,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasSpindleOn(block)) {
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while tool length compensation (G43) is still active — cancel with G49 before starting the spindle.",
+          blockIndex: index
+        });
+      }
       if (cannedActive && !hasExactG80(block)) {
         issues.push({
           severity: "warning",
@@ -604,6 +612,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasCoolantOn(block)) {
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Coolant on (M7/M8) while tool length compensation (G43) is still active — cancel with G49 before coolant.",
+          blockIndex: index
+        });
+      }
       if (rotationActive && !hasExactG69(block)) {
         issues.push({
           severity: "warning",
@@ -2442,6 +2458,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
     if (hasG40) {
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G40 while tool length compensation (G43) is still active — cancel with G49 before canceling cutter compensation.",
+          blockIndex: index
+        });
+      }
       if (cannedActive && !hasExactG80(block)) {
         issues.push({
           severity: "warning",
@@ -2529,6 +2553,23 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG0(block) && toolLengthActive && !hasExactG49(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG0(block) && coolantActive && !hasCoolantOff(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G0 rapid while coolant is still on — turn coolant off with M9 before rapid moves.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactFeedMotion(block) && !hasLetter(block, "F") && !sawAnyFeedRate) {
       issues.push({
         severity: "warning",
@@ -2591,6 +2632,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasExactG80(block)) {
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G80 while tool length compensation (G43) is still active — cancel with G49 before canceling the canned cycle.",
+          blockIndex: index
+        });
+      }
       if (cutterCompActive && !hasExactG40(block)) {
         issues.push({
           severity: "warning",

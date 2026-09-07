@@ -63,7 +63,11 @@ const IJK_WHILE_CODES = [
 const L_WHILE_CODES = orphanWhileModeCodes("l");
 
 const ROTARY_ORPHAN_FAMILIES = [
-  { letter: "A", prefix: "a", modes: ["cutter-comp", "canned", "rotation"] },
+  {
+    letter: "A",
+    prefix: "a",
+    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on"]
+  },
   { letter: "B", prefix: "b", modes: ["cutter-comp", "canned"] },
   { letter: "C", prefix: "c", modes: ["cutter-comp", "canned"] }
 ] as const;

@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 481 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 491 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -493,6 +493,16 @@ Total rules: 481 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.b-while-canned` | warning | — | — | Cancel canned cycles before an orphan B rotary word. |
 | `haas.c-while-cutter-comp` | warning | — | — | Cancel cutter compensation before an orphan C rotary word. |
 | `haas.c-while-canned` | warning | — | — | Cancel canned cycles before an orphan C rotary word. |
+| `haas.cancel-conflict-same-block` | warning | — | — | Split multiple modal cancel commands across separate blocks. |
+| `haas.g40-while-tool-length` | warning | — | — | Cancel tool length compensation before G40. |
+| `haas.g80-while-tool-length` | warning | — | — | Cancel tool length compensation before G80. |
+| `haas.g0-while-tool-length` | warning | — | — | Cancel tool length compensation before G0 rapid moves. |
+| `haas.g0-while-coolant-on` | warning | — | — | Turn coolant off before G0 rapid moves. |
+| `haas.spindle-on-while-tool-length` | warning | — | — | Cancel tool length compensation before starting the spindle. |
+| `haas.coolant-on-while-tool-length` | warning | — | — | Cancel tool length compensation before turning coolant on. |
+| `haas.a-while-scaling` | warning | — | — | Cancel scaling before an orphan A rotary word. |
+| `haas.a-while-incremental` | warning | — | — | Restore G90 before an orphan A rotary word. |
+| `haas.a-while-coolant-on` | warning | — | — | Turn coolant off before an orphan A rotary word. |
 
 ### `haas.m6-without-t`
 
@@ -15838,6 +15848,272 @@ O0001
 G81 Z-1. R.1 F10.
 G0 C10.
 G80
+M30
+```
+
+### `haas.cancel-conflict-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/Cancel family conflict on the same block/`
+- **Summary:** Split multiple modal cancel commands across separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G40 G49 G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G40
+G49
+G80
+M30
+```
+
+### `haas.g40-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/G40 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before G40.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G41 D1 X1.
+G40
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G41 D1 X1.
+G49
+G40
+M30
+```
+
+### `haas.g80-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/G80 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before G80.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G81 Z-1. R.1 F10.
+G80
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G81 Z-1. R.1 F10.
+G49
+G80
+M30
+```
+
+### `haas.g0-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before G0 rapid moves.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G0 X1.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+G0 X1.
+M30
+```
+
+### `haas.g0-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while coolant is still on/`
+- **Summary:** Turn coolant off before G0 rapid moves.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M8
+G0 X1.
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M8
+M9
+G0 X1.
+M30
+```
+
+### `haas.spindle-on-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle start \(M3\/M4\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before starting the spindle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+S1000 M3
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+S1000 M3
+M5
+M30
+```
+
+### `haas.coolant-on-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant on \(M7\/M8\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before turning coolant on.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+M8
+G49
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+M8
+M9
+M30
+```
+
+### `haas.a-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G51 P2.
+A10.
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G51 P2.
+G1 A10.
+G50
+M30
+```
+
+### `haas.a-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G91
+A10.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G91
+G1 A10.
+G90
+M30
+```
+
+### `haas.a-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while coolant is still on/`
+- **Summary:** Turn coolant off before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M8
+A10.
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M8
+G1 A10.
+M9
 M30
 ```
 

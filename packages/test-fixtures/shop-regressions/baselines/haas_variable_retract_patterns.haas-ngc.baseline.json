@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_variable_retract_patterns.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 5,
+  "lintIssueCount": 8,
   "lintIssues": [
     {
       "severity": "warning",
@@ -13,7 +13,19 @@
     },
     {
       "severity": "warning",
+      "message": "Cancel family conflict on the same block — split G40/G49/G80/G69/G50 cancels into separate blocks."
+    },
+    {
+      "severity": "warning",
       "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
+    },
+    {
+      "severity": "warning",
+      "message": "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves."
+    },
+    {
+      "severity": "warning",
+      "message": "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves."
     },
     {
       "severity": "warning",

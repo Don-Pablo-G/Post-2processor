@@ -38,6 +38,9 @@ export const MACHINE_POSITION_CONFLICT_MESSAGE =
 export const COORD_SHIFT_CONFLICT_MESSAGE =
   "Coordinate shift conflict on the same block — Haas: split G92/G52 from other modes.";
 
+export const CANCEL_CONFLICT_MESSAGE =
+  "Cancel family conflict on the same block — split G40/G49/G80/G69/G50 cancels into separate blocks.";
+
 const MACHINE_POSITION: ReadonlySet<SameBlockToken> = new Set(["g28", "g30", "g53"]);
 
 const MACHINE_POSITION_PARTNERS: ReadonlySet<SameBlockToken> = new Set([
@@ -66,6 +69,8 @@ const MACHINE_POSITION_PARTNERS: ReadonlySet<SameBlockToken> = new Set([
 ]);
 
 const COORD_SHIFT: ReadonlySet<SameBlockToken> = new Set(["g92", "g52"]);
+
+const CANCEL_FAMILY: ReadonlySet<SameBlockToken> = new Set(["g40", "g49", "g80", "g69", "g50"]);
 
 const COORD_SHIFT_PARTNERS: ReadonlySet<SameBlockToken> = new Set([
   "workOffset",
@@ -180,6 +185,19 @@ export function collectSameBlockMatrixIssues(
     issues.push({
       severity: "warning",
       message: COORD_SHIFT_CONFLICT_MESSAGE,
+      blockIndex
+    });
+  }
+
+  let cancelCount = 0;
+  for (const token of CANCEL_FAMILY) {
+    if (tokens.has(token)) cancelCount += 1;
+  }
+  if (cancelCount >= 2) {
+    issues.push({
+      severity: "warning",
+      code: "haas.cancel-conflict-same-block",
+      message: CANCEL_CONFLICT_MESSAGE,
       blockIndex
     });
   }
