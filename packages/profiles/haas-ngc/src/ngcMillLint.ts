@@ -1593,6 +1593,26 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasWordM(block, 99),
           message:
             "M99 while spindle is still on — stop spindle with M5 before subprogram return."
+        },
+        {
+          test: hasWorkOffset(block),
+          message:
+            "Work offset (G54-G59/G154) while spindle is still on — stop spindle with M5 before selecting a work offset."
+        },
+        {
+          test: hasExactG61Or64(block) !== undefined,
+          message:
+            "Path mode select (G61/G64) while spindle is still on — stop spindle with M5 before changing path mode."
+        },
+        {
+          test: hasExactG93Or94Or95(block) !== undefined,
+          message:
+            "Feed mode select (G93/G94/G95) while spindle is still on — stop spindle with M5 before changing feed mode."
+        },
+        {
+          test: hasExactG20Or21(block) !== undefined,
+          message:
+            "Unit select (G20/G21) while spindle is still on — stop spindle with M5 before changing units."
         }
       ];
       for (const guard of spindleOnGuards) {
@@ -1824,6 +1844,45 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
             "M89 while spindle is off — start spindle (M3/M4) before turning through-spindle coolant off.",
           blockIndex: index
         });
+      }
+    }
+
+    if (!spindleActive && !hasSpindleOn(block)) {
+      const spindleOffGuards: Array<{ test: boolean; message: string }> = [
+        {
+          test: hasExactG41Or42(block),
+          message:
+            "G41/G42 while spindle is off — start spindle (M3/M4) before cutter compensation."
+        },
+        {
+          test: hasExactG93(block),
+          message:
+            "G93 while spindle is off — start spindle (M3/M4) before inverse-time feed mode."
+        },
+        {
+          test: hasExactG95(block),
+          message:
+            "G95 while spindle is off — start spindle (M3/M4) before feed-per-revolution mode."
+        },
+        {
+          test: hasExactG94(block),
+          message:
+            "G94 while spindle is off — start spindle (M3/M4) before feed-per-minute mode."
+        },
+        {
+          test: hasExactG68(block),
+          message:
+            "G68 while spindle is off — start spindle (M3/M4) before coordinate rotation."
+        },
+        {
+          test: hasExactG51(block),
+          message: "G51 while spindle is off — start spindle (M3/M4) before scaling."
+        }
+      ];
+      for (const guard of spindleOffGuards) {
+        if (guard.test) {
+          issues.push({ severity: "warning", message: guard.message, blockIndex: index });
+        }
       }
     }
 

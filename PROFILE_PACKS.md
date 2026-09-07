@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 591 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 601 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -603,6 +603,16 @@ Total rules: 591 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.m97-while-spindle-on` | warning | — | — | Stop the spindle with M5 before the local subprogram call (M97). |
 | `haas.g65-while-spindle-on` | warning | — | — | Stop the spindle with M5 before the macro call (G65). |
 | `haas.m99-while-spindle-on` | warning | — | — | Stop the spindle with M5 before subprogram return (M99). |
+| `haas.g41-g42-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before cutter compensation (G41/G42). |
+| `haas.g93-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before inverse-time feed mode (G93). |
+| `haas.g95-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before feed-per-revolution mode (G95). |
+| `haas.g68-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before coordinate rotation (G68). |
+| `haas.g51-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before scaling (G51). |
+| `haas.work-offset-while-spindle-on` | warning | — | — | Stop the spindle with M5 before selecting a work offset (G54-G59/G154). |
+| `haas.g94-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before feed-per-minute mode (G94). |
+| `haas.path-mode-while-spindle-on` | warning | — | — | Stop the spindle with M5 before changing path mode (G61/G64). |
+| `haas.feed-mode-while-spindle-on` | warning | — | — | Stop the spindle with M5 before changing feed mode (G93/G94/G95). |
+| `haas.unit-while-spindle-on` | warning | — | — | Stop the spindle with M5 before changing units (G20/G21). |
 
 ### `haas.m6-without-t`
 
@@ -19131,6 +19141,279 @@ G54
 S1200 M3
 M5
 M99
+M30
+```
+
+### `haas.g41-g42-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before cutter compensation (G41/G42).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G41 D1
+M30
+```
+
+### `haas.g93-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before inverse-time feed mode (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G93
+M30
+```
+
+### `haas.g95-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G95 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before feed-per-revolution mode (G95).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G95
+M30
+```
+
+### `haas.g68-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G68 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before coordinate rotation (G68).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68
+M30
+```
+
+### `haas.g51-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G51 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before scaling (G51).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51
+M30
+```
+
+### `haas.work-offset-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/Work offset \(G54-G59\/G154\) while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before selecting a work offset (G54-G59/G154).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G55
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G55
+S1200 M3
+M30
+```
+
+### `haas.g94-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G94 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before feed-per-minute mode (G94).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G94
+M30
+```
+
+### `haas.path-mode-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before changing path mode (G61/G64).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G61
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+S1200 M3
+M30
+```
+
+### `haas.feed-mode-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G93\/G94\/G95\) while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before changing feed mode (G93/G94/G95).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G94
+S1200 M3
+M30
+```
+
+### `haas.unit-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/Unit select \(G20\/G21\) while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before changing units (G20/G21).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G21
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G21
+G54
+S1200 M3
 M30
 ```
 
