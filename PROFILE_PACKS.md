@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 621 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 631 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -633,6 +633,16 @@ Total rules: 621 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.unit-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing units (G20/G21). |
 | `haas.feed-mode-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing feed mode (G93/G94/G95). |
 | `haas.path-mode-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing path mode (G61/G64). |
+| `haas.g40-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before canceling cutter compensation (G40). |
+| `haas.g49-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before canceling tool length (G49). |
+| `haas.g69-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before canceling coordinate rotation (G69). |
+| `haas.g50-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before canceling scaling (G50). |
+| `haas.g80-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before canceling the canned cycle (G80). |
+| `haas.g41-g42-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before cutter compensation (G41/G42). |
+| `haas.g43-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before applying tool length (G43). |
+| `haas.g68-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before coordinate rotation (G68). |
+| `haas.g51-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before scaling (G51). |
+| `haas.distance-mode-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing distance mode (G90/G91). |
 
 ### `haas.m6-without-t`
 
@@ -20044,6 +20054,316 @@ S1200 M3
 M88
 M89
 G64
+M30
+```
+
+### `haas.g40-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G40 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before canceling cutter compensation (G40).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G40
+M30
+```
+
+### `haas.g49-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G49 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before canceling tool length (G49).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G49
+M30
+```
+
+### `haas.g69-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G69 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before canceling coordinate rotation (G69).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G69
+M30
+```
+
+### `haas.g50-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G50 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before canceling scaling (G50).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G50
+M30
+```
+
+### `haas.g80-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G80 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before canceling the canned cycle (G80).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G80
+M30
+```
+
+### `haas.g41-g42-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before cutter compensation (G41/G42).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G41 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G41 D1
+M30
+```
+
+### `haas.g43-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G43 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before applying tool length (G43).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G43 H1 Z1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G43 H1 Z1.
+M30
+```
+
+### `haas.g68-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G68 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before coordinate rotation (G68).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G68 R45.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G68 R45.
+M30
+```
+
+### `haas.g51-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G51 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before scaling (G51).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G51
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G51
+M30
+```
+
+### `haas.distance-mode-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing distance mode (G90/G91).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G91
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G91
 M30
 ```
 

@@ -5169,5 +5169,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Turn through-spindle coolant off with M89 before changing path mode (G61/G64).",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG64\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG64\nM30\n"
+  },
+  {
+    id: "haas.g40-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G40 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before canceling cutter compensation (G40).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG40\nM30\n"
+  },
+  {
+    id: "haas.g49-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G49 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before canceling tool length (G49).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG49\nM30\n"
+  },
+  {
+    id: "haas.g69-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G69 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before canceling coordinate rotation (G69).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG69\nM30\n"
+  },
+  {
+    id: "haas.g50-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G50 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before canceling scaling (G50).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG50\nM30\n"
+  },
+  {
+    id: "haas.g80-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G80 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before canceling the canned cycle (G80).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG80\nM30\n"
+  },
+  {
+    id: "haas.g41-g42-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G41\/G42 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before cutter compensation (G41/G42).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG41 D1\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG41 D1\nM30\n"
+  },
+  {
+    id: "haas.g43-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G43 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before applying tool length (G43).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG43 H1 Z1.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG43 H1 Z1.\nM30\n"
+  },
+  {
+    id: "haas.g68-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G68 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before coordinate rotation (G68).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG68 R45.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG68 R45.\nM30\n"
+  },
+  {
+    id: "haas.g51-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G51 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before scaling (G51).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG51\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG51\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before changing distance mode (G90/G91).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG91\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG91\nM30\n"
   }
 ];

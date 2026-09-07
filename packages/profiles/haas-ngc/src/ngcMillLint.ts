@@ -2981,6 +2981,56 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasExactG61Or64(block) !== undefined,
           message:
             "Path mode select (G61/G64) while through-spindle coolant (M88) is still active — turn it off with M89 before changing path mode."
+        },
+        {
+          test: hasExactG40(block),
+          message:
+            "G40 while through-spindle coolant (M88) is still active — turn it off with M89 before canceling cutter compensation."
+        },
+        {
+          test: hasExactG49(block),
+          message:
+            "G49 while through-spindle coolant (M88) is still active — turn it off with M89 before canceling tool length."
+        },
+        {
+          test: hasExactG69(block),
+          message:
+            "G69 while through-spindle coolant (M88) is still active — turn it off with M89 before canceling coordinate rotation."
+        },
+        {
+          test: hasExactG50(block),
+          message:
+            "G50 while through-spindle coolant (M88) is still active — turn it off with M89 before canceling scaling."
+        },
+        {
+          test: hasExactG80(block),
+          message:
+            "G80 while through-spindle coolant (M88) is still active — turn it off with M89 before canceling the canned cycle."
+        },
+        {
+          test: hasExactG41Or42(block),
+          message:
+            "G41/G42 while through-spindle coolant (M88) is still active — turn it off with M89 before cutter compensation."
+        },
+        {
+          test: hasG43Classic(block),
+          message:
+            "G43 while through-spindle coolant (M88) is still active — turn it off with M89 before applying tool length."
+        },
+        {
+          test: hasExactG68(block),
+          message:
+            "G68 while through-spindle coolant (M88) is still active — turn it off with M89 before coordinate rotation."
+        },
+        {
+          test: hasExactG51(block),
+          message:
+            "G51 while through-spindle coolant (M88) is still active — turn it off with M89 before scaling."
+        },
+        {
+          test: hasExactG90Or91(block) !== undefined,
+          message:
+            "Distance mode select (G90/G91) while through-spindle coolant (M88) is still active — turn it off with M89 before changing distance mode."
         }
       ];
       for (const guard of throughSpindleExitGuards) {
