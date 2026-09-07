@@ -4609,5 +4609,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Cancel tool length with G49 before selecting inverse-time feed (G93).",
     positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG93\nG49\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG49\nG93\nM30\n"
+  },
+  {
+    id: "haas.g93-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G93 while coolant is still on/,
+    summary: "Turn coolant off with M9 before selecting inverse-time feed (G93).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG93\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG93\nM30\n"
+  },
+  {
+    id: "haas.g93-while-incremental",
+    severity: "warning",
+    messageMatcher: /G93 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 absolute mode before selecting inverse-time feed (G93).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91\nG93\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91\nG90\nG93\nM30\n"
+  },
+  {
+    id: "haas.g10-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G10 while spindle is still on/,
+    summary: "Stop the spindle with M5 before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG10 L2 P1 X0\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g92-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G92 while spindle is still on/,
+    summary: "Stop the spindle with M5 before shifting coordinates with G92.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG92 X0 Y0\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG92 X0 Y0\nM30\n"
+  },
+  {
+    id: "haas.g52-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G52 while spindle is still on/,
+    summary: "Stop the spindle with M5 before a G52 local offset.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG52 X10.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG52 X10.\nM30\n"
+  },
+  {
+    id: "haas.g28-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G28 while spindle is still on/,
+    summary: "Stop the spindle with M5 before a G28 reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91 G28 Z0\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG91 G28 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g30-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G30 while spindle is still on/,
+    summary: "Stop the spindle with M5 before a G30 secondary reference return.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91 G30 Z0\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG91 G30 Z0\nG90\nM30\n"
+  },
+  {
+    id: "haas.g53-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G53 while spindle is still on/,
+    summary: "Stop the spindle with M5 before a G53 machine-coordinate move.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90 G53 Z0\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG90 G53 Z0\nM30\n"
+  },
+  {
+    id: "haas.g68-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G68 while spindle is still on/,
+    summary: "Stop the spindle with M5 before enabling G68 coordinate rotation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 R45.\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG68 R45.\nG69\nM30\n"
+  },
+  {
+    id: "haas.g51-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G51 while spindle is still on/,
+    summary: "Stop the spindle with M5 before enabling G51 scaling.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG51\nG50\nM30\n"
   }
 ];

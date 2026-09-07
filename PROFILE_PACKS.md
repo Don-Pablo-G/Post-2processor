@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 551 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 561 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -563,6 +563,16 @@ Total rules: 551 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g93-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before selecting inverse-time feed (G93). |
 | `haas.g93-while-scaling` | warning | — | — | Cancel scaling with G50 before selecting inverse-time feed (G93). |
 | `haas.g93-while-tool-length` | warning | — | — | Cancel tool length with G49 before selecting inverse-time feed (G93). |
+| `haas.g93-while-coolant-on` | warning | — | — | Turn coolant off with M9 before selecting inverse-time feed (G93). |
+| `haas.g93-while-incremental` | warning | — | — | Restore G90 absolute mode before selecting inverse-time feed (G93). |
+| `haas.g10-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a G10 data setting block. |
+| `haas.g92-while-spindle-on` | warning | — | — | Stop the spindle with M5 before shifting coordinates with G92. |
+| `haas.g52-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a G52 local offset. |
+| `haas.g28-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a G28 reference return. |
+| `haas.g30-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a G30 secondary reference return. |
+| `haas.g53-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a G53 machine-coordinate move. |
+| `haas.g68-while-spindle-on` | warning | — | — | Stop the spindle with M5 before enabling G68 coordinate rotation. |
+| `haas.g51-while-spindle-on` | warning | — | — | Stop the spindle with M5 before enabling G51 scaling. |
 
 ### `haas.m6-without-t`
 
@@ -17846,6 +17856,318 @@ G54
 G43 H1 Z25.
 G49
 G93
+M30
+```
+
+### `haas.g93-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G93
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G93
+M30
+```
+
+### `haas.g93-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G93 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 absolute mode before selecting inverse-time feed (G93).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G91
+G93
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G91
+G90
+G93
+M30
+```
+
+### `haas.g10-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G10 L2 P1 X0
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g92-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G92 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before shifting coordinates with G92.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G92 X0 Y0
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G92 X0 Y0
+M30
+```
+
+### `haas.g52-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G52 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before a G52 local offset.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G52 X10.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G52 X10.
+M30
+```
+
+### `haas.g28-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G28 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before a G28 reference return.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G91 G28 Z0
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G91 G28 Z0
+G90
+M30
+```
+
+### `haas.g30-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G30 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before a G30 secondary reference return.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G91 G30 Z0
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G91 G30 Z0
+G90
+M30
+```
+
+### `haas.g53-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G53 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before a G53 machine-coordinate move.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G90 G53 Z0
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G90 G53 Z0
+M30
+```
+
+### `haas.g68-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G68 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before enabling G68 coordinate rotation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 R45.
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G68 R45.
+G69
+M30
+```
+
+### `haas.g51-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G51 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before enabling G51 scaling.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G51
+G50
 M30
 ```
 

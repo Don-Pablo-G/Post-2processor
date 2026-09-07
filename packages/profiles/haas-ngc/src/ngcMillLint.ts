@@ -1326,6 +1326,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while coolant is still on — turn coolant off with M9 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G93 while incremental mode (G91) is active — restore G90 before inverse-time feed mode.",
+          blockIndex: index
+        });
+      }
     }
 
     const exactGCodes = exactGCodesOnBlock(block);
@@ -1504,6 +1520,53 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         message: "M6 while spindle is still on — stop spindle with M5 before the tool change.",
         blockIndex: index
       });
+    }
+
+    if (spindleActive) {
+      const spindleOnGuards: Array<{ test: boolean; message: string }> = [
+        {
+          test: exactGCodes.has(10),
+          message:
+            "G10 while spindle is still on — stop spindle with M5 before G10 data setting."
+        },
+        {
+          test: hasExactG92(block),
+          message:
+            "G92 while spindle is still on — stop spindle with M5 before shifting coordinates."
+        },
+        {
+          test: hasExactG52(block),
+          message: "G52 while spindle is still on — stop spindle with M5 before a local offset."
+        },
+        {
+          test: hasExactG28(block),
+          message:
+            "G28 while spindle is still on — stop spindle with M5 before reference return."
+        },
+        {
+          test: hasExactG30(block),
+          message:
+            "G30 while spindle is still on — stop spindle with M5 before secondary reference return."
+        },
+        {
+          test: hasExactG53(block),
+          message: "G53 while spindle is still on — stop spindle with M5 before machine move."
+        },
+        {
+          test: hasExactG68(block),
+          message:
+            "G68 while spindle is still on — stop spindle with M5 before coordinate rotation."
+        },
+        {
+          test: hasExactG51(block),
+          message: "G51 while spindle is still on — stop spindle with M5 before scaling."
+        }
+      ];
+      for (const guard of spindleOnGuards) {
+        if (guard.test) {
+          issues.push({ severity: "warning", message: guard.message, blockIndex: index });
+        }
+      }
     }
 
     if (hasWordM(block, 6) && cutterCompActive && !hasExactG40(block)) {
