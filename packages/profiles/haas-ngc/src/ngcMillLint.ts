@@ -623,6 +623,30 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
             blockIndex: index
           });
         }
+        if (scalingActive && !hasExactG50(block)) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while scaling (G51) is still active — cancel with G50 before staging the next tool.",
+            blockIndex: index
+          });
+        }
+        if (coolantActive && !hasCoolantOff(block)) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while coolant is still on — turn coolant off with M9 before staging the next tool.",
+            blockIndex: index
+          });
+        }
+        if (incrementalActive) {
+          issues.push({
+            severity: "warning",
+            message:
+              "Tool select (T) while incremental mode (G91) is active — restore G90 before staging the next tool.",
+            blockIndex: index
+          });
+        }
       }
       lastToolNumber = tNumEarly;
     }
@@ -1515,6 +1539,49 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           "G1/G2/G3 while coolant is off after coolant was used earlier — turn coolant on (M7/M8) before feed motion.",
         blockIndex: index
       });
+    }
+
+    if (hasLetter(block, "S") && !hasSpindleOn(block)) {
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while a canned cycle is still active — cancel with G80 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while cutter compensation (G41/G42) is still active — cancel with G40 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while coordinate rotation (G68) is still active — cancel with G69 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while scaling (G51) is still active — cancel with G50 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while incremental mode (G91) is active — restore G90 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactTappingCycle(block) && !spindleActive) {
@@ -3022,6 +3089,30 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "Program ends with scaling (G51) still active — cancel with G50 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      activeFeedMode === 95 &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends in feed per revolution (G95) — restore G94 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      activePathMode === 61 &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends in exact stop mode (G61) — restore G64 before end.",
         blockIndex: index
       });
     }

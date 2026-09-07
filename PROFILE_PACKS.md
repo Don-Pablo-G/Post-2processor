@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 411 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 421 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -321,6 +321,16 @@ Total rules: 411 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.t-while-canned` | warning | — | — | Cancel canned cycles with G80 before staging the next tool. |
 | `haas.t-while-tool-length` | warning | — | — | Cancel tool length with G49 before staging the next tool. |
 | `haas.t-while-rotation` | warning | — | — | Cancel rotation with G69 before staging the next tool. |
+| `haas.t-while-scaling` | warning | — | — | Cancel scaling with G50 before staging the next tool. |
+| `haas.t-while-coolant-on` | warning | — | — | Turn coolant off with M9 before staging the next tool. |
+| `haas.t-while-incremental` | warning | — | — | Restore G90 before staging the next tool. |
+| `haas.s-while-canned` | warning | — | — | Cancel canned cycles with G80 before changing spindle speed. |
+| `haas.s-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before changing spindle speed. |
+| `haas.s-while-rotation` | warning | — | — | Cancel rotation with G69 before changing spindle speed. |
+| `haas.s-while-scaling` | warning | — | — | Cancel scaling with G50 before changing spindle speed. |
+| `haas.s-while-incremental` | warning | — | — | Restore G90 before changing spindle speed. |
+| `haas.feed-mode-active-at-end` | warning | — | — | Restore G94 before M02/M30. |
+| `haas.path-mode-active-at-end` | warning | — | — | Restore G64 before M02/M30. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -10494,6 +10504,354 @@ G68 X0 Y0 R45.
 G69
 T2
 M6
+M5
+M30
+```
+
+### `haas.t-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/Tool select \(T\) while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before staging the next tool.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+T2
+G50
+M6
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+T2
+M6
+M5
+M30
+```
+
+### `haas.t-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Tool select \(T\) while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before staging the next tool.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+T2
+M9
+M6
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+T2
+M6
+M5
+M30
+```
+
+### `haas.t-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/Tool select \(T\) while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before staging the next tool.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+T2
+G90
+M6
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+T2
+M6
+M5
+M30
+```
+
+### `haas.s-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+S800
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+S800
+M5
+M30
+```
+
+### `haas.s-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+S800
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+S800
+M5
+M30
+```
+
+### `haas.s-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+S800
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+S800
+M5
+M30
+```
+
+### `haas.s-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+S800
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+S800
+M5
+M30
+```
+
+### `haas.s-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+S1200 M3
+G91
+S800
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+S1200 M3
+G91
+G90
+S800
+M5
+M30
+```
+
+### `haas.feed-mode-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends in feed per revolution \(G95\)/`
+- **Summary:** Restore G94 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G95
+G1 X1. F0.1
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G95
+G1 X1. F0.1
+G94
+M5
+M30
+```
+
+### `haas.path-mode-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends in exact stop mode \(G61\)/`
+- **Summary:** Restore G64 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G61
+G1 X1. F10.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G61
+G1 X1. F10.
+G64
 M5
 M30
 ```
