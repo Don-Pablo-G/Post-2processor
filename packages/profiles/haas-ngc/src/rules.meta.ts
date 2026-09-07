@@ -2583,6 +2583,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG61\nG1 X1. F10.\nG64\nM5\nM30\n"
   },
   {
+    id: "haas.s-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Spindle speed \(S\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing spindle speed.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nS800\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nS800\nM5\nM30\n"
+  },
+  {
+    id: "haas.g52-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with G52 local offset still applied/,
+    summary: "Cancel G52 local offset before M02/M30.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG52 X10.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG52 X10.\nG52 X0 Y0 Z0\nM5\nM30\n"
+  },
+  {
+    id: "haas.h-while-canned",
+    severity: "warning",
+    messageMatcher: /H offset word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nH2\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.h-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /H offset word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nH2\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.h-while-rotation",
+    severity: "warning",
+    messageMatcher: /H offset word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nH2\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.h-while-scaling",
+    severity: "warning",
+    messageMatcher: /H offset word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nH2\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-canned",
+    severity: "warning",
+    messageMatcher: /D offset word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nD2\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nD2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-rotation",
+    severity: "warning",
+    messageMatcher: /D offset word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nD2\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nD2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-scaling",
+    severity: "warning",
+    messageMatcher: /D offset word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nD2\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nD2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-incremental",
+    severity: "warning",
+    messageMatcher: /D offset word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nD2\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nD2\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

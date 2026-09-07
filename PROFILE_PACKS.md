@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 421 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 431 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -331,6 +331,16 @@ Total rules: 421 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.s-while-incremental` | warning | — | — | Restore G90 before changing spindle speed. |
 | `haas.feed-mode-active-at-end` | warning | — | — | Restore G94 before M02/M30. |
 | `haas.path-mode-active-at-end` | warning | — | — | Restore G64 before M02/M30. |
+| `haas.s-while-coolant-on` | warning | — | — | Turn coolant off with M9 before changing spindle speed. |
+| `haas.g52-active-at-end` | warning | — | — | Cancel G52 local offset before M02/M30. |
+| `haas.h-while-canned` | warning | — | — | Cancel canned cycles with G80 before changing H offsets. |
+| `haas.h-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before changing H offsets. |
+| `haas.h-while-rotation` | warning | — | — | Cancel rotation with G69 before changing H offsets. |
+| `haas.h-while-scaling` | warning | — | — | Cancel scaling with G50 before changing H offsets. |
+| `haas.d-while-canned` | warning | — | — | Cancel canned cycles with G80 before changing D offsets. |
+| `haas.d-while-rotation` | warning | — | — | Cancel rotation with G69 before changing D offsets. |
+| `haas.d-while-scaling` | warning | — | — | Cancel scaling with G50 before changing D offsets. |
+| `haas.d-while-incremental` | warning | — | — | Restore G90 before changing D offsets. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -10852,6 +10862,345 @@ S1200 M3
 G61
 G1 X1. F10.
 G64
+M5
+M30
+```
+
+### `haas.s-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+S800
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+S800
+M5
+M30
+```
+
+### `haas.g52-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with G52 local offset still applied/`
+- **Summary:** Cancel G52 local offset before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G52 X10.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G52 X10.
+G52 X0 Y0 Z0
+M5
+M30
+```
+
+### `haas.h-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+H2
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+H2
+M5
+M30
+```
+
+### `haas.h-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+H2
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+H2
+M5
+M30
+```
+
+### `haas.h-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+H2
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+H2
+M5
+M30
+```
+
+### `haas.h-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+H2
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+H2
+M5
+M30
+```
+
+### `haas.d-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+D2
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+D2
+M5
+M30
+```
+
+### `haas.d-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+D2
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+D2
+M5
+M30
+```
+
+### `haas.d-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+D2
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+D2
+M5
+M30
+```
+
+### `haas.d-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+D2
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+D2
 M5
 M30
 ```

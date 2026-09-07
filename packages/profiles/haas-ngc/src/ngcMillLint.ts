@@ -372,6 +372,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let activeSpindleDirection: "cw" | "ccw" | undefined;
   let coolantActive = false;
   let sawCoolantOnEver = false;
+  let g52LocalActive = false;
   let toolLengthActive = false;
   let incrementalActive = false;
   let activeDistanceMode: 90 | 91 | undefined;
@@ -1582,6 +1583,84 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while coolant is still on — turn coolant off with M9 before changing spindle speed.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasLetter(block, "H") && !hasG43Classic(block)) {
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while a canned cycle is still active — cancel with G80 before changing H offsets.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while cutter compensation (G41/G42) is still active — cancel with G40 before changing H offsets.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while coordinate rotation (G68) is still active — cancel with G69 before changing H offsets.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while scaling (G51) is still active — cancel with G50 before changing H offsets.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasLetter(block, "D") && !hasExactG41Or42(block)) {
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while a canned cycle is still active — cancel with G80 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while coordinate rotation (G68) is still active — cancel with G69 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while scaling (G51) is still active — cancel with G50 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while incremental mode (G91) is active — restore G90 before changing D offsets.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactTappingCycle(block) && !spindleActive) {
@@ -2036,6 +2115,12 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           message: "G52 while incremental mode (G91) is active — restore G90 before a local offset.",
           blockIndex: index
         });
+      }
+      const g52Axes = (["X", "Y", "Z"] as const).filter((letter) => hasLetter(block, letter));
+      if (g52Axes.length === 0 || g52Axes.every((letter) => isZeroOffsetWord(lastWordValue(block, letter)))) {
+        g52LocalActive = false;
+      } else if (g52Axes.some((letter) => !isZeroOffsetWord(lastWordValue(block, letter)))) {
+        g52LocalActive = true;
       }
     }
 
@@ -3113,6 +3198,18 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "Program ends in exact stop mode (G61) — restore G64 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      g52LocalActive &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Program ends with G52 local offset still applied — cancel with G52 X0 Y0 Z0 before end.",
         blockIndex: index
       });
     }
