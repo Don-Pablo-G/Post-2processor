@@ -1799,6 +1799,44 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           "G92 coordinate system shift is uncommon and risky on mill programs — prefer work offsets (G54-G59).",
         blockIndex: index
       });
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G92 while cutter compensation (G41/G42) is still active — cancel with G40 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G92 while a canned cycle is still active — cancel with G80 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G92 while coordinate rotation (G68) is still active — cancel with G69 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G92 while scaling (G51) is still active — cancel with G50 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G92 while tool length compensation (G43) is still active — cancel with G49 before shifting coordinates.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactG52(block)) {
@@ -1808,6 +1846,44 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           "G52 local coordinate offset — verify intentional use; prefer work offsets (G54-G59) when possible.",
         blockIndex: index
       });
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G52 while cutter compensation (G41/G42) is still active — cancel with G40 before a local offset.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G52 while a canned cycle is still active — cancel with G80 before a local offset.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G52 while coordinate rotation (G68) is still active — cancel with G69 before a local offset.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G52 while scaling (G51) is still active — cancel with G50 before a local offset.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G52 while tool length compensation (G43) is still active — cancel with G49 before a local offset.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactG4(block) && !hasLetter(block, "P") && !hasLetter(block, "X")) {
