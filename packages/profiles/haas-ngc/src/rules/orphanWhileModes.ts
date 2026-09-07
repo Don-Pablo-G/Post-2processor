@@ -140,3 +140,19 @@ export function hasRotaryWordContext(block: { words: Word[] }): boolean {
     })
   );
 }
+
+/**
+ * F is legitimate as a feed rate only on G1/G2/G3 feed motion or canned-cycle
+ * blocks. Unlike rotary words, G0 does NOT license F — a feed word on a rapid
+ * (or on a bare block) is still an orphan for the f-while-* rules.
+ */
+export function hasFWordContext(block: { words: Word[] }): boolean {
+  return (
+    hasCannedCycle(block) ||
+    block.words.some((w) => {
+      if (w.letter !== "G") return false;
+      const g = Number.parseFloat(w.value);
+      return g === 1 || g === 2 || g === 3;
+    })
+  );
+}

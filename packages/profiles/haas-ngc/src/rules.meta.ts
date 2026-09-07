@@ -4205,5 +4205,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Cancel tool length compensation before an orphan C rotary word.",
     positiveSnippet: "O0001\nG43 H1 Z1.\nC10.\nG49\nM30\n",
     negativeSnippet: "O0001\nG43 H1 Z1.\nG1 C10.\nG49\nM30\n"
+  },
+  {
+    id: "haas.f-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /F word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nG41 D1 X1.\nF10.\nG40\nM30\n",
+    negativeSnippet: "O0001\nG41 D1 X1.\nG1 X2. F10.\nG40\nM30\n"
+  },
+  {
+    id: "haas.f-while-canned",
+    severity: "warning",
+    messageMatcher: /F word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nG81 Z-1. R.1 F10.\nF5.\nG80\nM30\n",
+    negativeSnippet: "O0001\nG81 Z-1. R.1 F10.\nG80\nF5.\nM30\n"
+  },
+  {
+    id: "haas.f-while-rotation",
+    severity: "warning",
+    messageMatcher: /F word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nG68 X0 Y0 R45.\nF10.\nG69\nM30\n",
+    negativeSnippet: "O0001\nG68 X0 Y0 R45.\nG69\nF10.\nM30\n"
+  },
+  {
+    id: "haas.f-while-scaling",
+    severity: "warning",
+    messageMatcher: /F word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nG51 P2.\nF10.\nG50\nM30\n",
+    negativeSnippet: "O0001\nG51 P2.\nG50\nF10.\nM30\n"
+  },
+  {
+    id: "haas.f-while-incremental",
+    severity: "warning",
+    messageMatcher: /F word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nG91\nF10.\nG90\nM30\n",
+    negativeSnippet: "O0001\nG91\nG90\nF10.\nM30\n"
+  },
+  {
+    id: "haas.f-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /F word while coolant is still on/,
+    summary: "Turn coolant off with M9 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nM8\nF10.\nM9\nM30\n",
+    negativeSnippet: "O0001\nM8\nM9\nF10.\nM30\n"
+  },
+  {
+    id: "haas.f-while-tool-length",
+    severity: "warning",
+    messageMatcher: /F word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before a bare F word outside feed motion.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nF10.\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nF10.\nM30\n"
+  },
+  {
+    id: "haas.a-while-tool-length",
+    severity: "warning",
+    messageMatcher: /A rotary word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation before an orphan A rotary word.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nA10.\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG1 A10.\nG49\nM30\n"
+  },
+  {
+    id: "haas.h-while-tool-length",
+    severity: "warning",
+    messageMatcher: /H offset word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before changing H offsets.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nH2\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nH2\nM30\n"
+  },
+  {
+    id: "haas.d-while-tool-length",
+    severity: "warning",
+    messageMatcher: /D offset word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before changing D offsets.",
+    positiveSnippet: "O0001\nG43 H1 Z1.\nD2\nG49\nM30\n",
+    negativeSnippet: "O0001\nG43 H1 Z1.\nG49\nD2\nM30\n"
   }
 ];

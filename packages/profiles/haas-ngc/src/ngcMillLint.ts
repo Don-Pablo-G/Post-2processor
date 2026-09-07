@@ -1488,6 +1488,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while tool length compensation (G43) is still active — cancel with G49 before changing H offsets.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasLetter(block, "D") && !hasExactG41Or42(block)) {
@@ -1536,6 +1544,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "D offset word while coolant is still on — turn coolant off with M9 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while tool length compensation (G43) is still active — cancel with G49 before changing D offsets.",
           blockIndex: index
         });
       }

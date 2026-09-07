@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 501 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 511 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -513,6 +513,16 @@ Total rules: 501 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.c-while-incremental` | warning | — | — | Restore G90 before an orphan C rotary word. |
 | `haas.c-while-coolant-on` | warning | — | — | Turn coolant off before an orphan C rotary word. |
 | `haas.c-while-tool-length` | warning | — | — | Cancel tool length compensation before an orphan C rotary word. |
+| `haas.f-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a bare F word outside feed motion. |
+| `haas.f-while-canned` | warning | — | — | Cancel canned cycles with G80 before a bare F word outside feed motion. |
+| `haas.f-while-rotation` | warning | — | — | Cancel rotation with G69 before a bare F word outside feed motion. |
+| `haas.f-while-scaling` | warning | — | — | Cancel scaling with G50 before a bare F word outside feed motion. |
+| `haas.f-while-incremental` | warning | — | — | Restore G90 before a bare F word outside feed motion. |
+| `haas.f-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a bare F word outside feed motion. |
+| `haas.f-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before a bare F word outside feed motion. |
+| `haas.a-while-tool-length` | warning | — | — | Cancel tool length compensation before an orphan A rotary word. |
+| `haas.h-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before changing H offsets. |
+| `haas.d-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before changing D offsets. |
 
 ### `haas.m6-without-t`
 
@@ -16384,6 +16394,266 @@ O0001
 G43 H1 Z1.
 G1 C10.
 G49
+M30
+```
+
+### `haas.f-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/F word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G41 D1 X1.
+F10.
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G41 D1 X1.
+G1 X2. F10.
+G40
+M30
+```
+
+### `haas.f-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/F word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+F5.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+G80
+F5.
+M30
+```
+
+### `haas.f-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/F word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+F10.
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+G69
+F10.
+M30
+```
+
+### `haas.f-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/F word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G51 P2.
+F10.
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G51 P2.
+G50
+F10.
+M30
+```
+
+### `haas.f-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/F word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G91
+F10.
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G91
+G90
+F10.
+M30
+```
+
+### `haas.f-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/F word while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M8
+F10.
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M8
+M9
+F10.
+M30
+```
+
+### `haas.f-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/F word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before a bare F word outside feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+F10.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+F10.
+M30
+```
+
+### `haas.a-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+A10.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G1 A10.
+G49
+M30
+```
+
+### `haas.h-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+H2
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+H2
+M30
+```
+
+### `haas.d-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G43 H1 Z1.
+D2
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G43 H1 Z1.
+G49
+D2
 M30
 ```
 

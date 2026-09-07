@@ -16,6 +16,7 @@ import {
 } from "./millHelpers.js";
 import { walkMillModalState } from "./millModalState.js";
 import {
+  hasFWordContext,
   hasLWordContext,
   hasRotaryWordContext,
   orphanWhileModeCodes,
@@ -62,11 +63,13 @@ const IJK_WHILE_CODES = [
 
 const L_WHILE_CODES = orphanWhileModeCodes("l");
 
+const F_WHILE_CODES = orphanWhileModeCodes("f");
+
 const ROTARY_ORPHAN_FAMILIES = [
   {
     letter: "A",
     prefix: "a",
-    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on"]
+    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on", "tool-length"]
   },
   {
     letter: "B",
@@ -109,8 +112,9 @@ export function lintHaasOrphanWordWhile(
   const skipP = familyDisabled(disabled, P_WHILE_CODES);
   const skipIjk = familyDisabled(disabled, IJK_WHILE_CODES);
   const skipL = familyDisabled(disabled, L_WHILE_CODES);
+  const skipF = familyDisabled(disabled, F_WHILE_CODES);
   const skipRotary = familyDisabled(disabled, ROTARY_WHILE_CODES);
-  if (skipQ && skipR && skipP && skipIjk && skipL && skipRotary) return [];
+  if (skipQ && skipR && skipP && skipIjk && skipL && skipF && skipRotary) return [];
 
   const issues: LintIssue[] = [];
 
@@ -147,6 +151,15 @@ export function lintHaasOrphanWordWhile(
           modeSuffixes: family.modes
         });
       }
+    }
+
+    if (!skipF && hasLetter(block, "F") && !hasFWordContext(block)) {
+      pushOrphanWhileModes(issues, disabled, {
+        letterPrefix: "f",
+        wordLabel: "F word",
+        contextHint: "outside G1/G2/G3 or canned-cycle feed context",
+        ctx
+      });
     }
 
     if (!skipQ && hasLetter(block, "Q") && !hasExactPeckCycle(block)) {
