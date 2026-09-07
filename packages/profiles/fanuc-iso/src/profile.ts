@@ -1,5 +1,5 @@
 import type { ControllerProfile } from "@cnc/core";
-import { lintFanucIsoMill } from "./fanucIsoMill.js";
+import { lintFanucIsoMillWithCodes } from "./ruleModules.js";
 
 export const fanucIsoProfile: ControllerProfile = {
   id: "fanuc",
@@ -9,5 +9,5 @@ export const fanucIsoProfile: ControllerProfile = {
     normalizeSpacing: true,
     removeStandaloneOptionalStops: false
   },
-  validateAst: lintFanucIsoMill
+  validateAst: lintFanucIsoMillWithCodes
 };

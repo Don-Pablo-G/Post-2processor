@@ -110,7 +110,7 @@ describe("discoverProfilePackLoaders", () => {
     ]);
   });
 
-  it("ignores profile packs whose controllerKey is unknown", async () => {
+  it("accepts open controller keys such as siemens-840d from discovered packs", async () => {
     const root: ParsedDirectoryRoot = {
       dirs: { "/fake/node_modules/@cnc": ["profile-future"] },
       files: {
@@ -125,8 +125,15 @@ describe("discoverProfilePackLoaders", () => {
         })
       }
     };
-    const result = await discoverProfilePackLoaders(buildFakeIo(root, {}));
-    expect(result).toEqual({});
+    const futureProfile = {
+      validateAst: () => [{ severity: "warning", message: "siemens", blockIndex: 0 }]
+    };
+    const result = await discoverProfilePackLoaders(
+      buildFakeIo(root, { "@cnc/profile-future": { futureProfile } })
+    );
+    expect(Object.keys(result)).toEqual(["siemens-840d"]);
+    const issues = await result["siemens-840d"]!(STUB_AST);
+    expect(issues).toEqual([{ severity: "warning", message: "siemens", blockIndex: 0 }]);
   });
 
   it("registers a synthetic third-party pack with valid metadata", async () => {

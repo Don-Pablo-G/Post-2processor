@@ -1,5 +1,9 @@
 import type { CliControllerKey, CliProfileLintLoader } from "../cli.js";
 import type { LintIssue, ProfileRuleDoc, ProgramAst } from "../types.js";
+import {
+  parseControllerPackManifest,
+  type ControllerPackManifest
+} from "./controllerManifest.js";
 
 /**
  * Metadata that a profile-pack `package.json` can declare under the
@@ -23,7 +27,7 @@ import type { LintIssue, ProfileRuleDoc, ProgramAst } from "../types.js";
  * ```
  */
 export type ProfilePackMetadata = {
-  controllerKey: CliControllerKey;
+  controllerKey: string;
   validateAstExport: string;
   /**
    * Optional. When set, names a top-level export from the same package whose
@@ -33,6 +37,11 @@ export type ProfilePackMetadata = {
    * docs simply omit this field — discovery still picks them up for linting.
    */
   ruleDocsExport?: string;
+  /**
+   * Optional embedded controller manifest (rules list, grammar, compliance).
+   * When present, CLI/desktop treat it as the pack's rule/controller config.
+   */
+  manifest?: ControllerPackManifest;
 };
 
 export type DiscoverProfilePackOptions = {
@@ -80,11 +89,7 @@ export type DiscoverProfilePackOptions = {
   envFn?: (name: string) => string | undefined;
 };
 
-const VALID_CONTROLLER_KEYS = new Set<CliControllerKey>([
-  "haas-ngc",
-  "haas-legacy",
-  "fanuc"
-]);
+const CONTROLLER_KEY_RE = /^(?:haas-ngc|haas-legacy|fanuc|[a-z][a-z0-9._-]*)$/i;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -111,7 +116,7 @@ function parseMetadata(json: string): {
   if (typeof controllerKey !== "string" || typeof validateAstExport !== "string") {
     return undefined;
   }
-  if (!VALID_CONTROLLER_KEYS.has(controllerKey as CliControllerKey)) {
+  if (!CONTROLLER_KEY_RE.test(controllerKey)) {
     return undefined;
   }
   if (validateAstExport.length === 0) return undefined;
@@ -120,12 +125,21 @@ function parseMetadata(json: string): {
     typeof rawRuleDocsExport === "string" && rawRuleDocsExport.length > 0
       ? rawRuleDocsExport
       : undefined;
+  let manifest: ProfilePackMetadata["manifest"];
+  if (isPlainObject(profilePack.manifest)) {
+    try {
+      manifest = parseControllerPackManifest(profilePack.manifest);
+    } catch {
+      manifest = undefined;
+    }
+  }
   return {
     packageName,
     metadata: {
-      controllerKey: controllerKey as CliControllerKey,
+      controllerKey,
       validateAstExport,
-      ...(ruleDocsExport !== undefined ? { ruleDocsExport } : {})
+      ...(ruleDocsExport !== undefined ? { ruleDocsExport } : {}),
+      ...(manifest !== undefined ? { manifest } : {})
     }
   };
 }

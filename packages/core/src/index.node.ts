@@ -104,6 +104,38 @@ export {
 export type { SafetyFindingFix } from "./workshop/safetyFindingFixes.js";
 
 export { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecation.js";
+export {
+  applyRulePolicy,
+  attachRuleCodesFromDocs,
+  buildRulePolicyFromFlags,
+  mergeRulePolicies,
+  parseRulePolicyJson
+} from "./lints/rulePolicy.js";
+export type { RulePolicy, RulePolicyEntry } from "./types.js";
+export {
+  createRuleRegistry,
+  listRuleModules,
+  registerRuleModule,
+  runRuleRegistry,
+  ruleModulesFromDocs
+} from "./lints/ruleRegistry.js";
+export type { RuleModule, RuleRegistry } from "./lints/ruleRegistry.js";
+export {
+  parseDeclarativeRulesJson,
+  runDeclarativeRules
+} from "./lints/declarativeRules.js";
+export type { DeclarativeRuleDef } from "./lints/declarativeRules.js";
+export {
+  GRAMMAR_PACK_TABLES,
+  resolveGrammarPackIds
+} from "./lints/grammarTables.js";
+export type { GrammarPackId, ControllerGrammarPackTable } from "./lints/grammarTables.js";
+export {
+  parseControllerPackManifest,
+  grammarIdsFromManifest,
+  enabledRuleIdsFromManifest
+} from "./cli/controllerManifest.js";
+export type { ControllerPackManifest } from "./cli/controllerManifest.js";
 
 export {
   CLI_SCHEMA_VERSION,

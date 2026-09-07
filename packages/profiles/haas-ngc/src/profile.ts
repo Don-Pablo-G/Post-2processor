@@ -1,5 +1,5 @@
 import type { ControllerProfile } from "@cnc/core";
-import { lintHaasNgcMill } from "./ngcMillLint.js";
+import { lintHaasNgcMillWithCodes } from "./ruleModules.js";
 
 export const haasNgcProfile: ControllerProfile = {
   id: "haas-ngc",
@@ -9,5 +9,5 @@ export const haasNgcProfile: ControllerProfile = {
     normalizeSpacing: true,
     removeStandaloneOptionalStops: false
   },
-  validateAst: lintHaasNgcMill
+  validateAst: lintHaasNgcMillWithCodes
 };

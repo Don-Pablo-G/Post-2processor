@@ -19,7 +19,14 @@
   "cnc-workbench": {
     "profilePack": {
       "controllerKey": "haas-ngc",
-      "validateAstExport": "haasNgcProfile"
+      "validateAstExport": "haasNgcProfile",
+      "ruleDocsExport": "haasNgcRuleDocs",
+      "manifest": {
+        "controllerKey": "haas-ngc",
+        "name": "Haas NGC",
+        "grammar": "haas-strict",
+        "parseCompliance": "strict_haas"
+      }
     }
   }
 }

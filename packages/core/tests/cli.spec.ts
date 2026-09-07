@@ -171,7 +171,7 @@ describe("parseCliArgs", () => {
   });
 
   it("throws on invalid --controller", () => {
-    expect(() => parseCliArgs(["--input", "p.nc", "--controller", "siemens"])).toThrow(
+    expect(() => parseCliArgs(["--input", "p.nc", "--controller", "!!!bad!!!"])).toThrow(
       /Invalid --controller/
     );
   });
@@ -1026,7 +1026,7 @@ describe("main()", () => {
     expect(stdout).toBe(`cnc-job-check schema=${CLI_SCHEMA_VERSION}\n`);
     // Drift sentinel: any future bump to CLI_SCHEMA_VERSION must update
     // this literal in lockstep with the README wave write-up.
-    expect(stdout).toBe("cnc-job-check schema=48\n");
+    expect(stdout).toBe("cnc-job-check schema=49\n");
     expect(stderr).toBe("");
   });
 
@@ -1384,8 +1384,8 @@ describe("main()", () => {
 
   it("CliBatchEnvelope.summary key-list includes lintIssuesByControllerCodePerInputFile [schema v6]", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "01.nc"), "G0 X1 Y1\nM30\n", "utf8");
-    await writeFile(path.join(tmp, "02.nc"), "G0 X2 Y2\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "01.nc"), "O1\nG0 X1 Y1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "02.nc"), "O2\nG0 X2 Y2\nM30\n", "utf8");
     let stdout = "";
     const exitCode = await main(
       ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
@@ -1409,8 +1409,8 @@ describe("main()", () => {
 
   it("summary.lintIssuesByControllerCodePerInputFile is an empty array on a clean 2-file batch [schema v6]", async () => {
     const tmp = await setupTmpDir();
-    await writeFile(path.join(tmp, "alpha.nc"), "G0 X1\nM30\n", "utf8");
-    await writeFile(path.join(tmp, "beta.nc"), "G0 Y2\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "alpha.nc"), "O1\nG0 X1\nM30\n", "utf8");
+    await writeFile(path.join(tmp, "beta.nc"), "O2\nG0 Y2\nM30\n", "utf8");
     let stdout = "";
     const exitCode = await main(
       ["--input-dir", tmp, "--controller", "fanuc", "--format", "json"],
@@ -2641,8 +2641,8 @@ describe("profile-pack rule deprecation (--no-deprecated-rules)", () => {
 });
 
 describe("--strict-controller-codes gate (schema v7)", () => {
-  it("CLI_SCHEMA_VERSION is 48", () => {
-    expect(CLI_SCHEMA_VERSION).toBe(48);
+  it("CLI_SCHEMA_VERSION is 49", () => {
+    expect(CLI_SCHEMA_VERSION).toBe(49);
   });
 
   it("parseCliArgs accepts a single --strict-controller-codes value", () => {
@@ -5032,7 +5032,7 @@ describe("Schema v48: setupTxtDir/patchedNcDir/setupSheetPdfDir on verify", () =
       )
     ).toBe(0);
     const summary = JSON.parse(await readFile(path.join(outDir, "batch-summary.json"), "utf8"));
-    expect(summary.schemaVersion).toBe(48);
+    expect(summary.schemaVersion).toBe(49);
     const exp = summary.summary.batchWalk.export;
     const out: string[] = [];
     const exit = await main(
@@ -5041,7 +5041,7 @@ describe("Schema v48: setupTxtDir/patchedNcDir/setupSheetPdfDir on verify", () =
     );
     expect(exit).toBe(0);
     const result = JSON.parse(out.join(""));
-    expect(result.schemaVersion).toBe(48);
+    expect(result.schemaVersion).toBe(49);
     expect(result.ok).toBe(true);
     expect(result.setupTxtDir).toBe(exp.setupTxtDir);
     expect(result.setupTxtDir).toMatch(/setup-txt$/);

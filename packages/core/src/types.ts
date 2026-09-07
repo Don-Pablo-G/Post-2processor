@@ -175,11 +175,9 @@ export type LintIssue = {
   blockIndex: number;
   suggestedFixes?: ParseDiagnosticFixSuggestion[];
   /**
-   * Optional stable rule code (e.g. `CG_N_AND_O_MIXED`,
-   * `CG_DUPLICATE_ADDRESSES_X`). Append-only — existing rules are NOT required
-   * to emit a code; new code-emitting rules MUST use the `CG_` prefix for
-   * controller-grammar lints. The CLI envelope's `lintIssuesByControllerCode`
-   * cross-table aggregates issues by this field.
+   * Stable rule code (e.g. `CG_N_AND_O_MIXED`, `haas.m6-without-t`).
+   * Controller-grammar lints use the `CG_` prefix; profile packs use their
+   * `ProfileRuleDoc.id`. Preferred for policy toggles and envelope aggregation.
    */
   code?: string;
 };
@@ -322,6 +320,19 @@ export type ExportBlockingPolicyOverride = Partial<{
 }>;
 
 export type JobCheckPolicyPreset = "strict" | "balanced" | "permissive";
+
+/**
+ * Per-rule enable/disable (+ optional severity override) keyed by stable
+ * `LintIssue.code` / `ProfileRuleDoc.id`. Missing ids keep default (enabled).
+ */
+export type RulePolicyEntry = {
+  enabled: boolean;
+  severity?: LintIssue["severity"];
+};
+
+export type RulePolicy = {
+  rules: Record<string, RulePolicyEntry>;
+};
 
 export type CriticalEvent = {
   kind:
@@ -603,6 +614,16 @@ export type RunJobCheckInput = {
   simulationFindingPolicy?: SimulationFindingPolicyOverride;
   exportBlockingPolicy?: ExportBlockingPolicyOverride;
   parseDiagnosticsPolicy?: ParseDiagnosticsThresholdPolicy;
+  /**
+   * Per-rule enable/disable for lint issues that carry a stable `code`
+   * (controller-grammar `CG_*`, profile `haas.*` / `fanuc.*`, declarative).
+   */
+  rulePolicy?: RulePolicy;
+  /**
+   * Optional profile rule docs used to attach missing `code`s to profile-lint
+   * issues before `rulePolicy` is applied.
+   */
+  profileRuleDocs?: ProfileRuleDoc[];
   exportOptions?: {
     enabled: boolean;
     allowExportWithBlockers?: boolean;

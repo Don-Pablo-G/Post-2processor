@@ -1,10 +1,11 @@
 import { buildTimelineFindingsExportBundle, summarizeLintIssues } from "./exportBundle.js";
+import { applyRulePolicy, attachRuleCodesFromDocs } from "../lints/rulePolicy.js";
+import { withLintProvenance } from "../lints/lintProvenance.js";
+import { simpleLint } from "../lints/simpleLint.js";
 import { buildProveoutProgram } from "./proveout.js";
 import { generateSetupSheet } from "./setupSheet.js";
 import { analyzeProgram } from "./advisor.js";
 import { simpleSimulate } from "../simulator/simpleSimulator.js";
-import { simpleLint } from "../lints/simpleLint.js";
-import { withLintProvenance } from "../lints/lintProvenance.js";
 import type {
   LintIssue,
   ParseDiagnostic,
@@ -237,10 +238,15 @@ export async function runJobCheckWorkflow(input: RunJobCheckInput): Promise<RunJ
     input.parseDiagnosticsPolicy,
     input.ast.parseDiagnostics
   );
-  const rawLintIssues: LintIssue[] = [
-    ...simpleLint(input.ast),
-    ...(input.profileLintIssues ?? [])
-  ];
+  const rawProfileIssues = input.profileLintIssues ?? [];
+  const codedProfileIssues =
+    input.profileRuleDocs && input.profileRuleDocs.length > 0
+      ? attachRuleCodesFromDocs(rawProfileIssues, input.profileRuleDocs)
+      : rawProfileIssues;
+  const rawLintIssues: LintIssue[] = applyRulePolicy(
+    [...simpleLint(input.ast), ...codedProfileIssues],
+    input.rulePolicy
+  );
   const lintIssues = withLintProvenance(input.ast, rawLintIssues);
   const lintIssuesSummary = summarizeLintIssues(lintIssues);
   const setupSheet = generateSetupSheet(input.ast, initialState, {

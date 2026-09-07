@@ -28,6 +28,13 @@ import {
 } from "./audit/auditTrailIntegrity.js";
 import { filterDeprecatedProfileLintIssues } from "./lints/profileRuleDeprecation.js";
 import {
+  attachRuleCodesFromDocs,
+  buildRulePolicyFromFlags,
+  mergeRulePolicies,
+  parseRulePolicyJson,
+  type RulePolicy
+} from "./lints/rulePolicy.js";
+import {
   AuditTrailRotationStrandedTempError,
   rotateAuditTrailKey
 } from "./audit/auditTrailRotation.js";
@@ -69,7 +76,11 @@ import {
   classifyBatchRelativePath
 } from "./cli/batchPathGlob.js";
 
-export type CliControllerKey = "haas-ngc" | "haas-legacy" | "fanuc";
+export type CliControllerKey = string;
+
+export const BUILTIN_CONTROLLER_KEYS = ["haas-ngc", "haas-legacy", "fanuc"] as const;
+
+export type BuiltinControllerKey = (typeof BUILTIN_CONTROLLER_KEYS)[number];
 
 export {
   CLI_SCHEMA_VERSION,
@@ -164,7 +175,7 @@ export const CLI_USAGE = [
   "  --recursive                Walk --input-dir subtrees (default: single-level)",
   "  --include <glob>           Repeatable glob matched against forward-slash relative paths (replaces extension floor)",
   "  --exclude <glob>           Repeatable glob; takes precedence over --include and the extension floor",
-  "  --controller <id>          haas-ngc | haas-legacy | fanuc (default: haas-ngc)",
+  "  --controller <id>          Controller pack key (default: haas-ngc). Built-ins: haas-ngc | haas-legacy | fanuc; additional keys come from discovered profile packs.",
   "  --policy <path>            JSON file with ParseDiagnosticsThresholdPolicy",
   "  --policy-preset <id>       strict | balanced | permissive (mirrors desktop chips)",
   "  --format <json|text|ndjson>  Output format (default: json; ndjson emits one envelope per line)",
@@ -178,6 +189,9 @@ export const CLI_USAGE = [
   "  --schema-version           Print 'cnc-job-check schema=<n>' and exit (no input required)",
   "  --rediscover-profile-packs Flush the in-memory profile-pack auto-discovery cache before running (use after installing a new pack mid-session)",
   "  --no-deprecated-rules      Suppress profile-lint issues whose ProfileRuleDoc.deprecatedSince is set (per-pack opt-in soft-deprecation)",
+  "  --disable-rule <id>        Repeatable: disable a lint rule by stable code (e.g. haas.m6-without-t, CG_N_AND_O_MIXED)",
+  "  --enable-rule <id>         Repeatable: force-enable a rule id (overridden by --disable-rule on the same id)",
+  "  --rules-policy <path>      JSON file with { \"rules\": { \"<id>\": { \"enabled\": bool, \"severity\"?: \"warning\"|\"error\" } } }",
   "  --strict-controller-codes <c,...>  Comma-separated list of CG_* codes (or families with trailing *) that, when emitted by any lint issue, flip blocked=true and add the codes to envelope.strictControllerCodesGated",
   "  --help, -h                 Show this message",
   "",
@@ -1452,6 +1466,18 @@ export type CliArgs = {
    */
   noDeprecatedRules: boolean;
   /**
+   * Rule ids to force-disable (from repeatable `--disable-rule`).
+   */
+  disableRules: string[];
+  /**
+   * Rule ids to force-enable (from repeatable `--enable-rule`).
+   */
+  enableRules: string[];
+  /**
+   * Optional path to a JSON rule-policy file (`--rules-policy`).
+   */
+  rulesPolicyPath?: string;
+  /**
    * Schema v7: list of controller-grammar code patterns that, when matched
    * by any lint issue's `code`, flip `envelope.blocked = true` and surface
    * the matched code(s) in `envelope.strictControllerCodesGated`. Each entry
@@ -1470,7 +1496,9 @@ export class CliArgumentError extends Error {
 }
 
 function isControllerKey(value: string | undefined): value is CliControllerKey {
-  return value === "haas-ngc" || value === "haas-legacy" || value === "fanuc";
+  if (value === undefined) return false;
+  // Open keys: builtins plus any pack-style id (lowercase kebab/dot).
+  return /^(?:haas-ngc|haas-legacy|fanuc|[a-z][a-z0-9._-]*)$/i.test(value);
 }
 
 function isPresetId(value: string | undefined): value is ParseDiagnosticsPolicyPresetId {
@@ -1495,7 +1523,9 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
     schemaVersion: false,
     help: false,
     rediscoverProfilePacks: false,
-    noDeprecatedRules: false
+    noDeprecatedRules: false,
+    disableRules: [],
+    enableRules: []
   };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
@@ -1510,7 +1540,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
         const value = requireValue(flag, argv[++i]);
         if (!isControllerKey(value)) {
           throw new CliArgumentError(
-            `Invalid --controller value: ${value} (expected haas-ngc | haas-legacy | fanuc)`
+            `Invalid --controller value: ${value} (expected a controller id such as haas-ngc | haas-legacy | fanuc | <pack-key>)`
           );
         }
         result.controller = value;
@@ -1598,6 +1628,21 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
       case "--no-deprecated-rules":
         result.noDeprecatedRules = true;
         break;
+      case "--disable-rule": {
+        const value = requireValue(flag, argv[++i]).trim();
+        if (!value) throw new CliArgumentError("--disable-rule requires a non-empty rule id");
+        result.disableRules.push(value);
+        break;
+      }
+      case "--enable-rule": {
+        const value = requireValue(flag, argv[++i]).trim();
+        if (!value) throw new CliArgumentError("--enable-rule requires a non-empty rule id");
+        result.enableRules.push(value);
+        break;
+      }
+      case "--rules-policy":
+        result.rulesPolicyPath = requireValue(flag, argv[++i]);
+        break;
       case "--strict-controller-codes": {
         const value = requireValue(flag, argv[++i]);
         const codes = value
@@ -1666,7 +1711,7 @@ export function parseCliArgs(argv: readonly string[]): CliArgs {
 export function buildControllerProfile(controller: CliControllerKey): ControllerProfile {
   return {
     id: controller,
-    name: CONTROLLER_NAMES[controller],
+    name: CONTROLLER_NAMES[controller] ?? controller,
     defaultFormatStyle: {
       upperCaseWords: true,
       normalizeSpacing: true,
@@ -1990,34 +2035,66 @@ async function loadProfileLintIssues(
   controller: CliControllerKey,
   ast: ProgramAst,
   options: { suppressDeprecated?: boolean } = {}
-): Promise<LintIssue[] | undefined> {
+): Promise<{ issues: LintIssue[] | undefined; ruleDocs: ProfileRuleDoc[] | undefined }> {
   const handWiredLoader = PROFILE_LINT_LOADERS[controller];
   let issues: LintIssue[] | undefined;
   if (handWiredLoader) {
     issues = await handWiredLoader(ast);
   } else {
-    // Fallback: auto-discovered third-party profile packs declared via
-    // `cnc-workbench.profilePack` metadata in their package.json.
     const discovered = await getDiscoveredProfilePackLoaders();
     const discoveredLoader = discovered[controller];
     issues = discoveredLoader ? await discoveredLoader(ast) : undefined;
   }
-  if (!issues || !options.suppressDeprecated) return issues;
   const ruleDocs = await loadProfileRuleDocs(controller);
-  if (!ruleDocs || ruleDocs.length === 0) return issues;
-  return filterDeprecatedProfileLintIssues(issues, ruleDocs);
+  if (issues && ruleDocs && ruleDocs.length > 0) {
+    issues = attachRuleCodesFromDocs(issues, ruleDocs);
+  }
+  if (issues && options.suppressDeprecated && ruleDocs && ruleDocs.length > 0) {
+    issues = filterDeprecatedProfileLintIssues(issues, ruleDocs);
+  }
+  return { issues, ruleDocs };
+}
+
+async function resolveCliRulePolicy(
+  parsed: Pick<CliArgs, "enableRules" | "disableRules" | "rulesPolicyPath">,
+  readFileFn: (path: string) => Promise<string>
+): Promise<RulePolicy | undefined> {
+  let filePolicy: RulePolicy | undefined;
+  if (parsed.rulesPolicyPath) {
+    const raw = await readFileFn(parsed.rulesPolicyPath);
+    filePolicy = parseRulePolicyJson(raw);
+  }
+  const flagPolicy = buildRulePolicyFromFlags({
+    enableRules: parsed.enableRules,
+    disableRules: parsed.disableRules
+  });
+  const merged = mergeRulePolicies(filePolicy, flagPolicy);
+  return Object.keys(merged.rules).length > 0 ? merged : undefined;
 }
 
 async function runOnce(
   source: string,
   controller: CliControllerKey,
   policy: ParseDiagnosticsThresholdPolicy | undefined,
-  options: { suppressDeprecated?: boolean } = {}
+  options: {
+    suppressDeprecated?: boolean;
+    rulePolicy?: RulePolicy;
+  } = {}
 ): Promise<RunJobCheckResult> {
   const profile = buildControllerProfile(controller);
   const ast = parse(source, profile, { includeExpressionAst: true });
-  const profileLintIssues = await loadProfileLintIssues(controller, ast, options);
-  return runJobCheck({ ast, parseDiagnosticsPolicy: policy, profileLintIssues });
+  const { issues: profileLintIssues, ruleDocs: profileRuleDocs } = await loadProfileLintIssues(
+    controller,
+    ast,
+    options
+  );
+  return runJobCheck({
+    ast,
+    parseDiagnosticsPolicy: policy,
+    profileLintIssues,
+    profileRuleDocs,
+    rulePolicy: options.rulePolicy
+  });
 }
 
 function emitStrictBlockedHint(
@@ -2564,6 +2641,14 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
     clearDiscoveredProfilePackLoadersCache();
   }
 
+  let rulePolicy: RulePolicy | undefined;
+  try {
+    rulePolicy = await resolveCliRulePolicy(parsed, readFn);
+  } catch (err) {
+    writeErr(`Failed to load --rules-policy: ${(err as Error).message}\n`);
+    return 2;
+  }
+
   let policyJson: string | undefined;
   if (parsed.policy) {
     try {
@@ -2637,7 +2722,8 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
       }
       sourcesByInputDuringBatch.set(filePath, source);
       const result = await runOnce(source, parsed.controller, policy, {
-        suppressDeprecated: parsed.noDeprecatedRules
+        suppressDeprecated: parsed.noDeprecatedRules,
+        rulePolicy
       });
       const envelope = applyStrictControllerCodesGate(
         buildJobCheckEnvelope(result),
@@ -3048,7 +3134,8 @@ export async function main(argv: readonly string[], io: CliIo = {}): Promise<num
   }
 
   const result = await runOnce(source, parsed.controller, policy, {
-    suppressDeprecated: parsed.noDeprecatedRules
+    suppressDeprecated: parsed.noDeprecatedRules,
+    rulePolicy
   });
   const envelope = applyStrictControllerCodesGate(
     buildJobCheckEnvelope(result),

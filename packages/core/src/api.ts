@@ -1,5 +1,6 @@
 import { simpleFormat } from "./formatter/simpleFormatter.js";
 import { withLintProvenance } from "./lints/lintProvenance.js";
+import { applyRulePolicy, attachRuleCodesFromDocs } from "./lints/rulePolicy.js";
 import { simpleLint } from "./lints/simpleLint.js";
 import { simpleParameterize } from "./parameterizer/suggest.js";
 import { simpleParse } from "./parser/simpleParser.js";
@@ -44,6 +45,8 @@ import type {
   ProgramAdvisorOptions,
   ProgramAdvisorReport,
   ProgramAst,
+  ProfileRuleDoc,
+  RulePolicy,
   RunJobCheckInput,
   RunJobCheckResult,
   ProveoutPatchResult,
@@ -85,14 +88,27 @@ export function simulate(
   return simpleSimulate(ast, initialState, limits);
 }
 
-export function lint(ast: ProgramAst, profile: ControllerProfile): LintIssue[] {
+export type LintOptions = {
+  rulePolicy?: RulePolicy;
+  profileRuleDocs?: readonly ProfileRuleDoc[];
+};
+
+export function lint(ast: ProgramAst, profile: ControllerProfile, options?: LintOptions): LintIssue[] {
   const commonIssues = simpleLint(ast);
-  const profileIssues = profile.validateAst ? profile.validateAst(ast) : [];
-  return [...commonIssues, ...profileIssues];
+  let profileIssues = profile.validateAst ? profile.validateAst(ast) : [];
+  if (options?.profileRuleDocs && options.profileRuleDocs.length > 0) {
+    profileIssues = attachRuleCodesFromDocs(profileIssues, options.profileRuleDocs);
+  }
+  const merged = [...commonIssues, ...profileIssues];
+  return applyRulePolicy(merged, options?.rulePolicy);
 }
 
-export function lintWithProvenance(ast: ProgramAst, profile: ControllerProfile): LintIssueWithProvenance[] {
-  const issues = lint(ast, profile);
+export function lintWithProvenance(
+  ast: ProgramAst,
+  profile: ControllerProfile,
+  options?: LintOptions
+): LintIssueWithProvenance[] {
+  const issues = lint(ast, profile, options);
   return withLintProvenance(ast, issues);
 }
 

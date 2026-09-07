@@ -19,7 +19,14 @@
   "cnc-workbench": {
     "profilePack": {
       "controllerKey": "fanuc",
-      "validateAstExport": "fanucIsoProfile"
+      "validateAstExport": "fanucIsoProfile",
+      "ruleDocsExport": "fanucIsoRuleDocs",
+      "manifest": {
+        "controllerKey": "fanuc",
+        "name": "Fanuc ISO",
+        "grammar": ["haas-strict", "fanuc-strict"],
+        "parseCompliance": "strict_fanuc"
+      }
     }
   }
 }

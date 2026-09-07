@@ -28,11 +28,23 @@ import {
 } from "@cnc/core/browser";
 import type {
   AnalyzeShopFixturesResult,
+  DeclarativeRuleDef,
   PreviewShopFixtureAutoFixesResult,
+  ProfileRuleDoc,
+  RulePolicy,
   RunJobCheckResult
 } from "@cnc/core/browser";
-import { haasNgcProfile } from "@cnc/profile-haas-ngc";
+import { runDeclarativeRules } from "@cnc/core/browser";
+import { haasNgcProfile, haasNgcRuleDocs } from "@cnc/profile-haas-ngc";
+import { fanucIsoProfile, fanucIsoRuleDocs } from "@cnc/profile-fanuc-iso";
 import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  buildRuleToggleRows,
+  disableAllDeprecated,
+  filterRuleRows,
+  toggleRuleInPolicy,
+  tryParseCustomDeclarativeRules
+} from "./rulesPolicyView";
 import {
   addPolicyPresetContextToSetupSheetBundle,
   buildPolicyUiEventPayload,
@@ -157,6 +169,14 @@ M30`;
 
 type UiLanguage = "pl" | "en";
 type ControllerProfileKey = "haas-ngc" | "haas-legacy" | "fanuc";
+
+function controllerProfileForKey(key: ControllerProfileKey) {
+  return key === "fanuc" ? fanucIsoProfile : haasNgcProfile;
+}
+
+function ruleDocsForKey(key: ControllerProfileKey): readonly ProfileRuleDoc[] {
+  return key === "fanuc" ? fanucIsoRuleDocs : haasNgcRuleDocs;
+}
 type SubprogramTargetPolicy = "shop_friendly" | "strict_controller";
 type LogSemantics = "controller_default" | "natural" | "base10";
 type JobCheckPolicyPreset = "strict" | "balanced" | "permissive";
@@ -1300,6 +1320,13 @@ export function App() {
   const [fixtureIdManuallyEdited, setFixtureIdManuallyEdited] = useState(false);
   const [fixtureController, setFixtureController] = useState<ControllerProfileKey>("haas-ngc");
   const [fixtureControllerManuallySet, setFixtureControllerManuallySet] = useState(false);
+  const [lintController, setLintController] = useState<ControllerProfileKey>("haas-ngc");
+  const [rulePolicy, setRulePolicy] = useState<RulePolicy | undefined>(undefined);
+  const [ruleFilterQuery, setRuleFilterQuery] = useState("");
+  const [customDeclarativeRulesJson, setCustomDeclarativeRulesJson] = useState("[]");
+  const [customDeclarativeRulesError, setCustomDeclarativeRulesError] = useState("");
+  const [customDeclarativeRules, setCustomDeclarativeRules] = useState<DeclarativeRuleDef[]>([]);
+
   const [fixtureFilename, setFixtureFilename] = useState("");
   const [fixtureExpectMainM99, setFixtureExpectMainM99] = useState(false);
   const [fixtureExpectSimWarnings, setFixtureExpectSimWarnings] = useState(false);
@@ -1348,10 +1375,23 @@ export function App() {
 
   const blacklistedParameters = useMemo(() => parseBlacklistedParameters(parameterBlacklistInput), [parameterBlacklistInput]);
 
-  const ast = useMemo(() => parse(code, haasNgcProfile, { includeExpressionAst: true }), [code]);
+  const activeControllerProfile = useMemo(
+    () => controllerProfileForKey(lintController),
+    [lintController]
+  );
+  const activeRuleDocs = useMemo(() => ruleDocsForKey(lintController), [lintController]);
+  const ruleToggleRows = useMemo(
+    () => filterRuleRows(buildRuleToggleRows(activeRuleDocs, rulePolicy), ruleFilterQuery),
+    [activeRuleDocs, rulePolicy, ruleFilterQuery]
+  );
+
+  const ast = useMemo(
+    () => parse(code, activeControllerProfile, { includeExpressionAst: true }),
+    [code, activeControllerProfile]
+  );
   const formatted = useMemo(
-    () => format(ast, haasNgcProfile, { removeStandaloneOptionalStops }),
-    [ast, removeStandaloneOptionalStops]
+    () => format(ast, activeControllerProfile, { removeStandaloneOptionalStops }),
+    [ast, activeControllerProfile, removeStandaloneOptionalStops]
   );
   const parameterSuggestions = useMemo(
     () =>
@@ -1361,7 +1401,18 @@ export function App() {
       }).suggestions,
     [ast, blacklistedParameters, selectedPreset]
   );
-  const lintIssues = useMemo(() => lintWithProvenance(ast, haasNgcProfile), [ast]);
+  const lintIssues = useMemo(() => {
+    const base = lintWithProvenance(ast, activeControllerProfile, {
+      rulePolicy,
+      profileRuleDocs: activeRuleDocs
+    });
+    if (customDeclarativeRules.length === 0) return base;
+    const extra = runDeclarativeRules(ast, customDeclarativeRules).map((issue) => ({
+      ...issue,
+      provenance: { source: "profile_lint" as const, relatedDiagnostics: [] }
+    }));
+    return [...base, ...extra];
+  }, [ast, activeControllerProfile, rulePolicy, activeRuleDocs, customDeclarativeRules]);
   const lintIssuesBySource = useMemo<Array<[LintIssueProvenanceSource, LintIssueLike[]]>>(
     () => groupLintIssuesBySource(lintIssues as unknown as LintIssueLike[]),
     [lintIssues]
@@ -1926,9 +1977,16 @@ export function App() {
           maxSteps: 10000,
           maxLoopIterations: 1000,
           subprogramTargetPolicy,
-          logSemantics
+          logSemantics,
+          controllerMode: lintController === "haas-legacy" ? "haas-legacy" : lintController === "fanuc" ? "fanuc" : "haas-ngc"
         },
-        parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy
+        parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy,
+        profileLintIssues: [
+          ...(activeControllerProfile.validateAst?.(ast) ?? []),
+          ...runDeclarativeRules(ast, customDeclarativeRules)
+        ],
+        profileRuleDocs: [...activeRuleDocs],
+        rulePolicy
       });
       const parseSummary = result.parseDiagnosticsSummary;
       const parseSummaryStatusSuffix =
@@ -1988,7 +2046,7 @@ export function App() {
       const batch = await runDesktopBatchJobCheck(
         batchFiles,
         async (source) => {
-          const fileAst = parse(source, haasNgcProfile, { includeExpressionAst: true });
+          const fileAst = parse(source, activeControllerProfile, { includeExpressionAst: true });
           return runJobCheck({
             ast: fileAst,
             policyPreset: jobCheckPolicyPreset,
@@ -2010,9 +2068,21 @@ export function App() {
               maxSteps: 10000,
               maxLoopIterations: 1000,
               subprogramTargetPolicy,
-              logSemantics
+              logSemantics,
+              controllerMode:
+                lintController === "haas-legacy"
+                  ? "haas-legacy"
+                  : lintController === "fanuc"
+                    ? "fanuc"
+                    : "haas-ngc"
             },
-            parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy
+            parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy,
+            profileLintIssues: [
+              ...(activeControllerProfile.validateAst?.(fileAst) ?? []),
+              ...runDeclarativeRules(fileAst, customDeclarativeRules)
+            ],
+            profileRuleDocs: [...activeRuleDocs],
+            rulePolicy
           });
         },
         { batchWalk: filtered.batchWalk }
@@ -5490,6 +5560,94 @@ export function App() {
         <button data-testid="run-job-check" onClick={() => void handleRunJobCheck()}>
           {t.runJobCheck}
         </button>
+        <fieldset style={{ marginTop: 12, marginBottom: 12 }} data-testid="lint-controller-rules">
+          <legend>Lint controller & rules</legend>
+          <label style={{ display: "block", marginBottom: 8 }}>
+            Active controller:{" "}
+            <select
+              data-testid="lint-controller-select"
+              value={lintController}
+              onChange={(event) => setLintController(event.target.value as ControllerProfileKey)}
+            >
+              <option value="haas-ngc">haas-ngc</option>
+              <option value="haas-legacy">haas-legacy</option>
+              <option value="fanuc">fanuc</option>
+            </select>
+          </label>
+          <label style={{ display: "block", marginBottom: 8 }}>
+            Filter rules:{" "}
+            <input
+              data-testid="rule-filter-input"
+              value={ruleFilterQuery}
+              onChange={(event) => setRuleFilterQuery(event.target.value)}
+              placeholder="haas.m6 / coolant"
+            />
+          </label>
+          <button
+            type="button"
+            data-testid="disable-deprecated-rules"
+            onClick={() => setRulePolicy(disableAllDeprecated(activeRuleDocs, rulePolicy))}
+            style={{ marginBottom: 8 }}
+          >
+            Disable deprecated rules
+          </button>
+          <div
+            data-testid="rule-toggle-list"
+            style={{ maxHeight: 180, overflow: "auto", border: "1px solid #ccc", padding: 8 }}
+          >
+            {ruleToggleRows.slice(0, 80).map((row) => (
+              <label key={row.id} style={{ display: "block", fontSize: 12, marginBottom: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={row.enabled}
+                  onChange={(event) =>
+                    setRulePolicy(toggleRuleInPolicy(rulePolicy, row.id, event.target.checked))
+                  }
+                />{" "}
+                <code>{row.id}</code>
+                {row.deprecated ? " (deprecated)" : ""} — {row.summary}
+              </label>
+            ))}
+            {ruleToggleRows.length > 80 ? (
+              <p style={{ opacity: 0.7 }}>Showing 80 of {ruleToggleRows.length} rules (filter to narrow).</p>
+            ) : null}
+          </div>
+          <label style={{ display: "block", marginTop: 8 }}>
+            Custom declarative rules (JSON array):
+            <textarea
+              data-testid="custom-declarative-rules"
+              value={customDeclarativeRulesJson}
+              onChange={(event) => setCustomDeclarativeRulesJson(event.target.value)}
+              rows={4}
+              style={{ width: "100%", fontFamily: "monospace", fontSize: 12 }}
+            />
+          </label>
+          <button
+            type="button"
+            data-testid="apply-custom-declarative-rules"
+            onClick={() => {
+              const parsed = tryParseCustomDeclarativeRules(customDeclarativeRulesJson);
+              if (!parsed.ok) {
+                setCustomDeclarativeRulesError(parsed.error);
+                return;
+              }
+              setCustomDeclarativeRulesError("");
+              setCustomDeclarativeRules(parsed.rules);
+            }}
+          >
+            Apply custom rules
+          </button>
+          {customDeclarativeRulesError ? (
+            <p data-testid="custom-declarative-rules-error" style={{ color: "crimson" }}>
+              {customDeclarativeRulesError}
+            </p>
+          ) : null}
+          {customDeclarativeRules.length > 0 ? (
+            <p data-testid="custom-declarative-rules-count">
+              {customDeclarativeRules.length} custom rule(s) active
+            </p>
+          ) : null}
+        </fieldset>
         <details
           open={advancedQaExpanded}
           onToggle={(event) => setAdvancedQaExpanded((event.currentTarget as HTMLDetailsElement).open)}
