@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 581 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 591 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -593,6 +593,16 @@ Total rules: 581 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.m88-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before turning through-spindle coolant on (M88). |
 | `haas.m89-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before turning through-spindle coolant off (M89). |
 | `haas.m89-while-canned` | warning | — | — | Cancel canned cycles with G80 before turning through-spindle coolant off (M89). |
+| `haas.m89-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before turning through-spindle coolant off (M89). |
+| `haas.m89-while-scaling` | warning | — | — | Cancel scaling with G50 before turning through-spindle coolant off (M89). |
+| `haas.m89-while-incremental` | warning | — | — | Restore absolute mode with G90 before turning through-spindle coolant off (M89). |
+| `haas.m89-while-coolant-on` | warning | — | — | Turn flood/mist coolant off with M9 before turning through-spindle coolant off (M89). |
+| `haas.m89-while-tool-length` | warning | — | — | Cancel tool length with G49 before turning through-spindle coolant off (M89). |
+| `haas.m89-while-spindle-off` | warning | — | — | Start the spindle (M3/M4) before turning through-spindle coolant off (M89). |
+| `haas.m98-while-spindle-on` | warning | — | — | Stop the spindle with M5 before the subprogram call (M98). |
+| `haas.m97-while-spindle-on` | warning | — | — | Stop the spindle with M5 before the local subprogram call (M97). |
+| `haas.g65-while-spindle-on` | warning | — | — | Stop the spindle with M5 before the macro call (G65). |
+| `haas.m99-while-spindle-on` | warning | — | — | Stop the spindle with M5 before subprogram return (M99). |
 
 ### `haas.m6-without-t`
 
@@ -18813,6 +18823,314 @@ S1200 M3
 G81 X10. Y10. Z-5. R2. F100.
 G80
 M89
+M30
+```
+
+### `haas.m89-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before turning through-spindle coolant off (M89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68
+M89
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68
+G69
+M89
+M30
+```
+
+### `haas.m89-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before turning through-spindle coolant off (M89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51
+M89
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51
+G50
+M89
+M30
+```
+
+### `haas.m89-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while incremental mode \(G91\) is active/`
+- **Summary:** Restore absolute mode with G90 before turning through-spindle coolant off (M89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G91
+M89
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G91
+G90
+M89
+M30
+```
+
+### `haas.m89-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while flood\/mist coolant is still on/`
+- **Summary:** Turn flood/mist coolant off with M9 before turning through-spindle coolant off (M89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M89
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+M89
+M30
+```
+
+### `haas.m89-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before turning through-spindle coolant off (M89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G90
+G43 H1 Z25.
+M89
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G90
+G43 H1 Z25.
+G49
+M89
+M30
+```
+
+### `haas.m89-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while spindle is off/`
+- **Summary:** Start the spindle (M3/M4) before turning through-spindle coolant off (M89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M89
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M89
+M30
+```
+
+### `haas.m98-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before the subprogram call (M98).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M98 P1000
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+M98 P1000
+M30
+```
+
+### `haas.m97-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before the local subprogram call (M97).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M97 P100
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+M97 P100
+M30
+```
+
+### `haas.g65-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G65 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before the macro call (G65).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G65 P9000
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G65 P9000
+M30
+```
+
+### `haas.m99-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/M99 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before subprogram return (M99).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+M99
 M30
 ```
 

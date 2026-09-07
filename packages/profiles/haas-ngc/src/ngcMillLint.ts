@@ -1574,6 +1574,25 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasExactG80(block),
           message:
             "G80 while spindle is still on — stop spindle with M5 before canceling the canned cycle."
+        },
+        {
+          test: hasWordM(block, 98),
+          message:
+            "M98 while spindle is still on — stop spindle with M5 before the subprogram call."
+        },
+        {
+          test: hasWordM(block, 97),
+          message:
+            "M97 while spindle is still on — stop spindle with M5 before the local subprogram call."
+        },
+        {
+          test: hasExactG65(block),
+          message: "G65 while spindle is still on — stop spindle with M5 before the macro call."
+        },
+        {
+          test: hasWordM(block, 99),
+          message:
+            "M99 while spindle is still on — stop spindle with M5 before subprogram return."
         }
       ];
       for (const guard of spindleOnGuards) {
@@ -1755,6 +1774,54 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "M89 while a canned cycle is still active — cancel with G80 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while coordinate rotation (G68) is still active — cancel with G69 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while scaling (G51) is still active — cancel with G50 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while incremental mode (G91) is active — restore G90 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while flood/mist coolant is still on — turn coolant off with M9 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while tool length compensation (G43) is still active — cancel with G49 when turning through-spindle coolant off.",
+          blockIndex: index
+        });
+      }
+      if (!spindleActive && !hasSpindleOn(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while spindle is off — start spindle (M3/M4) before turning through-spindle coolant off.",
           blockIndex: index
         });
       }

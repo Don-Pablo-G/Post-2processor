@@ -4849,5 +4849,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Cancel canned cycles with G80 before turning through-spindle coolant off (M89).",
     positiveSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nM89\nG80\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-rotation",
+    severity: "warning",
+    messageMatcher: /M89 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68\nM89\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68\nG69\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-scaling",
+    severity: "warning",
+    messageMatcher: /M89 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51\nM89\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51\nG50\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-incremental",
+    severity: "warning",
+    messageMatcher: /M89 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91\nM89\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG91\nG90\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M89 while flood\/mist coolant is still on/,
+    summary: "Turn flood/mist coolant off with M9 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM89\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M89 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG43 H1 Z25.\nM89\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nG43 H1 Z25.\nG49\nM89\nM30\n"
+  },
+  {
+    id: "haas.m89-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /M89 while spindle is off/,
+    summary: "Start the spindle (M3/M4) before turning through-spindle coolant off (M89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM89\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM89\nM30\n"
+  },
+  {
+    id: "haas.m98-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /M98 while spindle is still on/,
+    summary: "Stop the spindle with M5 before the subprogram call (M98).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM98 P1000\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nM98 P1000\nM30\n"
+  },
+  {
+    id: "haas.m97-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /M97 while spindle is still on/,
+    summary: "Stop the spindle with M5 before the local subprogram call (M97).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM97 P100\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nM97 P100\nM30\n"
+  },
+  {
+    id: "haas.g65-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G65 while spindle is still on/,
+    summary: "Stop the spindle with M5 before the macro call (G65).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG65 P9000\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG65 P9000\nM30\n"
+  },
+  {
+    id: "haas.m99-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /M99 while spindle is still on/,
+    summary: "Stop the spindle with M5 before subprogram return (M99).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nM99\nM30\n"
   }
 ];
