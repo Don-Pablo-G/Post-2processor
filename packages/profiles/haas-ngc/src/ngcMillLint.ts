@@ -188,6 +188,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let spindleActive = false;
   let activeSpindleDirection: "cw" | "ccw" | undefined;
   let coolantActive = false;
+  let throughSpindleCoolantActive = false;
   let sawCoolantOnEver = false;
   let g52LocalActive = false;
   let sawG92Shift = false;
@@ -613,6 +614,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "M5 while incremental mode (G91) is active — restore G90 when stopping the spindle.",
+          blockIndex: index
+        });
+      }
+      if (throughSpindleCoolantActive && !hasWordM(block, 89)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M5 while through-spindle coolant (M88) is still active — turn it off with M89 before stopping the spindle.",
           blockIndex: index
         });
       }
@@ -1613,6 +1622,16 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasExactG20Or21(block) !== undefined,
           message:
             "Unit select (G20/G21) while spindle is still on — stop spindle with M5 before changing units."
+        },
+        {
+          test: hasExactPlane(block) !== undefined,
+          message:
+            "Plane select (G17/G18/G19) while spindle is still on — stop spindle with M5 before changing plane."
+        },
+        {
+          test: hasExactG90Or91(block) !== undefined,
+          message:
+            "Distance mode select (G90/G91) while spindle is still on — stop spindle with M5 before changing distance mode."
         }
       ];
       for (const guard of spindleOnGuards) {
@@ -1674,6 +1693,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 6) && throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M6 while through-spindle coolant (M88) is still active — turn it off with M89 before the tool change.",
+        blockIndex: index
+      });
+    }
+
     if (hasWordM(block, 6) && hasExactG4(block)) {
       issues.push({
         severity: "warning",
@@ -1724,6 +1752,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         if (guard.test) {
           issues.push({ severity: "warning", message: guard.message, blockIndex: index });
         }
+      }
+      if (!spindleActive && !hasSpindleOn(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M19 while spindle is off — start spindle (M3/M4) before spindle orientation.",
+          blockIndex: index
+        });
       }
     }
 
@@ -1778,6 +1814,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      throughSpindleCoolantActive = true;
     }
 
     if (hasWordM(block, 89)) {
@@ -1845,6 +1882,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      throughSpindleCoolantActive = false;
     }
 
     if (!spindleActive && !hasSpindleOn(block)) {
@@ -2290,6 +2328,24 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G65 while coolant is still on — turn coolant off with M9 before the macro call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasWordM(block, 98) && throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "M98 while through-spindle coolant (M88) is still active — turn it off with M89 before the subprogram call.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG65(block) && throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G65 while through-spindle coolant (M88) is still active — turn it off with M89 before the macro call.",
         blockIndex: index
       });
     }
@@ -2836,6 +2892,33 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G53 while coolant is still on — turn coolant off with M9 before machine move.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG28(block) && throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G28 while through-spindle coolant (M88) is still active — turn it off with M89 before reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG30(block) && throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G30 while through-spindle coolant (M88) is still active — turn it off with M89 before secondary reference return.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG53(block) && throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G53 while through-spindle coolant (M88) is still active — turn it off with M89 before the machine move.",
         blockIndex: index
       });
     }

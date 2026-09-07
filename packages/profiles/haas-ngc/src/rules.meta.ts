@@ -5009,5 +5009,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Stop the spindle with M5 before changing units (G20/G21).",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG21\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG21\nG54\nS1200 M3\nM30\n"
+  },
+  {
+    id: "haas.m19-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /M19 while spindle is off/,
+    summary: "Start the spindle (M3/M4) before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM19\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM30\n"
+  },
+  {
+    id: "haas.plane-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while spindle is still on/,
+    summary: "Stop the spindle with M5 before changing plane (G17/G18/G19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG17\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG17\nS1200 M3\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while spindle is still on/,
+    summary: "Stop the spindle with M5 before changing distance mode (G90/G91).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nS1200 M3\nM30\n"
+  },
+  {
+    id: "haas.m5-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M5 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before stopping the spindle (M5).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM5\nM30\n"
+  },
+  {
+    id: "haas.m6-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M6 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before the tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nT2 M6\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.g28-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G28 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before reference return (G28).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG28\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG28\nM30\n"
+  },
+  {
+    id: "haas.g30-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G30 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before secondary reference return (G30).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG30\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG30\nM30\n"
+  },
+  {
+    id: "haas.g53-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G53 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before a machine-coordinate move (G53).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG53\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG53\nM30\n"
+  },
+  {
+    id: "haas.m98-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M98 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before the subprogram call (M98).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM98 P1000\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM98 P1000\nM30\n"
+  },
+  {
+    id: "haas.g65-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G65 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before the macro call (G65).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG65 P9010\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG65 P9010\nM30\n"
   }
 ];
