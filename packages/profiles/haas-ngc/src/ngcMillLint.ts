@@ -609,6 +609,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasSpindleOn(block)) {
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while a canned cycle is still active — cancel with G80 before starting the spindle.",
+          blockIndex: index
+        });
+      }
       sawSpindleOn = true;
       spindleActive = true;
       if (nextSpindleDirection !== undefined) {
@@ -684,6 +692,51 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       coolantActive = true;
     }
     if (hasCoolantOff(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M9 while cutter compensation (G41/G42) is still active — cancel with G40 when turning coolant off.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "M9 while a canned cycle is still active — cancel with G80 when turning coolant off.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M9 while tool length compensation (G43) is still active — cancel with G49 when turning coolant off.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M9 while coordinate rotation (G68) is still active — cancel with G69 when turning coolant off.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "M9 while scaling (G51) is still active — cancel with G50 when turning coolant off.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "M9 while incremental mode (G91) is active — restore G90 when turning coolant off.",
+          blockIndex: index
+        });
+      }
       coolantActive = false;
     }
 
@@ -2203,6 +2256,23 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG0(block) && rotationActive && !hasExactG69(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G0 rapid while coordinate rotation (G68) is still active — cancel with G69 before rapid moves.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactG0(block) && scalingActive && !hasExactG50(block)) {
+      issues.push({
+        severity: "warning",
+        message: "G0 rapid while scaling (G51) is still active — cancel with G50 before rapid moves.",
+        blockIndex: index
+      });
+    }
+
     if (hasExactFeedMotion(block) && !hasLetter(block, "F") && !sawAnyFeedRate) {
       issues.push({
         severity: "warning",
@@ -2292,6 +2362,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "G80 while incremental mode (G91) is active — restore G90 before canceling the canned cycle.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G80 while coolant is still on — turn coolant off with M9 before canceling the canned cycle.",
           blockIndex: index
         });
       }

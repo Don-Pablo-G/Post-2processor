@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 371 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 381 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -281,6 +281,16 @@ Total rules: 371 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.feed-mode-while-tool-length` | warning | — | — | Cancel tool length with G49 before changing feed mode. |
 | `haas.path-mode-while-tool-length` | warning | — | — | Cancel tool length with G49 before changing path mode. |
 | `haas.g41-g42-while-coolant-on` | warning | — | — | Turn coolant off with M9 before cutter compensation. |
+| `haas.g0-while-rotation` | warning | — | — | Cancel rotation with G69 before G0 rapid moves. |
+| `haas.g0-while-scaling` | warning | — | — | Cancel scaling with G50 before G0 rapid moves. |
+| `haas.g80-while-coolant-on` | warning | — | — | Turn coolant off with M9 before canceling canned cycles with G80. |
+| `haas.m9-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 when turning coolant off. |
+| `haas.m9-while-canned` | warning | — | — | Cancel canned cycles with G80 when turning coolant off. |
+| `haas.m9-while-tool-length` | warning | — | — | Cancel tool length with G49 when turning coolant off. |
+| `haas.m9-while-rotation` | warning | — | — | Cancel rotation with G69 when turning coolant off. |
+| `haas.m9-while-scaling` | warning | — | — | Cancel scaling with G50 when turning coolant off. |
+| `haas.m9-while-incremental` | warning | — | — | Restore G90 when turning coolant off. |
+| `haas.spindle-on-while-canned` | warning | — | — | Cancel canned cycles with G80 before starting the spindle. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -9031,6 +9041,364 @@ M8
 M9
 G41 D1
 G40
+M5
+M30
+```
+
+### `haas.g0-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before G0 rapid moves.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G0 X10.
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G0 X10.
+M5
+M30
+```
+
+### `haas.g0-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before G0 rapid moves.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G0 X10.
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+G0 X10.
+M5
+M30
+```
+
+### `haas.g80-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G80 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before canceling canned cycles with G80.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G81 Z-1. R0.1 F10.
+G80
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G81 Z-1. R0.1 F10.
+M9
+G80
+M5
+M30
+```
+
+### `haas.m9-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 when turning coolant off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G41 D1
+M9
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G41 D1
+G40
+M9
+M5
+M30
+```
+
+### `haas.m9-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 when turning coolant off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G81 Z-1. R0.1 F10.
+M9
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G81 Z-1. R0.1 F10.
+G80
+M9
+M5
+M30
+```
+
+### `haas.m9-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 when turning coolant off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+M9
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G49
+M9
+M5
+M30
+```
+
+### `haas.m9-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 when turning coolant off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G68 X0 Y0 R45.
+M9
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G68 X0 Y0 R45.
+G69
+M9
+M5
+M30
+```
+
+### `haas.m9-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 when turning coolant off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G51 P2.
+M9
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G51 P2.
+G50
+M9
+M5
+M30
+```
+
+### `haas.m9-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 when turning coolant off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+M8
+M9
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+M8
+G90
+M9
+M5
+M30
+```
+
+### `haas.spindle-on-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle start \(M3\/M4\) while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before starting the spindle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+M5
+M3
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+M5
+M3
 M5
 M30
 ```

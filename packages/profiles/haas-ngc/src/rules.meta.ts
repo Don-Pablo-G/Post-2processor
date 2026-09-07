@@ -2183,6 +2183,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nM9\nG41 D1\nG40\nM5\nM30\n"
   },
   {
+    id: "haas.g0-while-rotation",
+    severity: "warning",
+    messageMatcher: /G0 rapid while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before G0 rapid moves.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG0 X10.\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG0 X10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g0-while-scaling",
+    severity: "warning",
+    messageMatcher: /G0 rapid while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G0 rapid moves.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG0 X10.\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG0 X10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g80-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G80 while coolant is still on/,
+    summary: "Turn coolant off with M9 before canceling canned cycles with G80.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG81 Z-1. R0.1 F10.\nG80\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG81 Z-1. R0.1 F10.\nM9\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.m9-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M9 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 when turning coolant off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG41 D1\nM9\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG41 D1\nG40\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.m9-while-canned",
+    severity: "warning",
+    messageMatcher: /M9 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 when turning coolant off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG81 Z-1. R0.1 F10.\nM9\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG81 Z-1. R0.1 F10.\nG80\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.m9-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M9 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 when turning coolant off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nM9\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG49\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.m9-while-rotation",
+    severity: "warning",
+    messageMatcher: /M9 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 when turning coolant off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG68 X0 Y0 R45.\nM9\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG68 X0 Y0 R45.\nG69\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.m9-while-scaling",
+    severity: "warning",
+    messageMatcher: /M9 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 when turning coolant off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG51 P2.\nM9\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG51 P2.\nG50\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.m9-while-incremental",
+    severity: "warning",
+    messageMatcher: /M9 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 when turning coolant off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM8\nM9\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM8\nG90\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.spindle-on-while-canned",
+    severity: "warning",
+    messageMatcher: /Spindle start \(M3\/M4\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before starting the spindle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM5\nM3\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM5\nM3\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,
