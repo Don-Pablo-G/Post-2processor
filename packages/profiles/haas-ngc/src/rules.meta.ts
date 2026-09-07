@@ -4689,5 +4689,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Stop the spindle with M5 before enabling G51 scaling.",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51\nG50\nM5\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG51\nG50\nM30\n"
+  },
+  {
+    id: "haas.m19-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M19 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nM19\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG41 D1\nG40\nM19\nM30\n"
+  },
+  {
+    id: "haas.m19-while-canned",
+    severity: "warning",
+    messageMatcher: /M19 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nM19\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM19\nM30\n"
+  },
+  {
+    id: "haas.m19-while-rotation",
+    severity: "warning",
+    messageMatcher: /M19 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68\nM19\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68\nG69\nM19\nM30\n"
+  },
+  {
+    id: "haas.m19-while-scaling",
+    severity: "warning",
+    messageMatcher: /M19 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51\nM19\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51\nG50\nM19\nM30\n"
+  },
+  {
+    id: "haas.m19-while-incremental",
+    severity: "warning",
+    messageMatcher: /M19 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nM19\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG90\nM19\nM30\n"
+  },
+  {
+    id: "haas.m19-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M19 while coolant is still on/,
+    summary: "Turn coolant off with M9 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM19\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM19\nM5\nM30\n"
+  },
+  {
+    id: "haas.m19-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M19 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before spindle orientation (M19).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG43 H1 Z25.\nM19\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG43 H1 Z25.\nG49\nM19\nM30\n"
+  },
+  {
+    id: "haas.g50-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G50 while spindle is still on/,
+    summary: "Stop the spindle with M5 before canceling scaling with G50.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG50\nM30\n"
+  },
+  {
+    id: "haas.g69-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G69 while spindle is still on/,
+    summary: "Stop the spindle with M5 before canceling coordinate rotation with G69.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG69\nM30\n"
+  },
+  {
+    id: "haas.g80-while-spindle-on",
+    severity: "warning",
+    messageMatcher: /G80 while spindle is still on/,
+    summary: "Stop the spindle with M5 before canceling the canned cycle with G80.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nG80\nM30\n"
   }
 ];

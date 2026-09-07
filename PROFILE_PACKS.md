@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 561 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 571 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -573,6 +573,16 @@ Total rules: 561 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g53-while-spindle-on` | warning | — | — | Stop the spindle with M5 before a G53 machine-coordinate move. |
 | `haas.g68-while-spindle-on` | warning | — | — | Stop the spindle with M5 before enabling G68 coordinate rotation. |
 | `haas.g51-while-spindle-on` | warning | — | — | Stop the spindle with M5 before enabling G51 scaling. |
+| `haas.m19-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before spindle orientation (M19). |
+| `haas.m19-while-canned` | warning | — | — | Cancel canned cycles with G80 before spindle orientation (M19). |
+| `haas.m19-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before spindle orientation (M19). |
+| `haas.m19-while-scaling` | warning | — | — | Cancel scaling with G50 before spindle orientation (M19). |
+| `haas.m19-while-incremental` | warning | — | — | Restore absolute mode with G90 before spindle orientation (M19). |
+| `haas.m19-while-coolant-on` | warning | — | — | Turn coolant off with M9 before spindle orientation (M19). |
+| `haas.m19-while-tool-length` | warning | — | — | Cancel tool length with G49 before spindle orientation (M19). |
+| `haas.g50-while-spindle-on` | warning | — | — | Stop the spindle with M5 before canceling scaling with G50. |
+| `haas.g69-while-spindle-on` | warning | — | — | Stop the spindle with M5 before canceling coordinate rotation with G69. |
+| `haas.g80-while-spindle-on` | warning | — | — | Stop the spindle with M5 before canceling the canned cycle with G80. |
 
 ### `haas.m6-without-t`
 
@@ -18168,6 +18178,314 @@ S1200 M3
 M5
 G51
 G50
+M30
+```
+
+### `haas.m19-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G41 D1
+M19
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G41 D1
+G40
+M19
+M30
+```
+
+### `haas.m19-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+M19
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+M19
+M30
+```
+
+### `haas.m19-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+M19
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68
+G69
+M19
+M30
+```
+
+### `haas.m19-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+M19
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51
+G50
+M19
+M30
+```
+
+### `haas.m19-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while incremental mode \(G91\) is active/`
+- **Summary:** Restore absolute mode with G90 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+M19
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+M19
+M30
+```
+
+### `haas.m19-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M19
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+M19
+M5
+M30
+```
+
+### `haas.m19-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M19 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before spindle orientation (M19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G43 H1 Z25.
+M19
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G43 H1 Z25.
+G49
+M19
+M30
+```
+
+### `haas.g50-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G50 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before canceling scaling with G50.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G50
+M30
+```
+
+### `haas.g69-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G69 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before canceling coordinate rotation with G69.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G69
+M30
+```
+
+### `haas.g80-while-spindle-on`
+
+- **Severity:** warning
+- **Matcher:** `/G80 while spindle is still on/`
+- **Summary:** Stop the spindle with M5 before canceling the canned cycle with G80.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+G80
 M30
 ```
 

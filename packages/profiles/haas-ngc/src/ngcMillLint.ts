@@ -1560,6 +1560,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         {
           test: hasExactG51(block),
           message: "G51 while spindle is still on — stop spindle with M5 before scaling."
+        },
+        {
+          test: hasExactG50(block),
+          message: "G50 while spindle is still on — stop spindle with M5 before canceling scaling."
+        },
+        {
+          test: hasExactG69(block),
+          message:
+            "G69 while spindle is still on — stop spindle with M5 before canceling coordinate rotation."
+        },
+        {
+          test: hasExactG80(block),
+          message:
+            "G80 while spindle is still on — stop spindle with M5 before canceling the canned cycle."
         }
       ];
       for (const guard of spindleOnGuards) {
@@ -1627,6 +1641,51 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         message: "G4 dwell and M6 on the same block — dwell and tool change separately.",
         blockIndex: index
       });
+    }
+
+    if (hasWordM(block, 19)) {
+      const m19Guards: Array<{ test: boolean; message: string }> = [
+        {
+          test: cutterCompActive && !hasExactG40(block),
+          message:
+            "M19 while cutter compensation (G41/G42) is still active — cancel with G40 before spindle orientation."
+        },
+        {
+          test: cannedActive && !hasExactG80(block),
+          message:
+            "M19 while a canned cycle is still active — cancel with G80 before spindle orientation."
+        },
+        {
+          test: rotationActive && !hasExactG69(block),
+          message:
+            "M19 while coordinate rotation (G68) is still active — cancel with G69 before spindle orientation."
+        },
+        {
+          test: scalingActive && !hasExactG50(block),
+          message:
+            "M19 while scaling (G51) is still active — cancel with G50 before spindle orientation."
+        },
+        {
+          test: incrementalActive,
+          message:
+            "M19 while incremental mode (G91) is active — restore G90 before spindle orientation."
+        },
+        {
+          test: coolantActive && !hasCoolantOff(block),
+          message:
+            "M19 while coolant is still on — turn coolant off with M9 before spindle orientation."
+        },
+        {
+          test: toolLengthActive && !hasExactG49(block),
+          message:
+            "M19 while tool length compensation (G43) is still active — cancel with G49 before spindle orientation."
+        }
+      ];
+      for (const guard of m19Guards) {
+        if (guard.test) {
+          issues.push({ severity: "warning", message: guard.message, blockIndex: index });
+        }
+      }
     }
 
     if (hasExactFeedMotion(block) && !spindleActive) {
