@@ -246,9 +246,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     const hasM00 = hasWordM(block, 0);
     const hasM01 = hasWordM(block, 1);
-    if (hasM00 || hasM01) {
-      const stopLabel = hasM00 ? "M00" : "M01";
-      const stopKind = hasM00 ? "program stop" : "optional stop";
+    const hasM02 = hasWordM(block, 2);
+    if (hasM00 || hasM01 || hasM02) {
+      const stopLabel = hasM00 ? "M00" : hasM01 ? "M01" : "M02";
+      const stopKind = hasM00
+        ? "program stop"
+        : hasM01
+          ? "optional stop"
+          : "program end";
       if (coolantActive && !hasCoolantOff(block)) {
         issues.push({
           severity: "warning",
@@ -298,16 +303,18 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
-      const hasRestartSpindleSameBlock = block.words.some((w) => {
-        if (w.letter !== "M") return false;
-        const m = Math.trunc(Number.parseFloat(w.value));
-        return m === 3 || m === 4;
-      });
-      activeStopResumeSafety = {
-        stopBlockIndex: index,
-        stopCode: hasM00 ? 0 : 1,
-        spindleRestartSeen: hasRestartSpindleSameBlock
-      };
+      if (hasM00 || hasM01) {
+        const hasRestartSpindleSameBlock = block.words.some((w) => {
+          if (w.letter !== "M") return false;
+          const m = Math.trunc(Number.parseFloat(w.value));
+          return m === 3 || m === 4;
+        });
+        activeStopResumeSafety = {
+          stopBlockIndex: index,
+          stopCode: hasM00 ? 0 : 1,
+          spindleRestartSeen: hasRestartSpindleSameBlock
+        };
+      }
     } else if (activeStopResumeSafety) {
       const hasRestartSpindle = block.words.some((w) => {
         if (w.letter !== "M") return false;

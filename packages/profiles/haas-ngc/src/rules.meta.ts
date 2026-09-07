@@ -4365,5 +4365,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Select G17/G18/G19 plane before axis motion (parallel to missing unit mode).",
     positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG20\nG94\nG0 X0\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG20\nG94\nG17\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.m02-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M02 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM02\n"
+  },
+  {
+    id: "haas.m02-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M02 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM02\n"
+  },
+  {
+    id: "haas.m02-while-canned",
+    severity: "warning",
+    messageMatcher: /M02 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM02\n"
+  },
+  {
+    id: "haas.m02-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M02 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nM02\n"
+  },
+  {
+    id: "haas.m02-while-rotation",
+    severity: "warning",
+    messageMatcher: /M02 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG69\nM02\n"
+  },
+  {
+    id: "haas.m02-while-scaling",
+    severity: "warning",
+    messageMatcher: /M02 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nS1200 M3\nG50\nM02\n"
+  },
+  {
+    id: "haas.m02-while-incremental",
+    severity: "warning",
+    messageMatcher: /M02 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before an M02 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nM02\n"
+  },
+  {
+    id: "haas.p-while-canned",
+    severity: "warning",
+    messageMatcher: /P word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nP100\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-canned",
+    severity: "warning",
+    messageMatcher: /R word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nR0.1\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.stop-restart-unsafe-z",
+    severity: "warning",
+    messageMatcher: /is followed by a move below Z0 before spindle restart/,
+    summary: "After M00/M01, avoid moving below Z0 before restarting the spindle (M3/M4).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nM5\nM00\nG0 Z-1.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nM5\nM00\nS1200 M3\nG0 Z-1.\nM30\n"
   }
 ];

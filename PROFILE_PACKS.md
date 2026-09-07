@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 521 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 531 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -533,6 +533,16 @@ Total rules: 521 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g93-and-g95-same-block` | warning | — | — | Do not select inverse-time (G93) and per-rev (G95) feed on one block. |
 | `haas.g93-and-g94-mixed` | warning | — | — | Mixing G93 and G94 feed modes in one program is ambiguous — pick one. |
 | `haas.missing-plane-mode` | warning | — | — | Select G17/G18/G19 plane before axis motion (parallel to missing unit mode). |
+| `haas.m02-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M02 program end. |
+| `haas.m02-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M02 program end. |
+| `haas.m02-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M02 program end. |
+| `haas.m02-while-tool-length` | warning | — | — | Cancel tool length with G49 before an M02 program end. |
+| `haas.m02-while-rotation` | warning | — | — | Cancel rotation with G69 before an M02 program end. |
+| `haas.m02-while-scaling` | warning | — | — | Cancel scaling with G50 before an M02 program end. |
+| `haas.m02-while-incremental` | warning | — | — | Restore G90 before an M02 program end. |
+| `haas.p-while-canned` | warning | — | — | Cancel canned cycles with G80 before using P outside call/dwell/scaling/canned context. |
+| `haas.r-while-canned` | warning | — | — | Cancel canned cycles with G80 before using R outside canned/arc/rotation context. |
+| `haas.stop-restart-unsafe-z` | warning | — | — | After M00/M01, avoid moving below Z0 before restarting the spindle (M3/M4). |
 
 ### `haas.m6-without-t`
 
@@ -16932,6 +16942,314 @@ G20
 G94
 G17
 G0 X0
+M30
+```
+
+### `haas.m02-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+M02
+```
+
+### `haas.m02-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+M02
+```
+
+### `haas.m02-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+M02
+```
+
+### `haas.m02-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+M02
+```
+
+### `haas.m02-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+G69
+M02
+```
+
+### `haas.m02-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+S1200 M3
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+S1200 M3
+G50
+M02
+```
+
+### `haas.m02-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+M02
+```
+
+### `haas.p-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/P word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+P100
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+P100
+M5
+M30
+```
+
+### `haas.r-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/R word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+R0.1
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+R0.1
+M5
+M30
+```
+
+### `haas.stop-restart-unsafe-z`
+
+- **Severity:** warning
+- **Matcher:** `/is followed by a move below Z0 before spindle restart/`
+- **Summary:** After M00/M01, avoid moving below Z0 before restarting the spindle (M3/M4).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+M5
+M00
+G0 Z-1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+M5
+M00
+S1200 M3
+G0 Z-1.
 M30
 ```
 

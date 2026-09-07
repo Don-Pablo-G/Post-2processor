@@ -39,7 +39,8 @@ const R_WHILE_CODES = [
   "haas.r-while-scaling",
   "haas.r-while-incremental",
   "haas.r-while-coolant-on",
-  "haas.r-while-tool-length"
+  "haas.r-while-tool-length",
+  "haas.r-while-canned"
 ] as const;
 
 const P_WHILE_CODES = [
@@ -48,7 +49,8 @@ const P_WHILE_CODES = [
   "haas.p-while-scaling",
   "haas.p-while-tool-length",
   "haas.p-while-incremental",
-  "haas.p-while-coolant-on"
+  "haas.p-while-coolant-on",
+  "haas.p-while-canned"
 ] as const;
 
 const IJK_WHILE_CODES = [
@@ -269,6 +271,14 @@ export function lintHaasOrphanWordWhile(
           blockIndex: index
         });
       }
+      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
+        pushIfEnabled(issues, disabled, "haas.r-while-canned", {
+          severity: "warning",
+          message:
+            "R word while a canned cycle is still active — cancel with G80 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
     }
 
     if (!skipP && hasLetter(block, "P") && !hasPWordContext(block)) {
@@ -317,6 +327,14 @@ export function lintHaasOrphanWordWhile(
           severity: "warning",
           message:
             "P word while coolant is still on — turn coolant off with M9 before using P outside call/dwell/scaling/canned context.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
+        pushIfEnabled(issues, disabled, "haas.p-while-canned", {
+          severity: "warning",
+          message:
+            "P word while a canned cycle is still active — cancel with G80 before using P outside call/dwell/scaling/canned context.",
           blockIndex: index
         });
       }
