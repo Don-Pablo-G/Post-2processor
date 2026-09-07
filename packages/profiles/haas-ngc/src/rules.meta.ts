@@ -2743,6 +2743,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nQ0.1\nM5\nM30\n"
   },
   {
+    id: "haas.r-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /R word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nR0.1\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-rotation",
+    severity: "warning",
+    messageMatcher: /R word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nR0.1\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-scaling",
+    severity: "warning",
+    messageMatcher: /R word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nR0.1\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-incremental",
+    severity: "warning",
+    messageMatcher: /R word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nR0.1\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /R word while coolant is still on/,
+    summary: "Turn coolant off with M9 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nR0.1\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-tool-length",
+    severity: "warning",
+    messageMatcher: /R word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nR0.1\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.p-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /P word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nP100\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.p-while-rotation",
+    severity: "warning",
+    messageMatcher: /P word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nP100\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.p-while-scaling",
+    severity: "warning",
+    messageMatcher: /P word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nP100\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.p-while-tool-length",
+    severity: "warning",
+    messageMatcher: /P word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nP100\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nP100\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

@@ -244,6 +244,23 @@ function hasExactPeckCycle(block: { words: Word[] }): boolean {
   });
 }
 
+/** R is legitimate on canned cycles, arcs, and G68 rotation angle. */
+function hasRWordContext(block: { words: Word[] }): boolean {
+  return hasCannedCycle(block) || hasExactArcMotion(block) || hasExactG68(block);
+}
+
+/** P is legitimate on subprogram/macro calls, dwell, scaling, and canned dwell. */
+function hasPWordContext(block: { words: Word[] }): boolean {
+  return (
+    hasWordM(block, 98) ||
+    hasWordM(block, 97) ||
+    hasExactG65(block) ||
+    hasExactG4(block) ||
+    hasExactG51(block) ||
+    hasCannedCycle(block)
+  );
+}
+
 function exactCutterSide(block: { words: Word[] }): 41 | 42 | undefined {
   let side: 41 | 42 | undefined;
   for (const w of block.words) {
@@ -1741,6 +1758,92 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Q word while coolant is still on — turn coolant off with M9 before using Q outside a peck cycle.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasLetter(block, "R") && !hasRWordContext(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "R word while cutter compensation (G41/G42) is still active — cancel with G40 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "R word while coordinate rotation (G68) is still active — cancel with G69 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "R word while scaling (G51) is still active — cancel with G50 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "R word while incremental mode (G91) is active — restore G90 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "R word while coolant is still on — turn coolant off with M9 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "R word while tool length compensation (G43) is still active — cancel with G49 before using R outside canned/arc/rotation context.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasLetter(block, "P") && !hasPWordContext(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "P word while cutter compensation (G41/G42) is still active — cancel with G40 before using P outside call/dwell/scaling/canned context.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "P word while coordinate rotation (G68) is still active — cancel with G69 before using P outside call/dwell/scaling/canned context.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "P word while scaling (G51) is still active — cancel with G50 before using P outside call/dwell/scaling/canned context.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "P word while tool length compensation (G43) is still active — cancel with G49 before using P outside call/dwell/scaling/canned context.",
           blockIndex: index
         });
       }

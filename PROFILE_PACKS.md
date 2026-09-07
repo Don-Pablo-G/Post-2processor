@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 441 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 451 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -351,6 +351,16 @@ Total rules: 441 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.q-while-scaling` | warning | — | — | Cancel scaling with G50 before using Q outside a peck cycle. |
 | `haas.q-while-incremental` | warning | — | — | Restore G90 before using Q outside a peck cycle. |
 | `haas.q-while-coolant-on` | warning | — | — | Turn coolant off with M9 before using Q outside a peck cycle. |
+| `haas.r-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before using R outside canned/arc/rotation context. |
+| `haas.r-while-rotation` | warning | — | — | Cancel rotation with G69 before using R outside canned/arc/rotation context. |
+| `haas.r-while-scaling` | warning | — | — | Cancel scaling with G50 before using R outside canned/arc/rotation context. |
+| `haas.r-while-incremental` | warning | — | — | Restore G90 before using R outside canned/arc/rotation context. |
+| `haas.r-while-coolant-on` | warning | — | — | Turn coolant off with M9 before using R outside canned/arc/rotation context. |
+| `haas.r-while-tool-length` | warning | — | — | Cancel tool length with G49 before using R outside canned/arc/rotation context. |
+| `haas.p-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before using P outside call/dwell/scaling/canned context. |
+| `haas.p-while-rotation` | warning | — | — | Cancel rotation with G69 before using P outside call/dwell/scaling/canned context. |
+| `haas.p-while-scaling` | warning | — | — | Cancel scaling with G50 before using P outside call/dwell/scaling/canned context. |
+| `haas.p-while-tool-length` | warning | — | — | Cancel tool length with G49 before using P outside call/dwell/scaling/canned context. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -11555,6 +11565,350 @@ S1200 M3
 M8
 M9
 Q0.1
+M5
+M30
+```
+
+### `haas.r-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/R word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+R0.1
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+R0.1
+M5
+M30
+```
+
+### `haas.r-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/R word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+R0.1
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+R0.1
+M5
+M30
+```
+
+### `haas.r-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/R word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+R0.1
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+R0.1
+M5
+M30
+```
+
+### `haas.r-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/R word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+R0.1
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+R0.1
+M5
+M30
+```
+
+### `haas.r-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/R word while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+R0.1
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+R0.1
+M5
+M30
+```
+
+### `haas.r-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/R word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+R0.1
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+R0.1
+M5
+M30
+```
+
+### `haas.p-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/P word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+P100
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+P100
+M5
+M30
+```
+
+### `haas.p-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/P word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+P100
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+P100
+M5
+M30
+```
+
+### `haas.p-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/P word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+P100
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+P100
+M5
+M30
+```
+
+### `haas.p-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/P word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+P100
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+P100
 M5
 M30
 ```
