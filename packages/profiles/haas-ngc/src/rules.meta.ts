@@ -2823,6 +2823,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nP100\nM5\nM30\n"
   },
   {
+    id: "haas.p-while-incremental",
+    severity: "warning",
+    messageMatcher: /P word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nP100\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.p-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /P word while coolant is still on/,
+    summary: "Turn coolant off with M9 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nP100\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nI1.\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-rotation",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nI1.\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-scaling",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nI1.\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-incremental",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nI1.\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while coolant is still on/,
+    summary: "Turn coolant off with M9 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nI1.\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-tool-length",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nI1.\nG49\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-canned",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nI1.\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.g92-used-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends after G92 was used/,
+    summary: "Verify the coordinate system is restored before M02/M30 after G92.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG92 X0\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 451 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 461 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -361,6 +361,16 @@ Total rules: 451 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.p-while-rotation` | warning | — | — | Cancel rotation with G69 before using P outside call/dwell/scaling/canned context. |
 | `haas.p-while-scaling` | warning | — | — | Cancel scaling with G50 before using P outside call/dwell/scaling/canned context. |
 | `haas.p-while-tool-length` | warning | — | — | Cancel tool length with G49 before using P outside call/dwell/scaling/canned context. |
+| `haas.p-while-incremental` | warning | — | — | Restore G90 before using P outside call/dwell/scaling/canned context. |
+| `haas.p-while-coolant-on` | warning | — | — | Turn coolant off with M9 before using P outside call/dwell/scaling/canned context. |
+| `haas.ijk-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before using I/J/K outside arc context. |
+| `haas.ijk-while-rotation` | warning | — | — | Cancel rotation with G69 before using I/J/K outside arc context. |
+| `haas.ijk-while-scaling` | warning | — | — | Cancel scaling with G50 before using I/J/K outside arc context. |
+| `haas.ijk-while-incremental` | warning | — | — | Restore G90 before using I/J/K outside arc context. |
+| `haas.ijk-while-coolant-on` | warning | — | — | Turn coolant off with M9 before using I/J/K outside arc context. |
+| `haas.ijk-while-tool-length` | warning | — | — | Cancel tool length with G49 before using I/J/K outside arc context. |
+| `haas.ijk-while-canned` | warning | — | — | Cancel canned cycles with G80 before using I/J/K outside arc context. |
+| `haas.g92-used-at-end` | warning | — | — | Verify the coordinate system is restored before M02/M30 after G92. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -11909,6 +11919,343 @@ G43 H1 Z25.
 S1200 M3
 G49
 P100
+M5
+M30
+```
+
+### `haas.p-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/P word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+P100
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+P100
+M5
+M30
+```
+
+### `haas.p-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/P word while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+P100
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+P100
+M5
+M30
+```
+
+### `haas.ijk-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+I1.
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+I1.
+M5
+M30
+```
+
+### `haas.ijk-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+I1.
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+I1.
+M5
+M30
+```
+
+### `haas.ijk-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+I1.
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+I1.
+M5
+M30
+```
+
+### `haas.ijk-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+I1.
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+I1.
+M5
+M30
+```
+
+### `haas.ijk-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+I1.
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+I1.
+M5
+M30
+```
+
+### `haas.ijk-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+I1.
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+I1.
+M5
+M30
+```
+
+### `haas.ijk-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+I1.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+I1.
+M5
+M30
+```
+
+### `haas.g92-used-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends after G92 was used/`
+- **Summary:** Verify the coordinate system is restored before M02/M30 after G92.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G92 X0
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
 M5
 M30
 ```

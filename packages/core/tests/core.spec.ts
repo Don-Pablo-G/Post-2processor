@@ -5612,6 +5612,106 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns P word while incremental is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nS1200 M3\nP100\nG90\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("P word while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns P word while coolant is on", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nM8\nP100\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("P word while coolant is still on"))
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while cutter compensation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nI1.\nG40\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while rotation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nI1.\nG69\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while scaling is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nG51 P2.\nI1.\nG50\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while incremental is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nS1200 M3\nI1.\nG90\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while coolant is on", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nM8\nI1.\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while coolant is still on")
+      )
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while tool length is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nI1.\nG49\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns I/J/K word while canned cycle is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nI1.\nG80\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("I/J/K word while a canned cycle is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns when program ends after G92 was used", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nG92 X0\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Program ends after G92 was used")
+      )
+    ).toBe(true);
+  });
+
   it("warns G28 and G92 on the same block", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(

@@ -261,6 +261,15 @@ function hasPWordContext(block: { words: Word[] }): boolean {
   );
 }
 
+/** I/J/K are legitimate on arc motion (center offsets). */
+function hasIjkWordContext(block: { words: Word[] }): boolean {
+  return hasExactArcMotion(block);
+}
+
+function hasIjkWord(block: { words: Word[] }): boolean {
+  return hasLetter(block, "I") || hasLetter(block, "J") || hasLetter(block, "K");
+}
+
 function exactCutterSide(block: { words: Word[] }): 41 | 42 | undefined {
   let side: 41 | 42 | undefined;
   for (const w of block.words) {
@@ -390,6 +399,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let coolantActive = false;
   let sawCoolantOnEver = false;
   let g52LocalActive = false;
+  let sawG92Shift = false;
   let toolLengthActive = false;
   let incrementalActive = false;
   let activeDistanceMode: 90 | 91 | undefined;
@@ -1847,6 +1857,81 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "P word while incremental mode (G91) is active — restore G90 before using P outside call/dwell/scaling/canned context.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "P word while coolant is still on — turn coolant off with M9 before using P outside call/dwell/scaling/canned context.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasIjkWord(block) && !hasIjkWordContext(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while cutter compensation (G41/G42) is still active — cancel with G40 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while coordinate rotation (G68) is still active — cancel with G69 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while scaling (G51) is still active — cancel with G50 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while incremental mode (G91) is active — restore G90 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while coolant is still on — turn coolant off with M9 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while tool length compensation (G43) is still active — cancel with G49 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "I/J/K word while a canned cycle is still active — cancel with G80 before using I/J/K outside arc context.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasExactTappingCycle(block) && !spindleActive) {
@@ -2183,6 +2268,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasExactG92(block)) {
+      sawG92Shift = true;
       issues.push({
         severity: "warning",
         message:
@@ -3396,6 +3482,19 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "Program ends with G52 local offset still applied — cancel with G52 X0 Y0 Z0 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (
+      sawG92Shift &&
+      (hasWordM(block, 2) || hasWordM(block, 30)) &&
+      index === ast.blocks.length - 1
+    ) {
+      issues.push({
+        severity: "warning",
+        message:
+          "Program ends after G92 was used — verify the coordinate system is restored before end.",
         blockIndex: index
       });
     }
