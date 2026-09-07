@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_multiop_local_subs.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 9,
+  "lintIssueCount": 10,
   "lintIssues": [
     {
       "severity": "warning",
@@ -22,6 +22,10 @@
     {
       "severity": "warning",
       "message": "M30 appears before the last block."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
     },
     {
       "severity": "warning",

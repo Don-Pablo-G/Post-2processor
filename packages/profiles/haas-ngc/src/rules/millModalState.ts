@@ -43,6 +43,7 @@ export type MillModalBlockContext = {
   activePathMode: 61 | 64 | undefined;
   g52LocalActive: boolean;
   sawG92Shift: boolean;
+  sawG10DataSetting: boolean;
 };
 
 type MillModalState = {
@@ -59,6 +60,7 @@ type MillModalState = {
   activePathMode: 61 | 64 | undefined;
   g52LocalActive: boolean;
   sawG92Shift: boolean;
+  sawG10DataSetting: boolean;
 };
 
 function snapshot(state: MillModalState): Omit<MillModalBlockContext, "block" | "index" | "isLast"> {
@@ -113,6 +115,9 @@ function applyEarlyUpdates(state: MillModalState, block: Block): void {
 function applyLateUpdates(state: MillModalState, block: Block): void {
   if (hasExactG92(block)) {
     state.sawG92Shift = true;
+  }
+  if (block.words.some((w) => w.letter === "G" && Number.parseFloat(w.value) === 10)) {
+    state.sawG10DataSetting = true;
   }
   if (hasExactG52(block)) {
     const g52Axes = (["X", "Y", "Z"] as const).filter((letter) => hasLetter(block, letter));
@@ -174,7 +179,8 @@ export function walkMillModalState(
     activeFeedMode: undefined,
     activePathMode: undefined,
     g52LocalActive: false,
-    sawG92Shift: false
+    sawG92Shift: false,
+    sawG10DataSetting: false
   };
 
   const lastIndex = ast.blocks.length - 1;
@@ -211,7 +217,8 @@ export function walkMillModalStateAfter(
     activeFeedMode: undefined,
     activePathMode: undefined,
     g52LocalActive: false,
-    sawG92Shift: false
+    sawG92Shift: false,
+    sawG10DataSetting: false
   };
 
   const lastIndex = ast.blocks.length - 1;

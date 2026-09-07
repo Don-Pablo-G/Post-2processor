@@ -15,7 +15,8 @@ const END_HYGIENE_CODES = [
   "haas.feed-mode-active-at-end",
   "haas.path-mode-active-at-end",
   "haas.g52-active-at-end",
-  "haas.g92-used-at-end"
+  "haas.g92-used-at-end",
+  "haas.g10-used-at-end"
 ] as const;
 
 function familyDisabled(disabled: ReadonlySet<string> | undefined, codes: readonly string[]): boolean {
@@ -152,6 +153,15 @@ export function lintHaasEndHygiene(
         severity: "warning",
         message:
           "Program ends after G92 was used — verify the coordinate system is restored before end.",
+        blockIndex: index
+      });
+    }
+
+    if (ctx.sawG10DataSetting) {
+      pushIfEnabled(issues, disabled, "haas.g10-used-at-end", {
+        severity: "warning",
+        message:
+          "Program ends after G10 data setting — verify offsets/registers are intentional before end.",
         blockIndex: index
       });
     }

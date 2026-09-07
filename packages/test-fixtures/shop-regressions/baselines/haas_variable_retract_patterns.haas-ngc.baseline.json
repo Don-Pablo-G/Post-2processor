@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_variable_retract_patterns.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 4,
+  "lintIssueCount": 5,
   "lintIssues": [
     {
       "severity": "warning",
@@ -10,6 +10,10 @@
     {
       "severity": "warning",
       "message": "Program must end with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
     },
     {
       "severity": "warning",

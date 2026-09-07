@@ -3885,5 +3885,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "The last block must contain M02, M30, or M99 to close the program cleanly.",
     positiveSnippet: "O0001\nT1 M6\nG0 X0\n",
     negativeSnippet: "O0001\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.l-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /L word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation before an orphan L word (outside M98/G65/G10).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG41 D1 X10.\nL2\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG41 D1 X10.\nG40\nL2\nM30\n"
+  },
+  {
+    id: "haas.l-while-canned",
+    severity: "warning",
+    messageMatcher: /L word while a canned cycle is still active/,
+    summary: "Cancel the canned cycle before an orphan L word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nL2\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nL2\nM30\n"
+  },
+  {
+    id: "haas.l-while-rotation",
+    severity: "warning",
+    messageMatcher: /L word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel G68 before an orphan L word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nL2\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nL2\nM30\n"
+  },
+  {
+    id: "haas.l-while-scaling",
+    severity: "warning",
+    messageMatcher: /L word while scaling \(G51\) is still active/,
+    summary: "Cancel G51 before an orphan L word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nL2\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nL2\nM30\n"
+  },
+  {
+    id: "haas.l-while-incremental",
+    severity: "warning",
+    messageMatcher: /L word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before an orphan L word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nL2\nG90\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nG90\nL2\nM30\n"
+  },
+  {
+    id: "haas.l-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /L word while coolant is still on/,
+    summary: "Turn coolant off before an orphan L word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nL2\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nL2\nM30\n"
+  },
+  {
+    id: "haas.l-while-tool-length",
+    severity: "warning",
+    messageMatcher: /L word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel G43 before an orphan L word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nL2\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nG49\nL2\nM30\n"
+  },
+  {
+    id: "haas.q-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Q word while tool length compensation \(G43\) is still active/,
+    summary: "Cancel G43 before an orphan Q word outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nQ0.1\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nG49\nQ0.1\nM30\n"
+  },
+  {
+    id: "haas.missing-unit-mode",
+    severity: "warning",
+    messageMatcher: /Axis motion before any unit mode \(G20\/G21\)/,
+    summary: "Select G20 or G21 before axis motion (parallel to missing distance mode).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nG0 X0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nG21\nG0 X0\nM30\n"
+  },
+  {
+    id: "haas.g10-used-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends after G10 data setting/,
+    summary: "Ending after G10 offset/data writes is easy to leave latched — verify intentional.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG10 L2 P1 X0 Y0 Z0\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM30\n"
   }
 ];

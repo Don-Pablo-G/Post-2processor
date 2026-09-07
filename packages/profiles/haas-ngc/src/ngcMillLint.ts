@@ -194,6 +194,8 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let sawAxisMotion = false;
   let sawDistanceMode = false;
   let warnedMissingDistanceMode = false;
+  let sawUnitMode = false;
+  let warnedMissingUnitMode = false;
   let activeWorkOffset: number | undefined;
   let activeUnitMode: 20 | 21 | undefined;
   let lastToolNumber: number | undefined;
@@ -1032,6 +1034,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     const unitModeEarly = hasExactG20Or21(block);
     if (unitModeEarly !== undefined) {
+      sawUnitMode = true;
       if (
         sawAxisMotion &&
         activeUnitMode !== undefined &&
@@ -1096,6 +1099,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         });
       }
       activeUnitMode = unitModeEarly;
+    }
+
+    if (
+      !warnedMissingUnitMode &&
+      (hasExactG0(block) || hasExactFeedMotion(block) || hasCannedCycle(block)) &&
+      hasAxisWord(block) &&
+      !sawUnitMode
+    ) {
+      issues.push({
+        severity: "warning",
+        message: "Axis motion before any unit mode (G20/G21) — select inch or metric units first.",
+        blockIndex: index
+      });
+      warnedMissingUnitMode = true;
     }
 
     if (hasExactFeedMotion(block) || hasCannedCycle(block)) {

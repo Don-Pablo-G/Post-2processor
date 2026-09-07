@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 461 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 471 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -473,6 +473,16 @@ Total rules: 461 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.duplicate-sequence-n` | warning | — | — | Duplicate N numbers make GOTO/M97 targets ambiguous. |
 | `haas.duplicate-program-label-o` | warning | — | — | Two O#### headers with the same number — subprogram targets become ambiguous. |
 | `haas.missing-program-end` | warning | — | — | The last block must contain M02, M30, or M99 to close the program cleanly. |
+| `haas.l-while-cutter-comp` | warning | — | — | Cancel cutter compensation before an orphan L word (outside M98/G65/G10). |
+| `haas.l-while-canned` | warning | — | — | Cancel the canned cycle before an orphan L word. |
+| `haas.l-while-rotation` | warning | — | — | Cancel G68 before an orphan L word. |
+| `haas.l-while-scaling` | warning | — | — | Cancel G51 before an orphan L word. |
+| `haas.l-while-incremental` | warning | — | — | Restore G90 before an orphan L word. |
+| `haas.l-while-coolant-on` | warning | — | — | Turn coolant off before an orphan L word. |
+| `haas.l-while-tool-length` | warning | — | — | Cancel G43 before an orphan L word. |
+| `haas.q-while-tool-length` | warning | — | — | Cancel G43 before an orphan Q word outside a peck cycle. |
+| `haas.missing-unit-mode` | warning | — | — | Select G20 or G21 before axis motion (parallel to missing distance mode). |
+| `haas.g10-used-at-end` | warning | — | — | Ending after G10 offset/data writes is easy to leave latched — verify intentional. |
 
 ### `haas.m6-without-t`
 
@@ -15259,6 +15269,314 @@ G0 X0
 ```gcode
 O0001
 T1 M6
+M30
+```
+
+### `haas.l-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/L word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation before an orphan L word (outside M98/G65/G10).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G41 D1 X10.
+L2
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G41 D1 X10.
+G40
+L2
+M30
+```
+
+### `haas.l-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/L word while a canned cycle is still active/`
+- **Summary:** Cancel the canned cycle before an orphan L word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+L2
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+L2
+M30
+```
+
+### `haas.l-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/L word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel G68 before an orphan L word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+L2
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+L2
+M30
+```
+
+### `haas.l-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/L word while scaling \(G51\) is still active/`
+- **Summary:** Cancel G51 before an orphan L word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+L2
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+L2
+M30
+```
+
+### `haas.l-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/L word while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before an orphan L word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+L2
+G90
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+G90
+L2
+M30
+```
+
+### `haas.l-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/L word while coolant is still on/`
+- **Summary:** Turn coolant off before an orphan L word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+L2
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+L2
+M30
+```
+
+### `haas.l-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/L word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel G43 before an orphan L word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+L2
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+G49
+L2
+M30
+```
+
+### `haas.q-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Q word while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel G43 before an orphan Q word outside a peck cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+Q0.1
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G43 H1 Z25.
+G49
+Q0.1
+M30
+```
+
+### `haas.missing-unit-mode`
+
+- **Severity:** warning
+- **Matcher:** `/Axis motion before any unit mode \(G20\/G21\)/`
+- **Summary:** Select G20 or G21 before axis motion (parallel to missing distance mode).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G0 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G90
+G21
+G0 X0
+M30
+```
+
+### `haas.g10-used-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends after G10 data setting/`
+- **Summary:** Ending after G10 offset/data writes is easy to leave latched — verify intentional.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G10 L2 P1 X0 Y0 Z0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
 M30
 ```
 

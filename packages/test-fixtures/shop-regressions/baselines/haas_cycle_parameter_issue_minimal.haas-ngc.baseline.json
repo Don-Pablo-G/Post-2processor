@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 7,
+  "lintIssueCount": 8,
   "lintIssues": [
     {
       "severity": "warning",
@@ -18,6 +18,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before G90/G91 — set absolute or incremental distance mode first."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
     },
     {
       "severity": "warning",

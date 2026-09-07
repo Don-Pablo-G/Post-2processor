@@ -5506,6 +5506,43 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns L word while cutter compensation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG41 D1 X10.\nL2\nG40\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("L word while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns Q word while tool length is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nQ0.1\nG49\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Q word while tool length compensation (G43) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns axis motion before unit mode", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG90\nG0 X0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Axis motion before any unit mode (G20/G21)")
+      )
+    ).toBe(true);
+  });
+
+  it("warns program end after G10 data setting", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG10 L2 P1 X0 Y0 Z0\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => i.message.includes("Program ends after G10 data setting"))
+    ).toBe(true);
+  });
+
   it("warns R word while cutter compensation is active", () => {
     const ast = parse(
       "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nR0.1\nG40\nM5\nM30",

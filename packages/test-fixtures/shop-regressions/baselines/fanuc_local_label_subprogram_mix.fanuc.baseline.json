@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_local_label_subprogram_mix.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 9,
+  "lintIssueCount": 10,
   "lintIssues": [
     {
       "severity": "warning",
@@ -22,6 +22,10 @@
     {
       "severity": "warning",
       "message": "Axis motion before any work offset (G54-G59/G154) — select a work coordinate system first."
+    },
+    {
+      "severity": "warning",
+      "message": "Axis motion before any unit mode (G20/G21) — select inch or metric units first."
     },
     {
       "severity": "warning",

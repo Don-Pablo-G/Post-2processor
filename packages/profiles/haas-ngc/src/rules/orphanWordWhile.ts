@@ -15,6 +15,11 @@ import {
   hasRWordContext
 } from "./millHelpers.js";
 import { walkMillModalState } from "./millModalState.js";
+import {
+  hasLWordContext,
+  orphanWhileModeCodes,
+  pushOrphanWhileModes
+} from "./orphanWhileModes.js";
 
 const Q_WHILE_CODES = [
   "haas.q-while-cutter-comp",
@@ -22,7 +27,8 @@ const Q_WHILE_CODES = [
   "haas.q-while-rotation",
   "haas.q-while-scaling",
   "haas.q-while-incremental",
-  "haas.q-while-coolant-on"
+  "haas.q-while-coolant-on",
+  "haas.q-while-tool-length"
 ] as const;
 
 const R_WHILE_CODES = [
@@ -53,6 +59,8 @@ const IJK_WHILE_CODES = [
   "haas.ijk-while-canned"
 ] as const;
 
+const L_WHILE_CODES = orphanWhileModeCodes("l");
+
 function familyDisabled(disabled: ReadonlySet<string> | undefined, codes: readonly string[]): boolean {
   if (!disabled || disabled.size === 0) return false;
   return codes.every((code) => disabled.has(code));
@@ -77,7 +85,8 @@ export function lintHaasOrphanWordWhile(
   const skipR = familyDisabled(disabled, R_WHILE_CODES);
   const skipP = familyDisabled(disabled, P_WHILE_CODES);
   const skipIjk = familyDisabled(disabled, IJK_WHILE_CODES);
-  if (skipQ && skipR && skipP && skipIjk) return [];
+  const skipL = familyDisabled(disabled, L_WHILE_CODES);
+  if (skipQ && skipR && skipP && skipIjk && skipL) return [];
 
   const issues: LintIssue[] = [];
 
@@ -93,6 +102,15 @@ export function lintHaasOrphanWordWhile(
       coolantActive,
       toolLengthActive
     } = ctx;
+
+    if (!skipL && hasLetter(block, "L") && !hasLWordContext(block)) {
+      pushOrphanWhileModes(issues, disabled, {
+        letterPrefix: "l",
+        wordLabel: "L word",
+        contextHint: "outside M98/G65/G10 context",
+        ctx
+      });
+    }
 
     if (!skipQ && hasLetter(block, "Q") && !hasExactPeckCycle(block)) {
       if (cutterCompActive && !hasExactG40(block)) {
@@ -143,6 +161,13 @@ export function lintHaasOrphanWordWhile(
           blockIndex: index
         });
       }
+      pushOrphanWhileModes(issues, disabled, {
+        letterPrefix: "q",
+        wordLabel: "Q word",
+        contextHint: "outside a peck cycle",
+        ctx,
+        modeSuffixes: ["tool-length"]
+      });
     }
 
     if (!skipR && hasLetter(block, "R") && !hasRWordContext(block)) {
