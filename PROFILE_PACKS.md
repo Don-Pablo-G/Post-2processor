@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 321 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 331 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -231,6 +231,16 @@ Total rules: 321 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g50-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G50 scaling cancel. |
 | `haas.g50-while-incremental` | warning | — | — | Restore G90 before G50 scaling cancel. |
 | `haas.g80-while-incremental` | warning | — | — | Restore G90 before G80 canned-cycle cancel. |
+| `haas.g40-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G40 cutter-comp cancel. |
+| `haas.g40-while-incremental` | warning | — | — | Restore G90 before G40 cutter-comp cancel. |
+| `haas.g41-g42-while-canned` | warning | — | — | Cancel canned cycles with G80 before G41/G42 cutter compensation. |
+| `haas.g41-g42-while-rotation` | warning | — | — | Cancel rotation with G69 before G41/G42 cutter compensation. |
+| `haas.g41-g42-while-scaling` | warning | — | — | Cancel scaling with G50 before G41/G42 cutter compensation. |
+| `haas.g41-g42-while-incremental` | warning | — | — | Restore G90 before G41/G42 cutter compensation. |
+| `haas.g43-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before applying G43 tool length. |
+| `haas.g43-while-canned` | warning | — | — | Cancel canned cycles with G80 before applying G43 tool length. |
+| `haas.canned-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a canned cycle. |
+| `haas.canned-while-rotation` | warning | — | — | Cancel rotation with G69 before a canned cycle. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -7162,6 +7172,380 @@ G91
 S1200 M3
 G81 Z-1. R0.1 F10.
 G90
+G80
+M5
+M30
+```
+
+### `haas.g40-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G40 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before G40 cutter-comp cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G41 D1
+G40
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G41 D1
+M9
+G40
+M5
+M30
+```
+
+### `haas.g40-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G40 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G40 cutter-comp cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G91
+S1200 M3
+G41 D1
+G40
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G91
+S1200 M3
+G41 D1
+G90
+G40
+M5
+M30
+```
+
+### `haas.g41-g42-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before G41/G42 cutter compensation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G81 Z-1. R0.1 F10.
+G41 D1
+G80
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G41 D1
+G40
+M5
+M30
+```
+
+### `haas.g41-g42-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before G41/G42 cutter compensation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G68 X0 Y0 R45.
+G41 D1
+G69
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G41 D1
+G40
+M5
+M30
+```
+
+### `haas.g41-g42-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before G41/G42 cutter compensation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G51 P2.
+G41 D1
+G50
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G51 P2.
+G50
+G41 D1
+G40
+M5
+M30
+```
+
+### `haas.g41-g42-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G41/G42 cutter compensation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G91
+S1200 M3
+G41 D1
+G90
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G91
+S1200 M3
+G90
+G41 D1
+G40
+M5
+M30
+```
+
+### `haas.g43-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G43 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before applying G43 tool length.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G43 H1 Z25.
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+G43 H1 Z25.
+M5
+M30
+```
+
+### `haas.g43-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G43 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before applying G43 tool length.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G81 Z-1. R0.1 F10.
+G43 H1 Z25.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G43 H1 Z25.
+M5
+M30
+```
+
+### `haas.canned-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a canned cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G81 Z-1. R0.1 F10.
+G40
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+G81 Z-1. R0.1 F10.
+G80
+M5
+M30
+```
+
+### `haas.canned-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before a canned cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G81 Z-1. R0.1 F10.
+G69
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G81 Z-1. R0.1 F10.
 G80
 M5
 M30

@@ -688,6 +688,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasG43Classic(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G43 while cutter compensation (G41/G42) is still active — cancel with G40 before applying tool length.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G43 while a canned cycle is still active — cancel with G80 before applying tool length.",
+          blockIndex: index
+        });
+      }
       toolLengthActive = true;
     }
     if (hasExactG49(block)) {
@@ -1773,6 +1788,38 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasExactG41Or42(block)) {
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G41/G42 while a canned cycle is still active — cancel with G80 before cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G41/G42 while coordinate rotation (G68) is still active — cancel with G69 before cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G41/G42 while scaling (G51) is still active — cancel with G50 before cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G41/G42 while incremental mode (G91) is active — restore G90 before cutter compensation.",
+          blockIndex: index
+        });
+      }
+    }
+
     if (hasLetter(block, "D")) {
       sawAnyDOffset = true;
     }
@@ -1812,6 +1859,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "G40 while scaling (G51) is still active — cancel with G50 before canceling cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G40 while coolant is still on — turn coolant off with M9 before canceling cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G40 while incremental mode (G91) is active — restore G90 before canceling cutter compensation.",
           blockIndex: index
         });
       }
@@ -1946,6 +2008,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasCannedCycle(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Canned cycle while cutter compensation (G41/G42) is still active — cancel with G40 before the cycle.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Canned cycle while coordinate rotation (G68) is still active — cancel with G69 before the cycle.",
+          blockIndex: index
+        });
+      }
       if (!hasLetter(block, "Z") && !cannedHasZ) {
         issues.push({
           severity: "warning",
