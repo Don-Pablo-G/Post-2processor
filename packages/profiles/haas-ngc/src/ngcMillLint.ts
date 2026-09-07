@@ -1626,6 +1626,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while incremental mode (G91) is active — restore G90 before changing H offsets.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while coolant is still on — turn coolant off with M9 before changing H offsets.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasLetter(block, "D") && !hasExactG41Or42(block)) {
@@ -1634,6 +1650,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "D offset word while a canned cycle is still active — cancel with G80 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while cutter compensation (G41/G42) is still active — cancel with G40 before changing D offsets.",
           blockIndex: index
         });
       }
@@ -1658,6 +1682,65 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "D offset word while incremental mode (G91) is active — restore G90 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while coolant is still on — turn coolant off with M9 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+    }
+
+    if (hasLetter(block, "Q") && !hasExactPeckCycle(block)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Q word while cutter compensation (G41/G42) is still active — cancel with G40 before using Q outside a peck cycle.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Q word while a canned cycle is still active — cancel with G80 before using Q outside a peck cycle.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Q word while coordinate rotation (G68) is still active — cancel with G69 before using Q outside a peck cycle.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Q word while scaling (G51) is still active — cancel with G50 before using Q outside a peck cycle.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Q word while incremental mode (G91) is active — restore G90 before using Q outside a peck cycle.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Q word while coolant is still on — turn coolant off with M9 before using Q outside a peck cycle.",
           blockIndex: index
         });
       }

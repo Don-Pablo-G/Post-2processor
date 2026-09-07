@@ -2663,6 +2663,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nD2\nM5\nM30\n"
   },
   {
+    id: "haas.h-while-incremental",
+    severity: "warning",
+    messageMatcher: /H offset word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nH2\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.h-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /H offset word while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nH2\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /D offset word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nD2\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nD2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /D offset word while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nD2\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nD2\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Q word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nQ0.1\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nQ0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-canned",
+    severity: "warning",
+    messageMatcher: /Q word while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nQ0.1\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nQ0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-rotation",
+    severity: "warning",
+    messageMatcher: /Q word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nQ0.1\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nQ0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-scaling",
+    severity: "warning",
+    messageMatcher: /Q word while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nQ0.1\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nQ0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-incremental",
+    severity: "warning",
+    messageMatcher: /Q word while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nQ0.1\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nQ0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Q word while coolant is still on/,
+    summary: "Turn coolant off with M9 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nQ0.1\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nQ0.1\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,
