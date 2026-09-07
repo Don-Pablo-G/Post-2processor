@@ -263,6 +263,21 @@ export function hasExactG61Or64(block: { words: Word[] }): 61 | 64 | undefined {
   return mode;
 }
 
+/**
+ * Set of plain integer G codes present on the block (exact float equals, so
+ * G17 is included but G17.1 is not, and G10 is distinct from G100). Useful for
+ * detecting same-block mutually exclusive modal pairs without pairwise ladders.
+ */
+export function exactGCodesOnBlock(block: { words: Word[] }): Set<number> {
+  const codes = new Set<number>();
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (Number.isInteger(v)) codes.add(v);
+  }
+  return codes;
+}
+
 export function lastWordValue(block: { words: Word[] }, letter: string): string | undefined {
   const w = block.words.filter((x) => x.letter === letter).at(-1);
   return w?.value;

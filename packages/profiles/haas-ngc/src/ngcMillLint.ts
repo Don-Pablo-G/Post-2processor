@@ -26,6 +26,7 @@ import {
   hasExactG94Or95,
   hasExactG93Or94Or95,
   hasExactG20Or21,
+  exactGCodesOnBlock,
   hasExactPeckCycle,
   hasExactPlane,
   hasLetter,
@@ -1282,6 +1283,55 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           "G93 and G95 on the same block — pick one feed mode (inverse-time or per-revolution).",
         blockIndex: index
       });
+    }
+
+    const exactGCodes = exactGCodesOnBlock(block);
+    const pushExclusiveGPair = (a: number, b: number, message: string) => {
+      if (exactGCodes.has(a) && exactGCodes.has(b)) {
+        issues.push({ severity: "warning", message, blockIndex: index });
+      }
+    };
+    pushExclusiveGPair(
+      90,
+      91,
+      "G90 and G91 on the same block — pick one distance mode (absolute or incremental)."
+    );
+    pushExclusiveGPair(17, 18, "G17 and G18 on the same block — pick one plane.");
+    pushExclusiveGPair(17, 19, "G17 and G19 on the same block — pick one plane.");
+    pushExclusiveGPair(18, 19, "G18 and G19 on the same block — pick one plane.");
+    pushExclusiveGPair(
+      20,
+      21,
+      "G20 and G21 on the same block — pick one unit mode (inch or metric)."
+    );
+    pushExclusiveGPair(
+      94,
+      95,
+      "G94 and G95 on the same block — pick one feed mode (per-minute or per-revolution)."
+    );
+    pushExclusiveGPair(
+      61,
+      64,
+      "G61 and G64 on the same block — pick one path mode (exact stop or continuous)."
+    );
+
+    if (exactGCodes.has(10)) {
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while cutter compensation (G41/G42) is still active — cancel with G40 before G10 data setting.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G10 while a canned cycle is still active — cancel with G80 before G10 data setting.",
+          blockIndex: index
+        });
+      }
     }
 
     const pathModeEarly = hasExactG61Or64(block);
@@ -3140,6 +3190,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       severity: "warning",
       message: "Program contains both G93 and G94 — pick one feed mode (inverse-time or per-minute).",
       blockIndex: Math.min(firstG93Block, firstG94Block)
+    });
+  }
+
+  if (firstG93Block >= 0 && firstG95Block >= 0) {
+    issues.push({
+      severity: "warning",
+      message:
+        "Program contains both G93 and G95 — pick one feed mode (inverse-time or per-revolution).",
+      blockIndex: Math.min(firstG93Block, firstG95Block)
     });
   }
 

@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 531 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 541 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -543,6 +543,16 @@ Total rules: 531 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.p-while-canned` | warning | — | — | Cancel canned cycles with G80 before using P outside call/dwell/scaling/canned context. |
 | `haas.r-while-canned` | warning | — | — | Cancel canned cycles with G80 before using R outside canned/arc/rotation context. |
 | `haas.stop-restart-unsafe-z` | warning | — | — | After M00/M01, avoid moving below Z0 before restarting the spindle (M3/M4). |
+| `haas.g90-and-g91-same-block` | warning | — | — | G90 and G91 are mutually exclusive distance modes — do not combine on one block. |
+| `haas.g17-and-g18-same-block` | warning | — | — | G17 and G18 are mutually exclusive planes — do not combine on one block. |
+| `haas.g17-and-g19-same-block` | warning | — | — | G17 and G19 are mutually exclusive planes — do not combine on one block. |
+| `haas.g18-and-g19-same-block` | warning | — | — | G18 and G19 are mutually exclusive planes — do not combine on one block. |
+| `haas.g20-and-g21-same-block` | warning | — | — | G20 and G21 are mutually exclusive unit modes — do not combine on one block. |
+| `haas.g94-and-g95-same-block` | warning | — | — | G94 and G95 are mutually exclusive feed modes — do not combine on one block. |
+| `haas.g61-and-g64-same-block` | warning | — | — | G61 and G64 are mutually exclusive path modes — do not combine on one block. |
+| `haas.g93-and-g95-mixed` | warning | — | — | Mixing G93 and G95 feed modes in one program is ambiguous — pick one. |
+| `haas.g10-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a G10 data setting block. |
+| `haas.g10-while-canned` | warning | — | — | Cancel canned cycles with G80 before a G10 data setting block. |
 
 ### `haas.m6-without-t`
 
@@ -17250,6 +17260,272 @@ M5
 M00
 S1200 M3
 G0 Z-1.
+M30
+```
+
+### `haas.g90-and-g91-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G90 and G91 on the same block/`
+- **Summary:** G90 and G91 are mutually exclusive distance modes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G90 G91
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G90
+G91
+T1 M6
+M30
+```
+
+### `haas.g17-and-g18-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G17 and G18 on the same block/`
+- **Summary:** G17 and G18 are mutually exclusive planes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G17 G18
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G17
+G18
+T1 M6
+M30
+```
+
+### `haas.g17-and-g19-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G17 and G19 on the same block/`
+- **Summary:** G17 and G19 are mutually exclusive planes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G17 G19
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G17
+G19
+T1 M6
+M30
+```
+
+### `haas.g18-and-g19-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G18 and G19 on the same block/`
+- **Summary:** G18 and G19 are mutually exclusive planes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G18 G19
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G18
+G19
+T1 M6
+M30
+```
+
+### `haas.g20-and-g21-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G20 and G21 on the same block/`
+- **Summary:** G20 and G21 are mutually exclusive unit modes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G20 G21
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G20
+G21
+T1 M6
+M30
+```
+
+### `haas.g94-and-g95-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G94 and G95 on the same block/`
+- **Summary:** G94 and G95 are mutually exclusive feed modes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G94 G95
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G94
+G95
+T1 M6
+M30
+```
+
+### `haas.g61-and-g64-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G61 and G64 on the same block/`
+- **Summary:** G61 and G64 are mutually exclusive path modes — do not combine on one block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G61 G64
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G61
+G64
+T1 M6
+M30
+```
+
+### `haas.g93-and-g95-mixed`
+
+- **Severity:** warning
+- **Matcher:** `/Program contains both G93 and G95/`
+- **Summary:** Mixing G93 and G95 feed modes in one program is ambiguous — pick one.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G93
+G95
+T1 M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G95
+T1 M6
+M30
+```
+
+### `haas.g10-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1 X0 Y0
+G10 L2 P1 X0
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1 X0 Y0
+G40
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g10-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before a G10 data setting block.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G10 L2 P1 X0
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G10 L2 P1 X0
 M30
 ```
 

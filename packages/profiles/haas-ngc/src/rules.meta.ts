@@ -4445,5 +4445,87 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "After M00/M01, avoid moving below Z0 before restarting the spindle (M3/M4).",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nM5\nM00\nG0 Z-1.\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG43 H1 Z25.\nM5\nM00\nS1200 M3\nG0 Z-1.\nM30\n"
+  },
+  {
+    id: "haas.g90-and-g91-same-block",
+    severity: "warning",
+    messageMatcher: /G90 and G91 on the same block/,
+    summary: "G90 and G91 are mutually exclusive distance modes — do not combine on one block.",
+    positiveSnippet: "O0001\nG90 G91\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG90\nG91\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g17-and-g18-same-block",
+    severity: "warning",
+    messageMatcher: /G17 and G18 on the same block/,
+    summary: "G17 and G18 are mutually exclusive planes — do not combine on one block.",
+    positiveSnippet: "O0001\nG17 G18\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG17\nG18\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g17-and-g19-same-block",
+    severity: "warning",
+    messageMatcher: /G17 and G19 on the same block/,
+    summary: "G17 and G19 are mutually exclusive planes — do not combine on one block.",
+    positiveSnippet: "O0001\nG17 G19\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG17\nG19\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g18-and-g19-same-block",
+    severity: "warning",
+    messageMatcher: /G18 and G19 on the same block/,
+    summary: "G18 and G19 are mutually exclusive planes — do not combine on one block.",
+    positiveSnippet: "O0001\nG18 G19\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG18\nG19\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g20-and-g21-same-block",
+    severity: "warning",
+    messageMatcher: /G20 and G21 on the same block/,
+    summary: "G20 and G21 are mutually exclusive unit modes — do not combine on one block.",
+    positiveSnippet: "O0001\nG20 G21\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG20\nG21\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g94-and-g95-same-block",
+    severity: "warning",
+    messageMatcher: /G94 and G95 on the same block/,
+    summary: "G94 and G95 are mutually exclusive feed modes — do not combine on one block.",
+    positiveSnippet: "O0001\nG94 G95\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG94\nG95\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g61-and-g64-same-block",
+    severity: "warning",
+    messageMatcher: /G61 and G64 on the same block/,
+    summary: "G61 and G64 are mutually exclusive path modes — do not combine on one block.",
+    positiveSnippet: "O0001\nG61 G64\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG61\nG64\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g93-and-g95-mixed",
+    severity: "warning",
+    messageMatcher: /Program contains both G93 and G95/,
+    summary: "Mixing G93 and G95 feed modes in one program is ambiguous — pick one.",
+    positiveSnippet: "O0001\nG93\nG95\nT1 M6\nM30\n",
+    negativeSnippet: "O0001\nG95\nT1 M6\nM30\n"
+  },
+  {
+    id: "haas.g10-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G10 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before a G10 data setting block.",
+    positiveSnippet:
+      "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1 X0 Y0\nG10 L2 P1 X0\nG40\nM30\n",
+    negativeSnippet:
+      "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1 X0 Y0\nG40\nG10 L2 P1 X0\nM30\n"
+  },
+  {
+    id: "haas.g10-while-canned",
+    severity: "warning",
+    messageMatcher: /G10 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before a G10 data setting block.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG10 L2 P1 X0\nG80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG10 L2 P1 X0\nM30\n"
   }
 ];
