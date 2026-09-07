@@ -1943,6 +1943,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG18\nG17\nM5\nM30\n"
   },
   {
+    id: "haas.plane-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG18\nM9\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG18\nG17\nM5\nM30\n"
+  },
+  {
+    id: "haas.plane-while-incremental",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG18\nG90\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG18\nG17\nM5\nM30\n"
+  },
+  {
+    id: "haas.unit-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG21\nG40\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.unit-while-canned",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG21\nG80\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.unit-while-rotation",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG21\nG69\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.unit-while-scaling",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG21\nG50\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG95\nG40\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-canned",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG95\nG80\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG61\nG40\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG61\nG64\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-canned",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG61\nG80\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG61\nG64\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

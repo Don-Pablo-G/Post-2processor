@@ -848,6 +848,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Plane select (G17/G18/G19) while coolant is still on — turn coolant off with M9 before changing plane.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Plane select (G17/G18/G19) while incremental mode (G91) is active — restore G90 before changing plane.",
+          blockIndex: index
+        });
+      }
       activePlane = plane;
     }
 
@@ -976,6 +991,36 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Unit select (G20/G21) while cutter compensation (G41/G42) is still active — cancel with G40 before changing units.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Unit select (G20/G21) while a canned cycle is still active — cancel with G80 before changing units.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Unit select (G20/G21) while coordinate rotation (G68) is still active — cancel with G69 before changing units.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Unit select (G20/G21) while scaling (G51) is still active — cancel with G50 before changing units.",
+          blockIndex: index
+        });
+      }
       activeUnitMode = unitModeEarly;
     }
 
@@ -996,6 +1041,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while cutter compensation (G41/G42) is still active — cancel with G40 before changing feed mode.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while a canned cycle is still active — cancel with G80 before changing feed mode.",
+          blockIndex: index
+        });
+      }
       activeFeedMode = feedModeEarly;
     }
 
@@ -1010,6 +1071,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Path mode changed after axis motion — verify intentional G61/G64 switch mid-program.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while cutter compensation (G41/G42) is still active — cancel with G40 before changing path mode.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while a canned cycle is still active — cancel with G80 before changing path mode.",
           blockIndex: index
         });
       }
