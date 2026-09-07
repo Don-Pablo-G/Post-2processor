@@ -2103,6 +2103,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG61\nG64\nM5\nM30\n"
   },
   {
+    id: "haas.distance-mode-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before changing distance mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG91\nG40\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nG91\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-canned",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before changing distance mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG91\nG80\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG91\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-rotation",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing distance mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG91\nG69\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG91\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-scaling",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing distance mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG91\nG50\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG91\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.distance-mode-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Distance mode select \(G90\/G91\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing distance mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG91\nM9\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG91\nG90\nM5\nM30\n"
+  },
+  {
+    id: "haas.plane-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Plane select \(G17\/G18\/G19\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before changing plane.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG18\nG49\nG17\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nG18\nG17\nM5\nM30\n"
+  },
+  {
+    id: "haas.unit-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG21\nG49\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG95\nG49\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-tool-length",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG61\nG49\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nG61\nG64\nM5\nM30\n"
+  },
+  {
+    id: "haas.g41-g42-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G41\/G42 while coolant is still on/,
+    summary: "Turn coolant off with M9 before cutter compensation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG41 D1\nM9\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nM9\nG41 D1\nG40\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 361 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 371 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -271,6 +271,16 @@ Total rules: 361 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.path-mode-while-scaling` | warning | — | — | Cancel scaling with G50 before changing path mode. |
 | `haas.path-mode-while-coolant-on` | warning | — | — | Turn coolant off with M9 before changing path mode. |
 | `haas.path-mode-while-incremental` | warning | — | — | Restore G90 before changing path mode. |
+| `haas.distance-mode-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before changing distance mode. |
+| `haas.distance-mode-while-canned` | warning | — | — | Cancel canned cycles with G80 before changing distance mode. |
+| `haas.distance-mode-while-rotation` | warning | — | — | Cancel rotation with G69 before changing distance mode. |
+| `haas.distance-mode-while-scaling` | warning | — | — | Cancel scaling with G50 before changing distance mode. |
+| `haas.distance-mode-while-coolant-on` | warning | — | — | Turn coolant off with M9 before changing distance mode. |
+| `haas.plane-while-tool-length` | warning | — | — | Cancel tool length with G49 before changing plane. |
+| `haas.unit-while-tool-length` | warning | — | — | Cancel tool length with G49 before changing units. |
+| `haas.feed-mode-while-tool-length` | warning | — | — | Cancel tool length with G49 before changing feed mode. |
+| `haas.path-mode-while-tool-length` | warning | — | — | Cancel tool length with G49 before changing path mode. |
+| `haas.g41-g42-while-coolant-on` | warning | — | — | Turn coolant off with M9 before cutter compensation. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -8657,6 +8667,370 @@ S1200 M3
 G90
 G61
 G64
+M5
+M30
+```
+
+### `haas.distance-mode-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before changing distance mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G91
+G40
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+G91
+G90
+M5
+M30
+```
+
+### `haas.distance-mode-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before changing distance mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G91
+G80
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G91
+G90
+M5
+M30
+```
+
+### `haas.distance-mode-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before changing distance mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G91
+G69
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G91
+G90
+M5
+M30
+```
+
+### `haas.distance-mode-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before changing distance mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G91
+G50
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+G91
+G90
+M5
+M30
+```
+
+### `haas.distance-mode-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Distance mode select \(G90\/G91\) while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before changing distance mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G91
+M9
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G91
+G90
+M5
+M30
+```
+
+### `haas.plane-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Plane select \(G17\/G18\/G19\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before changing plane.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G18
+G49
+G17
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+G18
+G17
+M5
+M30
+```
+
+### `haas.unit-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Unit select \(G20\/G21\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before changing units.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G21
+G49
+G20
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+G21
+G20
+M5
+M30
+```
+
+### `haas.feed-mode-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G94\/G95\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before changing feed mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G95
+G49
+G94
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+G95
+G94
+M5
+M30
+```
+
+### `haas.path-mode-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before changing path mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G61
+G49
+G64
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+G61
+G64
+M5
+M30
+```
+
+### `haas.g41-g42-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before cutter compensation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G41 D1
+M9
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+M9
+G41 D1
+G40
 M5
 M30
 ```

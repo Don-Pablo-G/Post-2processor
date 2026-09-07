@@ -804,6 +804,46 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode select (G90/G91) while cutter compensation (G41/G42) is still active — cancel with G40 before changing distance mode.",
+          blockIndex: index
+        });
+      }
+      if (cannedActive && !hasExactG80(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode select (G90/G91) while a canned cycle is still active — cancel with G80 before changing distance mode.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode select (G90/G91) while coordinate rotation (G68) is still active — cancel with G69 before changing distance mode.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode select (G90/G91) while scaling (G51) is still active — cancel with G50 before changing distance mode.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Distance mode select (G90/G91) while coolant is still on — turn coolant off with M9 before changing distance mode.",
+          blockIndex: index
+        });
+      }
       activeDistanceMode = distanceMode;
       incrementalActive = distanceMode === 91;
       sawDistanceMode = true;
@@ -860,6 +900,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Plane select (G17/G18/G19) while incremental mode (G91) is active — restore G90 before changing plane.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Plane select (G17/G18/G19) while tool length compensation (G43) is still active — cancel with G49 before changing plane.",
           blockIndex: index
         });
       }
@@ -1035,6 +1083,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Unit select (G20/G21) while tool length compensation (G43) is still active — cancel with G49 before changing units.",
+          blockIndex: index
+        });
+      }
       activeUnitMode = unitModeEarly;
     }
 
@@ -1103,6 +1159,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while tool length compensation (G43) is still active — cancel with G49 before changing feed mode.",
+          blockIndex: index
+        });
+      }
       activeFeedMode = feedModeEarly;
     }
 
@@ -1165,6 +1229,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Path mode select (G61/G64) while incremental mode (G91) is active — restore G90 before changing path mode.",
+          blockIndex: index
+        });
+      }
+      if (toolLengthActive && !hasExactG49(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while tool length compensation (G43) is still active — cancel with G49 before changing path mode.",
           blockIndex: index
         });
       }
@@ -2029,6 +2101,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "G41/G42 while incremental mode (G91) is active — restore G90 before cutter compensation.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G41/G42 while coolant is still on — turn coolant off with M9 before cutter compensation.",
           blockIndex: index
         });
       }
