@@ -1,0 +1,26 @@
+---
+description: Haas mill lint batch workflow — auto verify, commit, and push
+alwaysApply: true
+---
+
+# Haas mill lint batches
+
+When the user asks for Haas NGC mill lint work as `batch N` or `batches N–M` / `batches N-M` / `next K batches`:
+
+## Default ship path
+
+1. Implement ~10 rules per batch (lint + `rules.meta` + tests + README Recent Updates).
+2. Prefer targeted checks while coding; run full `npm run verify` once before shipping (build `@cnc/profile-haas-ngc` first if needed).
+3. On green verify: **commit and push to `main` without waiting** for a separate “commit and push”.
+4. One git commit per batch; for multi-batch requests, push once after all batch commits (or after each if interrupted).
+5. Soft CLI schema stays frozen unless the user explicitly asks to bump it.
+6. Do **not** commit/push if verify fails — fix or report; hold shipping.
+7. Opt out only if the user says `no push`, `hold`, `verify only`, or similar.
+
+## Commit style
+
+Match recent messages, e.g. `feat: Haas mill lint batch for <theme>`.
+
+## Multi-batch
+
+Plan themes for the range up front, ship each batch fully (implement → verify → commit), then one final push unless already pushing per commit.
