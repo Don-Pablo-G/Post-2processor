@@ -5249,5 +5249,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Turn through-spindle coolant off with M89 before changing distance mode (G90/G91).",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG91\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG91\nM30\n"
+  },
+  {
+    id: "haas.m6-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /M6 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before a tool change (M6).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nT2 M6\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.g28-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /G28 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before reference return (G28).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG28 G91 Z0.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG28 G91 Z0.\nM30\n"
+  },
+  {
+    id: "haas.g30-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /G30 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before secondary reference return (G30).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG30 G91 Z0.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG30 G91 Z0.\nM30\n"
+  },
+  {
+    id: "haas.g53-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /G53 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before a machine move (G53).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG53 X0.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG53 X0.\nM30\n"
+  },
+  {
+    id: "haas.m98-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /M98 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before a subprogram call (M98).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM98 P1000\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nM98 P1000\nM30\n"
+  },
+  {
+    id: "haas.m97-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /M97 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before a local subprogram call (M97).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM97 P100\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nM97 P100\nM30\n"
+  },
+  {
+    id: "haas.g65-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /G65 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before a macro call (G65).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG65 P9000\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG65 P9000\nM30\n"
+  },
+  {
+    id: "haas.m99-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /M99 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before a subprogram return (M99).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM99\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nM99\nM30\n"
+  },
+  {
+    id: "haas.g10-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /G10 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before G10 data setting.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG10 L2 P1 X0.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG10 L2 P1 X0.\nM30\n"
+  },
+  {
+    id: "haas.work-offset-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /Work offset \(G54-G59\/G154\) while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before selecting a work offset.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG55\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG55\nM30\n"
   }
 ];

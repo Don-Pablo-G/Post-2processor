@@ -196,6 +196,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let activeSpindleDirection: "cw" | "ccw" | undefined;
   let coolantActive = false;
   let throughSpindleCoolantActive = false;
+  let spindleOrientActive = false;
   let sawCoolantOnEver = false;
   let g52LocalActive = false;
   let sawG92Shift = false;
@@ -3038,6 +3039,77 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           issues.push({ severity: "warning", message: guard.message, blockIndex: index });
         }
       }
+    }
+
+    // M19 spindle orientation stays latched until the spindle is restarted (M3/M4)
+    // or stopped (M5). Guard operations that must not run while orientation is held.
+    // Capture the pre-block latch state so a same-block M3/M4/M5 clears the warning.
+    if (spindleOrientActive && !hasSpindleOn(block) && !hasSpindleOff(block)) {
+      const spindleOrientGuards: Array<{ test: boolean; message: string }> = [
+        {
+          test: hasWordM(block, 6),
+          message:
+            "M6 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before the tool change."
+        },
+        {
+          test: hasExactG28(block),
+          message:
+            "G28 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before reference return."
+        },
+        {
+          test: hasExactG30(block),
+          message:
+            "G30 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before secondary reference return."
+        },
+        {
+          test: hasExactG53(block),
+          message:
+            "G53 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before machine move."
+        },
+        {
+          test: hasWordM(block, 98),
+          message:
+            "M98 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before the subprogram call."
+        },
+        {
+          test: hasWordM(block, 97),
+          message:
+            "M97 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before the local subprogram call."
+        },
+        {
+          test: hasExactG65(block),
+          message:
+            "G65 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before the macro call."
+        },
+        {
+          test: hasWordM(block, 99),
+          message:
+            "M99 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before subprogram return."
+        },
+        {
+          test: hasExactG10(block),
+          message:
+            "G10 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before G10 data setting."
+        },
+        {
+          test: hasWorkOffset(block),
+          message:
+            "Work offset (G54-G59/G154) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before selecting a work offset."
+        }
+      ];
+      for (const guard of spindleOrientGuards) {
+        if (guard.test) {
+          issues.push({ severity: "warning", message: guard.message, blockIndex: index });
+        }
+      }
+    }
+
+    // Update the latch AFTER the guards so same-block spindle start/stop clears cleanly.
+    if (hasWordM(block, 19)) {
+      spindleOrientActive = true;
+    }
+    if (hasSpindleOn(block) || hasSpindleOff(block)) {
+      spindleOrientActive = false;
     }
 
     if (hasExactG28(block) && rotationActive && !hasExactG69(block)) {
