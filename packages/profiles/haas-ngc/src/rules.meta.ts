@@ -2023,6 +2023,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG61\nG64\nM5\nM30\n"
   },
   {
+    id: "haas.unit-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG21\nM9\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.unit-while-incremental",
+    severity: "warning",
+    messageMatcher: /Unit select \(G20\/G21\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before changing units.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG21\nG90\nG20\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG21\nG20\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-rotation",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG95\nG69\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-scaling",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG95\nG50\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG95\nM9\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-mode-while-incremental",
+    severity: "warning",
+    messageMatcher: /Feed mode select \(G94\/G95\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before changing feed mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG95\nG90\nG94\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG95\nG94\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-rotation",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG61\nG69\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG61\nG64\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-scaling",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG61\nG50\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nG61\nG64\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG61\nM9\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG61\nG64\nM5\nM30\n"
+  },
+  {
+    id: "haas.path-mode-while-incremental",
+    severity: "warning",
+    messageMatcher: /Path mode select \(G61\/G64\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before changing path mode.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG61\nG90\nG64\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG61\nG64\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

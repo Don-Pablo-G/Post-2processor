@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 351 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 361 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -261,6 +261,16 @@ Total rules: 351 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.feed-mode-while-canned` | warning | — | — | Cancel canned cycles with G80 before changing feed mode. |
 | `haas.path-mode-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before changing path mode. |
 | `haas.path-mode-while-canned` | warning | — | — | Cancel canned cycles with G80 before changing path mode. |
+| `haas.unit-while-coolant-on` | warning | — | — | Turn coolant off with M9 before changing units. |
+| `haas.unit-while-incremental` | warning | — | — | Restore G90 before changing units. |
+| `haas.feed-mode-while-rotation` | warning | — | — | Cancel rotation with G69 before changing feed mode. |
+| `haas.feed-mode-while-scaling` | warning | — | — | Cancel scaling with G50 before changing feed mode. |
+| `haas.feed-mode-while-coolant-on` | warning | — | — | Turn coolant off with M9 before changing feed mode. |
+| `haas.feed-mode-while-incremental` | warning | — | — | Restore G90 before changing feed mode. |
+| `haas.path-mode-while-rotation` | warning | — | — | Cancel rotation with G69 before changing path mode. |
+| `haas.path-mode-while-scaling` | warning | — | — | Cancel scaling with G50 before changing path mode. |
+| `haas.path-mode-while-coolant-on` | warning | — | — | Turn coolant off with M9 before changing path mode. |
+| `haas.path-mode-while-incremental` | warning | — | — | Restore G90 before changing path mode. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -8285,6 +8295,366 @@ G54
 S1200 M3
 G81 Z-1. R0.1 F10.
 G80
+G61
+G64
+M5
+M30
+```
+
+### `haas.unit-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Unit select \(G20\/G21\) while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before changing units.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G21
+M9
+G20
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G21
+G20
+M5
+M30
+```
+
+### `haas.unit-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/Unit select \(G20\/G21\) while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before changing units.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G21
+G90
+G20
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+G21
+G20
+M5
+M30
+```
+
+### `haas.feed-mode-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G94\/G95\) while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before changing feed mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G95
+G69
+G94
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G95
+G94
+M5
+M30
+```
+
+### `haas.feed-mode-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G94\/G95\) while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before changing feed mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G95
+G50
+G94
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+G95
+G94
+M5
+M30
+```
+
+### `haas.feed-mode-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G94\/G95\) while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before changing feed mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G95
+M9
+G94
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G95
+G94
+M5
+M30
+```
+
+### `haas.feed-mode-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G94\/G95\) while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before changing feed mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G95
+G90
+G94
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+G95
+G94
+M5
+M30
+```
+
+### `haas.path-mode-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before changing path mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G61
+G69
+G64
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G61
+G64
+M5
+M30
+```
+
+### `haas.path-mode-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before changing path mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G61
+G50
+G64
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G51 P2.
+G50
+G61
+G64
+M5
+M30
+```
+
+### `haas.path-mode-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before changing path mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G61
+M9
+G64
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G61
+G64
+M5
+M30
+```
+
+### `haas.path-mode-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before changing path mode.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G61
+G90
+G64
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
 G61
 G64
 M5

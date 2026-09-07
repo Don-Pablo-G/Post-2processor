@@ -1021,6 +1021,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Unit select (G20/G21) while coolant is still on — turn coolant off with M9 before changing units.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "Unit select (G20/G21) while incremental mode (G91) is active — restore G90 before changing units.",
+          blockIndex: index
+        });
+      }
       activeUnitMode = unitModeEarly;
     }
 
@@ -1057,6 +1071,38 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while coordinate rotation (G68) is still active — cancel with G69 before changing feed mode.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while scaling (G51) is still active — cancel with G50 before changing feed mode.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while coolant is still on — turn coolant off with M9 before changing feed mode.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Feed mode select (G94/G95) while incremental mode (G91) is active — restore G90 before changing feed mode.",
+          blockIndex: index
+        });
+      }
       activeFeedMode = feedModeEarly;
     }
 
@@ -1087,6 +1133,38 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "Path mode select (G61/G64) while a canned cycle is still active — cancel with G80 before changing path mode.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while coordinate rotation (G68) is still active — cancel with G69 before changing path mode.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while scaling (G51) is still active — cancel with G50 before changing path mode.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while coolant is still on — turn coolant off with M9 before changing path mode.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Path mode select (G61/G64) while incremental mode (G91) is active — restore G90 before changing path mode.",
           blockIndex: index
         });
       }
