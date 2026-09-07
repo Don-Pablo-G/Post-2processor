@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 471 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 481 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -483,6 +483,16 @@ Total rules: 471 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.q-while-tool-length` | warning | — | — | Cancel G43 before an orphan Q word outside a peck cycle. |
 | `haas.missing-unit-mode` | warning | — | — | Select G20 or G21 before axis motion (parallel to missing distance mode). |
 | `haas.g10-used-at-end` | warning | — | — | Ending after G10 offset/data writes is easy to leave latched — verify intentional. |
+| `haas.g93-active-at-end` | warning | — | — | Restore G94 before program end after inverse-time feed. |
+| `haas.m19-orient-at-end` | warning | — | — | Clear a latched M19 spindle orientation before program end. |
+| `haas.m88-active-at-end` | warning | — | — | Turn through-spindle coolant off with M89 before program end. |
+| `haas.a-while-cutter-comp` | warning | — | — | Cancel cutter compensation before an orphan A rotary word. |
+| `haas.a-while-canned` | warning | — | — | Cancel canned cycles before an orphan A rotary word. |
+| `haas.a-while-rotation` | warning | — | — | Cancel coordinate rotation before an orphan A rotary word. |
+| `haas.b-while-cutter-comp` | warning | — | — | Cancel cutter compensation before an orphan B rotary word. |
+| `haas.b-while-canned` | warning | — | — | Cancel canned cycles before an orphan B rotary word. |
+| `haas.c-while-cutter-comp` | warning | — | — | Cancel cutter compensation before an orphan C rotary word. |
+| `haas.c-while-canned` | warning | — | — | Cancel canned cycles before an orphan C rotary word. |
 
 ### `haas.m6-without-t`
 
@@ -15577,6 +15587,257 @@ M30
 O0001
 T1 M6
 G54
+M30
+```
+
+### `haas.g93-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends in inverse-time feed mode \(G93\)/`
+- **Summary:** Restore G94 before program end after inverse-time feed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G93
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G93
+G94
+M30
+```
+
+### `haas.m19-orient-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with spindle orientation \(M19\) still latched/`
+- **Summary:** Clear a latched M19 spindle orientation before program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M19
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M19
+M5
+M30
+```
+
+### `haas.m88-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with through-spindle coolant \(M88\) still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+M88
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+M88
+M89
+M30
+```
+
+### `haas.a-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G41 D1 X1.
+A10.
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G41 D1 X1.
+G1 A10.
+G40
+M30
+```
+
+### `haas.a-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+A10.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+G0 A10.
+G80
+M30
+```
+
+### `haas.a-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/A rotary word while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation before an orphan A rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+A10.
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G68 X0 Y0 R45.
+G1 A10.
+G69
+M30
+```
+
+### `haas.b-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G41 D1 X1.
+B10.
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G41 D1 X1.
+G1 B10.
+G40
+M30
+```
+
+### `haas.b-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+B10.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+G0 B10.
+G80
+M30
+```
+
+### `haas.c-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G41 D1 X1.
+C10.
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G41 D1 X1.
+G1 C10.
+G40
+M30
+```
+
+### `haas.c-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+C10.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+G81 Z-1. R.1 F10.
+G0 C10.
+G80
 M30
 ```
 

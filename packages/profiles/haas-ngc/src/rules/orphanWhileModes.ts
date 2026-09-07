@@ -128,3 +128,15 @@ export function hasLWordContext(block: { words: Word[] }): boolean {
     block.words.some((w) => w.letter === "G" && Number.parseFloat(w.value) === 10)
   );
 }
+
+/** A/B/C are legitimate axis words only on explicit motion or canned-cycle blocks. */
+export function hasRotaryWordContext(block: { words: Word[] }): boolean {
+  return (
+    hasCannedCycle(block) ||
+    block.words.some((w) => {
+      if (w.letter !== "G") return false;
+      const g = Number.parseFloat(w.value);
+      return g === 0 || g === 1 || g === 2 || g === 3;
+    })
+  );
+}

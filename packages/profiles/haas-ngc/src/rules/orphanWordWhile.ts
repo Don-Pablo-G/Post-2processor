@@ -17,6 +17,7 @@ import {
 import { walkMillModalState } from "./millModalState.js";
 import {
   hasLWordContext,
+  hasRotaryWordContext,
   orphanWhileModeCodes,
   pushOrphanWhileModes
 } from "./orphanWhileModes.js";
@@ -61,6 +62,16 @@ const IJK_WHILE_CODES = [
 
 const L_WHILE_CODES = orphanWhileModeCodes("l");
 
+const ROTARY_ORPHAN_FAMILIES = [
+  { letter: "A", prefix: "a", modes: ["cutter-comp", "canned", "rotation"] },
+  { letter: "B", prefix: "b", modes: ["cutter-comp", "canned"] },
+  { letter: "C", prefix: "c", modes: ["cutter-comp", "canned"] }
+] as const;
+
+const ROTARY_WHILE_CODES = ROTARY_ORPHAN_FAMILIES.flatMap(({ prefix, modes }) =>
+  modes.map((mode) => `haas.${prefix}-while-${mode}`)
+);
+
 function familyDisabled(disabled: ReadonlySet<string> | undefined, codes: readonly string[]): boolean {
   if (!disabled || disabled.size === 0) return false;
   return codes.every((code) => disabled.has(code));
@@ -86,7 +97,8 @@ export function lintHaasOrphanWordWhile(
   const skipP = familyDisabled(disabled, P_WHILE_CODES);
   const skipIjk = familyDisabled(disabled, IJK_WHILE_CODES);
   const skipL = familyDisabled(disabled, L_WHILE_CODES);
-  if (skipQ && skipR && skipP && skipIjk && skipL) return [];
+  const skipRotary = familyDisabled(disabled, ROTARY_WHILE_CODES);
+  if (skipQ && skipR && skipP && skipIjk && skipL && skipRotary) return [];
 
   const issues: LintIssue[] = [];
 
@@ -110,6 +122,19 @@ export function lintHaasOrphanWordWhile(
         contextHint: "outside M98/G65/G10 context",
         ctx
       });
+    }
+
+    if (!skipRotary && !hasRotaryWordContext(block)) {
+      for (const family of ROTARY_ORPHAN_FAMILIES) {
+        if (!hasLetter(block, family.letter)) continue;
+        pushOrphanWhileModes(issues, disabled, {
+          letterPrefix: family.prefix,
+          wordLabel: `${family.letter} rotary word`,
+          contextHint: "outside explicit G0/G1/G2/G3 or canned-cycle motion",
+          ctx,
+          modeSuffixes: family.modes
+        });
+      }
     }
 
     if (!skipQ && hasLetter(block, "Q") && !hasExactPeckCycle(block)) {

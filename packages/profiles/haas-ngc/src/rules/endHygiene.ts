@@ -16,7 +16,10 @@ const END_HYGIENE_CODES = [
   "haas.path-mode-active-at-end",
   "haas.g52-active-at-end",
   "haas.g92-used-at-end",
-  "haas.g10-used-at-end"
+  "haas.g10-used-at-end",
+  "haas.g93-active-at-end",
+  "haas.m19-orient-at-end",
+  "haas.m88-active-at-end"
 ] as const;
 
 function familyDisabled(disabled: ReadonlySet<string> | undefined, codes: readonly string[]): boolean {
@@ -127,6 +130,30 @@ export function lintHaasEndHygiene(
       pushIfEnabled(issues, disabled, "haas.feed-mode-active-at-end", {
         severity: "warning",
         message: "Program ends in feed per revolution (G95) — restore G94 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (ctx.activeFeedMode === 93) {
+      pushIfEnabled(issues, disabled, "haas.g93-active-at-end", {
+        severity: "warning",
+        message: "Program ends in inverse-time feed mode (G93) — restore G94 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (ctx.spindleOrientActive) {
+      pushIfEnabled(issues, disabled, "haas.m19-orient-at-end", {
+        severity: "warning",
+        message: "Program ends with spindle orientation (M19) still latched — clear with M3, M4, or M5 before end.",
+        blockIndex: index
+      });
+    }
+
+    if (ctx.throughSpindleCoolantActive) {
+      pushIfEnabled(issues, disabled, "haas.m88-active-at-end", {
+        severity: "warning",
+        message: "Program ends with through-spindle coolant (M88) still active — turn it off with M89 before end.",
         blockIndex: index
       });
     }

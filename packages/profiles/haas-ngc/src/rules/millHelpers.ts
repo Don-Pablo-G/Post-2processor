@@ -221,6 +221,16 @@ export function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
   return undefined;
 }
 
+export function hasExactG93Or94Or95(block: { words: Word[] }): 93 | 94 | 95 | undefined {
+  let mode: 93 | 94 | 95 | undefined;
+  for (const w of block.words) {
+    if (w.letter !== "G") continue;
+    const v = Number.parseFloat(w.value);
+    if (v === 93 || v === 94 || v === 95) mode = v;
+  }
+  return mode;
+}
+
 export function hasExactG61Or64(block: { words: Word[] }): 61 | 64 | undefined {
   let mode: 61 | 64 | undefined;
   for (const w of block.words) {

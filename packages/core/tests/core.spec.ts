@@ -5543,6 +5543,45 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns for G93, M19, and M88 still active at program end", () => {
+    const ast = parse("O1\nG93\nM19\nM88\nM30", haasNgcProfilePackaged);
+    const messages = lint(ast, haasNgcProfilePackaged).map((i) => i.message);
+    expect(messages.some((m) => m.includes("inverse-time feed mode (G93)"))).toBe(true);
+    expect(messages.some((m) => m.includes("spindle orientation (M19) still latched"))).toBe(true);
+    expect(messages.some((m) => m.includes("through-spindle coolant (M88) still active"))).toBe(true);
+  });
+
+  it("clears G93, M19, and M88 end state with their normal resets", () => {
+    const ast = parse("O1\nG93\nG94\nM19\nM5\nM88\nM89\nM30", haasNgcProfilePackaged);
+    const messages = lint(ast, haasNgcProfilePackaged).map((i) => i.message);
+    expect(messages.some((m) => m.includes("inverse-time feed mode (G93)"))).toBe(false);
+    expect(messages.some((m) => m.includes("spindle orientation (M19) still latched"))).toBe(false);
+    expect(messages.some((m) => m.includes("through-spindle coolant (M88) still active"))).toBe(false);
+  });
+
+  it("warns for orphan A/B/C rotary words while selected modal states are active", () => {
+    const ast = parse(
+      "O1\nG41 D1 X1.\nA10.\nB10.\nC10.\nG40\nG81 Z-1. R.1 F10.\nA20.\nB20.\nC20.\nG80\nG68 X0 Y0 R45.\nA30.\nG69\nM30",
+      haasNgcProfilePackaged
+    );
+    const messages = lint(ast, haasNgcProfilePackaged).map((i) => i.message);
+    for (const letter of ["A", "B", "C"]) {
+      expect(messages.some((m) => m.includes(`${letter} rotary word while cutter compensation`))).toBe(true);
+      expect(messages.some((m) => m.includes(`${letter} rotary word while a canned cycle`))).toBe(true);
+    }
+    expect(messages.some((m) => m.includes("A rotary word while coordinate rotation"))).toBe(true);
+  });
+
+  it("accepts A/B/C rotary words on explicit motion and canned-cycle blocks", () => {
+    const ast = parse(
+      "O1\nG41 D1 X1.\nG0 A10.\nG1 B10.\nG2 C10. I1.\nG40\nG81 A20. B20. C20. Z-1. R.1 F10.\nG80\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) => /[ABC] rotary word while/.test(i.message))
+    ).toBe(false);
+  });
+
   it("warns R word while cutter compensation is active", () => {
     const ast = parse(
       "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nR0.1\nG40\nM5\nM30",

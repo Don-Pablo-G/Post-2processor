@@ -3965,5 +3965,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Ending after G10 offset/data writes is easy to leave latched — verify intentional.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG10 L2 P1 X0 Y0 Z0\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nM30\n"
+  },
+  {
+    id: "haas.g93-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends in inverse-time feed mode \(G93\)/,
+    summary: "Restore G94 before program end after inverse-time feed.",
+    positiveSnippet: "O0001\nG93\nM30\n",
+    negativeSnippet: "O0001\nG93\nG94\nM30\n"
+  },
+  {
+    id: "haas.m19-orient-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with spindle orientation \(M19\) still latched/,
+    summary: "Clear a latched M19 spindle orientation before program end.",
+    positiveSnippet: "O0001\nM19\nM30\n",
+    negativeSnippet: "O0001\nM19\nM5\nM30\n"
+  },
+  {
+    id: "haas.m88-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with through-spindle coolant \(M88\) still active/,
+    summary: "Turn through-spindle coolant off with M89 before program end.",
+    positiveSnippet: "O0001\nM88\nM30\n",
+    negativeSnippet: "O0001\nM88\nM89\nM30\n"
+  },
+  {
+    id: "haas.a-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /A rotary word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation before an orphan A rotary word.",
+    positiveSnippet: "O0001\nG41 D1 X1.\nA10.\nG40\nM30\n",
+    negativeSnippet: "O0001\nG41 D1 X1.\nG1 A10.\nG40\nM30\n"
+  },
+  {
+    id: "haas.a-while-canned",
+    severity: "warning",
+    messageMatcher: /A rotary word while a canned cycle is still active/,
+    summary: "Cancel canned cycles before an orphan A rotary word.",
+    positiveSnippet: "O0001\nG81 Z-1. R.1 F10.\nA10.\nG80\nM30\n",
+    negativeSnippet: "O0001\nG81 Z-1. R.1 F10.\nG0 A10.\nG80\nM30\n"
+  },
+  {
+    id: "haas.a-while-rotation",
+    severity: "warning",
+    messageMatcher: /A rotary word while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation before an orphan A rotary word.",
+    positiveSnippet: "O0001\nG68 X0 Y0 R45.\nA10.\nG69\nM30\n",
+    negativeSnippet: "O0001\nG68 X0 Y0 R45.\nG1 A10.\nG69\nM30\n"
+  },
+  {
+    id: "haas.b-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /B rotary word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation before an orphan B rotary word.",
+    positiveSnippet: "O0001\nG41 D1 X1.\nB10.\nG40\nM30\n",
+    negativeSnippet: "O0001\nG41 D1 X1.\nG1 B10.\nG40\nM30\n"
+  },
+  {
+    id: "haas.b-while-canned",
+    severity: "warning",
+    messageMatcher: /B rotary word while a canned cycle is still active/,
+    summary: "Cancel canned cycles before an orphan B rotary word.",
+    positiveSnippet: "O0001\nG81 Z-1. R.1 F10.\nB10.\nG80\nM30\n",
+    negativeSnippet: "O0001\nG81 Z-1. R.1 F10.\nG0 B10.\nG80\nM30\n"
+  },
+  {
+    id: "haas.c-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /C rotary word while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation before an orphan C rotary word.",
+    positiveSnippet: "O0001\nG41 D1 X1.\nC10.\nG40\nM30\n",
+    negativeSnippet: "O0001\nG41 D1 X1.\nG1 C10.\nG40\nM30\n"
+  },
+  {
+    id: "haas.c-while-canned",
+    severity: "warning",
+    messageMatcher: /C rotary word while a canned cycle is still active/,
+    summary: "Cancel canned cycles before an orphan C rotary word.",
+    positiveSnippet: "O0001\nG81 Z-1. R.1 F10.\nC10.\nG80\nM30\n",
+    negativeSnippet: "O0001\nG81 Z-1. R.1 F10.\nG0 C10.\nG80\nM30\n"
   }
 ];

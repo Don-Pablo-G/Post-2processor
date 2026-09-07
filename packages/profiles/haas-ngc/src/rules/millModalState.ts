@@ -16,11 +16,12 @@ import {
   hasExactG80,
   hasExactG90Or91,
   hasExactG92,
-  hasExactG94Or95,
+  hasExactG93Or94Or95,
   hasExactPlane,
   hasLetter,
   hasSpindleOff,
   hasSpindleOn,
+  hasWordM,
   isZeroOffsetWord,
   lastWordValue
 } from "./millHelpers.js";
@@ -38,8 +39,10 @@ export type MillModalBlockContext = {
   coolantActive: boolean;
   toolLengthActive: boolean;
   spindleActive: boolean;
+  spindleOrientActive: boolean;
+  throughSpindleCoolantActive: boolean;
   activePlane: 17 | 18 | 19 | undefined;
-  activeFeedMode: 94 | 95 | undefined;
+  activeFeedMode: 93 | 94 | 95 | undefined;
   activePathMode: 61 | 64 | undefined;
   g52LocalActive: boolean;
   sawG92Shift: boolean;
@@ -55,8 +58,10 @@ type MillModalState = {
   coolantActive: boolean;
   toolLengthActive: boolean;
   spindleActive: boolean;
+  spindleOrientActive: boolean;
+  throughSpindleCoolantActive: boolean;
   activePlane: 17 | 18 | 19 | undefined;
-  activeFeedMode: 94 | 95 | undefined;
+  activeFeedMode: 93 | 94 | 95 | undefined;
   activePathMode: 61 | 64 | undefined;
   g52LocalActive: boolean;
   sawG92Shift: boolean;
@@ -72,11 +77,22 @@ function snapshot(state: MillModalState): Omit<MillModalBlockContext, "block" | 
  * Callback sees this post-early / pre-late state (matches orphan-word timing).
  */
 function applyEarlyUpdates(state: MillModalState, block: Block): void {
+  if (hasWordM(block, 19)) {
+    state.spindleOrientActive = true;
+  }
   if (hasSpindleOn(block)) {
     state.spindleActive = true;
+    state.spindleOrientActive = false;
   }
   if (hasSpindleOff(block)) {
     state.spindleActive = false;
+    state.spindleOrientActive = false;
+  }
+  if (hasWordM(block, 88)) {
+    state.throughSpindleCoolantActive = true;
+  }
+  if (hasWordM(block, 89) || hasCoolantOff(block)) {
+    state.throughSpindleCoolantActive = false;
   }
   if (hasCoolantOn(block)) {
     state.coolantActive = true;
@@ -98,7 +114,7 @@ function applyEarlyUpdates(state: MillModalState, block: Block): void {
   if (plane !== undefined) {
     state.activePlane = plane;
   }
-  const feedMode = hasExactG94Or95(block);
+  const feedMode = hasExactG93Or94Or95(block);
   if (feedMode !== undefined) {
     state.activeFeedMode = feedMode;
   }
@@ -175,6 +191,8 @@ export function walkMillModalState(
     coolantActive: false,
     toolLengthActive: false,
     spindleActive: false,
+    spindleOrientActive: false,
+    throughSpindleCoolantActive: false,
     activePlane: undefined,
     activeFeedMode: undefined,
     activePathMode: undefined,
@@ -213,6 +231,8 @@ export function walkMillModalStateAfter(
     coolantActive: false,
     toolLengthActive: false,
     spindleActive: false,
+    spindleOrientActive: false,
+    throughSpindleCoolantActive: false,
     activePlane: undefined,
     activeFeedMode: undefined,
     activePathMode: undefined,
