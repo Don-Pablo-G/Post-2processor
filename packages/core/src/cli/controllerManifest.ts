@@ -1,4 +1,6 @@
 import type { DeclarativeRuleDef } from "../lints/declarativeRules.js";
+import type { RulePolicy } from "../lints/rulePolicy.js";
+import type { ParseComplianceMode, ParseOptions, ProfileRuleDoc } from "../types.js";
 
 /**
  * Controller pack manifest — source of truth for which rules / grammar /
@@ -14,6 +16,9 @@ export type ControllerPackManifest = {
    * Rule ids enabled for this controller. Entries may be bare ids or
    * `{ id, enabled }` objects. When omitted, the pack's validateAst /
    * rule-docs export defines the full set.
+   *
+   * When non-empty and at least one id is enabled, combined with `ruleDocs`
+   * this becomes an allowlist: doc ids not listed as enabled are disabled.
    */
   rules?: Array<string | { id: string; enabled?: boolean }>;
   /** Grammar pack table ids (e.g. "haas-strict", "fanuc-strict"). */
@@ -58,4 +63,54 @@ export function enabledRuleIdsFromManifest(manifest: ControllerPackManifest): {
     else enabled.push(entry.id);
   }
   return { enabled, disabled };
+}
+
+/**
+ * Build parse options driven by a pack manifest (compliance + grammar packs).
+ * Returns undefined when the manifest contributes nothing.
+ */
+export function parseOptionsFromManifest(
+  manifest: ControllerPackManifest | undefined
+): Pick<ParseOptions, "complianceMode" | "grammarPackIds"> | undefined {
+  if (!manifest) return undefined;
+  const grammarPackIds = grammarIdsFromManifest(manifest);
+  const complianceMode = manifest.parseCompliance as ParseComplianceMode | undefined;
+  if (!complianceMode && grammarPackIds.length === 0) return undefined;
+  return {
+    ...(complianceMode ? { complianceMode } : {}),
+    ...(grammarPackIds.length > 0 ? { grammarPackIds } : {})
+  };
+}
+
+/**
+ * Convert manifest `rules` into a RulePolicy overlay.
+ * When `rules` lists enabled ids and `ruleDocs` is provided, unlisted doc ids
+ * are disabled (allowlist). Explicit `{ enabled: false }` always wins.
+ */
+export function rulePolicyFromManifest(
+  manifest: ControllerPackManifest | undefined,
+  ruleDocs?: readonly ProfileRuleDoc[]
+): RulePolicy | undefined {
+  if (!manifest) return undefined;
+  const hasRulesField = Array.isArray(manifest.rules) && manifest.rules.length > 0;
+  if (!hasRulesField) return undefined;
+
+  const { enabled, disabled } = enabledRuleIdsFromManifest(manifest);
+  const rules: RulePolicy["rules"] = {};
+
+  if (enabled.length > 0 && ruleDocs && ruleDocs.length > 0) {
+    const enabledSet = new Set(enabled);
+    for (const doc of ruleDocs) {
+      if (!enabledSet.has(doc.id)) {
+        rules[doc.id] = { enabled: false };
+      }
+    }
+  }
+  for (const id of enabled) {
+    rules[id] = { ...rules[id], enabled: true };
+  }
+  for (const id of disabled) {
+    rules[id] = { ...rules[id], enabled: false };
+  }
+  return Object.keys(rules).length > 0 ? { rules } : undefined;
 }

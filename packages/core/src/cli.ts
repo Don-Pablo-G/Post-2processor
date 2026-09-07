@@ -34,6 +34,12 @@ import {
   parseRulePolicyJson,
   type RulePolicy
 } from "./lints/rulePolicy.js";
+import { runDeclarativeRules } from "./lints/declarativeRules.js";
+import {
+  parseOptionsFromManifest,
+  rulePolicyFromManifest,
+  type ControllerPackManifest
+} from "./cli/controllerManifest.js";
 import {
   AuditTrailRotationStrandedTempError,
   rotateAuditTrailKey
@@ -1954,6 +1960,7 @@ export function setDiscoveredProfilePackLoadersForTesting(
 export function clearDiscoveredProfilePackLoadersCache(): void {
   discoveredProfilePackLoadersPromise = undefined;
   discoveredProfilePackRuleDocsPromise = undefined;
+  discoveredProfilePackManifestsPromise = undefined;
 }
 
 /**
@@ -1987,6 +1994,79 @@ const PROFILE_RULE_DOCS_LOADERS: Partial<
     }
   }
 };
+
+const PROFILE_MANIFEST_LOADERS: Partial<
+  Record<CliControllerKey, () => Promise<ControllerPackManifest | undefined>>
+> = {
+  "haas-ngc": async () => {
+    try {
+      const mod = (await import(PROFILE_HAAS_NGC_SPEC)) as {
+        haasNgcControllerManifest?: ControllerPackManifest;
+      };
+      return mod.haasNgcControllerManifest;
+    } catch {
+      return undefined;
+    }
+  },
+  "haas-legacy": async () => {
+    try {
+      const mod = (await import(PROFILE_HAAS_NGC_SPEC)) as {
+        haasNgcControllerManifest?: ControllerPackManifest;
+      };
+      const base = mod.haasNgcControllerManifest;
+      if (!base) return undefined;
+      return {
+        ...base,
+        controllerKey: "haas-legacy",
+        name: "Haas Legacy"
+      };
+    } catch {
+      return undefined;
+    }
+  },
+  fanuc: async () => {
+    try {
+      const mod = (await import(PROFILE_FANUC_ISO_SPEC)) as {
+        fanucIsoControllerManifest?: ControllerPackManifest;
+      };
+      return mod.fanucIsoControllerManifest;
+    } catch {
+      return undefined;
+    }
+  }
+};
+
+let discoveredProfilePackManifestsPromise:
+  | Promise<Partial<Record<CliControllerKey, ControllerPackManifest>>>
+  | undefined;
+
+function getDiscoveredProfilePackManifests(): Promise<
+  Partial<Record<CliControllerKey, ControllerPackManifest>>
+> {
+  if (!discoveredProfilePackManifestsPromise) {
+    discoveredProfilePackManifestsPromise = (async () => {
+      try {
+        const mod = await import("./cli/profilePackRegistry.js");
+        return mod.discoverProfilePackManifests();
+      } catch {
+        return {};
+      }
+    })();
+  }
+  return discoveredProfilePackManifestsPromise;
+}
+
+export async function resolveControllerPackManifest(
+  controller: CliControllerKey
+): Promise<ControllerPackManifest | undefined> {
+  const handWired = PROFILE_MANIFEST_LOADERS[controller];
+  if (handWired) {
+    const builtIn = await handWired();
+    if (builtIn) return builtIn;
+  }
+  const discovered = await getDiscoveredProfilePackManifests();
+  return discovered[controller];
+}
 
 let discoveredProfilePackRuleDocsPromise:
   | Promise<Partial<Record<CliControllerKey, ProfileRuleDoc[]>>>
@@ -2079,21 +2159,40 @@ async function runOnce(
   options: {
     suppressDeprecated?: boolean;
     rulePolicy?: RulePolicy;
+    manifest?: ControllerPackManifest;
   } = {}
 ): Promise<RunJobCheckResult> {
   const profile = buildControllerProfile(controller);
-  const ast = parse(source, profile, { includeExpressionAst: true });
-  const { issues: profileLintIssues, ruleDocs: profileRuleDocs } = await loadProfileLintIssues(
+  const manifest = options.manifest ?? (await resolveControllerPackManifest(controller));
+  const manifestParse = parseOptionsFromManifest(manifest);
+  const ast = parse(source, profile, {
+    includeExpressionAst: true,
+    ...(manifestParse ?? {})
+  });
+  const { issues: loadedProfileIssues, ruleDocs: profileRuleDocs } = await loadProfileLintIssues(
     controller,
     ast,
     options
   );
+  const declarativeFromManifest =
+    manifest?.declarativeRules && manifest.declarativeRules.length > 0
+      ? runDeclarativeRules(ast, manifest.declarativeRules)
+      : [];
+  const profileLintIssues = [
+    ...(loadedProfileIssues ?? []),
+    ...declarativeFromManifest
+  ];
+  const mergedPolicy = mergeRulePolicies(
+    rulePolicyFromManifest(manifest, profileRuleDocs),
+    options.rulePolicy
+  );
+  const rulePolicy = Object.keys(mergedPolicy.rules).length > 0 ? mergedPolicy : undefined;
   return runJobCheck({
     ast,
     parseDiagnosticsPolicy: policy,
-    profileLintIssues,
+    profileLintIssues: profileLintIssues.length > 0 ? profileLintIssues : undefined,
     profileRuleDocs,
-    rulePolicy: options.rulePolicy
+    rulePolicy
   });
 }
 

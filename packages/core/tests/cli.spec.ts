@@ -38,6 +38,7 @@ import {
   main,
   parseCliArgs,
   parseAuditDeprecatedRulesArgs,
+  resolveControllerPackManifest,
   parseRotateAuditTrailKeyArgs,
   parseVerifyAuditTrailArgs,
   parseVerifyBatchExportArgs,
@@ -864,6 +865,18 @@ describe("main()", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.lintIssuesSummary.bySource.profile_lint ?? 0).toBe(0);
+  });
+
+  it("resolves built-in pack manifests for grammar and parseCompliance", async () => {
+    const fanuc = await resolveControllerPackManifest("fanuc");
+    expect(fanuc?.parseCompliance).toBe("strict_fanuc");
+    expect(fanuc?.grammar).toEqual(["haas-strict", "fanuc-strict"]);
+    const haas = await resolveControllerPackManifest("haas-ngc");
+    expect(haas?.parseCompliance).toBe("strict_haas");
+    expect(haas?.grammar).toBe("haas-strict");
+    const legacy = await resolveControllerPackManifest("haas-legacy");
+    expect(legacy?.controllerKey).toBe("haas-legacy");
+    expect(legacy?.parseCompliance).toBe("strict_haas");
   });
 
   it("forwards fanucIsoProfile.validateAst lints into lintIssuesSummary.bySource.profile_lint when --controller fanuc", async () => {

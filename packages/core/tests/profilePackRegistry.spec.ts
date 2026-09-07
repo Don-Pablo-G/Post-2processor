@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   discoverProfilePackLoaders,
+  discoverProfilePackManifests,
   discoverProfilePackRuleDocs,
   resolveScopeRoots
 } from "../src/cli/profilePackRegistry.js";
@@ -582,5 +583,39 @@ describe("discoverProfilePackRuleDocs", () => {
       })
     );
     expect(result).toEqual({});
+  });
+});
+
+describe("discoverProfilePackManifests", () => {
+  it("reads embedded package.json manifests", async () => {
+    const root: ParsedDirectoryRoot = {
+      dirs: { "/fake/node_modules/@cnc": ["profile-manifested"] },
+      files: {
+        "/fake/node_modules/@cnc/profile-manifested/package.json": JSON.stringify({
+          name: "@cnc/profile-manifested",
+          "cnc-workbench": {
+            profilePack: {
+              controllerKey: "siemens-840d",
+              validateAstExport: "ignored",
+              manifest: {
+                controllerKey: "siemens-840d",
+                name: "Siemens 840D",
+                grammar: "haas-strict",
+                parseCompliance: "strict",
+                rules: ["siemens.foo"]
+              }
+            }
+          }
+        })
+      }
+    };
+    const result = await discoverProfilePackManifests(buildFakeIo(root, {}));
+    expect(result["siemens-840d"]).toEqual({
+      controllerKey: "siemens-840d",
+      name: "Siemens 840D",
+      grammar: "haas-strict",
+      parseCompliance: "strict",
+      rules: ["siemens.foo"]
+    });
   });
 });

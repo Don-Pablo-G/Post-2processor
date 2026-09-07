@@ -133,7 +133,9 @@ export type { GrammarPackId, ControllerGrammarPackTable } from "./lints/grammarT
 export {
   parseControllerPackManifest,
   grammarIdsFromManifest,
-  enabledRuleIdsFromManifest
+  enabledRuleIdsFromManifest,
+  parseOptionsFromManifest,
+  rulePolicyFromManifest
 } from "./cli/controllerManifest.js";
 export type { ControllerPackManifest } from "./cli/controllerManifest.js";
 

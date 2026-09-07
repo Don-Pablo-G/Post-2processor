@@ -609,5 +609,16 @@ export function simpleParse(code: string, profileId: string, options?: ParseOpti
     })
   };
 
-  return { profileId, blocks, parseComplianceMode: complianceMode, parseDiagnostics, parseSummary };
+  const grammarPackIds =
+    options?.grammarPackIds && options.grammarPackIds.length > 0
+      ? [...options.grammarPackIds]
+      : undefined;
+  return {
+    profileId,
+    blocks,
+    parseComplianceMode: complianceMode,
+    ...(grammarPackIds ? { grammarPackIds } : {}),
+    parseDiagnostics,
+    parseSummary
+  };
 }

@@ -11,14 +11,17 @@ import {
   getTemplateLibrary,
   importShopFixture,
   lintWithProvenance,
+  mergeRulePolicies,
   parameterReserveProfiles,
   parameterize,
   parseTemplateLibrary,
   parse,
+  parseOptionsFromManifest,
   previewShopFixtureAutoFixes,
   proveoutProgram,
   removeProveout,
   restoreShopFixtureManifestBackup,
+  rulePolicyFromManifest,
   runShopRegressionTests,
   runJobCheck,
   runDeclarativeRules,
@@ -30,14 +33,25 @@ import {
 } from "@cnc/core/browser";
 import type {
   AnalyzeShopFixturesResult,
+  ControllerPackManifest,
   DeclarativeRuleDef,
   PreviewShopFixtureAutoFixesResult,
   ProfileRuleDoc,
   RulePolicy,
   RunJobCheckResult
 } from "@cnc/core/browser";
-import { haasNgcProfile, haasNgcRuleDocs, lintHaasNgcMillWithCodes } from "@cnc/profile-haas-ngc";
-import { fanucIsoProfile, fanucIsoRuleDocs, lintFanucIsoMillWithCodes } from "@cnc/profile-fanuc-iso";
+import {
+  haasNgcControllerManifest,
+  haasNgcProfile,
+  haasNgcRuleDocs,
+  lintHaasNgcMillWithCodes
+} from "@cnc/profile-haas-ngc";
+import {
+  fanucIsoControllerManifest,
+  fanucIsoProfile,
+  fanucIsoRuleDocs,
+  lintFanucIsoMillWithCodes
+} from "@cnc/profile-fanuc-iso";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildRuleToggleRows,
@@ -180,17 +194,45 @@ function ruleDocsForKey(key: ControllerProfileKey): readonly ProfileRuleDoc[] {
   return key === "fanuc" ? fanucIsoRuleDocs : haasNgcRuleDocs;
 }
 
+function packManifestForKey(key: ControllerProfileKey): ControllerPackManifest {
+  if (key === "fanuc") return fanucIsoControllerManifest;
+  if (key === "haas-legacy") {
+    return {
+      ...haasNgcControllerManifest,
+      controllerKey: "haas-legacy",
+      name: "Haas Legacy"
+    };
+  }
+  return haasNgcControllerManifest;
+}
+
+function effectiveRulePolicyFor(
+  key: ControllerProfileKey,
+  userPolicy: RulePolicy | undefined
+): RulePolicy | undefined {
+  const merged = mergeRulePolicies(
+    rulePolicyFromManifest(packManifestForKey(key), ruleDocsForKey(key)),
+    userPolicy
+  );
+  return Object.keys(merged.rules).length > 0 ? merged : undefined;
+}
+
 function profileLintIssuesFor(
   ast: ReturnType<typeof parse>,
   key: ControllerProfileKey,
   rulePolicy: RulePolicy | undefined,
   customRules: readonly DeclarativeRuleDef[]
 ) {
+  const manifest = packManifestForKey(key);
+  const packDeclarative = manifest.declarativeRules ?? [];
   const base =
     key === "fanuc"
       ? applyRulePolicy(lintFanucIsoMillWithCodes(ast), rulePolicy)
       : lintHaasNgcMillWithCodes(ast, { rulePolicy });
-  return [...base, ...runDeclarativeRules(ast, customRules)];
+  return [
+    ...base,
+    ...runDeclarativeRules(ast, [...packDeclarative, ...customRules])
+  ];
 }
 type SubprogramTargetPolicy = "shop_friendly" | "strict_controller";
 type LogSemantics = "controller_default" | "natural" | "base10";
@@ -1395,14 +1437,23 @@ export function App() {
     [lintController]
   );
   const activeRuleDocs = useMemo(() => ruleDocsForKey(lintController), [lintController]);
+  const activePackManifest = useMemo(() => packManifestForKey(lintController), [lintController]);
+  const effectiveRulePolicy = useMemo(
+    () => effectiveRulePolicyFor(lintController, rulePolicy),
+    [lintController, rulePolicy]
+  );
   const ruleToggleRows = useMemo(
-    () => filterRuleRows(buildRuleToggleRows(activeRuleDocs, rulePolicy), ruleFilterQuery),
-    [activeRuleDocs, rulePolicy, ruleFilterQuery]
+    () => filterRuleRows(buildRuleToggleRows(activeRuleDocs, effectiveRulePolicy), ruleFilterQuery),
+    [activeRuleDocs, effectiveRulePolicy, ruleFilterQuery]
   );
 
   const ast = useMemo(
-    () => parse(code, activeControllerProfile, { includeExpressionAst: true }),
-    [code, activeControllerProfile]
+    () =>
+      parse(code, activeControllerProfile, {
+        includeExpressionAst: true,
+        ...parseOptionsFromManifest(activePackManifest)
+      }),
+    [code, activeControllerProfile, activePackManifest]
   );
   const formatted = useMemo(
     () => format(ast, activeControllerProfile, { removeStandaloneOptionalStops }),
@@ -1420,12 +1471,12 @@ export function App() {
     const profileIssues = profileLintIssuesFor(
       ast,
       lintController,
-      rulePolicy,
+      effectiveRulePolicy,
       customDeclarativeRules
     );
     // Re-run common lint via lintWithProvenance without double-running profile:
     const commonOnly = lintWithProvenance(ast, { ...activeControllerProfile, validateAst: undefined }, {
-      rulePolicy,
+      rulePolicy: effectiveRulePolicy,
       profileRuleDocs: activeRuleDocs
     });
     const profileWithProvenance = profileIssues.map((issue) => ({
@@ -1433,7 +1484,14 @@ export function App() {
       provenance: { source: "profile_lint" as const, relatedDiagnostics: [] }
     }));
     return [...commonOnly, ...profileWithProvenance];
-  }, [ast, lintController, rulePolicy, customDeclarativeRules, activeControllerProfile, activeRuleDocs]);
+  }, [
+    ast,
+    lintController,
+    effectiveRulePolicy,
+    customDeclarativeRules,
+    activeControllerProfile,
+    activeRuleDocs
+  ]);
   const lintIssuesBySource = useMemo<Array<[LintIssueProvenanceSource, LintIssueLike[]]>>(
     () => groupLintIssuesBySource(lintIssues as unknown as LintIssueLike[]),
     [lintIssues]
@@ -2023,11 +2081,11 @@ export function App() {
         profileLintIssues: profileLintIssuesFor(
           ast,
           lintController,
-          rulePolicy,
+          effectiveRulePolicy,
           customDeclarativeRules
         ),
         profileRuleDocs: [...activeRuleDocs],
-        rulePolicy
+        rulePolicy: effectiveRulePolicy
       });
       const parseSummary = result.parseDiagnosticsSummary;
       const parseSummaryStatusSuffix =
@@ -2087,7 +2145,10 @@ export function App() {
       const batch = await runDesktopBatchJobCheck(
         batchFiles,
         async (source) => {
-          const fileAst = parse(source, activeControllerProfile, { includeExpressionAst: true });
+          const fileAst = parse(source, activeControllerProfile, {
+            includeExpressionAst: true,
+            ...parseOptionsFromManifest(activePackManifest)
+          });
           return runJobCheck({
             ast: fileAst,
             policyPreset: jobCheckPolicyPreset,
@@ -2121,11 +2182,11 @@ export function App() {
             profileLintIssues: profileLintIssuesFor(
               fileAst,
               lintController,
-              rulePolicy,
+              effectiveRulePolicy,
               customDeclarativeRules
             ),
             profileRuleDocs: [...activeRuleDocs],
-            rulePolicy
+            rulePolicy: effectiveRulePolicy
           });
         },
         { batchWalk: filtered.batchWalk }

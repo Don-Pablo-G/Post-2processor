@@ -347,3 +347,44 @@ export async function discoverProfilePackRuleDocs(
   }
   return result;
 }
+
+/**
+ * Discover pack manifests embedded under `cnc-workbench.profilePack.manifest`.
+ * Same first-wins / silent-failure contract as the loader and rule-docs walkers.
+ */
+export async function discoverProfilePackManifests(
+  opts: DiscoverProfilePackOptions = {}
+): Promise<Partial<Record<CliControllerKey, ControllerPackManifest>>> {
+  const readDirEntriesFn = opts.readDirEntriesFn ?? defaultReadDirEntriesFn;
+  const readFileFn = opts.readFileFn ?? defaultReadFileFn;
+
+  const scopeRoots = resolveScopeRoots(opts);
+  const result: Partial<Record<CliControllerKey, ControllerPackManifest>> = {};
+
+  for (const scopeRoot of scopeRoots) {
+    let directoryEntries: string[];
+    try {
+      directoryEntries = await readDirEntriesFn(scopeRoot);
+    } catch {
+      continue;
+    }
+    const profileDirs = directoryEntries
+      .filter((name) => name.startsWith("profile-"))
+      .sort();
+
+    for (const dirName of profileDirs) {
+      const packageJsonPath = `${scopeRoot}/${dirName}/package.json`;
+      let json: string;
+      try {
+        json = await readFileFn(packageJsonPath);
+      } catch {
+        continue;
+      }
+      const parsed = parseMetadata(json);
+      if (!parsed?.metadata.manifest) continue;
+      if (result[parsed.metadata.controllerKey] !== undefined) continue;
+      result[parsed.metadata.controllerKey] = parsed.metadata.manifest;
+    }
+  }
+  return result;
+}

@@ -194,11 +194,10 @@ function evaluateBlockAgainstTable(
 }
 
 function grammarPackIdsForAst(ast: ProgramAst): GrammarPackId[] {
-  const extended = ast as ProgramAst & { grammarPackIds?: readonly string[] };
   return resolveGrammarPackIds({
     profileId: ast.profileId,
     parseComplianceMode: ast.parseComplianceMode,
-    grammarPackIds: extended.grammarPackIds
+    grammarPackIds: ast.grammarPackIds
   });
 }
 

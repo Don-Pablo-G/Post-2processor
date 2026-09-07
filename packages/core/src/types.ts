@@ -67,6 +67,12 @@ export type ProgramAst = {
   profileId: string;
   blocks: Block[];
   parseComplianceMode?: ParseComplianceMode;
+  /**
+   * Optional grammar pack table ids stamped from a controller pack manifest
+   * (e.g. `haas-strict`, `fanuc-strict`). When set, controller-grammar lint
+   * uses these instead of profileId / compliance heuristics.
+   */
+  grammarPackIds?: string[];
   parseDiagnostics?: ParseDiagnostic[];
   parseSummary?: ParseSummary;
 };
@@ -75,6 +81,8 @@ export type ParseComplianceMode = "strict" | "lenient" | "strict_haas" | "strict
 
 export type ParseOptions = {
   complianceMode?: ParseComplianceMode;
+  /** Optional grammar pack ids to stamp onto the returned AST. */
+  grammarPackIds?: string[];
   semicolonEob?: boolean;
   includeTokenSpans?: boolean;
   includeExpressionAst?: boolean;
