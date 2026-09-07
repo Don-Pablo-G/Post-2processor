@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 611 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 621 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -623,6 +623,16 @@ Total rules: 611 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g53-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before a machine-coordinate move (G53). |
 | `haas.m98-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before the subprogram call (M98). |
 | `haas.g65-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before the macro call (G65). |
+| `haas.m97-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before the local subprogram call (M97). |
+| `haas.m99-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before subprogram return (M99). |
+| `haas.g10-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before G10 data setting. |
+| `haas.g92-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before shifting coordinates (G92). |
+| `haas.g52-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before a local offset (G52). |
+| `haas.work-offset-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before selecting a work offset (G54-G59/G154). |
+| `haas.plane-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing plane (G17/G18/G19). |
+| `haas.unit-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing units (G20/G21). |
+| `haas.feed-mode-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing feed mode (G93/G94/G95). |
+| `haas.path-mode-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing path mode (G61/G64). |
 
 ### `haas.m6-without-t`
 
@@ -19724,6 +19734,316 @@ S1200 M3
 M88
 M89
 G65 P9010
+M30
+```
+
+### `haas.m97-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/M97 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before the local subprogram call (M97).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M97 P1000
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M97 P1000
+M30
+```
+
+### `haas.m99-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/M99 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before subprogram return (M99).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M99
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M99
+M30
+```
+
+### `haas.g10-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G10 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before G10 data setting.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G10 L2 P1 X0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G10 L2 P1 X0
+M30
+```
+
+### `haas.g92-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G92 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before shifting coordinates (G92).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G92 X0 Y0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G92 X0 Y0
+M30
+```
+
+### `haas.g52-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G52 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before a local offset (G52).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G52 X0 Y0
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G52 X0 Y0
+M30
+```
+
+### `haas.work-offset-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Work offset \(G54-G59\/G154\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before selecting a work offset (G54-G59/G154).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G55
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G55
+M30
+```
+
+### `haas.plane-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Plane select \(G17\/G18\/G19\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing plane (G17/G18/G19).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G18
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G18
+M30
+```
+
+### `haas.unit-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Unit select \(G20\/G21\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing units (G20/G21).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G21
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G21
+M30
+```
+
+### `haas.feed-mode-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Feed mode select \(G93\/G94\/G95\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing feed mode (G93/G94/G95).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G94
+M30
+```
+
+### `haas.path-mode-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Path mode select \(G61\/G64\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing path mode (G61/G64).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G64
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G64
 M30
 ```
 

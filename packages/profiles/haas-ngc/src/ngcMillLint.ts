@@ -60,6 +60,13 @@ function hasExactG53(block: { words: Word[] }): boolean {
   });
 }
 
+function hasExactG10(block: { words: Word[] }): boolean {
+  return block.words.some((w) => {
+    if (w.letter !== "G") return false;
+    return Number.parseFloat(w.value) === 10;
+  });
+}
+
 const WORK_OFFSET_G_CODES = new Set([54, 55, 56, 57, 58, 59, 154]);
 
 function hasWorkOffset(block: { words: Word[] }): boolean {
@@ -2921,6 +2928,66 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           "G53 while through-spindle coolant (M88) is still active — turn it off with M89 before the machine move.",
         blockIndex: index
       });
+    }
+
+    if (throughSpindleCoolantActive && !hasWordM(block, 89)) {
+      const throughSpindleExitGuards: Array<{ test: boolean; message: string }> = [
+        {
+          test: hasWordM(block, 97),
+          message:
+            "M97 while through-spindle coolant (M88) is still active — turn it off with M89 before the local subprogram call."
+        },
+        {
+          test: hasWordM(block, 99),
+          message:
+            "M99 while through-spindle coolant (M88) is still active — turn it off with M89 before subprogram return."
+        },
+        {
+          test: hasExactG10(block),
+          message:
+            "G10 while through-spindle coolant (M88) is still active — turn it off with M89 before G10 data setting."
+        },
+        {
+          test: hasExactG92(block),
+          message:
+            "G92 while through-spindle coolant (M88) is still active — turn it off with M89 before shifting coordinates."
+        },
+        {
+          test: hasExactG52(block),
+          message:
+            "G52 while through-spindle coolant (M88) is still active — turn it off with M89 before a local offset."
+        },
+        {
+          test: hasWorkOffset(block),
+          message:
+            "Work offset (G54-G59/G154) while through-spindle coolant (M88) is still active — turn it off with M89 before selecting a work offset."
+        },
+        {
+          test: hasExactPlane(block) !== undefined,
+          message:
+            "Plane select (G17/G18/G19) while through-spindle coolant (M88) is still active — turn it off with M89 before changing plane."
+        },
+        {
+          test: hasExactG20Or21(block) !== undefined,
+          message:
+            "Unit select (G20/G21) while through-spindle coolant (M88) is still active — turn it off with M89 before changing units."
+        },
+        {
+          test: hasExactG93Or94Or95(block) !== undefined,
+          message:
+            "Feed mode select (G93/G94/G95) while through-spindle coolant (M88) is still active — turn it off with M89 before changing feed mode."
+        },
+        {
+          test: hasExactG61Or64(block) !== undefined,
+          message:
+            "Path mode select (G61/G64) while through-spindle coolant (M88) is still active — turn it off with M89 before changing path mode."
+        }
+      ];
+      for (const guard of throughSpindleExitGuards) {
+        if (guard.test) {
+          issues.push({ severity: "warning", message: guard.message, blockIndex: index });
+        }
+      }
     }
 
     if (hasExactG28(block) && rotationActive && !hasExactG69(block)) {
