@@ -721,6 +721,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G49 while coolant is still on — turn coolant off with M9 before canceling tool length.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G49 while incremental mode (G91) is active — restore G90 before canceling tool length.",
+          blockIndex: index
+        });
+      }
       toolLengthActive = false;
     }
 
@@ -1919,6 +1933,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G80 while incremental mode (G91) is active — restore G90 before canceling the canned cycle.",
+          blockIndex: index
+        });
+      }
       cannedActive = false;
       cannedHasZ = false;
       cannedHasR = false;
@@ -2006,6 +2027,13 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G68 while incremental mode (G91) is active — restore G90 before coordinate rotation.",
+          blockIndex: index
+        });
+      }
       rotationActive = true;
     }
     if (hasExactG69(block)) {
@@ -2037,6 +2065,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "G69 while scaling (G51) is still active — cancel with G50 before canceling coordinate rotation.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G69 while coolant is still on — turn coolant off with M9 before canceling coordinate rotation.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "G69 while incremental mode (G91) is active — restore G90 before canceling coordinate rotation.",
           blockIndex: index
         });
       }
@@ -2083,6 +2126,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G51 while coolant is still on — turn coolant off with M9 before scaling.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G51 while incremental mode (G91) is active — restore G90 before scaling.",
+          blockIndex: index
+        });
+      }
       scalingActive = true;
     }
     if (hasExactG50(block)) {
@@ -2114,6 +2171,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "G50 while coordinate rotation (G68) is still active — cancel with G69 before canceling scaling.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message: "G50 while coolant is still on — turn coolant off with M9 before canceling scaling.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "G50 while incremental mode (G91) is active — restore G90 before canceling scaling.",
           blockIndex: index
         });
       }

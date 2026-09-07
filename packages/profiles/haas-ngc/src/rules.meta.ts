@@ -1703,6 +1703,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG68 X0 Y0 R45.\nG69\nM5\nM30\n"
   },
   {
+    id: "haas.g68-while-incremental",
+    severity: "warning",
+    messageMatcher: /G68 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G68 coordinate rotation.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG68 X0 Y0 R45.\nG90\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG68 X0 Y0 R45.\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g51-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G51 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G51 scaling.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG51 P2.\nM9\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nG51 P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g51-while-incremental",
+    severity: "warning",
+    messageMatcher: /G51 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G51 scaling.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG51 P2.\nG90\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nG51 P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g49-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G49 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G49 tool-length cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nG49\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM8\nM9\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g49-while-incremental",
+    severity: "warning",
+    messageMatcher: /G49 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G49 tool-length cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG91\nS1200 M3\nG49\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG91\nS1200 M3\nG90\nG49\nM5\nM30\n"
+  },
+  {
+    id: "haas.g69-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G69 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G69 rotation cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG68 X0 Y0 R45.\nG69\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG68 X0 Y0 R45.\nM9\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g69-while-incremental",
+    severity: "warning",
+    messageMatcher: /G69 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G69 rotation cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG68 X0 Y0 R45.\nG69\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG68 X0 Y0 R45.\nG90\nG69\nM5\nM30\n"
+  },
+  {
+    id: "haas.g50-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G50 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G50 scaling cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG51 P2.\nG50\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nG51 P2.\nM9\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g50-while-incremental",
+    severity: "warning",
+    messageMatcher: /G50 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G50 scaling cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG51 P2.\nG50\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG51 P2.\nG90\nG50\nM5\nM30\n"
+  },
+  {
+    id: "haas.g80-while-incremental",
+    severity: "warning",
+    messageMatcher: /G80 while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before G80 canned-cycle cancel.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG81 Z-1. R0.1 F10.\nG90\nG80\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,

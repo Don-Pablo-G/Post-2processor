@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 311 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 321 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -221,6 +221,16 @@ Total rules: 311 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g80-while-rotation` | warning | — | — | Cancel rotation with G69 before G80 canned-cycle cancel. |
 | `haas.g80-while-scaling` | warning | — | — | Cancel scaling with G50 before G80 canned-cycle cancel. |
 | `haas.g68-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G68 coordinate rotation. |
+| `haas.g68-while-incremental` | warning | — | — | Restore G90 before G68 coordinate rotation. |
+| `haas.g51-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G51 scaling. |
+| `haas.g51-while-incremental` | warning | — | — | Restore G90 before G51 scaling. |
+| `haas.g49-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G49 tool-length cancel. |
+| `haas.g49-while-incremental` | warning | — | — | Restore G90 before G49 tool-length cancel. |
+| `haas.g69-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G69 rotation cancel. |
+| `haas.g69-while-incremental` | warning | — | — | Restore G90 before G69 rotation cancel. |
+| `haas.g50-while-coolant-on` | warning | — | — | Turn coolant off with M9 before G50 scaling cancel. |
+| `haas.g50-while-incremental` | warning | — | — | Restore G90 before G50 scaling cancel. |
+| `haas.g80-while-incremental` | warning | — | — | Restore G90 before G80 canned-cycle cancel. |
 | `haas.g28-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g53-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
 | `haas.g30-and-g92-same-block` (deprecated) | warning | 2026-09 | Use haas.machine-position-conflict-same-block. | Superseded by haas.machine-position-conflict-same-block — split G28/G30/G53 from other modes/calls/stops. |
@@ -6793,6 +6803,366 @@ M8
 M9
 G68 X0 Y0 R45.
 G69
+M5
+M30
+```
+
+### `haas.g68-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G68 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G68 coordinate rotation.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G68 X0 Y0 R45.
+G90
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+G68 X0 Y0 R45.
+G69
+M5
+M30
+```
+
+### `haas.g51-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G51 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before G51 scaling.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G51 P2.
+M9
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+G51 P2.
+G50
+M5
+M30
+```
+
+### `haas.g51-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G51 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G51 scaling.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G51 P2.
+G90
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G90
+G51 P2.
+G50
+M5
+M30
+```
+
+### `haas.g49-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G49 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before G49 tool-length cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+G49
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M8
+M9
+G49
+M5
+M30
+```
+
+### `haas.g49-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G49 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G49 tool-length cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G91
+S1200 M3
+G49
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G91
+S1200 M3
+G90
+G49
+M5
+M30
+```
+
+### `haas.g69-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G69 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before G69 rotation cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G68 X0 Y0 R45.
+G69
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G68 X0 Y0 R45.
+M9
+G69
+M5
+M30
+```
+
+### `haas.g69-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G69 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G69 rotation cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G68 X0 Y0 R45.
+G69
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G68 X0 Y0 R45.
+G90
+G69
+M5
+M30
+```
+
+### `haas.g50-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/G50 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before G50 scaling cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G51 P2.
+G50
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+G51 P2.
+M9
+G50
+M5
+M30
+```
+
+### `haas.g50-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G50 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G50 scaling cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G51 P2.
+G50
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G51 P2.
+G90
+G50
+M5
+M30
+```
+
+### `haas.g80-while-incremental`
+
+- **Severity:** warning
+- **Matcher:** `/G80 while incremental mode \(G91\) is active/`
+- **Summary:** Restore G90 before G80 canned-cycle cancel.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+G90
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G91
+S1200 M3
+G81 Z-1. R0.1 F10.
+G90
+G80
 M5
 M30
 ```
