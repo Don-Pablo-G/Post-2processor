@@ -617,6 +617,46 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while cutter compensation (G41/G42) is still active — cancel with G40 before starting the spindle.",
+          blockIndex: index
+        });
+      }
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while coordinate rotation (G68) is still active — cancel with G69 before starting the spindle.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while scaling (G51) is still active — cancel with G50 before starting the spindle.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while incremental mode (G91) is active — restore G90 before starting the spindle.",
+          blockIndex: index
+        });
+      }
+      if (coolantActive && !hasCoolantOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle start (M3/M4) while coolant is still on — turn coolant off with M9 before starting the spindle.",
+          blockIndex: index
+        });
+      }
       sawSpindleOn = true;
       spindleActive = true;
       if (nextSpindleDirection !== undefined) {
@@ -689,6 +729,36 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasCoolantOn(block)) {
+      if (rotationActive && !hasExactG69(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Coolant on (M7/M8) while coordinate rotation (G68) is still active — cancel with G69 before coolant.",
+          blockIndex: index
+        });
+      }
+      if (scalingActive && !hasExactG50(block)) {
+        issues.push({
+          severity: "warning",
+          message: "Coolant on (M7/M8) while scaling (G51) is still active — cancel with G50 before coolant.",
+          blockIndex: index
+        });
+      }
+      if (incrementalActive) {
+        issues.push({
+          severity: "warning",
+          message: "Coolant on (M7/M8) while incremental mode (G91) is active — restore G90 before coolant.",
+          blockIndex: index
+        });
+      }
+      if (cutterCompActive && !hasExactG40(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Coolant on (M7/M8) while cutter compensation (G41/G42) is still active — cancel with G40 before coolant.",
+          blockIndex: index
+        });
+      }
       coolantActive = true;
     }
     if (hasCoolantOff(block)) {
@@ -1376,6 +1446,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       issues.push({
         severity: "warning",
         message: "G1/G2/G3 while spindle is off — start spindle (M3/M4) before feed motion.",
+        blockIndex: index
+      });
+    }
+
+    if (hasExactFeedMotion(block) && cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
+      issues.push({
+        severity: "warning",
+        message:
+          "G1/G2/G3 while a canned cycle is still active — cancel with G80 before feed motion.",
         blockIndex: index
       });
     }

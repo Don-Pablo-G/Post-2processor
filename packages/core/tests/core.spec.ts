@@ -4869,6 +4869,120 @@ describe("Haas NGC profile package (@cnc/profile-haas-ngc)", () => {
     ).toBe(true);
   });
 
+  it("warns spindle start while cutter compensation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM5\nM3\nG40\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle start (M3/M4) while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns spindle start while rotation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nM5\nM3\nG69\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle start (M3/M4) while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns spindle start while scaling is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG51 P2.\nM5\nM3\nG50\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle start (M3/M4) while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns spindle start while incremental is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG90\nS1200 M3\nG91\nM5\nM3\nG90\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle start (M3/M4) while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns spindle start while coolant is on", () => {
+    const ast = parse("O1\nT1 M6\nG54\nS1200 M3\nM8\nM5\nM3\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Spindle start (M3/M4) while coolant is still on")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant on while rotation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nM8\nG69\nM9\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) while coordinate rotation (G68) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant on while scaling is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG51 P2.\nM8\nG50\nM9\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) while scaling (G51) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant on while incremental is active", () => {
+    const ast = parse("O1\nT1 M6\nG54\nG91\nS1200 M3\nM8\nG90\nM9\nM5\nM30", haasNgcProfilePackaged);
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) while incremental mode (G91) is active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns coolant on while cutter compensation is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM8\nG40\nM9\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("Coolant on (M7/M8) while cutter compensation (G41/G42) is still active")
+      )
+    ).toBe(true);
+  });
+
+  it("warns feed motion while canned cycle is active", () => {
+    const ast = parse(
+      "O1\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG1 X1. F10.\nG80\nM5\nM30",
+      haasNgcProfilePackaged
+    );
+    expect(
+      lint(ast, haasNgcProfilePackaged).some((i) =>
+        i.message.includes("G1/G2/G3 while a canned cycle is still active")
+      )
+    ).toBe(true);
+  });
+
   it("warns G28 and G92 on the same block", () => {
     const ast = parse("O1\nT1 M6\nG54\nG91\nG28 Z0 G92 X0\nG90\nM30", haasNgcProfilePackaged);
     expect(

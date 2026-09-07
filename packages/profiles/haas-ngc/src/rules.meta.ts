@@ -2263,6 +2263,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM5\nM3\nM5\nM30\n"
   },
   {
+    id: "haas.spindle-on-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Spindle start \(M3\/M4\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before starting the spindle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM5\nM3\nG40\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM5\nM3\nM5\nM30\n"
+  },
+  {
+    id: "haas.spindle-on-while-rotation",
+    severity: "warning",
+    messageMatcher: /Spindle start \(M3\/M4\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before starting the spindle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nM5\nM3\nG69\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nM5\nM3\nM5\nM30\n"
+  },
+  {
+    id: "haas.spindle-on-while-scaling",
+    severity: "warning",
+    messageMatcher: /Spindle start \(M3\/M4\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before starting the spindle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nM5\nM3\nG50\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nM5\nM3\nM5\nM30\n"
+  },
+  {
+    id: "haas.spindle-on-while-incremental",
+    severity: "warning",
+    messageMatcher: /Spindle start \(M3\/M4\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before starting the spindle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG90\nS1200 M3\nG91\nM5\nM3\nG90\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG90\nS1200 M3\nG91\nG90\nM5\nM3\nM5\nM30\n"
+  },
+  {
+    id: "haas.spindle-on-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /Spindle start \(M3\/M4\) while coolant is still on/,
+    summary: "Turn coolant off with M9 before starting the spindle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM5\nM3\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM5\nM3\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-while-rotation",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before coolant.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nM8\nG69\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG68 X0 Y0 R45.\nG69\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-while-scaling",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before coolant.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nM8\nG50\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG51 P2.\nG50\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-while-incremental",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while incremental mode \(G91\) is active/,
+    summary: "Restore G90 before coolant.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nM8\nG90\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG91\nS1200 M3\nG90\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before coolant.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM8\nG40\nM9\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "haas.feed-while-canned",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before feed motion.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG1 X1. F10.\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nG1 X1. F10.\nM5\nM30\n"
+  },
+  {
     id: "haas.g28-and-g92-same-block",
     severity: "warning",
     messageMatcher: /Machine positioning conflict on the same block/,
