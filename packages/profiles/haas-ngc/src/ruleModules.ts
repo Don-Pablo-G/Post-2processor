@@ -1,5 +1,6 @@
-import type { LintIssue, ProgramAst } from "@cnc/core";
+import type { LintIssue, ProgramAst, RulePolicy } from "@cnc/core";
 import {
+  applyRulePolicy,
   attachRuleCodesFromDocs,
   createRuleRegistry,
   ruleModulesFromDocs,
@@ -7,6 +8,8 @@ import {
   type RuleRegistry
 } from "@cnc/core";
 import { lintHaasNgcMill } from "./ngcMillLint.js";
+import { lintHaasEndHygiene } from "./rules/endHygiene.js";
+import { lintHaasOrphanWordWhile } from "./rules/orphanWordWhile.js";
 import { haasNgcRuleDocs } from "./rules.meta.js";
 import { collectSameBlockMatrixIssues } from "./sameBlockConflicts.js";
 
@@ -37,8 +40,29 @@ export const haasSameBlockConflictsModule: RuleModule = {
 };
 
 /**
- * Remainder of Haas mill lint (modal / while-state / end hygiene). Still one
- * module today; individual haas.* ids are attached via rule docs for policy.
+ * Orphan Q/R/P/IJK words while modal state is active.
+ */
+export const haasOrphanWordWhileModule: RuleModule = {
+  id: "haas.orphan-word-while",
+  summary: "Orphan Q/R/P/IJK words while cutter/canned/rotation/scaling/etc. still active.",
+  defaultEnabled: true,
+  run: (ast: ProgramAst): LintIssue[] => lintHaasOrphanWordWhile(ast)
+};
+
+/**
+ * Program-end modal hygiene (cutter, G43, spindle, coolant, plane, …).
+ */
+export const haasEndHygieneModule: RuleModule = {
+  id: "haas.end-hygiene",
+  summary: "Program-end modal hygiene checks for Haas NGC mill programs.",
+  defaultEnabled: true,
+  run: (ast: ProgramAst): LintIssue[] => lintHaasEndHygiene(ast)
+};
+
+/**
+ * Remainder of Haas mill lint (modal / while-state suite minus extracted
+ * orphan-word and end-hygiene clusters). Individual haas.* ids are attached
+ * via rule docs for policy.
  */
 export const haasMillStateMachineModule: RuleModule = {
   id: "haas.mill-state-machine",
@@ -51,22 +75,46 @@ export const haasMillStateMachineModule: RuleModule = {
   }
 };
 
+const ORPHAN_AND_END_MODULE_IDS = new Set([
+  "haas.orphan-word-while",
+  "haas.end-hygiene",
+  "haas.machine-position-conflict-same-block",
+  "haas.coord-shift-conflict-same-block"
+]);
+
 /** Full Haas registry: doc modules (for UI listing) + executable modules. */
 export function buildHaasNgcRuleRegistry(): RuleRegistry {
   const docModules = ruleModulesFromDocs(haasNgcRuleDocs);
   const registry = createRuleRegistry([
     haasMillStateMachineModule,
-    ...docModules.filter(
-      (m) =>
-        m.id !== "haas.machine-position-conflict-same-block" &&
-        m.id !== "haas.coord-shift-conflict-same-block"
-    ),
+    haasOrphanWordWhileModule,
+    haasEndHygieneModule,
+    ...docModules.filter((m) => !ORPHAN_AND_END_MODULE_IDS.has(m.id)),
     haasSameBlockConflictsModule
   ]);
   return registry;
 }
 
+function disabledRuleIdsFromPolicy(rulePolicy: RulePolicy | undefined): Set<string> {
+  const disabled = new Set<string>();
+  if (!rulePolicy) return disabled;
+  for (const [id, entry] of Object.entries(rulePolicy.rules)) {
+    if (entry.enabled === false) disabled.add(id);
+  }
+  return disabled;
+}
+
 /** validateAst entry that emits stable codes for every matched rule doc. */
-export function lintHaasNgcMillWithCodes(ast: ProgramAst): LintIssue[] {
-  return attachRuleCodesFromDocs(lintHaasNgcMill(ast), haasNgcRuleDocs);
+export function lintHaasNgcMillWithCodes(
+  ast: ProgramAst,
+  options?: { rulePolicy?: RulePolicy }
+): LintIssue[] {
+  const disabledRuleIds = disabledRuleIdsFromPolicy(options?.rulePolicy);
+  const issues: LintIssue[] = [
+    ...lintHaasNgcMill(ast),
+    ...lintHaasOrphanWordWhile(ast, { disabledRuleIds }),
+    ...lintHaasEndHygiene(ast, { disabledRuleIds })
+  ];
+  const coded = attachRuleCodesFromDocs(issues, haasNgcRuleDocs);
+  return applyRulePolicy(coded, options?.rulePolicy);
 }

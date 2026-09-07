@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "@cnc/core";
-import { haasNgcProfile, haasNgcRuleDocs, lintHaasNgcMill } from "../src/index.js";
+import { haasNgcProfile, haasNgcRuleDocs, lintHaasNgcMillWithCodes } from "../src/index.js";
 
 describe("@cnc/profile-haas-ngc rules.meta registry", () => {
   it("has stable, unique, dotted-lowercase ids", () => {
@@ -17,7 +17,7 @@ describe("@cnc/profile-haas-ngc rules.meta registry", () => {
   it("each rule's positiveSnippet triggers a matching LintIssue", () => {
     for (const rule of haasNgcRuleDocs) {
       const ast = parse(rule.positiveSnippet, haasNgcProfile);
-      const issues = lintHaasNgcMill(ast);
+      const issues = lintHaasNgcMillWithCodes(ast);
       const matched = issues.filter((issue) => rule.messageMatcher.test(issue.message));
       expect(
         matched.length,
@@ -33,7 +33,7 @@ describe("@cnc/profile-haas-ngc rules.meta registry", () => {
   it("each rule's negativeSnippet does NOT trigger the matcher", () => {
     for (const rule of haasNgcRuleDocs) {
       const ast = parse(rule.negativeSnippet, haasNgcProfile);
-      const issues = lintHaasNgcMill(ast);
+      const issues = lintHaasNgcMillWithCodes(ast);
       const matched = issues.filter((issue) => rule.messageMatcher.test(issue.message));
       expect(
         matched.length,

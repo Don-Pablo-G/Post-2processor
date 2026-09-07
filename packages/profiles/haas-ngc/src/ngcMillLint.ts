@@ -1,30 +1,36 @@
 import type { LintIssue, ProgramAst, Word } from "@cnc/core";
 import { collectSameBlockMatrixIssues } from "./sameBlockConflicts.js";
-
-function hasWordM(block: { words: Word[] }, code: number): boolean {
-  return block.words.some((w) => w.letter === "M" && Number(w.value) === code);
-}
-
-function hasG43Classic(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    const n = Number.parseFloat(w.value);
-    return n === 43;
-  });
-}
-
-function hasLetter(block: { words: Word[] }, letter: string): boolean {
-  return block.words.some((w) => w.letter === letter);
-}
-
-/** True only for plain G41 / G42 (not G41.1 etc.). */
-function hasExactG41Or42(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    const v = Number.parseFloat(w.value);
-    return v === 41 || v === 42;
-  });
-}
+import {
+  hasCannedCycle,
+  hasCoolantOff,
+  hasCoolantOn,
+  hasExactArcMotion,
+  hasExactG4,
+  hasExactG40,
+  hasExactG41Or42,
+  hasExactG43 as hasG43Classic,
+  hasExactG49,
+  hasExactG50,
+  hasExactG51,
+  hasExactG52,
+  hasExactG61Or64,
+  hasExactG65,
+  hasExactG68,
+  hasExactG69,
+  hasExactG80,
+  hasExactG90Or91,
+  hasExactG92,
+  hasExactG94Or95,
+  hasExactG20Or21,
+  hasExactPeckCycle,
+  hasExactPlane,
+  hasLetter,
+  hasSpindleOff,
+  hasSpindleOn,
+  hasWordM,
+  isZeroOffsetWord,
+  lastWordValue
+} from "./rules/millHelpers.js";
 
 /** True for plain G1 / G2 / G3 feed motion (not G10/G11/G21/…). */
 function hasExactFeedMotion(block: { words: Word[] }): boolean {
@@ -32,91 +38,6 @@ function hasExactFeedMotion(block: { words: Word[] }): boolean {
     if (w.letter !== "G") return false;
     const v = Number.parseFloat(w.value);
     return v === 1 || v === 2 || v === 3;
-  });
-}
-
-/** True for plain G2 / G3 arc motion (not G20/G21/…). */
-function hasExactArcMotion(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    const v = Number.parseFloat(w.value);
-    return v === 2 || v === 3;
-  });
-}
-
-const CANNED_CYCLE_G_CODES = new Set([73, 74, 76, 81, 82, 83, 84, 85, 86, 87, 88, 89]);
-
-/** Haas/Fanuc-style drilling/tapping canned cycles (exact Gnn, not G73.1). */
-function hasCannedCycle(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return CANNED_CYCLE_G_CODES.has(Number.parseFloat(w.value));
-  });
-}
-
-function hasExactG80(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 80;
-  });
-}
-
-function hasExactG40(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 40;
-  });
-}
-
-function hasExactG90Or91(block: { words: Word[] }): 90 | 91 | undefined {
-  let mode: 90 | 91 | undefined;
-  for (const w of block.words) {
-    if (w.letter !== "G") continue;
-    const v = Number.parseFloat(w.value);
-    if (v === 90) mode = 90;
-    if (v === 91) mode = 91;
-  }
-  return mode;
-}
-
-function hasExactG20Or21(block: { words: Word[] }): 20 | 21 | undefined {
-  for (const w of block.words) {
-    if (w.letter !== "G") continue;
-    const v = Number.parseFloat(w.value);
-    if (v === 20) return 20;
-    if (v === 21) return 21;
-  }
-  return undefined;
-}
-
-function hasCoolantOn(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "M") return false;
-    const m = Math.trunc(Number.parseFloat(w.value));
-    return m === 7 || m === 8;
-  });
-}
-
-function hasSpindleOn(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "M") return false;
-    const m = Math.trunc(Number.parseFloat(w.value));
-    return m === 3 || m === 4 || m === 13 || m === 14;
-  });
-}
-
-function hasSpindleOff(block: { words: Word[] }): boolean {
-  return hasWordM(block, 5);
-}
-
-function hasCoolantOff(block: { words: Word[] }): boolean {
-  return hasWordM(block, 9);
-}
-
-function hasExactG49(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 49;
   });
 }
 
@@ -147,31 +68,6 @@ function hasAxisWord(block: { words: Word[] }): boolean {
   return hasLetter(block, "X") || hasLetter(block, "Y") || hasLetter(block, "Z");
 }
 
-function hasExactPlane(block: { words: Word[] }): 17 | 18 | 19 | undefined {
-  for (const w of block.words) {
-    if (w.letter !== "G") continue;
-    const v = Number.parseFloat(w.value);
-    if (v === 17) return 17;
-    if (v === 18) return 18;
-    if (v === 19) return 19;
-  }
-  return undefined;
-}
-
-function hasExactG65(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 65;
-  });
-}
-
-function hasExactG4(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 4;
-  });
-}
-
 function hasExactG28(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;
@@ -186,88 +82,12 @@ function hasExactG30(block: { words: Word[] }): boolean {
   });
 }
 
-function hasExactG68(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 68;
-  });
-}
-
-function hasExactG69(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 69;
-  });
-}
-
-function hasExactG51(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 51;
-  });
-}
-
-function hasExactG50(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 50;
-  });
-}
-
-function hasExactG92(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 92;
-  });
-}
-
-function hasExactG52(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    return Number.parseFloat(w.value) === 52;
-  });
-}
-
 function hasExactTappingCycle(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;
     const v = Number.parseFloat(w.value);
     return v === 74 || v === 84;
   });
-}
-
-function hasExactPeckCycle(block: { words: Word[] }): boolean {
-  return block.words.some((w) => {
-    if (w.letter !== "G") return false;
-    const v = Number.parseFloat(w.value);
-    return v === 73 || v === 83;
-  });
-}
-
-/** R is legitimate on canned cycles, arcs, and G68 rotation angle. */
-function hasRWordContext(block: { words: Word[] }): boolean {
-  return hasCannedCycle(block) || hasExactArcMotion(block) || hasExactG68(block);
-}
-
-/** P is legitimate on subprogram/macro calls, dwell, scaling, and canned dwell. */
-function hasPWordContext(block: { words: Word[] }): boolean {
-  return (
-    hasWordM(block, 98) ||
-    hasWordM(block, 97) ||
-    hasExactG65(block) ||
-    hasExactG4(block) ||
-    hasExactG51(block) ||
-    hasCannedCycle(block)
-  );
-}
-
-/** I/J/K are legitimate on arc motion (center offsets). */
-function hasIjkWordContext(block: { words: Word[] }): boolean {
-  return hasExactArcMotion(block);
-}
-
-function hasIjkWord(block: { words: Word[] }): boolean {
-  return hasLetter(block, "I") || hasLetter(block, "J") || hasLetter(block, "K");
 }
 
 function exactCutterSide(block: { words: Word[] }): 41 | 42 | undefined {
@@ -291,27 +111,6 @@ function hasBothG41AndG42(block: { words: Word[] }): boolean {
     if (v === 42) g42 = true;
   }
   return g41 && g42;
-}
-
-function hasExactG94Or95(block: { words: Word[] }): 94 | 95 | undefined {
-  for (const w of block.words) {
-    if (w.letter !== "G") continue;
-    const v = Number.parseFloat(w.value);
-    if (v === 94) return 94;
-    if (v === 95) return 95;
-  }
-  return undefined;
-}
-
-function hasExactG61Or64(block: { words: Word[] }): 61 | 64 | undefined {
-  let mode: 61 | 64 | undefined;
-  for (const w of block.words) {
-    if (w.letter !== "G") continue;
-    const v = Number.parseFloat(w.value);
-    if (v === 61) mode = 61;
-    if (v === 64) mode = 64;
-  }
-  return mode;
 }
 
 function mWordCount(block: { words: Word[] }): number {
@@ -352,19 +151,6 @@ function literalToolNumber(raw: string | undefined): number | undefined {
   if (t.includes("#") || t.includes("[")) return undefined;
   const n = Math.trunc(Number.parseFloat(t));
   return Number.isFinite(n) ? n : undefined;
-}
-
-function lastWordValue(block: { words: Word[] }, letter: string): string | undefined {
-  const w = block.words.filter((x) => x.letter === letter).at(-1);
-  return w?.value;
-}
-
-function isZeroOffsetWord(raw: string | undefined): boolean {
-  if (raw === undefined) return false;
-  const t = raw.trim().toUpperCase();
-  if (t.includes("#") || t.includes("[")) return false;
-  const n = Number.parseFloat(t);
-  return Number.isFinite(n) && n === 0;
 }
 
 function isLiteralNegativeAxis(raw: string | undefined): boolean {
@@ -1717,218 +1503,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "D offset word while coolant is still on — turn coolant off with M9 before changing D offsets.",
-          blockIndex: index
-        });
-      }
-    }
-
-    if (hasLetter(block, "Q") && !hasExactPeckCycle(block)) {
-      if (cutterCompActive && !hasExactG40(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "Q word while cutter compensation (G41/G42) is still active — cancel with G40 before using Q outside a peck cycle.",
-          blockIndex: index
-        });
-      }
-      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "Q word while a canned cycle is still active — cancel with G80 before using Q outside a peck cycle.",
-          blockIndex: index
-        });
-      }
-      if (rotationActive && !hasExactG69(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "Q word while coordinate rotation (G68) is still active — cancel with G69 before using Q outside a peck cycle.",
-          blockIndex: index
-        });
-      }
-      if (scalingActive && !hasExactG50(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "Q word while scaling (G51) is still active — cancel with G50 before using Q outside a peck cycle.",
-          blockIndex: index
-        });
-      }
-      if (incrementalActive) {
-        issues.push({
-          severity: "warning",
-          message:
-            "Q word while incremental mode (G91) is active — restore G90 before using Q outside a peck cycle.",
-          blockIndex: index
-        });
-      }
-      if (coolantActive && !hasCoolantOff(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "Q word while coolant is still on — turn coolant off with M9 before using Q outside a peck cycle.",
-          blockIndex: index
-        });
-      }
-    }
-
-    if (hasLetter(block, "R") && !hasRWordContext(block)) {
-      if (cutterCompActive && !hasExactG40(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "R word while cutter compensation (G41/G42) is still active — cancel with G40 before using R outside canned/arc/rotation context.",
-          blockIndex: index
-        });
-      }
-      if (rotationActive && !hasExactG69(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "R word while coordinate rotation (G68) is still active — cancel with G69 before using R outside canned/arc/rotation context.",
-          blockIndex: index
-        });
-      }
-      if (scalingActive && !hasExactG50(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "R word while scaling (G51) is still active — cancel with G50 before using R outside canned/arc/rotation context.",
-          blockIndex: index
-        });
-      }
-      if (incrementalActive) {
-        issues.push({
-          severity: "warning",
-          message:
-            "R word while incremental mode (G91) is active — restore G90 before using R outside canned/arc/rotation context.",
-          blockIndex: index
-        });
-      }
-      if (coolantActive && !hasCoolantOff(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "R word while coolant is still on — turn coolant off with M9 before using R outside canned/arc/rotation context.",
-          blockIndex: index
-        });
-      }
-      if (toolLengthActive && !hasExactG49(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "R word while tool length compensation (G43) is still active — cancel with G49 before using R outside canned/arc/rotation context.",
-          blockIndex: index
-        });
-      }
-    }
-
-    if (hasLetter(block, "P") && !hasPWordContext(block)) {
-      if (cutterCompActive && !hasExactG40(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "P word while cutter compensation (G41/G42) is still active — cancel with G40 before using P outside call/dwell/scaling/canned context.",
-          blockIndex: index
-        });
-      }
-      if (rotationActive && !hasExactG69(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "P word while coordinate rotation (G68) is still active — cancel with G69 before using P outside call/dwell/scaling/canned context.",
-          blockIndex: index
-        });
-      }
-      if (scalingActive && !hasExactG50(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "P word while scaling (G51) is still active — cancel with G50 before using P outside call/dwell/scaling/canned context.",
-          blockIndex: index
-        });
-      }
-      if (toolLengthActive && !hasExactG49(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "P word while tool length compensation (G43) is still active — cancel with G49 before using P outside call/dwell/scaling/canned context.",
-          blockIndex: index
-        });
-      }
-      if (incrementalActive) {
-        issues.push({
-          severity: "warning",
-          message:
-            "P word while incremental mode (G91) is active — restore G90 before using P outside call/dwell/scaling/canned context.",
-          blockIndex: index
-        });
-      }
-      if (coolantActive && !hasCoolantOff(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "P word while coolant is still on — turn coolant off with M9 before using P outside call/dwell/scaling/canned context.",
-          blockIndex: index
-        });
-      }
-    }
-
-    if (hasIjkWord(block) && !hasIjkWordContext(block)) {
-      if (cutterCompActive && !hasExactG40(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while cutter compensation (G41/G42) is still active — cancel with G40 before using I/J/K outside arc context.",
-          blockIndex: index
-        });
-      }
-      if (rotationActive && !hasExactG69(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while coordinate rotation (G68) is still active — cancel with G69 before using I/J/K outside arc context.",
-          blockIndex: index
-        });
-      }
-      if (scalingActive && !hasExactG50(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while scaling (G51) is still active — cancel with G50 before using I/J/K outside arc context.",
-          blockIndex: index
-        });
-      }
-      if (incrementalActive) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while incremental mode (G91) is active — restore G90 before using I/J/K outside arc context.",
-          blockIndex: index
-        });
-      }
-      if (coolantActive && !hasCoolantOff(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while coolant is still on — turn coolant off with M9 before using I/J/K outside arc context.",
-          blockIndex: index
-        });
-      }
-      if (toolLengthActive && !hasExactG49(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while tool length compensation (G43) is still active — cancel with G49 before using I/J/K outside arc context.",
-          blockIndex: index
-        });
-      }
-      if (cannedActive && !hasExactG80(block) && !hasCannedCycle(block)) {
-        issues.push({
-          severity: "warning",
-          message:
-            "I/J/K word while a canned cycle is still active — cancel with G80 before using I/J/K outside arc context.",
           blockIndex: index
         });
       }
@@ -3340,163 +2914,6 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     if (block.words.some((w) => w.letter === "O")) {
       sawProgramO = true;
-    }
-
-    if (
-      cutterCompActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with cutter compensation (G41/G42) still active — cancel with G40 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      toolLengthActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with tool length compensation (G43) still active — cancel with G49 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      spindleActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with spindle still on — stop spindle with M5 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      coolantActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with coolant still on — turn coolant off with M9 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      incrementalActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends in incremental mode (G91) — restore G90 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      (activePlane === 18 || activePlane === 19) &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: `Program ends in G${activePlane} plane — restore G17 (XY) before end for mill programs.`,
-        blockIndex: index
-      });
-    }
-
-    if (
-      cannedActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with a canned cycle still active — cancel with G80 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      rotationActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with coordinate rotation (G68) still active — cancel with G69 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      scalingActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with scaling (G51) still active — cancel with G50 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      activeFeedMode === 95 &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends in feed per revolution (G95) — restore G94 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      activePathMode === 61 &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends in exact stop mode (G61) — restore G64 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      g52LocalActive &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message: "Program ends with G52 local offset still applied — cancel with G52 X0 Y0 Z0 before end.",
-        blockIndex: index
-      });
-    }
-
-    if (
-      sawG92Shift &&
-      (hasWordM(block, 2) || hasWordM(block, 30)) &&
-      index === ast.blocks.length - 1
-    ) {
-      issues.push({
-        severity: "warning",
-        message:
-          "Program ends after G92 was used — verify the coordinate system is restored before end.",
-        blockIndex: index
-      });
     }
 
     const tWord = block.words.filter((w) => w.letter === "T").at(-1);

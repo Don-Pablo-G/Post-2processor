@@ -3,6 +3,7 @@ import {
   analyzeProgram,
   analyzeShopFixtureHealth,
   applyShopFixtureAutoFixes,
+  applyRulePolicy,
   buildSetupSheet,
   buildTimelineFindingsExportBundle,
   exportWorkshopFiles,
@@ -20,6 +21,7 @@ import {
   restoreShopFixtureManifestBackup,
   runShopRegressionTests,
   runJobCheck,
+  runDeclarativeRules,
   simulate,
   summarizeParseDiagnostics,
   isNodeCapable,
@@ -34,14 +36,14 @@ import type {
   RulePolicy,
   RunJobCheckResult
 } from "@cnc/core/browser";
-import { runDeclarativeRules } from "@cnc/core/browser";
-import { haasNgcProfile, haasNgcRuleDocs } from "@cnc/profile-haas-ngc";
-import { fanucIsoProfile, fanucIsoRuleDocs } from "@cnc/profile-fanuc-iso";
+import { haasNgcProfile, haasNgcRuleDocs, lintHaasNgcMillWithCodes } from "@cnc/profile-haas-ngc";
+import { fanucIsoProfile, fanucIsoRuleDocs, lintFanucIsoMillWithCodes } from "@cnc/profile-fanuc-iso";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildRuleToggleRows,
   disableAllDeprecated,
   filterRuleRows,
+  readPersistedLintRuleDefaults,
   toggleRuleInPolicy,
   tryParseCustomDeclarativeRules
 } from "./rulesPolicyView";
@@ -176,6 +178,19 @@ function controllerProfileForKey(key: ControllerProfileKey) {
 
 function ruleDocsForKey(key: ControllerProfileKey): readonly ProfileRuleDoc[] {
   return key === "fanuc" ? fanucIsoRuleDocs : haasNgcRuleDocs;
+}
+
+function profileLintIssuesFor(
+  ast: ReturnType<typeof parse>,
+  key: ControllerProfileKey,
+  rulePolicy: RulePolicy | undefined,
+  customRules: readonly DeclarativeRuleDef[]
+) {
+  const base =
+    key === "fanuc"
+      ? applyRulePolicy(lintFanucIsoMillWithCodes(ast), rulePolicy)
+      : lintHaasNgcMillWithCodes(ast, { rulePolicy });
+  return [...base, ...runDeclarativeRules(ast, customRules)];
 }
 type SubprogramTargetPolicy = "shop_friendly" | "strict_controller";
 type LogSemantics = "controller_default" | "natural" | "base10";
@@ -1402,17 +1417,23 @@ export function App() {
     [ast, blacklistedParameters, selectedPreset]
   );
   const lintIssues = useMemo(() => {
-    const base = lintWithProvenance(ast, activeControllerProfile, {
+    const profileIssues = profileLintIssuesFor(
+      ast,
+      lintController,
+      rulePolicy,
+      customDeclarativeRules
+    );
+    // Re-run common lint via lintWithProvenance without double-running profile:
+    const commonOnly = lintWithProvenance(ast, { ...activeControllerProfile, validateAst: undefined }, {
       rulePolicy,
       profileRuleDocs: activeRuleDocs
     });
-    if (customDeclarativeRules.length === 0) return base;
-    const extra = runDeclarativeRules(ast, customDeclarativeRules).map((issue) => ({
+    const profileWithProvenance = profileIssues.map((issue) => ({
       ...issue,
       provenance: { source: "profile_lint" as const, relatedDiagnostics: [] }
     }));
-    return [...base, ...extra];
-  }, [ast, activeControllerProfile, rulePolicy, activeRuleDocs, customDeclarativeRules]);
+    return [...commonOnly, ...profileWithProvenance];
+  }, [ast, lintController, rulePolicy, customDeclarativeRules, activeControllerProfile, activeRuleDocs]);
   const lintIssuesBySource = useMemo<Array<[LintIssueProvenanceSource, LintIssueLike[]]>>(
     () => groupLintIssuesBySource(lintIssues as unknown as LintIssueLike[]),
     [lintIssues]
@@ -1817,6 +1838,24 @@ export function App() {
     ) {
       setAuditTrailExportFormat(uiDefaults.auditTrailExportFormat);
     }
+    const lintDefaults = readPersistedLintRuleDefaults(uiDefaults);
+    if (lintDefaults.lintController) {
+      setLintController(lintDefaults.lintController);
+    }
+    if (Object.prototype.hasOwnProperty.call(lintDefaults, "rulePolicy")) {
+      setRulePolicy(lintDefaults.rulePolicy);
+    }
+    if (lintDefaults.customDeclarativeRulesJson !== undefined) {
+      setCustomDeclarativeRulesJson(lintDefaults.customDeclarativeRulesJson);
+      const parsedRules = tryParseCustomDeclarativeRules(lintDefaults.customDeclarativeRulesJson);
+      if (parsedRules.ok) {
+        setCustomDeclarativeRules(parsedRules.rules);
+        setCustomDeclarativeRulesError("");
+      } else {
+        setCustomDeclarativeRules([]);
+        setCustomDeclarativeRulesError(parsedRules.error);
+      }
+    }
   }, [templateJson, detectedControllerProfile, policyUiEventsEnabled]);
 
   useEffect(() => {
@@ -1981,10 +2020,12 @@ export function App() {
           controllerMode: lintController === "haas-legacy" ? "haas-legacy" : lintController === "fanuc" ? "fanuc" : "haas-ngc"
         },
         parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy,
-        profileLintIssues: [
-          ...(activeControllerProfile.validateAst?.(ast) ?? []),
-          ...runDeclarativeRules(ast, customDeclarativeRules)
-        ],
+        profileLintIssues: profileLintIssuesFor(
+          ast,
+          lintController,
+          rulePolicy,
+          customDeclarativeRules
+        ),
         profileRuleDocs: [...activeRuleDocs],
         rulePolicy
       });
@@ -2077,10 +2118,12 @@ export function App() {
                     : "haas-ngc"
             },
             parseDiagnosticsPolicy: parseDiagnosticsPolicyResolved.policy,
-            profileLintIssues: [
-              ...(activeControllerProfile.validateAst?.(fileAst) ?? []),
-              ...runDeclarativeRules(fileAst, customDeclarativeRules)
-            ],
+            profileLintIssues: profileLintIssuesFor(
+              fileAst,
+              lintController,
+              rulePolicy,
+              customDeclarativeRules
+            ),
             profileRuleDocs: [...activeRuleDocs],
             rulePolicy
           });
@@ -2828,6 +2871,9 @@ export function App() {
               parseDiagnosticsPolicy?: ParseDiagnosticsPolicyUiState;
               lintDemoControllerOverride?: "auto" | ControllerProfileKey;
               auditTrailExportFormat?: AuditTrailExportFormat;
+              lintController?: ControllerProfileKey;
+              rulePolicy?: RulePolicy | null;
+              customDeclarativeRulesJson?: string;
             }
           >;
         };
@@ -2874,7 +2920,10 @@ export function App() {
               policyLockManualChanges,
               parseDiagnosticsPolicy,
               lintDemoControllerOverride,
-              auditTrailExportFormat
+              auditTrailExportFormat,
+              lintController,
+              rulePolicy: rulePolicy ?? null,
+              customDeclarativeRulesJson
             }
           },
           auditTrailRecent
@@ -3729,6 +3778,11 @@ export function App() {
       setLintDemoControllerOverride("auto");
       setShowOnlyBlockers(false);
       setTimelineFilters({ alarms: true, flow: true, control: true });
+      setLintController(detectedControllerProfile === "fanuc" ? "fanuc" : "haas-ngc");
+      setRulePolicy(undefined);
+      setCustomDeclarativeRulesJson("[]");
+      setCustomDeclarativeRules([]);
+      setCustomDeclarativeRulesError("");
       setExportStatus("UI defaults reset for current controller profile.");
       recordPolicyPresetTransition(
         "ui_defaults_reset_confirmed",
@@ -6017,6 +6071,9 @@ function readUiDefaultsFromTemplateJson(
       };
       lintDemoControllerOverride?: "auto" | ControllerProfileKey;
       auditTrailExportFormat?: AuditTrailExportFormat;
+      lintController?: ControllerProfileKey;
+      rulePolicy?: RulePolicy;
+      customDeclarativeRulesJson?: string;
     }
   | undefined {
   try {
@@ -6047,6 +6104,9 @@ function readUiDefaultsFromTemplateJson(
             };
             lintDemoControllerOverride?: "auto" | ControllerProfileKey;
             auditTrailExportFormat?: AuditTrailExportFormat;
+            lintController?: ControllerProfileKey;
+            rulePolicy?: RulePolicy;
+            customDeclarativeRulesJson?: string;
           }
         >;
       };

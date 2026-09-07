@@ -3,6 +3,9 @@ import {
   buildRuleToggleRows,
   disableAllDeprecated,
   filterRuleRows,
+  readPersistedLintRuleDefaults,
+  sanitizePersistedLintController,
+  sanitizePersistedRulePolicy,
   toggleRuleInPolicy,
   tryParseCustomDeclarativeRules
 } from "./rulesPolicyView";
@@ -46,5 +49,42 @@ describe("rulesPolicyView", () => {
     expect(filterRuleRows(rows, "rule a")).toHaveLength(1);
     const parsed = tryParseCustomDeclarativeRules("[]");
     expect(parsed.ok).toBe(true);
+  });
+
+  it("sanitizes persisted rule policy and lint controller", () => {
+    expect(sanitizePersistedLintController("fanuc")).toBe("fanuc");
+    expect(sanitizePersistedLintController("nope")).toBeUndefined();
+    expect(
+      sanitizePersistedRulePolicy({
+        rules: {
+          "haas.a": { enabled: false },
+          bad: { enabled: "yes" },
+          "haas.b": { enabled: true, severity: "error" }
+        }
+      })
+    ).toEqual({
+      rules: {
+        "haas.a": { enabled: false },
+        "haas.b": { enabled: true, severity: "error" }
+      }
+    });
+  });
+
+  it("reads persisted lint rule defaults from uiDefaults blobs", () => {
+    expect(
+      readPersistedLintRuleDefaults({
+        lintController: "haas-legacy",
+        rulePolicy: { rules: { "haas.a": { enabled: false } } },
+        customDeclarativeRulesJson: "[]"
+      })
+    ).toEqual({
+      lintController: "haas-legacy",
+      rulePolicy: { rules: { "haas.a": { enabled: false } } },
+      customDeclarativeRulesJson: "[]"
+    });
+    expect(readPersistedLintRuleDefaults({ rulePolicy: null })).toEqual({
+      rulePolicy: undefined
+    });
+    expect(readPersistedLintRuleDefaults(null)).toEqual({});
   });
 });
