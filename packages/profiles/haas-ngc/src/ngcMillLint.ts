@@ -3245,9 +3245,24 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
             "M88 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before through-spindle coolant."
         },
         {
+          test: hasWordM(block, 19),
+          message:
+            "M19 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before spindle orientation."
+        },
+        {
+          test: hasWordM(block, 89),
+          message:
+            "M89 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before turning through-spindle coolant off."
+        },
+        {
           test: hasCoolantOn(block),
           message:
             "Coolant on (M7/M8) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before coolant."
+        },
+        {
+          test: hasCoolantOff(block),
+          message:
+            "M9 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before turning coolant off."
         },
         {
           test: hasWordM(block, 0),

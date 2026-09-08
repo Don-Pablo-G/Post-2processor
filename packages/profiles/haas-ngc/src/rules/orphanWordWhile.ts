@@ -71,12 +71,31 @@ const ROTARY_ORPHAN_FAMILIES = [
   {
     letter: "A",
     prefix: "a",
-    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on", "tool-length"]
+    modes: [
+      "cutter-comp",
+      "canned",
+      "rotation",
+      "scaling",
+      "incremental",
+      "coolant-on",
+      "tool-length",
+      "through-spindle-coolant",
+      "spindle-orient"
+    ]
   },
   {
     letter: "B",
     prefix: "b",
-    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on", "tool-length"]
+    modes: [
+      "cutter-comp",
+      "canned",
+      "rotation",
+      "scaling",
+      "incremental",
+      "coolant-on",
+      "tool-length",
+      "through-spindle-coolant"
+    ]
   },
   {
     letter: "C",

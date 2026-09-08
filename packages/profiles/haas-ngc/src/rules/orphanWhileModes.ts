@@ -8,6 +8,8 @@ import {
   hasExactG65,
   hasExactG69,
   hasExactG80,
+  hasSpindleOff,
+  hasSpindleOn,
   hasWordM
 } from "./millHelpers.js";
 import type { MillModalBlockContext } from "./millModalState.js";
@@ -68,6 +70,18 @@ export const ORPHAN_WHILE_MODES: readonly OrphanWhileModeDef[] = [
     isActive: (ctx) => ctx.toolLengthActive,
     isClearedOnBlock: hasExactG49,
     remedy: "cancel with G49"
+  },
+  {
+    idSuffix: "through-spindle-coolant",
+    isActive: (ctx) => ctx.throughSpindleCoolantActive,
+    isClearedOnBlock: (block) => hasWordM(block, 89),
+    remedy: "turn it off with M89"
+  },
+  {
+    idSuffix: "spindle-orient",
+    isActive: (ctx) => ctx.spindleOrientActive,
+    isClearedOnBlock: (block) => hasSpindleOn(block) || hasSpindleOff(block),
+    remedy: "clear with M3, M4, or M5"
   }
 ];
 
@@ -110,7 +124,11 @@ export function pushOrphanWhileModes(
                 ? "incremental mode (G91) is active"
                 : mode.idSuffix === "coolant-on"
                   ? "coolant is still on"
-                  : "tool length compensation (G43) is still active";
+                  : mode.idSuffix === "tool-length"
+                    ? "tool length compensation (G43) is still active"
+                    : mode.idSuffix === "through-spindle-coolant"
+                      ? "through-spindle coolant (M88) is still active"
+                      : "spindle orientation (M19) is still latched";
     issues.push({
       severity: "warning",
       code,
