@@ -6363,6 +6363,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nS1200 M3 F20.\nM5\nM30\n"
   },
   {
+    id: "haas.g65-and-g41-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G41\/G42 on the same block/,
+    summary: "Run a G65 macro call and cutter compensation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G41 D1\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG41 D1\nG40\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g43-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G43 on the same block/,
+    summary: "Run a G65 macro call and tool length activation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G43 H1 Z25.\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG43 H1 Z25.\nG49\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g68-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G68 on the same block/,
+    summary: "Run a G65 macro call and coordinate rotation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G68 X0 Y0 R45.\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG68 X0 Y0 R45.\nG69\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g51-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G51 on the same block/,
+    summary: "Run a G65 macro call and scaling on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G51 P2.\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG51 P2.\nG50\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G80 on the same block/,
+    summary: "Run a G65 macro call and canned-cycle cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG80\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g40-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G40 on the same block/,
+    summary: "Run a G65 macro call and cutter-comp cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG40\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g49-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G49 on the same block/,
+    summary: "Run a G65 macro call and tool-length cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG49\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g69-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G69 on the same block/,
+    summary: "Run a G65 macro call and rotation cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG69\nM30\n"
+  },
+  {
+    id: "haas.g65-and-g50-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and G50 on the same block/,
+    summary: "Run a G65 macro call and scaling cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 G50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nG50\nM30\n"
+  },
+  {
+    id: "haas.g65-and-work-offset-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and work offset \(G54-G59\/G154\) on the same block/,
+    summary: "Run a G65 macro call and work-offset select on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG65 P9010 G54\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG65 P9010\nG54\nM30\n"
+  },
+  {
     id: "haas.s-while-spindle-off",
     severity: "warning",
     messageMatcher: /Spindle speed \(S\) while spindle is off/,

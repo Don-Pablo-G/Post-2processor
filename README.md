@@ -85,6 +85,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
+- Haas mill lint batch 89: added G65 macro-call same-block checks against cutter/tool-length/rotation/scaling apply, G80/G40/G49/G69/G50 cancels, and work-offset selects.
 - Haas mill lint batch 88: extended M00/M01 modal-stop parity for non-XY planes, G95/G93 feed modes, and G61 exact-stop, plus added G4+canned-cycle same-block and orphan F while spindle-off hygiene.
 - Haas mill lint batch 87: added M02/M30 modal end guards for non-XY planes, G95/G93 feed modes, and G61 exact stop, plus staged-tool-at-end and spindle-speed-while-off hygiene.
 - Haas mill lint batch 86: added `G4` dwell same-block checks against rotation/scaling apply, tool-length/cutter compensation apply, `G80`/`G40`/`G49`/`G69`/`G50` cancels, and work-offset selects.

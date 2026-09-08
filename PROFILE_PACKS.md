@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 771 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 781 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -782,6 +782,16 @@ Total rules: 771 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.m01-while-exact-stop` | warning | — | — | Restore G64 continuous path mode before an M01 optional stop. |
 | `haas.g4-and-canned-cycle-same-block` | warning | — | — | Dwell and canned-cycle starts belong on separate blocks. |
 | `haas.f-while-spindle-off` | warning | — | — | Restart the spindle before using orphan F words after a spindle stop. |
+| `haas.g65-and-g41-same-block` | warning | — | — | Run a G65 macro call and cutter compensation on separate blocks. |
+| `haas.g65-and-g43-same-block` | warning | — | — | Run a G65 macro call and tool length activation on separate blocks. |
+| `haas.g65-and-g68-same-block` | warning | — | — | Run a G65 macro call and coordinate rotation on separate blocks. |
+| `haas.g65-and-g51-same-block` | warning | — | — | Run a G65 macro call and scaling on separate blocks. |
+| `haas.g65-and-g80-same-block` | warning | — | — | Run a G65 macro call and canned-cycle cancel on separate blocks. |
+| `haas.g65-and-g40-same-block` | warning | — | — | Run a G65 macro call and cutter-comp cancel on separate blocks. |
+| `haas.g65-and-g49-same-block` | warning | — | — | Run a G65 macro call and tool-length cancel on separate blocks. |
+| `haas.g65-and-g69-same-block` | warning | — | — | Run a G65 macro call and rotation cancel on separate blocks. |
+| `haas.g65-and-g50-same-block` | warning | — | — | Run a G65 macro call and scaling cancel on separate blocks. |
+| `haas.g65-and-work-offset-same-block` | warning | — | — | Run a G65 macro call and work-offset select on separate blocks. |
 | `haas.s-while-spindle-off` | warning | — | — | Start the spindle with M3/M4 when changing S after a prior stop. |
 
 ### `haas.m6-without-t`
@@ -24702,6 +24712,282 @@ S1200 M3
 M5
 S1200 M3 F20.
 M5
+M30
+```
+
+### `haas.g65-and-g41-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G41\/G42 on the same block/`
+- **Summary:** Run a G65 macro call and cutter compensation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G41 D1
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G41 D1
+G40
+M30
+```
+
+### `haas.g65-and-g43-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G43 on the same block/`
+- **Summary:** Run a G65 macro call and tool length activation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G43 H1 Z25.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G43 H1 Z25.
+G49
+M30
+```
+
+### `haas.g65-and-g68-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G68 on the same block/`
+- **Summary:** Run a G65 macro call and coordinate rotation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G68 X0 Y0 R45.
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G68 X0 Y0 R45.
+G69
+M30
+```
+
+### `haas.g65-and-g51-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G51 on the same block/`
+- **Summary:** Run a G65 macro call and scaling on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G51 P2.
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G51 P2.
+G50
+M30
+```
+
+### `haas.g65-and-g80-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G80 on the same block/`
+- **Summary:** Run a G65 macro call and canned-cycle cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G80
+M30
+```
+
+### `haas.g65-and-g40-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G40 on the same block/`
+- **Summary:** Run a G65 macro call and cutter-comp cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G40
+M30
+```
+
+### `haas.g65-and-g49-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G49 on the same block/`
+- **Summary:** Run a G65 macro call and tool-length cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G49
+M30
+```
+
+### `haas.g65-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G69 on the same block/`
+- **Summary:** Run a G65 macro call and rotation cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G69
+M30
+```
+
+### `haas.g65-and-g50-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and G50 on the same block/`
+- **Summary:** Run a G65 macro call and scaling cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+G50
+M30
+```
+
+### `haas.g65-and-work-offset-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and work offset \(G54-G59\/G154\) on the same block/`
+- **Summary:** Run a G65 macro call and work-offset select on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G65 P9010 G54
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G65 P9010
+G54
 M30
 ```
 
