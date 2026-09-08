@@ -4,6 +4,7 @@ import {
   hasCannedCycle,
   hasExactFeedMotion,
   hasExactG0,
+  hasExactG4,
   hasExactG28,
   hasExactG30,
   hasExactG40,
@@ -285,6 +286,15 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
       );
     }
 
+    if (hasExactG30(block) && ctx.scalingActive && !hasExactG50(block)) {
+      push(
+        issues,
+        "fanuc.g30-while-scaling",
+        "G30 while scaling (G51) is still active — cancel with G50 before secondary reference return.",
+        index
+      );
+    }
+
     if (hasExactG53(block) && ctx.cutterCompActive && !hasExactG40(block)) {
       push(
         issues,
@@ -373,49 +383,98 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
       }
     }
 
-    if (hasExactG0(block) && ctx.cutterCompActive && !hasExactG40(block)) {
-      push(
-        issues,
-        "fanuc.g0-while-cutter-comp",
-        "G0 rapid while cutter compensation (G41/G42) is active — cancel with G40 or use feed motion.",
-        index
-      );
+    if (hasExactG0(block)) {
+      const g0Guards = [
+        {
+          test: ctx.cutterCompActive && !hasExactG40(block),
+          code: "fanuc.g0-while-cutter-comp",
+          message:
+            "G0 rapid while cutter compensation (G41/G42) is active — cancel with G40 or use feed motion."
+        },
+        {
+          test: ctx.cannedActive && !hasExactG80(block),
+          code: "fanuc.g0-while-canned",
+          message: "G0 rapid while a canned cycle is still active — cancel with G80 before rapid moves."
+        },
+        {
+          test: ctx.toolLengthActive && !hasExactG49(block),
+          code: "fanuc.g0-while-tool-length",
+          message:
+            "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves."
+        },
+        {
+          test: ctx.rotationActive && !hasExactG69(block),
+          code: "fanuc.g0-while-rotation",
+          message:
+            "G0 rapid while coordinate rotation (G68) is still active — cancel with G69 before rapid moves."
+        },
+        {
+          test: ctx.scalingActive && !hasExactG50(block),
+          code: "fanuc.g0-while-scaling",
+          message: "G0 rapid while scaling (G51) is still active — cancel with G50 before rapid moves."
+        },
+        {
+          test: ctx.coolantActive && !hasCoolantOff(block),
+          code: "fanuc.g0-while-coolant-on",
+          message: "G0 rapid while coolant is still on — turn coolant off with M9 before rapid moves."
+        },
+        {
+          test: ctx.incrementalActive && hasExactG90Or91(block) !== 90,
+          code: "fanuc.g0-while-incremental",
+          message: "G0 rapid while incremental mode (G91) is active — restore G90 before rapid moves."
+        }
+      ];
+
+      for (const guard of g0Guards) {
+        if (guard.test) push(issues, guard.code, guard.message, index);
+      }
     }
 
-    if (hasExactG0(block) && ctx.cannedActive && !hasExactG80(block)) {
-      push(
-        issues,
-        "fanuc.g0-while-canned",
-        "G0 rapid while a canned cycle is still active — cancel with G80 before rapid moves.",
-        index
-      );
-    }
+    if (hasExactG65(block)) {
+      const g65Guards = [
+        {
+          test: ctx.cutterCompActive && !hasExactG40(block),
+          code: "fanuc.g65-while-cutter-comp",
+          message:
+            "G65 while cutter compensation (G41/G42) is still active — cancel with G40 before the macro call."
+        },
+        {
+          test: ctx.cannedActive && !hasExactG80(block),
+          code: "fanuc.g65-while-canned",
+          message: "G65 while a canned cycle is still active — cancel with G80 before the macro call."
+        },
+        {
+          test: ctx.toolLengthActive && !hasExactG49(block),
+          code: "fanuc.g65-while-tool-length",
+          message:
+            "G65 while tool length compensation (G43) is still active — cancel with G49 before the macro call."
+        },
+        {
+          test: ctx.rotationActive && !hasExactG69(block),
+          code: "fanuc.g65-while-rotation",
+          message:
+            "G65 while coordinate rotation (G68) is still active — cancel with G69 before the macro call."
+        },
+        {
+          test: ctx.scalingActive && !hasExactG50(block),
+          code: "fanuc.g65-while-scaling",
+          message: "G65 while scaling (G51) is still active — cancel with G50 before the macro call."
+        },
+        {
+          test: ctx.coolantActive && !hasCoolantOff(block),
+          code: "fanuc.g65-while-coolant-on",
+          message: "G65 while coolant is still on — turn coolant off with M9 before the macro call."
+        },
+        {
+          test: ctx.incrementalActive && hasExactG90Or91(block) !== 90,
+          code: "fanuc.g65-while-incremental",
+          message: "G65 while incremental mode (G91) is active — restore G90 before the macro call."
+        }
+      ];
 
-    if (hasExactG0(block) && ctx.toolLengthActive && !hasExactG49(block)) {
-      push(
-        issues,
-        "fanuc.g0-while-tool-length",
-        "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves.",
-        index
-      );
-    }
-
-    if (hasExactG65(block) && ctx.cutterCompActive && !hasExactG40(block)) {
-      push(
-        issues,
-        "fanuc.g65-while-cutter-comp",
-        "G65 while cutter compensation (G41/G42) is still active — cancel with G40 before the macro call.",
-        index
-      );
-    }
-
-    if (hasExactG65(block) && ctx.cannedActive && !hasExactG80(block)) {
-      push(
-        issues,
-        "fanuc.g65-while-canned",
-        "G65 while a canned cycle is still active — cancel with G80 before the macro call.",
-        index
-      );
+      for (const guard of g65Guards) {
+        if (guard.test) push(issues, guard.code, guard.message, index);
+      }
     }
 
     if (hasExactG80(block)) {
@@ -451,6 +510,79 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
         "Coolant on (M7/M8) while spindle is off — restart spindle or turn coolant off.",
         index
       );
+    }
+
+    if (hasWordM(block, 98)) {
+      const m98Guards = [
+        {
+          test: ctx.cutterCompActive && !hasExactG40(block),
+          code: "fanuc.m98-while-cutter-comp",
+          message:
+            "M98 while cutter compensation (G41/G42) is still active — cancel with G40 before the subprogram call."
+        },
+        {
+          test: ctx.cannedActive && !hasExactG80(block),
+          code: "fanuc.m98-while-canned",
+          message: "M98 while a canned cycle is still active — cancel with G80 before the subprogram call."
+        },
+        {
+          test: ctx.toolLengthActive && !hasExactG49(block),
+          code: "fanuc.m98-while-tool-length",
+          message:
+            "M98 while tool length compensation (G43) is still active — cancel with G49 before the subprogram call."
+        },
+        {
+          test: ctx.rotationActive && !hasExactG69(block),
+          code: "fanuc.m98-while-rotation",
+          message:
+            "M98 while coordinate rotation (G68) is still active — cancel with G69 before the subprogram call."
+        },
+        {
+          test: ctx.scalingActive && !hasExactG50(block),
+          code: "fanuc.m98-while-scaling",
+          message: "M98 while scaling (G51) is still active — cancel with G50 before the subprogram call."
+        },
+        {
+          test: ctx.coolantActive && !hasCoolantOff(block),
+          code: "fanuc.m98-while-coolant-on",
+          message: "M98 while coolant is still on — turn coolant off with M9 before the subprogram call."
+        },
+        {
+          test: ctx.incrementalActive && hasExactG90Or91(block) !== 90,
+          code: "fanuc.m98-while-incremental",
+          message: "M98 while incremental mode (G91) is active — restore G90 before the subprogram call."
+        }
+      ];
+
+      for (const guard of m98Guards) {
+        if (guard.test) push(issues, guard.code, guard.message, index);
+      }
+    }
+
+    if (hasExactG4(block)) {
+      const g4Guards = [
+        {
+          test: ctx.cutterCompActive && !hasExactG40(block),
+          code: "fanuc.g4-while-cutter-comp",
+          message:
+            "G4 while cutter compensation (G41/G42) is still active — cancel with G40 before dwell."
+        },
+        {
+          test: ctx.cannedActive && !hasExactG80(block),
+          code: "fanuc.g4-while-canned",
+          message: "G4 while a canned cycle is still active — cancel with G80 before dwell."
+        },
+        {
+          test: ctx.toolLengthActive && !hasExactG49(block),
+          code: "fanuc.g4-while-tool-length",
+          message:
+            "G4 while tool length compensation (G43) is still active — cancel with G49 before dwell."
+        }
+      ];
+
+      for (const guard of g4Guards) {
+        if (guard.test) push(issues, guard.code, guard.message, index);
+      }
     }
 
     if (hasWordM(block, 98) && !hasLetter(block, "P")) {

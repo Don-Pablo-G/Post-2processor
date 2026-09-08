@@ -112,6 +112,18 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
     "g80",
     "fanuc.g41-and-g80-same-block",
     "G41/G42 and G80 on the same block — apply cutter compensation and cancel canned cycle on separate blocks."
+  ],
+  [
+    "g68",
+    "g80",
+    "fanuc.g68-and-g80-same-block",
+    "G68 and G80 on the same block — apply coordinate rotation and cancel canned cycle on separate blocks."
+  ],
+  [
+    "g51",
+    "g80",
+    "fanuc.g51-and-g80-same-block",
+    "G51 and G80 on the same block — apply scaling and cancel canned cycle on separate blocks."
   ]
 ];
 

@@ -85,6 +85,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
+- Fanuc mill lint slice 5: expanded `G0`/`G65`/`M98`/`G4` while-state hygiene, added `G30` while scaling, and covered `G68`/`G51` with `G80` same-block conflicts.
 - Fanuc mill lint slice 4: added stop/end scaling and incremental guards, expanded `G28`/`G30`/`G53`/`M5`/`G0` mode hygiene, enforced canned-cycle Z/R context, added `G65` while-mode checks, and covered new `G80` same-block conflicts.
 - Fanuc mill lint slice 3: completed `M01` optional-stop while-state coverage, added stop/end rotation guards, expanded `G28`/`G30`/`G53` mode hygiene, added `M5`/`G0`/coolant-on spindle-state checks, and covered new same-block conflicts.
 - Fanuc mill lint slice 2: added stop/end while-state guards, `M6` rotation/scaling guards, `G28`/`G53` cutter/canned guards, `M98` same-block `P` enforcement, and additional same-block apply/cancel conflicts.

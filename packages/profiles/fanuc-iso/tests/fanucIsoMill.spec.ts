@@ -221,6 +221,38 @@ describe("@cnc/profile-fanuc-iso lintFanucIsoMill", () => {
     }
   });
 
+  it("attaches documented codes for Fanuc mill lint slice 5", () => {
+    const samples: Array<[string, string]> = [
+      ["fanuc.g0-while-rotation", "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG0 X1.\nG69\nM5\nM30\n"],
+      ["fanuc.g0-while-scaling", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG0 X1.\nG50\nM5\nM30\n"],
+      ["fanuc.g0-while-coolant-on", "O1234\nT1 M6\nS1200 M3\nM8\nG0 X1.\nM9\nM5\nM30\n"],
+      ["fanuc.g0-while-incremental", "O1234\nT1 M6\nS1200 M3\nG91\nG0 X1.\nG90\nM5\nM30\n"],
+      ["fanuc.g65-while-rotation", "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG65 P9100\nG69\nM5\nM30\n"],
+      ["fanuc.g65-while-scaling", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG65 P9100\nG50\nM5\nM30\n"],
+      ["fanuc.g65-while-tool-length", "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG65 P9100\nG49\nM5\nM30\n"],
+      ["fanuc.g65-while-coolant-on", "O1234\nT1 M6\nS1200 M3\nM8\nG65 P9100\nM9\nM5\nM30\n"],
+      ["fanuc.g65-while-incremental", "O1234\nT1 M6\nS1200 M3\nG91\nG65 P9100\nG90\nM5\nM30\n"],
+      ["fanuc.m98-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nM98 P2000\nG40\nM5\nM30\n"],
+      ["fanuc.m98-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM98 P2000\nG80\nM5\nM30\n"],
+      ["fanuc.m98-while-tool-length", "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM98 P2000\nG49\nM5\nM30\n"],
+      ["fanuc.m98-while-rotation", "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nM98 P2000\nG69\nM5\nM30\n"],
+      ["fanuc.m98-while-scaling", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM98 P2000\nG50\nM5\nM30\n"],
+      ["fanuc.m98-while-coolant-on", "O1234\nT1 M6\nS1200 M3\nM8\nM98 P2000\nM9\nM5\nM30\n"],
+      ["fanuc.m98-while-incremental", "O1234\nT1 M6\nS1200 M3\nG91\nM98 P2000\nG90\nM5\nM30\n"],
+      ["fanuc.g30-while-scaling", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG30 Z0.\nG50\nM5\nM30\n"],
+      ["fanuc.g4-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nG4 P1.\nG40\nM5\nM30\n"],
+      ["fanuc.g4-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG4 P1.\nG80\nM5\nM30\n"],
+      ["fanuc.g4-while-tool-length", "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG4 P1.\nG49\nM5\nM30\n"],
+      ["fanuc.g68-and-g80-same-block", "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15. G80\nG69\nM5\nM30\n"],
+      ["fanuc.g51-and-g80-same-block", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2. G80\nG50\nM5\nM30\n"]
+    ];
+
+    for (const [code, program] of samples) {
+      const codes = lintFanucIsoMillWithCodes(parse(program, fanucIsoProfile)).map((issue) => issue.code);
+      expect(codes, `${code} should be emitted`).toContain(code);
+    }
+  });
+
   it("does not warn for stop while incremental when G90 is restored on the stop block", () => {
     const codes = lintFanucIsoMillWithCodes(
       parse("O1234\nT1 M6\nS1200 M3\nG91\nG90 M00\nM5\nM30\n", fanucIsoProfile)

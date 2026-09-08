@@ -736,5 +736,181 @@ export const fanucIsoRuleDocs: ProfileRuleDoc[] = [
     summary: "Apply cutter compensation and cancel canned cycles on separate blocks.",
     positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1 G80\nG40\nM5\nM30\n",
     negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG80\nG40\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g0-while-rotation",
+    severity: "warning",
+    messageMatcher: /G0 rapid while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before G0 rapid moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG0 X1.\nG69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69 G0 X1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g0-while-scaling",
+    severity: "warning",
+    messageMatcher: /G0 rapid while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G0 rapid moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG0 X1.\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50 G0 X1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g0-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G0 rapid while coolant is still on/,
+    summary: "Turn coolant off with M9 before G0 rapid moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nG0 X1.\nM9\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM9 G0 X1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g0-while-incremental",
+    severity: "warning",
+    messageMatcher: /G0 rapid while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before G0 rapid moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG0 X1.\nG90\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 G0 X1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-rotation",
+    severity: "warning",
+    messageMatcher: /G65 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG65 P9100\nG69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69 G65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-scaling",
+    severity: "warning",
+    messageMatcher: /G65 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG65 P9100\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50 G65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G65 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG65 P9100\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49 G65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /G65 while coolant is still on/,
+    summary: "Turn coolant off with M9 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nG65 P9100\nM9\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM9 G65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-incremental",
+    severity: "warning",
+    messageMatcher: /G65 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG65 P9100\nG90\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 G65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M98 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nM98 P2000\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-canned",
+    severity: "warning",
+    messageMatcher: /M98 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM98 P2000\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M98 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM98 P2000\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-rotation",
+    severity: "warning",
+    messageMatcher: /M98 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nM98 P2000\nG69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-scaling",
+    severity: "warning",
+    messageMatcher: /M98 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM98 P2000\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M98 while coolant is still on/,
+    summary: "Turn coolant off with M9 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM98 P2000\nM9\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM9 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-while-incremental",
+    severity: "warning",
+    messageMatcher: /M98 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before M98 subprogram calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nM98 P2000\nG90\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 M98 P2000\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g30-while-scaling",
+    severity: "warning",
+    messageMatcher: /G30 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G30 secondary reference return.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG30 Z0.\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50 G30 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g4-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G4 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G4 dwell.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG4 P1.\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40 G4 P1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g4-while-canned",
+    severity: "warning",
+    messageMatcher: /G4 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G4 dwell.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG4 P1.\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80 G4 P1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g4-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G4 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before G4 dwell.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG4 P1.\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49 G4 P1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g68-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G80 on the same block/,
+    summary: "Apply coordinate rotation and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15. G80\nG69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG80\nG69\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g51-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G80 on the same block/,
+    summary: "Apply scaling and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2. G80\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG80\nG50\nM5\nM30\n"
   }
 ];
