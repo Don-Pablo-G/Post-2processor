@@ -41,6 +41,14 @@ export function hasExactFeedMotion(block: { words: Word[] }): boolean {
   });
 }
 
+export function hasExactG0(block: { words: Word[] }): boolean {
+  return hasExactG(block, 0);
+}
+
+export function hasExactG4(block: { words: Word[] }): boolean {
+  return hasExactG(block, 4);
+}
+
 const CANNED_CYCLE_G_CODES = new Set([73, 74, 76, 81, 82, 83, 84, 85, 86, 87, 88, 89]);
 
 /** Fanuc/Haas-style drilling/tapping canned cycles (exact Gnn, not G73.1). */
@@ -65,6 +73,10 @@ export function hasExactG80(block: { words: Word[] }): boolean {
 
 export function hasExactG28(block: { words: Word[] }): boolean {
   return hasExactG(block, 28);
+}
+
+export function hasExactG30(block: { words: Word[] }): boolean {
+  return hasExactG(block, 30);
 }
 
 export function hasExactG53(block: { words: Word[] }): boolean {

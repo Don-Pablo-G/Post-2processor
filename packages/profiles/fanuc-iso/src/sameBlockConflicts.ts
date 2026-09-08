@@ -1,5 +1,5 @@
 import type { LintIssue, Word } from "@cnc/core";
-import { hasCannedCycle, hasExactG } from "./rules/millHelpers.js";
+import { hasCannedCycle, hasExactG, hasWordM } from "./rules/millHelpers.js";
 
 export type SameBlockToken =
   | "g43"
@@ -13,7 +13,9 @@ export type SameBlockToken =
   | "g68"
   | "g69"
   | "g50"
-  | "g51";
+  | "g51"
+  | "g4"
+  | "m6";
 
 type Conflict = readonly [SameBlockToken, SameBlockToken, string, string];
 
@@ -27,6 +29,7 @@ export function detectSameBlockTokens(block: { words: Word[] }): Set<SameBlockTo
   if (hasExactG(block, 69)) tokens.add("g69");
   if (hasExactG(block, 50)) tokens.add("g50");
   if (hasExactG(block, 51)) tokens.add("g51");
+  if (hasExactG(block, 4)) tokens.add("g4");
   if (hasCannedCycle(block)) tokens.add("cannedCycle");
   if (hasExactG(block, 41)) tokens.add("g41");
   if (hasExactG(block, 42)) tokens.add("g42");
@@ -39,6 +42,7 @@ export function detectSameBlockTokens(block: { words: Word[] }): Set<SameBlockTo
   ) {
     tokens.add("g41Or42");
   }
+  if (hasWordM(block, 6)) tokens.add("m6");
   return tokens;
 }
 
@@ -78,6 +82,24 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
     "g42",
     "fanuc.g41-and-g42-same-block",
     "G41 and G42 on the same block — pick one cutter-compensation side, not both."
+  ],
+  [
+    "g43",
+    "g41Or42",
+    "fanuc.g43-and-g41-same-block",
+    "G43 and G41/G42 on the same block — apply tool length and cutter compensation on separate blocks."
+  ],
+  [
+    "g68",
+    "g51",
+    "fanuc.g68-and-g51-same-block",
+    "G68 and G51 on the same block — do not apply coordinate rotation and scaling together."
+  ],
+  [
+    "g4",
+    "m6",
+    "fanuc.g4-and-m6-same-block",
+    "G4 dwell and M6 on the same block — dwell and tool change separately."
   ]
 ];
 

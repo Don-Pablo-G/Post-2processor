@@ -2,7 +2,9 @@ import type { LintIssue, ProgramAst } from "@cnc/core";
 import { collectFanucSameBlockConflictIssues } from "./sameBlockConflicts.js";
 import {
   hasExactFeedMotion,
+  hasExactG0,
   hasExactG28,
+  hasExactG30,
   hasExactG40,
   hasExactG43,
   hasExactG49,
@@ -14,6 +16,8 @@ import {
   hasCoolantOff,
   hasCoolantOn,
   hasLetter,
+  hasSpindleOff,
+  hasSpindleOn,
   hasWordM
 } from "./rules/millHelpers.js";
 import { lintFanucEndHygiene } from "./rules/endHygiene.js";
@@ -31,6 +35,7 @@ function push(
 
 const STOP_GUARDS = [
   { m: 0, label: "M00", kind: "program stop", codePrefix: "fanuc.m00" },
+  { m: 1, label: "M01", kind: "optional stop", codePrefix: "fanuc.m01" },
   { m: 2, label: "M02", kind: "program end", codePrefix: "fanuc.m02" },
   { m: 30, label: "M30", kind: "program end", codePrefix: "fanuc.m30" }
 ] as const;
@@ -38,6 +43,7 @@ const STOP_GUARDS = [
 export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
   let sawFeedRate = false;
+  let sawSpindleOn = false;
 
   walkMillModalState(ast, (ctx) => {
     const { block, index } = ctx;
@@ -122,6 +128,14 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
           index
         );
       }
+      if (ctx.rotationActive && !hasExactG69(block)) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-rotation`,
+          `${stop.label} while coordinate rotation (G68) is still active — cancel with G69 before ${stop.kind}.`,
+          index
+        );
+      }
     }
 
     if (hasWordM(block, 6) && ctx.cutterCompActive && !hasExactG40(block)) {
@@ -187,6 +201,42 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
       );
     }
 
+    if (hasExactG28(block) && ctx.toolLengthActive && !hasExactG49(block)) {
+      push(
+        issues,
+        "fanuc.g28-while-tool-length",
+        "G28 while tool length compensation (G43) is still active — cancel with G49 before reference return.",
+        index
+      );
+    }
+
+    if (hasExactG28(block) && ctx.rotationActive && !hasExactG69(block)) {
+      push(
+        issues,
+        "fanuc.g28-while-rotation",
+        "G28 while coordinate rotation (G68) is still active — cancel with G69 before reference return.",
+        index
+      );
+    }
+
+    if (hasExactG30(block) && ctx.cutterCompActive && !hasExactG40(block)) {
+      push(
+        issues,
+        "fanuc.g30-while-cutter-comp",
+        "G30 while cutter compensation (G41/G42) is still active — cancel with G40 before secondary reference return.",
+        index
+      );
+    }
+
+    if (hasExactG30(block) && ctx.cannedActive && !hasExactG80(block)) {
+      push(
+        issues,
+        "fanuc.g30-while-canned",
+        "G30 while a canned cycle is still active — cancel with G80 before secondary reference return.",
+        index
+      );
+    }
+
     if (hasExactG53(block) && ctx.cutterCompActive && !hasExactG40(block)) {
       push(
         issues,
@@ -201,6 +251,70 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
         issues,
         "fanuc.g53-while-canned",
         "G53 while a canned cycle is still active — cancel with G80 before machine move.",
+        index
+      );
+    }
+
+    if (hasExactG53(block) && ctx.toolLengthActive && !hasExactG49(block)) {
+      push(
+        issues,
+        "fanuc.g53-while-tool-length",
+        "G53 while tool length compensation (G43) is still active — cancel with G49 before machine move.",
+        index
+      );
+    }
+
+    if (hasExactG53(block) && ctx.rotationActive && !hasExactG69(block)) {
+      push(
+        issues,
+        "fanuc.g53-while-rotation",
+        "G53 while coordinate rotation (G68) is still active — cancel with G69 before machine move.",
+        index
+      );
+    }
+
+    if (hasSpindleOff(block)) {
+      if (ctx.coolantActive && !hasCoolantOff(block)) {
+        push(
+          issues,
+          "fanuc.m5-while-coolant-on",
+          "M5 while coolant is still on — turn coolant off with M9 when stopping the spindle.",
+          index
+        );
+      }
+      if (ctx.cutterCompActive && !hasExactG40(block)) {
+        push(
+          issues,
+          "fanuc.m5-while-cutter-comp",
+          "M5 while cutter compensation (G41/G42) is still active — cancel with G40 when stopping the spindle.",
+          index
+        );
+      }
+    }
+
+    if (hasExactG0(block) && ctx.cutterCompActive && !hasExactG40(block)) {
+      push(
+        issues,
+        "fanuc.g0-while-cutter-comp",
+        "G0 rapid while cutter compensation (G41/G42) is active — cancel with G40 or use feed motion.",
+        index
+      );
+    }
+
+    if (hasExactG0(block) && ctx.cannedActive && !hasExactG80(block)) {
+      push(
+        issues,
+        "fanuc.g0-while-canned",
+        "G0 rapid while a canned cycle is still active — cancel with G80 before rapid moves.",
+        index
+      );
+    }
+
+    if (hasCoolantOn(block) && sawSpindleOn && !ctx.spindleActive && !hasSpindleOn(block)) {
+      push(
+        issues,
+        "fanuc.coolant-on-while-spindle-off",
+        "Coolant on (M7/M8) while spindle is off — restart spindle or turn coolant off.",
         index
       );
     }
@@ -224,6 +338,10 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
     }
 
     issues.push(...collectFanucSameBlockConflictIssues(block, index));
+
+    if (hasSpindleOn(block)) {
+      sawSpindleOn = true;
+    }
 
     if (hasLetter(block, "F")) {
       sawFeedRate = true;
