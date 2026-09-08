@@ -1754,6 +1754,11 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: toolLengthActive && !hasExactG49(block),
           message:
             "M19 while tool length compensation (G43) is still active — cancel with G49 before spindle orientation."
+        },
+        {
+          test: throughSpindleCoolantActive && !hasWordM(block, 89),
+          message:
+            "M19 while through-spindle coolant (M88) is still active — turn it off with M89 before spindle orientation."
         }
       ];
       for (const guard of m19Guards) {
@@ -3032,6 +3037,26 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasExactG90Or91(block) !== undefined,
           message:
             "Distance mode select (G90/G91) while through-spindle coolant (M88) is still active — turn it off with M89 before changing distance mode."
+        },
+        {
+          test: hasWordM(block, 2),
+          message:
+            "M02 while through-spindle coolant (M88) is still active — turn it off with M89 before program end."
+        },
+        {
+          test: hasWordM(block, 30),
+          message:
+            "M30 while through-spindle coolant (M88) is still active — turn it off with M89 before program end."
+        },
+        {
+          test: hasExactG4(block),
+          message:
+            "G4 while through-spindle coolant (M88) is still active — turn it off with M89 before dwell."
+        },
+        {
+          test: hasLetter(block, "T"),
+          message:
+            "Tool select (T) while through-spindle coolant (M88) is still active — turn it off with M89 before staging the next tool."
         }
       ];
       for (const guard of throughSpindleExitGuards) {
@@ -3195,6 +3220,31 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasWordM(block, 1),
           message:
             "M01 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before optional stop."
+        },
+        {
+          test: hasWordM(block, 2),
+          message:
+            "M02 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before program end."
+        },
+        {
+          test: hasWordM(block, 30),
+          message:
+            "M30 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before program end."
+        },
+        {
+          test: hasExactG0(block),
+          message:
+            "G0 rapid while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before rapid moves."
+        },
+        {
+          test: hasExactG4(block),
+          message:
+            "G4 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before dwell."
+        },
+        {
+          test: hasLetter(block, "T"),
+          message:
+            "Tool select (T) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before staging the next tool."
         }
       ];
       for (const guard of spindleOrientGuards) {
