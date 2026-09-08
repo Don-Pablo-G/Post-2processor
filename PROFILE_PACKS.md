@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 731 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 741 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -743,6 +743,16 @@ Total rules: 731 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g68-and-g40-same-block` | warning | — | — | Apply coordinate rotation and cancel cutter compensation on separate blocks. |
 | `haas.g51-and-g40-same-block` | warning | — | — | Apply scaling and cancel cutter compensation on separate blocks. |
 | `haas.g41-and-g49-same-block` | warning | — | — | Apply cutter compensation and cancel tool length on separate blocks. |
+| `haas.g68-and-g49-same-block` | warning | — | — | Apply coordinate rotation and cancel tool length on separate blocks. |
+| `haas.g51-and-g49-same-block` | warning | — | — | Apply scaling and cancel tool length on separate blocks. |
+| `haas.g43-and-g69-same-block` | warning | — | — | Apply tool length and cancel coordinate rotation on separate blocks. |
+| `haas.g41-and-g69-same-block` | warning | — | — | Apply cutter compensation and cancel coordinate rotation on separate blocks. |
+| `haas.g51-and-g69-same-block` | warning | — | — | Apply scaling and cancel coordinate rotation on separate blocks. |
+| `haas.g43-and-g50-same-block` | warning | — | — | Apply tool length and cancel scaling on separate blocks. |
+| `haas.g41-and-g50-same-block` | warning | — | — | Apply cutter compensation and cancel scaling on separate blocks. |
+| `haas.g68-and-g50-same-block` | warning | — | — | Apply coordinate rotation and cancel scaling on separate blocks. |
+| `haas.g65-and-m00-same-block` | warning | — | — | Run a G65 macro call and M00 program stop on separate blocks. |
+| `haas.g65-and-m01-same-block` | warning | — | — | Run a G65 macro call and M01 optional stop on separate blocks. |
 
 ### `haas.m6-without-t`
 
@@ -23551,6 +23561,288 @@ G41 D1
 G49
 G40
 M30
+```
+
+### `haas.g68-and-g49-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G68 and G49 on the same block/`
+- **Summary:** Apply coordinate rotation and cancel tool length on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45. G49
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G49
+G69
+M30
+```
+
+### `haas.g51-and-g49-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G51 and G49 on the same block/`
+- **Summary:** Apply scaling and cancel tool length on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2. G49
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G49
+G50
+M30
+```
+
+### `haas.g43-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G69 on the same block/`
+- **Summary:** Apply tool length and cancel coordinate rotation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G69
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G69
+G49
+M30
+```
+
+### `haas.g41-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 and G69 on the same block/`
+- **Summary:** Apply cutter compensation and cancel coordinate rotation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1 G69
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G69
+G40
+M30
+```
+
+### `haas.g51-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G51 and G69 on the same block/`
+- **Summary:** Apply scaling and cancel coordinate rotation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2. G69
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G69
+G50
+M30
+```
+
+### `haas.g43-and-g50-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G50 on the same block/`
+- **Summary:** Apply tool length and cancel scaling on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25. G50
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G50
+G49
+M30
+```
+
+### `haas.g41-and-g50-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 and G50 on the same block/`
+- **Summary:** Apply cutter compensation and cancel scaling on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1 G50
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G50
+G40
+M30
+```
+
+### `haas.g68-and-g50-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G68 and G50 on the same block/`
+- **Summary:** Apply coordinate rotation and cancel scaling on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45. G50
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G50
+G69
+M30
+```
+
+### `haas.g65-and-m00-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and M00 on the same block/`
+- **Summary:** Run a G65 macro call and M00 program stop on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 M00
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+M00
+```
+
+### `haas.g65-and-m01-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G65 and M01 on the same block/`
+- **Summary:** Run a G65 macro call and M01 optional stop on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010 M01
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G65 P9010
+M01
 ```
 
 ## Fanuc ISO (`@cnc/profile-fanuc-iso`)
