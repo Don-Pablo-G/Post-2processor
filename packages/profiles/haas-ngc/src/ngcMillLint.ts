@@ -324,32 +324,32 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
-      if (hasM02 || hasM30) {
+      if (hasM00 || hasM01 || hasM02 || hasM30) {
         if (stopPlane !== undefined && stopPlane !== 17) {
           issues.push({
             severity: "warning",
-            message: `${stopLabel} while G18/G19 plane is active — restore G17 (XY) before program end.`,
+            message: `${stopLabel} while G18/G19 plane is active — restore G17 (XY) before ${stopKind}.`,
             blockIndex: index
           });
         }
         if (stopFeedMode === 95) {
           issues.push({
             severity: "warning",
-            message: `${stopLabel} while feed per revolution (G95) is active — restore G94 before program end.`,
+            message: `${stopLabel} while feed per revolution (G95) is active — restore G94 before ${stopKind}.`,
             blockIndex: index
           });
         }
         if (stopInverseTimeActive) {
           issues.push({
             severity: "warning",
-            message: `${stopLabel} while inverse-time feed mode (G93) is active — restore G94 before program end.`,
+            message: `${stopLabel} while inverse-time feed mode (G93) is active — restore G94 before ${stopKind}.`,
             blockIndex: index
           });
         }
         if (stopPathMode === 61) {
           issues.push({
             severity: "warning",
-            message: `${stopLabel} while exact stop mode (G61) is active — restore G64 before program end.`,
+            message: `${stopLabel} while exact stop mode (G61) is active — restore G64 before ${stopKind}.`,
             blockIndex: index
           });
         }
@@ -3733,6 +3733,20 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         issues.push({
           severity: "warning",
           message: "Negative feed rate (F) — feed cannot be negative.",
+          blockIndex: index
+        });
+      }
+      if (
+        !hasExactFeedMotion(block) &&
+        !hasCannedCycle(block) &&
+        sawSpindleOn &&
+        !spindleActive &&
+        !hasSpindleOn(block)
+      ) {
+        issues.push({
+          severity: "warning",
+          message:
+            "F word while spindle is off — start spindle (M3/M4) before using F word outside G1/G2/G3 or canned-cycle feed context.",
           blockIndex: index
         });
       }

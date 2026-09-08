@@ -6283,6 +6283,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM30\n"
   },
   {
+    id: "haas.m00-while-non-xy-plane",
+    severity: "warning",
+    messageMatcher: /M00 while G18\/G19 plane is active/,
+    summary: "Restore G17 (XY plane) before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG18\nM00\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17\nM00\nM30\n"
+  },
+  {
+    id: "haas.m01-while-non-xy-plane",
+    severity: "warning",
+    messageMatcher: /M01 while G18\/G19 plane is active/,
+    summary: "Restore G17 (XY plane) before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG18\nM01\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17\nM01\nM30\n"
+  },
+  {
+    id: "haas.m00-while-feed-per-revolution",
+    severity: "warning",
+    messageMatcher: /M00 while feed per revolution \(G95\) is active/,
+    summary: "Restore G94 before an M00 program stop when G95 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG95\nM00\nG94\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG95\nG94\nM00\nM30\n"
+  },
+  {
+    id: "haas.m01-while-feed-per-revolution",
+    severity: "warning",
+    messageMatcher: /M01 while feed per revolution \(G95\) is active/,
+    summary: "Restore G94 before an M01 optional stop when G95 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG95\nM01\nG94\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG95\nG94\nM01\nM30\n"
+  },
+  {
+    id: "haas.m00-while-inverse-time-feed",
+    severity: "warning",
+    messageMatcher: /M00 while inverse-time feed mode \(G93\) is active/,
+    summary: "Restore G94 before an M00 program stop when G93 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG93\nM00\nG94\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG93\nG94\nM00\nM30\n"
+  },
+  {
+    id: "haas.m01-while-inverse-time-feed",
+    severity: "warning",
+    messageMatcher: /M01 while inverse-time feed mode \(G93\) is active/,
+    summary: "Restore G94 before an M01 optional stop when G93 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG93\nM01\nG94\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG93\nG94\nM01\nM30\n"
+  },
+  {
+    id: "haas.m00-while-exact-stop",
+    severity: "warning",
+    messageMatcher: /M00 while exact stop mode \(G61\) is active/,
+    summary: "Restore G64 continuous path mode before an M00 program stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG61\nM00\nG64\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG61\nG64\nM00\nM30\n"
+  },
+  {
+    id: "haas.m01-while-exact-stop",
+    severity: "warning",
+    messageMatcher: /M01 while exact stop mode \(G61\) is active/,
+    summary: "Restore G64 continuous path mode before an M01 optional stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG61\nM01\nG64\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG61\nG64\nM01\nM30\n"
+  },
+  {
+    id: "haas.g4-and-canned-cycle-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and a canned cycle on the same block/,
+    summary: "Dwell and canned-cycle starts belong on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG4 P1. G81 Z-1. R0.1 F10.\nG80\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG4 P1.\nG81 Z-1. R0.1 F10.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "haas.f-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /F word while spindle is off/,
+    summary: "Restart the spindle before using orphan F words after a spindle stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nF20.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nS1200 M3 F20.\nM5\nM30\n"
+  },
+  {
     id: "haas.s-while-spindle-off",
     severity: "warning",
     messageMatcher: /Spindle speed \(S\) while spindle is off/,

@@ -1,4 +1,5 @@
 import type { LintIssue, Word } from "@cnc/core";
+import { hasCannedCycle } from "./rules/millHelpers.js";
 
 /** Tokens used by same-block conflict detection. */
 export type SameBlockToken =
@@ -12,6 +13,7 @@ export type SameBlockToken =
   | "g40"
   | "g80"
   | "g41Or42"
+  | "cannedCycle"
   | "workOffset"
   | "m6"
   | "g4"
@@ -111,6 +113,7 @@ export function detectSameBlockTokens(block: { words: Word[] }): Set<SameBlockTo
   if (hasExactG(block, 40)) tokens.add("g40");
   if (hasExactG(block, 80)) tokens.add("g80");
   if (hasExactG(block, 4)) tokens.add("g4");
+  if (hasCannedCycle(block)) tokens.add("cannedCycle");
   if (hasExactG(block, 65)) tokens.add("g65");
   if (hasExactG(block, 68)) tokens.add("g68");
   if (hasExactG(block, 69)) tokens.add("g69");
@@ -196,6 +199,11 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
   ["g4", "g43", "G4 dwell and G43 on the same block — dwell and tool length separately."],
   ["g4", "g41Or42", "G4 dwell and G41/G42 on the same block — dwell and cutter compensation separately."],
   ["g4", "g80", "G4 dwell and G80 on the same block — dwell and canned-cycle cancel separately."],
+  [
+    "g4",
+    "cannedCycle",
+    "G4 dwell and a canned cycle on the same block — dwell and canned-cycle start separately."
+  ],
   ["g4", "g40", "G4 dwell and G40 on the same block — dwell and cutter-comp cancel separately."],
   ["g4", "g49", "G4 dwell and G49 on the same block — dwell and tool-length cancel separately."],
   ["g4", "g69", "G4 dwell and G69 on the same block — dwell and rotation cancel separately."],

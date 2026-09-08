@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 761 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 771 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -772,6 +772,16 @@ Total rules: 761 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.m02-while-inverse-time-feed` | warning | — | — | Restore G94 before ending a program with M02 when G93 is active. |
 | `haas.m02-while-exact-stop` | warning | — | — | Restore G64 continuous path mode before ending a program with M02. |
 | `haas.staged-tool-without-m6-at-end` | warning | — | — | Do not leave a staged T tool unconsumed at program end. |
+| `haas.m00-while-non-xy-plane` | warning | — | — | Restore G17 (XY plane) before an M00 program stop. |
+| `haas.m01-while-non-xy-plane` | warning | — | — | Restore G17 (XY plane) before an M01 optional stop. |
+| `haas.m00-while-feed-per-revolution` | warning | — | — | Restore G94 before an M00 program stop when G95 is active. |
+| `haas.m01-while-feed-per-revolution` | warning | — | — | Restore G94 before an M01 optional stop when G95 is active. |
+| `haas.m00-while-inverse-time-feed` | warning | — | — | Restore G94 before an M00 program stop when G93 is active. |
+| `haas.m01-while-inverse-time-feed` | warning | — | — | Restore G94 before an M01 optional stop when G93 is active. |
+| `haas.m00-while-exact-stop` | warning | — | — | Restore G64 continuous path mode before an M00 program stop. |
+| `haas.m01-while-exact-stop` | warning | — | — | Restore G64 continuous path mode before an M01 optional stop. |
+| `haas.g4-and-canned-cycle-same-block` | warning | — | — | Dwell and canned-cycle starts belong on separate blocks. |
+| `haas.f-while-spindle-off` | warning | — | — | Restart the spindle before using orphan F words after a spindle stop. |
 | `haas.s-while-spindle-off` | warning | — | — | Start the spindle with M3/M4 when changing S after a prior stop. |
 
 ### `haas.m6-without-t`
@@ -24390,6 +24400,308 @@ O0001
 T1 M6
 G54
 T2 M6
+M30
+```
+
+### `haas.m00-while-non-xy-plane`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while G18\/G19 plane is active/`
+- **Summary:** Restore G17 (XY plane) before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+M00
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+G17
+M00
+M30
+```
+
+### `haas.m01-while-non-xy-plane`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while G18\/G19 plane is active/`
+- **Summary:** Restore G17 (XY plane) before an M01 optional stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+M01
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+G17
+M01
+M30
+```
+
+### `haas.m00-while-feed-per-revolution`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while feed per revolution \(G95\) is active/`
+- **Summary:** Restore G94 before an M00 program stop when G95 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+M00
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+G94
+M00
+M30
+```
+
+### `haas.m01-while-feed-per-revolution`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while feed per revolution \(G95\) is active/`
+- **Summary:** Restore G94 before an M01 optional stop when G95 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+M01
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+G94
+M01
+M30
+```
+
+### `haas.m00-while-inverse-time-feed`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while inverse-time feed mode \(G93\) is active/`
+- **Summary:** Restore G94 before an M00 program stop when G93 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+M00
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+G94
+M00
+M30
+```
+
+### `haas.m01-while-inverse-time-feed`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while inverse-time feed mode \(G93\) is active/`
+- **Summary:** Restore G94 before an M01 optional stop when G93 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+M01
+G94
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+G94
+M01
+M30
+```
+
+### `haas.m00-while-exact-stop`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while exact stop mode \(G61\) is active/`
+- **Summary:** Restore G64 continuous path mode before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+M00
+G64
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+G64
+M00
+M30
+```
+
+### `haas.m01-while-exact-stop`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while exact stop mode \(G61\) is active/`
+- **Summary:** Restore G64 continuous path mode before an M01 optional stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+M01
+G64
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+G64
+M01
+M30
+```
+
+### `haas.g4-and-canned-cycle-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and a canned cycle on the same block/`
+- **Summary:** Dwell and canned-cycle starts belong on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G4 P1. G81 Z-1. R0.1 F10.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G4 P1.
+G81 Z-1. R0.1 F10.
+G80
+M5
+M30
+```
+
+### `haas.f-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/F word while spindle is off/`
+- **Summary:** Restart the spindle before using orphan F words after a spindle stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+F20.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+S1200 M3 F20.
+M5
 M30
 ```
 
