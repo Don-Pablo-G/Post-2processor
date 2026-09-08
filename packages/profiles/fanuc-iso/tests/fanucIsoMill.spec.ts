@@ -124,4 +124,36 @@ describe("@cnc/profile-fanuc-iso lintFanucIsoMill", () => {
     expect(codes).toContain("fanuc.g65-missing-p");
     expect(codes).toContain("fanuc.m6-without-t");
   });
+
+  it("attaches documented codes for Fanuc mill lint slice 2", () => {
+    const samples: Array<[string, string]> = [
+      ["fanuc.m00-while-coolant-on", "O1234\nT1 M6\nS1200 M3\nM8\nM00\nM9\nM5\nM30\n"],
+      ["fanuc.m00-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nM00\nG40\nM5\nM30\n"],
+      ["fanuc.m00-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM00\nG80\nM5\nM30\n"],
+      ["fanuc.m00-while-tool-length", "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM00\nG49\nM5\nM30\n"],
+      ["fanuc.m30-while-coolant-on", "O1234\nT1 M6\nS1200 M3\nM8\nM5\nM30\n"],
+      ["fanuc.m30-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nM5\nM30\n"],
+      ["fanuc.m30-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM30\n"],
+      ["fanuc.m30-while-tool-length", "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM30\n"],
+      ["fanuc.m02-while-coolant-on", "O1234\nT1 M6\nS1200 M3\nM8\nM5\nM02\n"],
+      ["fanuc.m02-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nM5\nM02\n"],
+      ["fanuc.m02-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM02\n"],
+      ["fanuc.m02-while-tool-length", "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM02\n"],
+      ["fanuc.m6-while-rotation", "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nT2 M6\nG69\nM5\nM30\n"],
+      ["fanuc.m6-while-scaling", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nT2 M6\nG50\nM5\nM30\n"],
+      ["fanuc.g28-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nG28 Z0.\nG40\nM5\nM30\n"],
+      ["fanuc.g28-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG28 Z0.\nG80\nM5\nM30\n"],
+      ["fanuc.g53-while-cutter-comp", "O1234\nT1 M6\nS1200 M3\nG41 D1\nG53 Z0.\nG40\nM5\nM30\n"],
+      ["fanuc.g53-while-canned", "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG53 Z0.\nG80\nM5\nM30\n"],
+      ["fanuc.m98-without-p", "O1234\nM98\nM30\n"],
+      ["fanuc.g68-and-g69-same-block", "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15. G69\nM5\nM30\n"],
+      ["fanuc.g50-and-g51-same-block", "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2. G50\nM5\nM30\n"],
+      ["fanuc.g41-and-g42-same-block", "O1234\nT1 M6\nS1200 M3\nG41 D1 G42\nM5\nM30\n"]
+    ];
+
+    for (const [code, program] of samples) {
+      const codes = lintFanucIsoMillWithCodes(parse(program, fanucIsoProfile)).map((issue) => issue.code);
+      expect(codes, `${code} should be emitted`).toContain(code);
+    }
+  });
 });

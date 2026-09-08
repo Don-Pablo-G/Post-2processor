@@ -1,7 +1,19 @@
 import type { LintIssue, Word } from "@cnc/core";
 import { hasCannedCycle, hasExactG } from "./rules/millHelpers.js";
 
-export type SameBlockToken = "g43" | "g49" | "g40" | "g41Or42" | "g80" | "cannedCycle";
+export type SameBlockToken =
+  | "g43"
+  | "g49"
+  | "g40"
+  | "g41"
+  | "g42"
+  | "g41Or42"
+  | "g80"
+  | "cannedCycle"
+  | "g68"
+  | "g69"
+  | "g50"
+  | "g51";
 
 type Conflict = readonly [SameBlockToken, SameBlockToken, string, string];
 
@@ -11,7 +23,13 @@ export function detectSameBlockTokens(block: { words: Word[] }): Set<SameBlockTo
   if (hasExactG(block, 49)) tokens.add("g49");
   if (hasExactG(block, 40)) tokens.add("g40");
   if (hasExactG(block, 80)) tokens.add("g80");
+  if (hasExactG(block, 68)) tokens.add("g68");
+  if (hasExactG(block, 69)) tokens.add("g69");
+  if (hasExactG(block, 50)) tokens.add("g50");
+  if (hasExactG(block, 51)) tokens.add("g51");
   if (hasCannedCycle(block)) tokens.add("cannedCycle");
+  if (hasExactG(block, 41)) tokens.add("g41");
+  if (hasExactG(block, 42)) tokens.add("g42");
   if (
     block.words.some((w) => {
       if (w.letter !== "G") return false;
@@ -42,6 +60,24 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
     "cannedCycle",
     "fanuc.g80-and-canned-same-block",
     "G80 and a canned cycle on the same block — split canned-cycle start/cancel into separate blocks."
+  ],
+  [
+    "g68",
+    "g69",
+    "fanuc.g68-and-g69-same-block",
+    "G68 and G69 on the same block — split coordinate rotation apply/cancel into separate blocks."
+  ],
+  [
+    "g51",
+    "g50",
+    "fanuc.g50-and-g51-same-block",
+    "G51 and G50 on the same block — split scaling apply/cancel into separate blocks."
+  ],
+  [
+    "g41",
+    "g42",
+    "fanuc.g41-and-g42-same-block",
+    "G41 and G42 on the same block — pick one cutter-compensation side, not both."
   ]
 ];
 

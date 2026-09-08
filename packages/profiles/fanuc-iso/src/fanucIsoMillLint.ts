@@ -2,11 +2,17 @@ import type { LintIssue, ProgramAst } from "@cnc/core";
 import { collectFanucSameBlockConflictIssues } from "./sameBlockConflicts.js";
 import {
   hasExactFeedMotion,
+  hasExactG28,
   hasExactG40,
   hasExactG43,
   hasExactG49,
+  hasExactG50,
+  hasExactG53,
+  hasExactG69,
   hasExactG80,
   hasExactTappingCycle,
+  hasCoolantOff,
+  hasCoolantOn,
   hasLetter,
   hasWordM
 } from "./rules/millHelpers.js";
@@ -22,6 +28,12 @@ function push(
 ): void {
   issues.push({ severity: "warning", code, message, blockIndex });
 }
+
+const STOP_GUARDS = [
+  { m: 0, label: "M00", kind: "program stop", codePrefix: "fanuc.m00" },
+  { m: 2, label: "M02", kind: "program end", codePrefix: "fanuc.m02" },
+  { m: 30, label: "M30", kind: "program end", codePrefix: "fanuc.m30" }
+] as const;
 
 export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
@@ -75,6 +87,43 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
       );
     }
 
+    for (const stop of STOP_GUARDS) {
+      if (!hasWordM(block, stop.m)) continue;
+
+      if (ctx.coolantActive && !hasCoolantOff(block) && !hasCoolantOn(block)) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-coolant-on`,
+          `${stop.label} while coolant is still on — turn coolant off with M9 before ${stop.kind}.`,
+          index
+        );
+      }
+      if (ctx.cutterCompActive && !hasExactG40(block)) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-cutter-comp`,
+          `${stop.label} while cutter compensation (G41/G42) is still active — cancel with G40 before ${stop.kind}.`,
+          index
+        );
+      }
+      if (ctx.cannedActive && !hasExactG80(block)) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-canned`,
+          `${stop.label} while a canned cycle is still active — cancel with G80 before ${stop.kind}.`,
+          index
+        );
+      }
+      if (ctx.toolLengthActive && !hasExactG49(block)) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-tool-length`,
+          `${stop.label} while tool length compensation (G43) is still active — cancel with G49 before ${stop.kind}.`,
+          index
+        );
+      }
+    }
+
     if (hasWordM(block, 6) && ctx.cutterCompActive && !hasExactG40(block)) {
       push(
         issues,
@@ -98,6 +147,69 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
         issues,
         "fanuc.m6-while-coolant-on",
         "M6 while coolant is still on — turn coolant off with M9 before a tool change.",
+        index
+      );
+    }
+
+    if (hasWordM(block, 6) && ctx.rotationActive && !hasExactG69(block)) {
+      push(
+        issues,
+        "fanuc.m6-while-rotation",
+        "M6 while coordinate rotation (G68) is still active — cancel with G69 before a tool change.",
+        index
+      );
+    }
+
+    if (hasWordM(block, 6) && ctx.scalingActive && !hasExactG50(block)) {
+      push(
+        issues,
+        "fanuc.m6-while-scaling",
+        "M6 while scaling (G51) is still active — cancel with G50 before a tool change.",
+        index
+      );
+    }
+
+    if (hasExactG28(block) && ctx.cutterCompActive && !hasExactG40(block)) {
+      push(
+        issues,
+        "fanuc.g28-while-cutter-comp",
+        "G28 while cutter compensation (G41/G42) is still active — cancel with G40 before reference return.",
+        index
+      );
+    }
+
+    if (hasExactG28(block) && ctx.cannedActive && !hasExactG80(block)) {
+      push(
+        issues,
+        "fanuc.g28-while-canned",
+        "G28 while a canned cycle is still active — cancel with G80 before reference return.",
+        index
+      );
+    }
+
+    if (hasExactG53(block) && ctx.cutterCompActive && !hasExactG40(block)) {
+      push(
+        issues,
+        "fanuc.g53-while-cutter-comp",
+        "G53 while cutter compensation (G41/G42) is still active — cancel with G40 before machine move.",
+        index
+      );
+    }
+
+    if (hasExactG53(block) && ctx.cannedActive && !hasExactG80(block)) {
+      push(
+        issues,
+        "fanuc.g53-while-canned",
+        "G53 while a canned cycle is still active — cancel with G80 before machine move.",
+        index
+      );
+    }
+
+    if (hasWordM(block, 98) && !hasLetter(block, "P")) {
+      push(
+        issues,
+        "fanuc.m98-without-p",
+        "M98 without P on the same block — Fanuc subprogram calls need P (program number).",
         index
       );
     }

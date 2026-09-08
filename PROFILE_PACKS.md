@@ -25313,7 +25313,7 @@ M30
 
 ## Fanuc ISO (`@cnc/profile-fanuc-iso`)
 
-Total rules: 24 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 46 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -25341,6 +25341,28 @@ Total rules: 24 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules
 | `fanuc.g51-active-at-end` | warning | — | — | Cancel scaling with G50 before M02/M30. |
 | `fanuc.m97-unsupported` | warning | — | — | M97 local subprogram calls are a Haas idiom; use standard Fanuc M98/G65. |
 | `fanuc.g1-without-f` | warning | — | — | G1/G2/G3 feed motion needs an explicit F on the block or earlier in the program. |
+| `fanuc.m00-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M00 program stop. |
+| `fanuc.m00-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M00 program stop. |
+| `fanuc.m00-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M00 program stop. |
+| `fanuc.m00-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before an M00 program stop. |
+| `fanuc.m30-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M30 program end. |
+| `fanuc.m30-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M30 program end. |
+| `fanuc.m30-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M30 program end. |
+| `fanuc.m30-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before an M30 program end. |
+| `fanuc.m02-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M02 program end. |
+| `fanuc.m02-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M02 program end. |
+| `fanuc.m02-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M02 program end. |
+| `fanuc.m02-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before an M02 program end. |
+| `fanuc.m6-while-rotation` | warning | — | — | Cancel coordinate rotation with G69 before a tool change (M6). |
+| `fanuc.m6-while-scaling` | warning | — | — | Cancel scaling with G50 before a tool change (M6). |
+| `fanuc.g28-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before G28 reference return. |
+| `fanuc.g28-while-canned` | warning | — | — | Cancel canned cycles with G80 before G28 reference return. |
+| `fanuc.g53-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before G53 machine-coordinate moves. |
+| `fanuc.g53-while-canned` | warning | — | — | Cancel canned cycles with G80 before G53 machine-coordinate moves. |
+| `fanuc.m98-without-p` | warning | — | — | Fanuc M98 subprogram calls require a P program number on the same block. |
+| `fanuc.g68-and-g69-same-block` | warning | — | — | Do not apply and cancel coordinate rotation on the same block. |
+| `fanuc.g50-and-g51-same-block` | warning | — | — | Do not apply and cancel scaling on the same block. |
+| `fanuc.g41-and-g42-same-block` | warning | — | — | Do not select both cutter-compensation sides on the same block. |
 
 ### `fanuc.missing-o-header`
 
@@ -25994,5 +26016,666 @@ O1234
 T1 M6
 S1200 M3
 G1 X10. Y10. F200.
+M30
+```
+
+### `fanuc.m00-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M00
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M9
+M00
+M5
+M30
+```
+
+### `fanuc.m00-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+M00
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G40
+M00
+M5
+M30
+```
+
+### `fanuc.m00-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+M00
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G80
+M00
+M5
+M30
+```
+
+### `fanuc.m00-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before an M00 program stop.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M00
+G49
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G49
+M00
+M5
+M30
+```
+
+### `fanuc.m30-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M9
+M5
+M30
+```
+
+### `fanuc.m30-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G40
+M5
+M30
+```
+
+### `fanuc.m30-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G80
+M30
+```
+
+### `fanuc.m30-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G49
+M5
+M30
+```
+
+### `fanuc.m02-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M5
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M9
+M5
+M02
+```
+
+### `fanuc.m02-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+M5
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G40
+M5
+M02
+```
+
+### `fanuc.m02-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G80
+M02
+```
+
+### `fanuc.m02-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before an M02 program end.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M5
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G49
+M5
+M02
+```
+
+### `fanuc.m6-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel coordinate rotation with G69 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G68 X0. Y0. R15.
+T2 M6
+G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G68 X0. Y0. R15.
+G69
+T2 M6
+M5
+M30
+```
+
+### `fanuc.m6-while-scaling`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while scaling \(G51\) is still active/`
+- **Summary:** Cancel scaling with G50 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G51 X0. Y0. P2.
+T2 M6
+G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G51 X0. Y0. P2.
+G50
+T2 M6
+M5
+M30
+```
+
+### `fanuc.g28-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G28 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before G28 reference return.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G28 Z0.
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G40
+G28 Z0.
+M5
+M30
+```
+
+### `fanuc.g28-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G28 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before G28 reference return.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G28 Z0.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G80
+G28 Z0.
+M5
+M30
+```
+
+### `fanuc.g53-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/G53 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before G53 machine-coordinate moves.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G53 Z0.
+G40
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G40
+G53 Z0.
+M5
+M30
+```
+
+### `fanuc.g53-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/G53 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before G53 machine-coordinate moves.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G53 Z0.
+G80
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X1. Y1. Z-1. R1. F50.
+G80
+G53 Z0.
+M5
+M30
+```
+
+### `fanuc.m98-without-p`
+
+- **Severity:** warning
+- **Matcher:** `/M98 without P on the same block/`
+- **Summary:** Fanuc M98 subprogram calls require a P program number on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+M98
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+M98 P1000
+M30
+O1000
+M99
+```
+
+### `fanuc.g68-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G68 and G69 on the same block/`
+- **Summary:** Do not apply and cancel coordinate rotation on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G68 X0. Y0. R15. G69
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G68 X0. Y0. R15.
+G69
+M5
+M30
+```
+
+### `fanuc.g50-and-g51-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G51 and G50 on the same block/`
+- **Summary:** Do not apply and cancel scaling on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G51 X0. Y0. P2. G50
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G51 X0. Y0. P2.
+G50
+M5
+M30
+```
+
+### `fanuc.g41-and-g42-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G41 and G42 on the same block/`
+- **Summary:** Do not select both cutter-compensation sides on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1 G42
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G41 D1
+G40
+G42 D2
+G40
+M5
 M30
 ```

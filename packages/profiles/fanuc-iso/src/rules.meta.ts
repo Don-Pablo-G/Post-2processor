@@ -208,5 +208,181 @@ export const fanucIsoRuleDocs: ProfileRuleDoc[] = [
     summary: "G1/G2/G3 feed motion needs an explicit F on the block or earlier in the program.",
     positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG1 X10. Y10.\nM30\n",
     negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG1 X10. Y10. F200.\nM30\n"
+  },
+  {
+    id: "fanuc.m00-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M00 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M00 program stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM00\nM9\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM9\nM00\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m00-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M00 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M00 program stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nM00\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nM00\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m00-while-canned",
+    severity: "warning",
+    messageMatcher: /M00 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M00 program stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM00\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nM00\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m00-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M00 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before an M00 program stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM00\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM00\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m30-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M30 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M30 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m30-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M30 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M30 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m30-while-canned",
+    severity: "warning",
+    messageMatcher: /M30 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M30 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nM30\n"
+  },
+  {
+    id: "fanuc.m30-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M30 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before an M30 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m02-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M02 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M02 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM5\nM02\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM9\nM5\nM02\n"
+  },
+  {
+    id: "fanuc.m02-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M02 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M02 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nM5\nM02\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nM5\nM02\n"
+  },
+  {
+    id: "fanuc.m02-while-canned",
+    severity: "warning",
+    messageMatcher: /M02 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M02 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nM02\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nM02\n"
+  },
+  {
+    id: "fanuc.m02-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M02 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before an M02 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM02\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM5\nM02\n"
+  },
+  {
+    id: "fanuc.m6-while-rotation",
+    severity: "warning",
+    messageMatcher: /M6 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before a tool change (M6).",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nT2 M6\nG69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69\nT2 M6\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m6-while-scaling",
+    severity: "warning",
+    messageMatcher: /M6 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before a tool change (M6).",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nT2 M6\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nT2 M6\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g28-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G28 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G28 reference return.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG28 Z0.\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nG28 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g28-while-canned",
+    severity: "warning",
+    messageMatcher: /G28 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G28 reference return.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG28 Z0.\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nG28 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g53-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G53 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G53 machine-coordinate moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG53 Z0.\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nG53 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g53-while-canned",
+    severity: "warning",
+    messageMatcher: /G53 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G53 machine-coordinate moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG53 Z0.\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nG53 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m98-without-p",
+    severity: "warning",
+    messageMatcher: /M98 without P on the same block/,
+    summary: "Fanuc M98 subprogram calls require a P program number on the same block.",
+    positiveSnippet: "O1234\nM98\nM30\n",
+    negativeSnippet: "O1234\nM98 P1000\nM30\nO1000\nM99\n"
+  },
+  {
+    id: "fanuc.g68-and-g69-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G69 on the same block/,
+    summary: "Do not apply and cancel coordinate rotation on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15. G69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g50-and-g51-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G50 on the same block/,
+    summary: "Do not apply and cancel scaling on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2. G50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g41-and-g42-same-block",
+    severity: "warning",
+    messageMatcher: /G41 and G42 on the same block/,
+    summary: "Do not select both cutter-compensation sides on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1 G42\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nG42 D2\nG40\nM5\nM30\n"
   }
 ];

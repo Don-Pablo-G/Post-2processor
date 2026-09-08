@@ -63,6 +63,14 @@ export function hasExactG80(block: { words: Word[] }): boolean {
   return hasExactG(block, 80);
 }
 
+export function hasExactG28(block: { words: Word[] }): boolean {
+  return hasExactG(block, 28);
+}
+
+export function hasExactG53(block: { words: Word[] }): boolean {
+  return hasExactG(block, 53);
+}
+
 export function hasExactG40(block: { words: Word[] }): boolean {
   return hasExactG(block, 40);
 }
