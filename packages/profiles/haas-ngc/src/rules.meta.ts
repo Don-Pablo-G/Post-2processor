@@ -6443,6 +6443,86 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     negativeSnippet: "O0001\nT1 M6\nG65 P9010\nG54\nM30\n"
   },
   {
+    id: "haas.m98-and-m00-same-block",
+    severity: "warning",
+    messageMatcher: /M98 and M00 on the same block/,
+    summary: "Run an M98 subprogram call and M00 program stop on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM98 P2 M00\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM98 P2\nM00\nM30\n"
+  },
+  {
+    id: "haas.m98-and-m01-same-block",
+    severity: "warning",
+    messageMatcher: /M98 and M01 on the same block/,
+    summary: "Run an M98 subprogram call and M01 optional stop on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM98 P2 M01\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM98 P2\nM01\nM30\n"
+  },
+  {
+    id: "haas.m98-and-m02-same-block",
+    severity: "warning",
+    messageMatcher: /M98 and M02 on the same block/,
+    summary: "Run an M98 subprogram call and M02 program end on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM98 P2 M02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM98 P2\nM02\n"
+  },
+  {
+    id: "haas.m98-and-m30-same-block",
+    severity: "warning",
+    messageMatcher: /M98 and M30 on the same block/,
+    summary: "Run an M98 subprogram call and M30 program end on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM98 P2 M30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM98 P2\nM30\n"
+  },
+  {
+    id: "haas.m97-and-m00-same-block",
+    severity: "warning",
+    messageMatcher: /M97 and M00 on the same block/,
+    summary: "Run an M97 local subprogram call and M00 program stop on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM97 P10 M00\nM30\nN10 M99\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM97 P10\nM00\nM30\nN10 M99\n"
+  },
+  {
+    id: "haas.m97-and-m01-same-block",
+    severity: "warning",
+    messageMatcher: /M97 and M01 on the same block/,
+    summary: "Run an M97 local subprogram call and M01 optional stop on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM97 P10 M01\nM30\nN10 M99\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM97 P10\nM01\nM30\nN10 M99\n"
+  },
+  {
+    id: "haas.m97-and-m02-same-block",
+    severity: "warning",
+    messageMatcher: /M97 and M02 on the same block/,
+    summary: "Run an M97 local subprogram call and M02 program end on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM97 P10 M02\nN10 M99\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM97 P10\nM02\nN10 M99\n"
+  },
+  {
+    id: "haas.m97-and-m30-same-block",
+    severity: "warning",
+    messageMatcher: /M97 and M30 on the same block/,
+    summary: "Run an M97 local subprogram call and M30 program end on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nM97 P10 M30\nN10 M99\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nM97 P10\nM30\nN10 M99\n"
+  },
+  {
+    id: "haas.s-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /Spindle speed \(S\) while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before changing spindle speed.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nS2000\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nS2000\nM5\nM30\n"
+  },
+  {
+    id: "haas.m98-while-non-xy-plane",
+    severity: "warning",
+    messageMatcher: /M98 while G18\/G19 plane is active/,
+    summary: "Restore G17 (XY plane) before an M98 subprogram call.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG18\nM98 P2\nG17\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17 M98 P2\nM30\n"
+  },
+  {
     id: "haas.s-while-spindle-off",
     severity: "warning",
     messageMatcher: /Spindle speed \(S\) while spindle is off/,

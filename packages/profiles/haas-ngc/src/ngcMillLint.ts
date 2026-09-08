@@ -2290,6 +2290,17 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
 
+    if (hasWordM(block, 98)) {
+      const m98Plane = hasExactPlane(block) ?? activePlane;
+      if (m98Plane !== undefined && m98Plane !== 17) {
+        issues.push({
+          severity: "warning",
+          message: "M98 while G18/G19 plane is active — restore G17 (XY) before the subprogram call.",
+          blockIndex: index
+        });
+      }
+    }
+
     if (hasWordM(block, 98) && cutterCompActive && !hasExactG40(block)) {
       issues.push({
         severity: "warning",
@@ -3183,6 +3194,11 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasLetter(block, "T"),
           message:
             "Tool select (T) while through-spindle coolant (M88) is still active — turn it off with M89 before staging the next tool."
+        },
+        {
+          test: hasLetter(block, "S"),
+          message:
+            "Spindle speed (S) while through-spindle coolant (M88) is still active — turn it off with M89 before changing spindle speed."
         }
       ];
       for (const guard of throughSpindleExitGuards) {

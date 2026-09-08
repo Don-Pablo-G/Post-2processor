@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 781 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 791 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -792,6 +792,16 @@ Total rules: 781 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g65-and-g69-same-block` | warning | — | — | Run a G65 macro call and rotation cancel on separate blocks. |
 | `haas.g65-and-g50-same-block` | warning | — | — | Run a G65 macro call and scaling cancel on separate blocks. |
 | `haas.g65-and-work-offset-same-block` | warning | — | — | Run a G65 macro call and work-offset select on separate blocks. |
+| `haas.m98-and-m00-same-block` | warning | — | — | Run an M98 subprogram call and M00 program stop on separate blocks. |
+| `haas.m98-and-m01-same-block` | warning | — | — | Run an M98 subprogram call and M01 optional stop on separate blocks. |
+| `haas.m98-and-m02-same-block` | warning | — | — | Run an M98 subprogram call and M02 program end on separate blocks. |
+| `haas.m98-and-m30-same-block` | warning | — | — | Run an M98 subprogram call and M30 program end on separate blocks. |
+| `haas.m97-and-m00-same-block` | warning | — | — | Run an M97 local subprogram call and M00 program stop on separate blocks. |
+| `haas.m97-and-m01-same-block` | warning | — | — | Run an M97 local subprogram call and M01 optional stop on separate blocks. |
+| `haas.m97-and-m02-same-block` | warning | — | — | Run an M97 local subprogram call and M02 program end on separate blocks. |
+| `haas.m97-and-m30-same-block` | warning | — | — | Run an M97 local subprogram call and M30 program end on separate blocks. |
+| `haas.s-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing spindle speed. |
+| `haas.m98-while-non-xy-plane` | warning | — | — | Restore G17 (XY plane) before an M98 subprogram call. |
 | `haas.s-while-spindle-off` | warning | — | — | Start the spindle with M3/M4 when changing S after a prior stop. |
 
 ### `haas.m6-without-t`
@@ -24988,6 +24998,285 @@ O0001
 T1 M6
 G65 P9010
 G54
+M30
+```
+
+### `haas.m98-and-m00-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and M00 on the same block/`
+- **Summary:** Run an M98 subprogram call and M00 program stop on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2 M00
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2
+M00
+M30
+```
+
+### `haas.m98-and-m01-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and M01 on the same block/`
+- **Summary:** Run an M98 subprogram call and M01 optional stop on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2 M01
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2
+M01
+M30
+```
+
+### `haas.m98-and-m02-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and M02 on the same block/`
+- **Summary:** Run an M98 subprogram call and M02 program end on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2 M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2
+M02
+```
+
+### `haas.m98-and-m30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M98 and M30 on the same block/`
+- **Summary:** Run an M98 subprogram call and M30 program end on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2 M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M98 P2
+M30
+```
+
+### `haas.m97-and-m00-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M97 and M00 on the same block/`
+- **Summary:** Run an M97 local subprogram call and M00 program stop on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10 M00
+M30
+N10 M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10
+M00
+M30
+N10 M99
+```
+
+### `haas.m97-and-m01-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M97 and M01 on the same block/`
+- **Summary:** Run an M97 local subprogram call and M01 optional stop on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10 M01
+M30
+N10 M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10
+M01
+M30
+N10 M99
+```
+
+### `haas.m97-and-m02-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M97 and M02 on the same block/`
+- **Summary:** Run an M97 local subprogram call and M02 program end on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10 M02
+N10 M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10
+M02
+N10 M99
+```
+
+### `haas.m97-and-m30-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/M97 and M30 on the same block/`
+- **Summary:** Run an M97 local subprogram call and M30 program end on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10 M30
+N10 M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+M97 P10
+M30
+N10 M99
+```
+
+### `haas.s-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing spindle speed.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+S2000
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+S2000
+M5
+M30
+```
+
+### `haas.m98-while-non-xy-plane`
+
+- **Severity:** warning
+- **Matcher:** `/M98 while G18\/G19 plane is active/`
+- **Summary:** Restore G17 (XY plane) before an M98 subprogram call.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+M98 P2
+G17
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+G17 M98 P2
 M30
 ```
 
