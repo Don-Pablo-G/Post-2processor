@@ -560,5 +560,181 @@ export const fanucIsoRuleDocs: ProfileRuleDoc[] = [
     summary: "Separate dwell (G4) and tool change (M6).",
     positiveSnippet: "O1234\nT1\nG4 P1. M6\nM30\n",
     negativeSnippet: "O1234\nT1\nG4 P1.\nM6\nM30\n"
+  },
+  {
+    id: "fanuc.m00-while-scaling",
+    severity: "warning",
+    messageMatcher: /M00 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M00 program stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM00\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nM00\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m01-while-scaling",
+    severity: "warning",
+    messageMatcher: /M01 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M01 optional stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM01\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nM01\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m02-while-scaling",
+    severity: "warning",
+    messageMatcher: /M02 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M02 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM5\nM02\nG50\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nM5\nM02\n"
+  },
+  {
+    id: "fanuc.m30-while-scaling",
+    severity: "warning",
+    messageMatcher: /M30 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before an M30 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m00-while-incremental",
+    severity: "warning",
+    messageMatcher: /M00 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before an M00 program stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nM00\nG90\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 M00\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m01-while-incremental",
+    severity: "warning",
+    messageMatcher: /M01 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before an M01 optional stop.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nM01\nG90\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 M01\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m02-while-incremental",
+    severity: "warning",
+    messageMatcher: /M02 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before an M02 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nM5\nM02\nG90\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 M5\nM02\n"
+  },
+  {
+    id: "fanuc.m30-while-incremental",
+    severity: "warning",
+    messageMatcher: /M30 while incremental mode \(G91\) is active/,
+    summary: "Restore absolute mode with G90 before an M30 program end.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG91\nG90 M5\nM30\n"
+  },
+  {
+    id: "fanuc.g30-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G30 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before G30 secondary reference return.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG30 Z0.\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nG30 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g30-while-rotation",
+    severity: "warning",
+    messageMatcher: /G30 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 before G30 secondary reference return.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG30 Z0.\nG69\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69\nG30 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g28-while-scaling",
+    severity: "warning",
+    messageMatcher: /G28 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G28 reference return.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG28 Z0.\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nG28 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g53-while-scaling",
+    severity: "warning",
+    messageMatcher: /G53 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 before G53 machine-coordinate moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG53 Z0.\nG50\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nG53 Z0.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m5-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M5 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 when stopping the spindle with M5.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nG49\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m5-while-rotation",
+    severity: "warning",
+    messageMatcher: /M5 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel coordinate rotation with G69 when stopping the spindle with M5.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nM5\nG69\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG68 X0. Y0. R15.\nG69\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m5-while-scaling",
+    severity: "warning",
+    messageMatcher: /M5 while scaling \(G51\) is still active/,
+    summary: "Cancel scaling with G50 when stopping the spindle with M5.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nM5\nG50\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG51 X0. Y0. P2.\nG50\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g0-while-tool-length",
+    severity: "warning",
+    messageMatcher: /G0 rapid while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before G0 rapid moves.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG0 X1.\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nG0 X1.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.canned-without-z",
+    severity: "warning",
+    messageMatcher: /Canned cycle \(G73\/G74\/G76\/G81-G89\) without Z depth/,
+    summary: "Canned cycles need a Z depth on the cycle block or earlier in the active cycle.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. R1. F50.\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.canned-without-r",
+    severity: "warning",
+    messageMatcher: /Canned cycle \(G73\/G74\/G76\/G81-G89\) without R plane/,
+    summary: "Canned cycles need an R plane on the cycle block or earlier in the active cycle.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. F50.\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /G65 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG65 P9100\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG40\nG65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g65-while-canned",
+    severity: "warning",
+    messageMatcher: /G65 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before G65 macro calls.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG65 P9100\nG80\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X1. Y1. Z-1. R1. F50.\nG80\nG65 P9100\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g43-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G80 on the same block/,
+    summary: "Apply tool length and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25. G80\nG49\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG80\nG49\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g41-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G41\/G42 and G80 on the same block/,
+    summary: "Apply cutter compensation and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1 G80\nG40\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG41 D1\nG80\nG40\nM5\nM30\n"
   }
 ];

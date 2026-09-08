@@ -100,6 +100,18 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
     "m6",
     "fanuc.g4-and-m6-same-block",
     "G4 dwell and M6 on the same block — dwell and tool change separately."
+  ],
+  [
+    "g43",
+    "g80",
+    "fanuc.g43-and-g80-same-block",
+    "G43 and G80 on the same block — apply tool length and cancel canned cycle on separate blocks."
+  ],
+  [
+    "g41Or42",
+    "g80",
+    "fanuc.g41-and-g80-same-block",
+    "G41/G42 and G80 on the same block — apply cutter compensation and cancel canned cycle on separate blocks."
   ]
 ];
 

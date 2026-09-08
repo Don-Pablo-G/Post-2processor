@@ -18,6 +18,8 @@ Slice 2 adds portable stop/end while-state guards for `M00`/`M02`/`M30`, `M6` wh
 
 Slice 3 completes portable `M01` optional-stop while-state coverage, adds stop/end rotation guards, expands `G28`/`G30`/`G53` positioning hygiene, adds `M5`/`G0`/coolant-on spindle-state checks, and adds same-block conflicts for `G43`+`G41/G42`, `G68`+`G51`, and `G4`+`M6`.
 
+Slice 4 adds stop/end guards for active scaling and incremental mode, expands `G28`/`G30`/`G53`/`M5`/`G0` modal hygiene, requires canned-cycle Z depth and R plane context, warns on `G65` while cutter compensation or canned cycles are active, and adds same-block conflicts for `G43`/`G41/G42` with `G80`.
+
 ## Roadmap
 
 Phase B can deduplicate shared Haas/Fanuc helpers after the copied Fanuc behavior settles. Future Fanuc work may add optional `G54.1 Pn` offsets, shop-configurable dialect flags, and broader same-block/modal hygiene once controller expectations are validated.

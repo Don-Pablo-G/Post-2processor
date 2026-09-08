@@ -141,6 +141,10 @@ export function hasExactG50(block: { words: Word[] }): boolean {
   return hasExactG(block, 50);
 }
 
+export function hasExactG65(block: { words: Word[] }): boolean {
+  return hasExactG(block, 65);
+}
+
 export function hasWorkOffset(block: { words: Word[] }): boolean {
   return block.words.some((w) => {
     if (w.letter !== "G") return false;

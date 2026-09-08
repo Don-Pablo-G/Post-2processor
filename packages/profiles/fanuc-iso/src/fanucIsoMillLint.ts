@@ -1,6 +1,7 @@
 import type { LintIssue, ProgramAst } from "@cnc/core";
 import { collectFanucSameBlockConflictIssues } from "./sameBlockConflicts.js";
 import {
+  hasCannedCycle,
   hasExactFeedMotion,
   hasExactG0,
   hasExactG28,
@@ -10,8 +11,10 @@ import {
   hasExactG49,
   hasExactG50,
   hasExactG53,
+  hasExactG65,
   hasExactG69,
   hasExactG80,
+  hasExactG90Or91,
   hasExactTappingCycle,
   hasCoolantOff,
   hasCoolantOn,
@@ -44,6 +47,8 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
   const issues: LintIssue[] = [];
   let sawFeedRate = false;
   let sawSpindleOn = false;
+  let cannedHasZ = false;
+  let cannedHasR = false;
 
   walkMillModalState(ast, (ctx) => {
     const { block, index } = ctx;
@@ -136,6 +141,22 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
           index
         );
       }
+      if (ctx.scalingActive && !hasExactG50(block)) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-scaling`,
+          `${stop.label} while scaling (G51) is still active — cancel with G50 before ${stop.kind}.`,
+          index
+        );
+      }
+      if (ctx.incrementalActive && hasExactG90Or91(block) !== 90) {
+        push(
+          issues,
+          `${stop.codePrefix}-while-incremental`,
+          `${stop.label} while incremental mode (G91) is active — restore G90 before ${stop.kind}.`,
+          index
+        );
+      }
     }
 
     if (hasWordM(block, 6) && ctx.cutterCompActive && !hasExactG40(block)) {
@@ -219,6 +240,15 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
       );
     }
 
+    if (hasExactG28(block) && ctx.scalingActive && !hasExactG50(block)) {
+      push(
+        issues,
+        "fanuc.g28-while-scaling",
+        "G28 while scaling (G51) is still active — cancel with G50 before reference return.",
+        index
+      );
+    }
+
     if (hasExactG30(block) && ctx.cutterCompActive && !hasExactG40(block)) {
       push(
         issues,
@@ -233,6 +263,24 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
         issues,
         "fanuc.g30-while-canned",
         "G30 while a canned cycle is still active — cancel with G80 before secondary reference return.",
+        index
+      );
+    }
+
+    if (hasExactG30(block) && ctx.toolLengthActive && !hasExactG49(block)) {
+      push(
+        issues,
+        "fanuc.g30-while-tool-length",
+        "G30 while tool length compensation (G43) is still active — cancel with G49 before secondary reference return.",
+        index
+      );
+    }
+
+    if (hasExactG30(block) && ctx.rotationActive && !hasExactG69(block)) {
+      push(
+        issues,
+        "fanuc.g30-while-rotation",
+        "G30 while coordinate rotation (G68) is still active — cancel with G69 before secondary reference return.",
         index
       );
     }
@@ -273,6 +321,15 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
       );
     }
 
+    if (hasExactG53(block) && ctx.scalingActive && !hasExactG50(block)) {
+      push(
+        issues,
+        "fanuc.g53-while-scaling",
+        "G53 while scaling (G51) is still active — cancel with G50 before machine move.",
+        index
+      );
+    }
+
     if (hasSpindleOff(block)) {
       if (ctx.coolantActive && !hasCoolantOff(block)) {
         push(
@@ -287,6 +344,30 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
           issues,
           "fanuc.m5-while-cutter-comp",
           "M5 while cutter compensation (G41/G42) is still active — cancel with G40 when stopping the spindle.",
+          index
+        );
+      }
+      if (ctx.toolLengthActive && !hasExactG49(block)) {
+        push(
+          issues,
+          "fanuc.m5-while-tool-length",
+          "M5 while tool length compensation (G43) is still active — cancel with G49 when stopping the spindle.",
+          index
+        );
+      }
+      if (ctx.rotationActive && !hasExactG69(block)) {
+        push(
+          issues,
+          "fanuc.m5-while-rotation",
+          "M5 while coordinate rotation (G68) is still active — cancel with G69 when stopping the spindle.",
+          index
+        );
+      }
+      if (ctx.scalingActive && !hasExactG50(block)) {
+        push(
+          issues,
+          "fanuc.m5-while-scaling",
+          "M5 while scaling (G51) is still active — cancel with G50 when stopping the spindle.",
           index
         );
       }
@@ -308,6 +389,59 @@ export function lintFanucIsoMillLint(ast: ProgramAst): LintIssue[] {
         "G0 rapid while a canned cycle is still active — cancel with G80 before rapid moves.",
         index
       );
+    }
+
+    if (hasExactG0(block) && ctx.toolLengthActive && !hasExactG49(block)) {
+      push(
+        issues,
+        "fanuc.g0-while-tool-length",
+        "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves.",
+        index
+      );
+    }
+
+    if (hasExactG65(block) && ctx.cutterCompActive && !hasExactG40(block)) {
+      push(
+        issues,
+        "fanuc.g65-while-cutter-comp",
+        "G65 while cutter compensation (G41/G42) is still active — cancel with G40 before the macro call.",
+        index
+      );
+    }
+
+    if (hasExactG65(block) && ctx.cannedActive && !hasExactG80(block)) {
+      push(
+        issues,
+        "fanuc.g65-while-canned",
+        "G65 while a canned cycle is still active — cancel with G80 before the macro call.",
+        index
+      );
+    }
+
+    if (hasExactG80(block)) {
+      cannedHasZ = false;
+      cannedHasR = false;
+    }
+
+    if (hasCannedCycle(block)) {
+      if (!hasLetter(block, "Z") && !cannedHasZ) {
+        push(
+          issues,
+          "fanuc.canned-without-z",
+          "Canned cycle (G73/G74/G76/G81-G89) without Z depth — set Z on the cycle block or earlier in the cycle.",
+          index
+        );
+      }
+      if (!hasLetter(block, "R") && !cannedHasR) {
+        push(
+          issues,
+          "fanuc.canned-without-r",
+          "Canned cycle (G73/G74/G76/G81-G89) without R plane — set R on the cycle block or earlier in the cycle.",
+          index
+        );
+      }
+      if (hasLetter(block, "Z")) cannedHasZ = true;
+      if (hasLetter(block, "R")) cannedHasR = true;
     }
 
     if (hasCoolantOn(block) && sawSpindleOn && !ctx.spindleActive && !hasSpindleOn(block)) {
