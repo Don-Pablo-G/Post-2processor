@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 651 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 661 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -663,6 +663,16 @@ Total rules: 651 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g40-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before canceling cutter compensation (G40). |
 | `haas.g49-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before canceling tool length (G49). |
 | `haas.g80-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before canceling the canned cycle (G80). |
+| `haas.g69-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before canceling coordinate rotation (G69). |
+| `haas.g50-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before canceling scaling (G50). |
+| `haas.g41-g42-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before cutter compensation (G41/G42). |
+| `haas.g43-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before applying tool length (G43). |
+| `haas.g68-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before coordinate rotation (G68). |
+| `haas.g51-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before scaling (G51). |
+| `haas.m88-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before through-spindle coolant (M88). |
+| `haas.coolant-on-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before turning coolant on (M7/M8). |
+| `haas.m00-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before program stop (M00). |
+| `haas.m01-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before optional stop (M01). |
 
 ### `haas.m6-without-t`
 
@@ -21004,6 +21014,316 @@ S1200 M3
 M19
 M5
 G80
+M30
+```
+
+### `haas.g69-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G69 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before canceling coordinate rotation (G69).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G69
+M30
+```
+
+### `haas.g50-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G50 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before canceling scaling (G50).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G50
+M30
+```
+
+### `haas.g41-g42-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G41\/G42 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before cutter compensation (G41/G42).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G41 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G41 D1
+M30
+```
+
+### `haas.g43-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G43 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before applying tool length (G43).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G43 H1 Z1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G43 H1 Z1.
+M30
+```
+
+### `haas.g68-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G68 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before coordinate rotation (G68).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G68 R45.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G68 R45.
+M30
+```
+
+### `haas.g51-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G51 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before scaling (G51).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G51
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G51
+M30
+```
+
+### `haas.m88-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/M88 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before through-spindle coolant (M88).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M88
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+M88
+M30
+```
+
+### `haas.coolant-on-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant on \(M7\/M8\) while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before turning coolant on (M7/M8).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M8
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+M8
+M30
+```
+
+### `haas.m00-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before program stop (M00).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M00
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+M00
+M30
+```
+
+### `haas.m01-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before optional stop (M01).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M01
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+M01
 M30
 ```
 

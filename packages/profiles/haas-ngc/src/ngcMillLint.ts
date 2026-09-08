@@ -3145,6 +3145,56 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasExactG80(block),
           message:
             "G80 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before canceling the canned cycle."
+        },
+        {
+          test: hasExactG69(block),
+          message:
+            "G69 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before canceling coordinate rotation."
+        },
+        {
+          test: hasExactG50(block),
+          message:
+            "G50 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before canceling scaling."
+        },
+        {
+          test: hasExactG41Or42(block),
+          message:
+            "G41/G42 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before cutter compensation."
+        },
+        {
+          test: hasG43Classic(block),
+          message:
+            "G43 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before applying tool length."
+        },
+        {
+          test: hasExactG68(block),
+          message:
+            "G68 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before coordinate rotation."
+        },
+        {
+          test: hasExactG51(block),
+          message:
+            "G51 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before scaling."
+        },
+        {
+          test: hasWordM(block, 88),
+          message:
+            "M88 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before through-spindle coolant."
+        },
+        {
+          test: hasCoolantOn(block),
+          message:
+            "Coolant on (M7/M8) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before coolant."
+        },
+        {
+          test: hasWordM(block, 0),
+          message:
+            "M00 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before program stop."
+        },
+        {
+          test: hasWordM(block, 1),
+          message:
+            "M01 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before optional stop."
         }
       ];
       for (const guard of spindleOrientGuards) {
