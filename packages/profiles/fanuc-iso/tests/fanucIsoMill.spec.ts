@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parse } from "@cnc/core";
-import { fanucIsoProfile, lintFanucIsoMill } from "../src/index.js";
+import { fanucIsoProfile, lintFanucIsoMill, lintFanucIsoMillWithCodes } from "../src/index.js";
 
 describe("@cnc/profile-fanuc-iso lintFanucIsoMill", () => {
   it("warns when a Fanuc program lacks an O#### header before the first motion block", () => {
@@ -115,5 +115,13 @@ describe("@cnc/profile-fanuc-iso lintFanucIsoMill", () => {
     expect(
       issues.some((i) => i.message.includes("T0 (tool cancel) issued before any real tool selection"))
     ).toBe(false);
+  });
+
+  it("attaches documented codes for legacy Fanuc checks and the new mill slice", () => {
+    const ast = parse("G65 L1\nM6\nM30\n", fanucIsoProfile);
+    const codes = lintFanucIsoMillWithCodes(ast).map((issue) => issue.code);
+    expect(codes).toContain("fanuc.missing-o-header");
+    expect(codes).toContain("fanuc.g65-missing-p");
+    expect(codes).toContain("fanuc.m6-without-t");
   });
 });

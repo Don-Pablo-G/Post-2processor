@@ -1,4 +1,5 @@
 import type { LintIssue, ProgramAst, Word } from "@cnc/core";
+import { lintFanucIsoMillLint } from "./fanucIsoMillLint.js";
 
 function hasOHeader(words: Word[]): boolean {
   return words.some((w) => w.letter === "O");
@@ -103,5 +104,5 @@ export function lintFanucIsoMill(ast: ProgramAst): LintIssue[] {
     }
   });
 
-  return issues;
+  return [...issues, ...lintFanucIsoMillLint(ast)];
 }

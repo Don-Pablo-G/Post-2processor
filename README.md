@@ -85,6 +85,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
+- Fanuc mill lint Phase A scaffolded from Haas: added the portable first rule slice, Fanuc-specific dialect exclusions, and a roadmap for later dedupe.
 - Haas mill lint batch 90: added semantic M98/M97 same-block stop/end conflicts, S-word while through-spindle coolant is active, and M98 non-XY plane hygiene.
 - Haas mill lint batch 89: added G65 macro-call same-block checks against cutter/tool-length/rotation/scaling apply, G80/G40/G49/G69/G50 cancels, and work-offset selects.
 - Haas mill lint batch 88: extended M00/M01 modal-stop parity for non-XY planes, G95/G93 feed modes, and G61 exact-stop, plus added G4+canned-cycle same-block and orphan F while spindle-off hygiene.

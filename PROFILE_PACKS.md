@@ -25313,7 +25313,7 @@ M30
 
 ## Fanuc ISO (`@cnc/profile-fanuc-iso`)
 
-Total rules: 4 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 24 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -25321,6 +25321,26 @@ Total rules: 4 (of which 1 soft-deprecated; suppress via `--no-deprecated-rules`
 | `fanuc.g65-missing-p` | warning | — | — | G65 macro calls require an explicit P (program number) — controllers alarm without it. |
 | `fanuc.g65-non-integer-l` | warning | — | — | G65 L (loop count) must be a non-negative integer; fractional/negative values alarm. |
 | `fanuc.t0-before-real-tool` (deprecated) | warning | 2026-05 | Rely on the Fanuc tool-life manager alarm instead of linting T0-before-Tn locally. | T0 (tool cancel) before any real Tn (n>0) trips the Fanuc tool-life manager. |
+| `fanuc.m6-without-t` | warning | — | — | M6 (tool change) must be paired with Tn on the same block. |
+| `fanuc.g43-without-h` | warning | — | — | G43 (tool length compensation) requires an H offset on the same block. |
+| `fanuc.feed-while-spindle-off` | warning | — | — | Start the spindle with M3/M4 before G1/G2/G3 feed motion. |
+| `fanuc.tapping-while-spindle-off` | warning | — | — | Start the spindle before G74/G84 tapping cycles. |
+| `fanuc.m6-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before a tool change (M6). |
+| `fanuc.m6-while-tool-length` | warning | — | — | Cancel tool length compensation with G49 before a tool change (M6). |
+| `fanuc.m6-while-coolant-on` | warning | — | — | Turn coolant off with M9 before a tool change (M6). |
+| `fanuc.g40-and-cutter-comp-same-block` | warning | — | — | Do not cancel and apply cutter compensation on the same block. |
+| `fanuc.g80-and-canned-same-block` | warning | — | — | Do not cancel and start a canned cycle on the same block. |
+| `fanuc.g43-and-g49-same-block` | warning | — | — | Do not apply and cancel tool length compensation on the same block. |
+| `fanuc.cutter-comp-active-at-end` | warning | — | — | Cancel cutter compensation with G40 before M02/M30. |
+| `fanuc.g43-active-at-end` | warning | — | — | Cancel tool length compensation with G49 before M02/M30. |
+| `fanuc.spindle-on-at-end` | warning | — | — | Stop the spindle with M5 before M02/M30. |
+| `fanuc.coolant-on-at-end` | warning | — | — | Turn coolant off with M9 before M02/M30. |
+| `fanuc.g91-active-at-end` | warning | — | — | Restore absolute mode with G90 before M02/M30. |
+| `fanuc.canned-active-at-end` | warning | — | — | Cancel canned cycles with G80 before M02/M30. |
+| `fanuc.g68-active-at-end` | warning | — | — | Cancel coordinate rotation with G69 before M02/M30. |
+| `fanuc.g51-active-at-end` | warning | — | — | Cancel scaling with G50 before M02/M30. |
+| `fanuc.m97-unsupported` | warning | — | — | M97 local subprogram calls are a Haas idiom; use standard Fanuc M98/G65. |
+| `fanuc.g1-without-f` | warning | — | — | G1/G2/G3 feed motion needs an explicit F on the block or earlier in the program. |
 
 ### `fanuc.missing-o-header`
 
@@ -25411,5 +25431,568 @@ M30
 O1234
 T1 M6
 T0 M6
+M30
+```
+
+### `fanuc.m6-without-t`
+
+- **Severity:** warning
+- **Matcher:** `/M6 without T on the same block/`
+- **Summary:** M6 (tool change) must be paired with Tn on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+M6
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+M30
+```
+
+### `fanuc.g43-without-h`
+
+- **Severity:** warning
+- **Matcher:** `/G43 without H on the same block/`
+- **Summary:** G43 (tool length compensation) requires an H offset on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 Z25.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M30
+```
+
+### `fanuc.feed-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/G1\/G2\/G3 while spindle is off/`
+- **Summary:** Start the spindle with M3/M4 before G1/G2/G3 feed motion.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G1 X10. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+S1200 M3
+G1 X10. F100.
+M5
+M30
+```
+
+### `fanuc.tapping-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/Tapping cycle \(G74\/G84\) while spindle is off/`
+- **Summary:** Start the spindle before G74/G84 tapping cycles.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G84 X10. Y10. Z-5. R2. F100.
+G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+S500 M3
+G84 X10. Y10. Z-5. R2. F100.
+G80
+M5
+M30
+```
+
+### `fanuc.m6-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G41 D1
+T2 M6
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G41 D1
+G40
+T2 M6
+M30
+```
+
+### `fanuc.m6-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length compensation with G49 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G43 H1 Z25.
+T2 M6
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G43 H1 Z25.
+G49
+T2 M6
+M30
+```
+
+### `fanuc.m6-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M6 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before a tool change (M6).
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+S1200 M3
+M8
+T2 M6
+M9
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+S1200 M3
+M8
+M9
+T2 M6
+M5
+M30
+```
+
+### `fanuc.g40-and-cutter-comp-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G40 and G41\/G42 on the same block/`
+- **Summary:** Do not cancel and apply cutter compensation on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G40 G41 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G41 D1
+G40
+M30
+```
+
+### `fanuc.g80-and-canned-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G80 and a canned cycle on the same block/`
+- **Summary:** Do not cancel and start a canned cycle on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G81 Z-5. R2. F100. G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G90
+G81 Z-5. R2. F100.
+G80
+M30
+```
+
+### `fanuc.g43-and-g49-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G43 and G49 on the same block/`
+- **Summary:** Do not apply and cancel tool length compensation on the same block.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G43 H1 G49 Z25.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G43 H1 Z25.
+G49
+M30
+```
+
+### `fanuc.cutter-comp-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with cutter compensation \(G41\/G42\) still active/`
+- **Summary:** Cancel cutter compensation with G40 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G41 D1 X10. Y10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G41 D1 X10. Y10.
+G40
+M30
+```
+
+### `fanuc.g43-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with tool length compensation \(G43\) still active/`
+- **Summary:** Cancel tool length compensation with G49 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G43 H1 Z25.
+G49
+M5
+M30
+```
+
+### `fanuc.spindle-on-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with spindle still on/`
+- **Summary:** Stop the spindle with M5 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M5
+M30
+```
+
+### `fanuc.coolant-on-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with coolant still on/`
+- **Summary:** Turn coolant off with M9 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+M8
+M5
+M9
+M30
+```
+
+### `fanuc.g91-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends in incremental mode \(G91\)/`
+- **Summary:** Restore absolute mode with G90 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G91
+G0 X1.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G91
+G0 X1.
+G90
+M30
+```
+
+### `fanuc.canned-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with a canned cycle still active/`
+- **Summary:** Cancel canned cycles with G80 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G81 X10. Y10. Z-5. R2. F100.
+G80
+M30
+```
+
+### `fanuc.g68-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with coordinate rotation \(G68\) still active/`
+- **Summary:** Cancel coordinate rotation with G69 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G68
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G68
+G69
+M30
+```
+
+### `fanuc.g51-active-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with scaling \(G51\) still active/`
+- **Summary:** Cancel scaling with G50 before M02/M30.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+G54
+G51
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+G54
+G51
+G50
+M30
+```
+
+### `fanuc.m97-unsupported`
+
+- **Severity:** warning
+- **Matcher:** `/M97 local subprogram call is not standard Fanuc ISO/`
+- **Summary:** M97 local subprogram calls are a Haas idiom; use standard Fanuc M98/G65.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+M97 P100
+M30
+N100
+M99
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+M98 P1000
+M30
+O1000
+M99
+```
+
+### `fanuc.g1-without-f`
+
+- **Severity:** warning
+- **Matcher:** `/G1\/G2\/G3 without F and no prior F in the program/`
+- **Summary:** G1/G2/G3 feed motion needs an explicit F on the block or earlier in the program.
+
+**Triggers (positive):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G1 X10. Y10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O1234
+T1 M6
+S1200 M3
+G1 X10. Y10. F200.
 M30
 ```

@@ -832,21 +832,21 @@ describe("main()", () => {
     }
   });
 
-  it("does NOT pull Haas-only profile lints when --controller fanuc (G43-without-H ignored, only Fanuc-specific rules apply)", async () => {
+  it("does NOT pull Haas-only profile lints when --controller fanuc (M13 ignored, only Fanuc-specific rules apply)", async () => {
     // This program includes an O-header so the Fanuc-specific missing-O-header
     // rule does NOT fire. The point of the test is to verify that the Haas
-    // loader is NOT invoked for --controller fanuc (Haas's G43-without-H rule
+    // loader is NOT invoked for --controller fanuc (Haas's M13/M14 spindle-start rules
     // would otherwise add a profile_lint issue).
     const tmp = await setupTmpDir();
-    const inputPath = path.join(tmp, "fanuc-g43-no-h.nc");
+    const inputPath = path.join(tmp, "fanuc-m13.nc");
     await writeFile(
       inputPath,
       [
         "%",
         "O1000",
-        "(FANUC SAMPLE - G43 WITHOUT H DOES NOT TRIGGER HAAS PROFILE LINT)",
+        "(FANUC SAMPLE - M13 DOES NOT TRIGGER HAAS PROFILE LINT)",
         "G0 X1.",
-        "G43 Z2.",
+        "M13",
         "M30",
         "%"
       ].join("\n") + "\n",

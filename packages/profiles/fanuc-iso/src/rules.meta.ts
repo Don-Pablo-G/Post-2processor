@@ -48,5 +48,165 @@ export const fanucIsoRuleDocs: ProfileRuleDoc[] = [
     deprecatedSince: "2026-05",
     replacementSuggestion:
       "Rely on the Fanuc tool-life manager alarm instead of linting T0-before-Tn locally."
+  },
+  {
+    id: "fanuc.m6-without-t",
+    severity: "warning",
+    messageMatcher: /M6 without T on the same block/,
+    summary: "M6 (tool change) must be paired with Tn on the same block.",
+    positiveSnippet: "O1234\nM6\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nM30\n"
+  },
+  {
+    id: "fanuc.g43-without-h",
+    severity: "warning",
+    messageMatcher: /G43 without H on the same block/,
+    summary: "G43 (tool length compensation) requires an H offset on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 Z25.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM30\n"
+  },
+  {
+    id: "fanuc.feed-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 while spindle is off/,
+    summary: "Start the spindle with M3/M4 before G1/G2/G3 feed motion.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG1 X10. F100.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nS1200 M3\nG1 X10. F100.\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.tapping-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /Tapping cycle \(G74\/G84\) while spindle is off/,
+    summary: "Start the spindle before G74/G84 tapping cycles.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG90\nG84 X10. Y10. Z-5. R2. F100.\nG80\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG90\nS500 M3\nG84 X10. Y10. Z-5. R2. F100.\nG80\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.m6-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M6 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before a tool change (M6).",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG90\nG41 D1\nT2 M6\nG40\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG90\nG41 D1\nG40\nT2 M6\nM30\n"
+  },
+  {
+    id: "fanuc.m6-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M6 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length compensation with G49 before a tool change (M6).",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG90\nG43 H1 Z25.\nT2 M6\nG49\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG90\nG43 H1 Z25.\nG49\nT2 M6\nM30\n"
+  },
+  {
+    id: "fanuc.m6-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M6 while coolant is still on/,
+    summary: "Turn coolant off with M9 before a tool change (M6).",
+    positiveSnippet: "O1234\nT1 M6\nG54\nS1200 M3\nM8\nT2 M6\nM9\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nS1200 M3\nM8\nM9\nT2 M6\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.g40-and-cutter-comp-same-block",
+    severity: "warning",
+    messageMatcher: /G40 and G41\/G42 on the same block/,
+    summary: "Do not cancel and apply cutter compensation on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG40 G41 D1\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG41 D1\nG40\nM30\n"
+  },
+  {
+    id: "fanuc.g80-and-canned-same-block",
+    severity: "warning",
+    messageMatcher: /G80 and a canned cycle on the same block/,
+    summary: "Do not cancel and start a canned cycle on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100. G80\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG90\nG81 Z-5. R2. F100.\nG80\nM30\n"
+  },
+  {
+    id: "fanuc.g43-and-g49-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G49 on the same block/,
+    summary: "Do not apply and cancel tool length compensation on the same block.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG43 H1 G49 Z25.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG43 H1 Z25.\nG49\nM30\n"
+  },
+  {
+    id: "fanuc.cutter-comp-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with cutter compensation \(G41\/G42\) still active/,
+    summary: "Cancel cutter compensation with G40 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG41 D1 X10. Y10.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG41 D1 X10. Y10.\nG40\nM30\n"
+  },
+  {
+    id: "fanuc.g43-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with tool length compensation \(G43\) still active/,
+    summary: "Cancel tool length compensation with G49 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG43 H1 Z25.\nG49\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.spindle-on-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with spindle still on/,
+    summary: "Stop the spindle with M5 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM5\nM30\n"
+  },
+  {
+    id: "fanuc.coolant-on-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with coolant still on/,
+    summary: "Turn coolant off with M9 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM5\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nM8\nM5\nM9\nM30\n"
+  },
+  {
+    id: "fanuc.g91-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends in incremental mode \(G91\)/,
+    summary: "Restore absolute mode with G90 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG91\nG0 X1.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG91\nG0 X1.\nG90\nM30\n"
+  },
+  {
+    id: "fanuc.canned-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with a canned cycle still active/,
+    summary: "Cancel canned cycles with G80 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG81 X10. Y10. Z-5. R2. F100.\nG80\nM30\n"
+  },
+  {
+    id: "fanuc.g68-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with coordinate rotation \(G68\) still active/,
+    summary: "Cancel coordinate rotation with G69 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG68\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG68\nG69\nM30\n"
+  },
+  {
+    id: "fanuc.g51-active-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with scaling \(G51\) still active/,
+    summary: "Cancel scaling with G50 before M02/M30.",
+    positiveSnippet: "O1234\nT1 M6\nG54\nG51\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nG54\nG51\nG50\nM30\n"
+  },
+  {
+    id: "fanuc.m97-unsupported",
+    severity: "warning",
+    messageMatcher: /M97 local subprogram call is not standard Fanuc ISO/,
+    summary: "M97 local subprogram calls are a Haas idiom; use standard Fanuc M98/G65.",
+    positiveSnippet: "O1234\nM97 P100\nM30\nN100\nM99\n",
+    negativeSnippet: "O1234\nM98 P1000\nM30\nO1000\nM99\n"
+  },
+  {
+    id: "fanuc.g1-without-f",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 without F and no prior F in the program/,
+    summary: "G1/G2/G3 feed motion needs an explicit F on the block or earlier in the program.",
+    positiveSnippet: "O1234\nT1 M6\nS1200 M3\nG1 X10. Y10.\nM30\n",
+    negativeSnippet: "O1234\nT1 M6\nS1200 M3\nG1 X10. Y10. F200.\nM30\n"
   }
 ];
