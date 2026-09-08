@@ -3095,6 +3095,56 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasWorkOffset(block),
           message:
             "Work offset (G54-G59/G154) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before selecting a work offset."
+        },
+        {
+          test: hasExactG92(block),
+          message:
+            "G92 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before shifting coordinates."
+        },
+        {
+          test: hasExactG52(block),
+          message:
+            "G52 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before a local offset."
+        },
+        {
+          test: Boolean(hasExactPlane(block)),
+          message:
+            "Plane select (G17/G18/G19) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing plane."
+        },
+        {
+          test: Boolean(hasExactG20Or21(block)),
+          message:
+            "Unit select (G20/G21) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing units."
+        },
+        {
+          test: Boolean(hasExactG93Or94Or95(block)),
+          message:
+            "Feed mode select (G93/G94/G95) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing feed mode."
+        },
+        {
+          test: Boolean(hasExactG61Or64(block)),
+          message:
+            "Path mode select (G61/G64) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing path mode."
+        },
+        {
+          test: Boolean(hasExactG90Or91(block)),
+          message:
+            "Distance mode select (G90/G91) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing distance mode."
+        },
+        {
+          test: hasExactG40(block),
+          message:
+            "G40 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before canceling cutter compensation."
+        },
+        {
+          test: hasExactG49(block),
+          message:
+            "G49 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before canceling tool length."
+        },
+        {
+          test: hasExactG80(block),
+          message:
+            "G80 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before canceling the canned cycle."
         }
       ];
       for (const guard of spindleOrientGuards) {
