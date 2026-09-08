@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_local_label_subprogram_mix.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 14,
+  "lintIssueCount": 15,
   "lintIssues": [
     {
       "severity": "warning",
@@ -18,6 +18,10 @@
     {
       "severity": "warning",
       "message": "M98 while tool length compensation (G43) is still active — cancel with G49 before the subprogram call."
+    },
+    {
+      "severity": "warning",
+      "message": "M30 while tool length compensation (G43) is still active — cancel with G49 before program end."
     },
     {
       "severity": "warning",

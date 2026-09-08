@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/fanuc/fanuc_if_goto_macro_branch.nc",
   "controllerMode": "fanuc",
-  "lintIssueCount": 11,
+  "lintIssueCount": 12,
   "lintIssues": [
     {
       "severity": "warning",
@@ -42,6 +42,10 @@
     {
       "severity": "warning",
       "message": "G0 rapid while tool length compensation (G43) is still active — cancel with G49 before rapid moves."
+    },
+    {
+      "severity": "warning",
+      "message": "M30 while tool length compensation (G43) is still active — cancel with G49 before program end."
     },
     {
       "severity": "warning",

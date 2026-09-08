@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_if_then_mixed_motion.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 8,
+  "lintIssueCount": 9,
   "lintIssues": [
     {
       "severity": "warning",
@@ -30,6 +30,10 @@
     {
       "severity": "warning",
       "message": "M5 while tool length compensation (G43) is still active — cancel with G49 when stopping the spindle."
+    },
+    {
+      "severity": "warning",
+      "message": "M30 while tool length compensation (G43) is still active — cancel with G49 before program end."
     },
     {
       "severity": "warning",

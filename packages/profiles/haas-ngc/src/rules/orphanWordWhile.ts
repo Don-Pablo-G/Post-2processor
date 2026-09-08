@@ -67,7 +67,8 @@ const IJK_WHILE_CODES = [
   "haas.ijk-while-coolant-on",
   "haas.ijk-while-tool-length",
   "haas.ijk-while-canned",
-  "haas.ijk-while-through-spindle-coolant"
+  "haas.ijk-while-through-spindle-coolant",
+  "haas.ijk-while-spindle-orient"
 ] as const;
 
 const L_WHILE_CODES = orphanWhileModeCodes("l");
@@ -453,7 +454,7 @@ export function lintHaasOrphanWordWhile(
         wordLabel: "I/J/K word",
         contextHint: "outside arc context",
         ctx,
-        modeSuffixes: ["through-spindle-coolant"]
+        modeSuffixes: ["through-spindle-coolant", "spindle-orient"]
       });
     }
   });

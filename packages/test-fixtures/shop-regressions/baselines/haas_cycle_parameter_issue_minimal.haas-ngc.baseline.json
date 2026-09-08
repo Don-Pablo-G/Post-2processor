@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_cycle_parameter_issue_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 10,
+  "lintIssueCount": 11,
   "lintIssues": [
     {
       "severity": "warning",
@@ -38,6 +38,10 @@
     {
       "severity": "warning",
       "message": "Peck canned cycle (G73/G83) without Q — set peck depth Q explicitly."
+    },
+    {
+      "severity": "warning",
+      "message": "M30 while a canned cycle is still active — cancel with G80 before program end."
     },
     {
       "severity": "warning",

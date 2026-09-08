@@ -5809,5 +5809,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Turn through-spindle coolant off with M89 before using I/J/K outside arc context.",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nI1.\nM89\nM5\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nI1.\nM5\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nI1.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nI1.\nM30\n"
+  },
+  {
+    id: "haas.h-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /H offset word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nH2\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nH2\nM5\nM30\n"
+  },
+  {
+    id: "haas.d-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /D offset word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nD2\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nD2\nM5\nM30\n"
+  },
+  {
+    id: "haas.h-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /H offset word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before changing H offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nH2\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nH2\nM30\n"
+  },
+  {
+    id: "haas.d-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /D offset word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before changing D offsets.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nD2\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nD2\nM30\n"
+  },
+  {
+    id: "haas.m30-while-coolant-on",
+    severity: "warning",
+    messageMatcher: /M30 while coolant is still on/,
+    summary: "Turn coolant off with M9 before an M30 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM8\nM9\nM30\n"
+  },
+  {
+    id: "haas.m30-while-cutter-comp",
+    severity: "warning",
+    messageMatcher: /M30 while cutter compensation \(G41\/G42\) is still active/,
+    summary: "Cancel cutter compensation with G40 before an M30 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG41 D1\nG40\nM30\n"
+  },
+  {
+    id: "haas.m30-while-canned",
+    severity: "warning",
+    messageMatcher: /M30 while a canned cycle is still active/,
+    summary: "Cancel canned cycles with G80 before an M30 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nG81 Z-1. R0.1 F10.\nG80\nM30\n"
+  },
+  {
+    id: "haas.m30-while-tool-length",
+    severity: "warning",
+    messageMatcher: /M30 while tool length compensation \(G43\) is still active/,
+    summary: "Cancel tool length with G49 before an M30 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nS1200 M3\nG49\nM30\n"
+  },
+  {
+    id: "haas.m30-while-rotation",
+    severity: "warning",
+    messageMatcher: /M30 while coordinate rotation \(G68\) is still active/,
+    summary: "Cancel rotation with G69 before an M30 program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nS1200 M3\nG69\nM30\n"
   }
 ];

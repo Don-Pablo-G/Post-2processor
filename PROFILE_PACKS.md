@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 701 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 711 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -713,6 +713,16 @@ Total rules: 701 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.p-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before using P outside call/dwell/scaling/canned context. |
 | `haas.p-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before using P outside call/dwell/scaling/canned context. |
 | `haas.ijk-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before using I/J/K outside arc context. |
+| `haas.ijk-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before using I/J/K outside arc context. |
+| `haas.h-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing H offsets. |
+| `haas.d-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before changing D offsets. |
+| `haas.h-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before changing H offsets. |
+| `haas.d-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before changing D offsets. |
+| `haas.m30-while-coolant-on` | warning | — | — | Turn coolant off with M9 before an M30 program end. |
+| `haas.m30-while-cutter-comp` | warning | — | — | Cancel cutter compensation with G40 before an M30 program end. |
+| `haas.m30-while-canned` | warning | — | — | Cancel canned cycles with G80 before an M30 program end. |
+| `haas.m30-while-tool-length` | warning | — | — | Cancel tool length with G49 before an M30 program end. |
+| `haas.m30-while-rotation` | warning | — | — | Cancel rotation with G69 before an M30 program end. |
 
 ### `haas.m6-without-t`
 
@@ -22633,6 +22643,317 @@ M88
 M89
 I1.
 M5
+M30
+```
+
+### `haas.ijk-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+I1.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+I1.
+M30
+```
+
+### `haas.h-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+H2
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+H2
+M5
+M30
+```
+
+### `haas.d-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+D2
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+D2
+M5
+M30
+```
+
+### `haas.h-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/H offset word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before changing H offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+H2
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+H2
+M30
+```
+
+### `haas.d-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/D offset word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before changing D offsets.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+D2
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+D2
+M30
+```
+
+### `haas.m30-while-coolant-on`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while coolant is still on/`
+- **Summary:** Turn coolant off with M9 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M8
+M9
+M30
+```
+
+### `haas.m30-while-cutter-comp`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while cutter compensation \(G41\/G42\) is still active/`
+- **Summary:** Cancel cutter compensation with G40 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G41 D1
+G40
+M30
+```
+
+### `haas.m30-while-canned`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while a canned cycle is still active/`
+- **Summary:** Cancel canned cycles with G80 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+G81 Z-1. R0.1 F10.
+G80
+M30
+```
+
+### `haas.m30-while-tool-length`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while tool length compensation \(G43\) is still active/`
+- **Summary:** Cancel tool length with G49 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+S1200 M3
+G49
+M30
+```
+
+### `haas.m30-while-rotation`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while coordinate rotation \(G68\) is still active/`
+- **Summary:** Cancel rotation with G69 before an M30 program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+S1200 M3
+G69
 M30
 ```
 

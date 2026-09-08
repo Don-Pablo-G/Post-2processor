@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_first_g43_bracket_z_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 3,
+  "lintIssueCount": 4,
   "lintIssues": [
     {
       "severity": "warning",
@@ -10,6 +10,10 @@
     {
       "severity": "warning",
       "message": "Program must end with a standalone % line."
+    },
+    {
+      "severity": "warning",
+      "message": "M30 while tool length compensation (G43) is still active — cancel with G49 before program end."
     },
     {
       "severity": "warning",

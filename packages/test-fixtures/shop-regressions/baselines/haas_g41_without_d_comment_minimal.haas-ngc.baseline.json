@@ -1,7 +1,7 @@
 {
   "fixture": "shop-regressions/haas-ngc/haas_g41_without_d_comment_minimal.nc",
   "controllerMode": "haas-ngc",
-  "lintIssueCount": 6,
+  "lintIssueCount": 7,
   "lintIssues": [
     {
       "severity": "warning",
@@ -22,6 +22,10 @@
     {
       "severity": "warning",
       "message": "G41/G42 while tool length compensation (G43) is inactive — apply G43 before cutter compensation."
+    },
+    {
+      "severity": "warning",
+      "message": "M30 while cutter compensation (G41/G42) is still active — cancel with G40 before program end."
     },
     {
       "severity": "warning",

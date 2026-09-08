@@ -257,8 +257,9 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     const hasM00 = hasWordM(block, 0);
     const hasM01 = hasWordM(block, 1);
     const hasM02 = hasWordM(block, 2);
-    if (hasM00 || hasM01 || hasM02) {
-      const stopLabel = hasM00 ? "M00" : hasM01 ? "M01" : "M02";
+    const hasM30 = hasWordM(block, 30);
+    if (hasM00 || hasM01 || hasM02 || hasM30) {
+      const stopLabel = hasM00 ? "M00" : hasM01 ? "M01" : hasM02 ? "M02" : "M30";
       const stopKind = hasM00
         ? "program stop"
         : hasM01
@@ -2098,6 +2099,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      if (throughSpindleCoolantActive && !hasWordM(block, 89)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while through-spindle coolant (M88) is still active — turn it off with M89 before changing H offsets.",
+          blockIndex: index
+        });
+      }
+      if (spindleOrientActive && !hasSpindleOn(block) && !hasSpindleOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "H offset word while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing H offsets.",
+          blockIndex: index
+        });
+      }
     }
 
     if (hasLetter(block, "D") && !hasExactG41Or42(block)) {
@@ -2154,6 +2171,22 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           severity: "warning",
           message:
             "D offset word while tool length compensation (G43) is still active — cancel with G49 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (throughSpindleCoolantActive && !hasWordM(block, 89)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while through-spindle coolant (M88) is still active — turn it off with M89 before changing D offsets.",
+          blockIndex: index
+        });
+      }
+      if (spindleOrientActive && !hasSpindleOn(block) && !hasSpindleOff(block)) {
+        issues.push({
+          severity: "warning",
+          message:
+            "D offset word while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing D offsets.",
           blockIndex: index
         });
       }
