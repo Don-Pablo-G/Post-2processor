@@ -85,6 +85,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
+- Haas mill lint batch 83: finished `M30` scaling/`G91` end-state docs and added same-block dwell/end plus apply-family conflicts for `G68`/`G51`, `G43`, and `G41`/`G42`.
 - Pack manifests drive CLI + desktop end-to-end: `parseCompliance` / `grammar` / optional `rules` allowlist / `declarativeRules` from controller pack manifests apply on lint and job-check (not declaration-only).
 - Separable rules follow-up: desktop persists `lintController` / `rulePolicy` / custom declarative rules in template `uiDefaults`; Haas mill orphan-word and end-hygiene clusters are extracted so disabled rule ids skip work (not only filter issues).
 - Separable rules foundation (schema **49**): stable lint codes + `RulePolicy`, CLI `--disable-rule` / `--enable-rule` / `--rules-policy`, open controller pack keys/manifests, data-driven grammar tables, declarative custom rules, and desktop controller/rule toggles.

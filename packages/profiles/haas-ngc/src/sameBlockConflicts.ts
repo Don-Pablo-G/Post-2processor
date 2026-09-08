@@ -162,7 +162,15 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
   ["g4", "m97", "G4 dwell and M97 on the same block — dwell and local subprogram call separately."],
   ["g4", "m00", "G4 dwell and M00 on the same block — dwell and program stop separately."],
   ["g4", "m01", "G4 dwell and M01 on the same block — dwell and optional stop separately."],
-  ["g4", "m99", "G4 dwell and M99 on the same block — dwell and subprogram return separately."]
+  ["g4", "m99", "G4 dwell and M99 on the same block — dwell and subprogram return separately."],
+  ["g4", "m02", "G4 dwell and M02 on the same block — dwell and program end separately."],
+  ["g4", "m30", "G4 dwell and M30 on the same block — dwell and program end separately."],
+  ["g68", "g51", "G68 and G51 on the same block — do not apply coordinate rotation and scaling together."],
+  ["g43", "g41Or42", "G43 and G41/G42 on the same block — apply tool length and cutter compensation on separate blocks."],
+  ["g43", "g68", "G43 and G68 on the same block — apply tool length and coordinate rotation on separate blocks."],
+  ["g43", "g51", "G43 and G51 on the same block — apply tool length and scaling on separate blocks."],
+  ["g41Or42", "g68", "G41/G42 and G68 on the same block — apply cutter compensation and coordinate rotation on separate blocks."],
+  ["g41Or42", "g51", "G41/G42 and G51 on the same block — apply cutter compensation and scaling on separate blocks."]
 ];
 
 export function collectSameBlockMatrixIssues(
