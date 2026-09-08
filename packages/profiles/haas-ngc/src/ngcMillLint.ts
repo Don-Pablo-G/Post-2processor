@@ -1779,6 +1779,11 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     if (hasWordM(block, 88)) {
       const m88Guards: Array<{ test: boolean; message: string }> = [
         {
+          test: throughSpindleCoolantActive,
+          message:
+            "M88 while through-spindle coolant (M88) is still active — turn it off with M89 before re-enabling through-spindle coolant."
+        },
+        {
           test: cutterCompActive && !hasExactG40(block),
           message:
             "M88 while cutter compensation (G41/G42) is still active — cancel with G40 before through-spindle coolant."
@@ -1831,6 +1836,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasWordM(block, 89)) {
+      if (!throughSpindleCoolantActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "M89 while through-spindle coolant (M88) is not active — through-spindle coolant is already off.",
+          blockIndex: index
+        });
+      }
       if (cutterCompActive && !hasExactG40(block)) {
         issues.push({
           severity: "warning",
@@ -2939,6 +2952,31 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     if (throughSpindleCoolantActive && !hasWordM(block, 89)) {
       const throughSpindleExitGuards: Array<{ test: boolean; message: string }> = [
         {
+          test: hasExactG0(block),
+          message:
+            "G0 rapid while through-spindle coolant (M88) is still active — turn it off with M89 before rapid moves."
+        },
+        {
+          test: hasWordM(block, 0),
+          message:
+            "M00 while through-spindle coolant (M88) is still active — turn it off with M89 before program stop."
+        },
+        {
+          test: hasWordM(block, 1),
+          message:
+            "M01 while through-spindle coolant (M88) is still active — turn it off with M89 before optional stop."
+        },
+        {
+          test: hasCoolantOn(block),
+          message:
+            "Coolant on (M7/M8) while through-spindle coolant (M88) is still active — turn it off with M89 before flood/mist coolant."
+        },
+        {
+          test: hasCoolantOff(block),
+          message:
+            "M9 while through-spindle coolant (M88) is still active — M9 does not clear through-spindle coolant; turn it off with M89."
+        },
+        {
           test: hasWordM(block, 97),
           message:
             "M97 while through-spindle coolant (M88) is still active — turn it off with M89 before the local subprogram call."
@@ -3245,6 +3283,21 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           test: hasLetter(block, "T"),
           message:
             "Tool select (T) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before staging the next tool."
+        },
+        {
+          test: hasExactFeedMotion(block),
+          message:
+            "G1/G2/G3 while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before feed motion."
+        },
+        {
+          test: hasLetter(block, "S"),
+          message:
+            "Spindle speed (S) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before changing spindle speed."
+        },
+        {
+          test: hasCannedCycle(block),
+          message:
+            "Canned cycle (G73/G74/G76/G81-G89) while spindle orientation (M19) is still latched — clear with M3, M4, or M5 before the canned cycle."
         }
       ];
       for (const guard of spindleOrientGuards) {

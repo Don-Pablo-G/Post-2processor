@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 671 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 681 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -683,6 +683,16 @@ Total rules: 671 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.t-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before staging the next tool (T). |
 | `haas.g4-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before a dwell (G4). |
 | `haas.t-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before staging the next tool (T). |
+| `haas.g0-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before rapid moves (G0). |
+| `haas.m00-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before program stop (M00). |
+| `haas.m01-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before optional stop (M01). |
+| `haas.coolant-on-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before flood/mist coolant (M7/M8). |
+| `haas.m9-while-through-spindle-coolant` | warning | — | — | M9 does not clear through-spindle coolant; turn it off with M89 first. |
+| `haas.m88-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before re-enabling M88. |
+| `haas.m89-while-through-spindle-coolant-off` | warning | — | — | Avoid M89 when through-spindle coolant is already off. |
+| `haas.feed-motion-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before feed motion (G1/G2/G3). |
+| `haas.s-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before changing spindle speed (S). |
+| `haas.canned-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before canned cycles (G73/G74/G76/G81-G89). |
 
 ### `haas.m6-without-t`
 
@@ -21636,6 +21646,314 @@ S1200 M3
 M88
 M89
 T2
+M30
+```
+
+### `haas.g0-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/G0 rapid while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before rapid moves (G0).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G0 X0. Y0.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+G0 X0. Y0.
+M30
+```
+
+### `haas.m00-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/M00 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before program stop (M00).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M00
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M00
+M30
+```
+
+### `haas.m01-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/M01 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before optional stop (M01).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M01
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M01
+M30
+```
+
+### `haas.coolant-on-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Coolant on \(M7\/M8\) while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before flood/mist coolant (M7/M8).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M8
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M8
+M30
+```
+
+### `haas.m9-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/M9 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** M9 does not clear through-spindle coolant; turn it off with M89 first.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M9
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M9
+M30
+```
+
+### `haas.m88-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/M88 while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before re-enabling M88.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M88
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M88
+M30
+```
+
+### `haas.m89-while-through-spindle-coolant-off`
+
+- **Severity:** warning
+- **Matcher:** `/M89 while through-spindle coolant \(M88\) is not active/`
+- **Summary:** Avoid M89 when through-spindle coolant is already off.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M89
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+M30
+```
+
+### `haas.feed-motion-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/G1\/G2\/G3 while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before feed motion (G1/G2/G3).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G1 X1. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G1 X1. F100.
+M30
+```
+
+### `haas.s-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before changing spindle speed (S).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+S1500
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+S1500
+M30
+```
+
+### `haas.canned-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/Canned cycle \(G73\/G74\/G76\/G81-G89\) while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before canned cycles (G73/G74/G76/G81-G89).
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G81 X0. Y0. Z-1. R1. F100.
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+G81 X0. Y0. Z-1. R1. F100.
 M30
 ```
 

@@ -5569,5 +5569,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Turn through-spindle coolant off with M89 before staging the next tool (T).",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nT2\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nT2\nM30\n"
+  },
+  {
+    id: "haas.g0-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /G0 rapid while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before rapid moves (G0).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG0 X0. Y0.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nG0 X0. Y0.\nM30\n"
+  },
+  {
+    id: "haas.m00-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M00 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before program stop (M00).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM00\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM00\nM30\n"
+  },
+  {
+    id: "haas.m01-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M01 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before optional stop (M01).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM01\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM01\nM30\n"
+  },
+  {
+    id: "haas.coolant-on-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /Coolant on \(M7\/M8\) while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before flood/mist coolant (M7/M8).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM8\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM8\nM30\n"
+  },
+  {
+    id: "haas.m9-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M9 while through-spindle coolant \(M88\) is still active/,
+    summary: "M9 does not clear through-spindle coolant; turn it off with M89 first.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM9\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM9\nM30\n"
+  },
+  {
+    id: "haas.m88-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /M88 while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before re-enabling M88.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM88\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM88\nM30\n"
+  },
+  {
+    id: "haas.m89-while-through-spindle-coolant-off",
+    severity: "warning",
+    messageMatcher: /M89 while through-spindle coolant \(M88\) is not active/,
+    summary: "Avoid M89 when through-spindle coolant is already off.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM89\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nM30\n"
+  },
+  {
+    id: "haas.feed-motion-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /G1\/G2\/G3 while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before feed motion (G1/G2/G3).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG1 X1. F100.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG1 X1. F100.\nM30\n"
+  },
+  {
+    id: "haas.s-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /Spindle speed \(S\) while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before changing spindle speed (S).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nS1500\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nS1500\nM30\n"
+  },
+  {
+    id: "haas.canned-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /Canned cycle \(G73\/G74\/G76\/G81-G89\) while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before canned cycles (G73/G74/G76/G81-G89).",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG81 X0. Y0. Z-1. R1. F100.\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nG81 X0. Y0. Z-1. R1. F100.\nM30\n"
   }
 ];

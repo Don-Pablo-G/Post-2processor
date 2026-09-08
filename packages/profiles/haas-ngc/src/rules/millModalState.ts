@@ -91,7 +91,7 @@ function applyEarlyUpdates(state: MillModalState, block: Block): void {
   if (hasWordM(block, 88)) {
     state.throughSpindleCoolantActive = true;
   }
-  if (hasWordM(block, 89) || hasCoolantOff(block)) {
+  if (hasWordM(block, 89)) {
     state.throughSpindleCoolantActive = false;
   }
   if (hasCoolantOn(block)) {
