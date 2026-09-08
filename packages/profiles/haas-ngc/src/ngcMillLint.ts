@@ -233,7 +233,9 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
   let firstG61Block = -1;
   let firstG64Block = -1;
   let activeFeedMode: 94 | 95 | undefined;
+  let inverseTimeActive = false;
   let activePathMode: 61 | 64 | undefined;
+  let pendingStagedToolBlockIndex: number | undefined;
   let sawFeedOrCanned = false;
   let sawProgramO = false;
   let activeStopResumeSafety:
@@ -265,6 +267,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         : hasM01
           ? "optional stop"
           : "program end";
+      const stopPlane = hasExactPlane(block) ?? activePlane;
+      const stopFeedMode = hasExactG95(block) ? 95 : hasExactG94(block) ? 94 : activeFeedMode;
+      const stopInverseTimeActive = hasExactG93(block)
+        ? true
+        : hasExactG94(block) || hasExactG95(block)
+          ? false
+          : inverseTimeActive;
+      const stopPathMode = hasExactG61Or64(block) ?? activePathMode;
       if (coolantActive && !hasCoolantOff(block)) {
         issues.push({
           severity: "warning",
@@ -313,6 +323,36 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           message: `${stopLabel} while incremental mode (G91) is active — restore G90 before ${stopKind}.`,
           blockIndex: index
         });
+      }
+      if (hasM02 || hasM30) {
+        if (stopPlane !== undefined && stopPlane !== 17) {
+          issues.push({
+            severity: "warning",
+            message: `${stopLabel} while G18/G19 plane is active — restore G17 (XY) before program end.`,
+            blockIndex: index
+          });
+        }
+        if (stopFeedMode === 95) {
+          issues.push({
+            severity: "warning",
+            message: `${stopLabel} while feed per revolution (G95) is active — restore G94 before program end.`,
+            blockIndex: index
+          });
+        }
+        if (stopInverseTimeActive) {
+          issues.push({
+            severity: "warning",
+            message: `${stopLabel} while inverse-time feed mode (G93) is active — restore G94 before program end.`,
+            blockIndex: index
+          });
+        }
+        if (stopPathMode === 61) {
+          issues.push({
+            severity: "warning",
+            message: `${stopLabel} while exact stop mode (G61) is active — restore G64 before program end.`,
+            blockIndex: index
+          });
+        }
       }
       if (hasM00 || hasM01) {
         const hasRestartSpindleSameBlock = block.words.some((w) => {
@@ -432,8 +472,12 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
 
     const tWordEarly = block.words.filter((w) => w.letter === "T").at(-1);
     const tNumEarly = literalToolNumber(tWordEarly?.value);
+    if (hasWordM(block, 6)) {
+      pendingStagedToolBlockIndex = undefined;
+    }
     if (tNumEarly !== undefined && tNumEarly > 0) {
       if (!hasWordM(block, 6)) {
+        pendingStagedToolBlockIndex = index;
         if (cutterCompActive && !hasExactG40(block)) {
           issues.push({
             severity: "warning",
@@ -1283,6 +1327,7 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
         });
       }
       activeFeedMode = feedModeEarly;
+      inverseTimeActive = false;
     }
 
     if (hasExactG93(block) && hasExactG94(block)) {
@@ -1360,6 +1405,8 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
           blockIndex: index
         });
       }
+      activeFeedMode = undefined;
+      inverseTimeActive = true;
     }
 
     const exactGCodes = exactGCodesOnBlock(block);
@@ -1984,6 +2031,14 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
     }
 
     if (hasLetter(block, "S") && !hasSpindleOn(block)) {
+      if (sawSpindleOn && !spindleActive) {
+        issues.push({
+          severity: "warning",
+          message:
+            "Spindle speed (S) while spindle is off — start spindle (M3/M4) before changing spindle speed.",
+          blockIndex: index
+        });
+      }
       if (cannedActive && !hasExactG80(block)) {
         issues.push({
           severity: "warning",
@@ -4094,6 +4149,15 @@ export function lintHaasNgcMill(ast: ProgramAst): LintIssue[] {
       });
     }
   });
+
+  if (pendingStagedToolBlockIndex !== undefined) {
+    issues.push({
+      severity: "warning",
+      message:
+        "Program ends with a staged tool (T) that was never changed with M6 — run Tn M6 or remove the staging line.",
+      blockIndex: pendingStagedToolBlockIndex
+    });
+  }
 
   if (firstG20Block >= 0 && firstG21Block >= 0) {
     issues.push({

@@ -6209,5 +6209,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Dwell and work-offset selection on separate blocks.",
     positiveSnippet: "O0001\nT1 M6\nG4 P1. G54\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG4 P1.\nG54\nM30\n"
+  },
+  {
+    id: "haas.m30-while-non-xy-plane",
+    severity: "warning",
+    messageMatcher: /M30 while G18\/G19 plane is active/,
+    summary: "Restore G17 (XY plane) before ending a program with M30.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG18\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17\nM30\n"
+  },
+  {
+    id: "haas.m30-while-feed-per-revolution",
+    severity: "warning",
+    messageMatcher: /M30 while feed per revolution \(G95\) is active/,
+    summary: "Restore G94 before ending a program with M30 when G95 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG95\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG95\nG94\nM30\n"
+  },
+  {
+    id: "haas.m30-while-inverse-time-feed",
+    severity: "warning",
+    messageMatcher: /M30 while inverse-time feed mode \(G93\) is active/,
+    summary: "Restore G94 before ending a program with M30 when G93 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG93\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG93\nG94\nM30\n"
+  },
+  {
+    id: "haas.m30-while-exact-stop",
+    severity: "warning",
+    messageMatcher: /M30 while exact stop mode \(G61\) is active/,
+    summary: "Restore G64 continuous path mode before ending a program with M30.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG61\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG61\nG64\nM30\n"
+  },
+  {
+    id: "haas.m02-while-non-xy-plane",
+    severity: "warning",
+    messageMatcher: /M02 while G18\/G19 plane is active/,
+    summary: "Restore G17 (XY plane) before ending a program with M02.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG18\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG18\nG17\nM02\n"
+  },
+  {
+    id: "haas.m02-while-feed-per-revolution",
+    severity: "warning",
+    messageMatcher: /M02 while feed per revolution \(G95\) is active/,
+    summary: "Restore G94 before ending a program with M02 when G95 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG95\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG95\nG94\nM02\n"
+  },
+  {
+    id: "haas.m02-while-inverse-time-feed",
+    severity: "warning",
+    messageMatcher: /M02 while inverse-time feed mode \(G93\) is active/,
+    summary: "Restore G94 before ending a program with M02 when G93 is active.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG93\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG93\nG94\nM02\n"
+  },
+  {
+    id: "haas.m02-while-exact-stop",
+    severity: "warning",
+    messageMatcher: /M02 while exact stop mode \(G61\) is active/,
+    summary: "Restore G64 continuous path mode before ending a program with M02.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG61\nM02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG61\nG64\nM02\n"
+  },
+  {
+    id: "haas.staged-tool-without-m6-at-end",
+    severity: "warning",
+    messageMatcher: /Program ends with a staged tool \(T\) that was never changed with M6/,
+    summary: "Do not leave a staged T tool unconsumed at program end.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nT2\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nT2 M6\nM30\n"
+  },
+  {
+    id: "haas.s-while-spindle-off",
+    severity: "warning",
+    messageMatcher: /Spindle speed \(S\) while spindle is off/,
+    summary: "Start the spindle with M3/M4 when changing S after a prior stop.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nS2000\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM5\nS2000 M3\nM5\nM30\n"
   }
 ];

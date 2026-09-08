@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 751 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 761 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -763,6 +763,16 @@ Total rules: 751 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g4-and-g69-same-block` | warning | — | — | Dwell and rotation cancel on separate blocks. |
 | `haas.g4-and-g50-same-block` | warning | — | — | Dwell and scaling cancel on separate blocks. |
 | `haas.g4-and-work-offset-same-block` | warning | — | — | Dwell and work-offset selection on separate blocks. |
+| `haas.m30-while-non-xy-plane` | warning | — | — | Restore G17 (XY plane) before ending a program with M30. |
+| `haas.m30-while-feed-per-revolution` | warning | — | — | Restore G94 before ending a program with M30 when G95 is active. |
+| `haas.m30-while-inverse-time-feed` | warning | — | — | Restore G94 before ending a program with M30 when G93 is active. |
+| `haas.m30-while-exact-stop` | warning | — | — | Restore G64 continuous path mode before ending a program with M30. |
+| `haas.m02-while-non-xy-plane` | warning | — | — | Restore G17 (XY plane) before ending a program with M02. |
+| `haas.m02-while-feed-per-revolution` | warning | — | — | Restore G94 before ending a program with M02 when G95 is active. |
+| `haas.m02-while-inverse-time-feed` | warning | — | — | Restore G94 before ending a program with M02 when G93 is active. |
+| `haas.m02-while-exact-stop` | warning | — | — | Restore G64 continuous path mode before ending a program with M02. |
+| `haas.staged-tool-without-m6-at-end` | warning | — | — | Do not leave a staged T tool unconsumed at program end. |
+| `haas.s-while-spindle-off` | warning | — | — | Start the spindle with M3/M4 when changing S after a prior stop. |
 
 ### `haas.m6-without-t`
 
@@ -24138,6 +24148,279 @@ O0001
 T1 M6
 G4 P1.
 G54
+M30
+```
+
+### `haas.m30-while-non-xy-plane`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while G18\/G19 plane is active/`
+- **Summary:** Restore G17 (XY plane) before ending a program with M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+G17
+M30
+```
+
+### `haas.m30-while-feed-per-revolution`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while feed per revolution \(G95\) is active/`
+- **Summary:** Restore G94 before ending a program with M30 when G95 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+G94
+M30
+```
+
+### `haas.m30-while-inverse-time-feed`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while inverse-time feed mode \(G93\) is active/`
+- **Summary:** Restore G94 before ending a program with M30 when G93 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+G94
+M30
+```
+
+### `haas.m30-while-exact-stop`
+
+- **Severity:** warning
+- **Matcher:** `/M30 while exact stop mode \(G61\) is active/`
+- **Summary:** Restore G64 continuous path mode before ending a program with M30.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+G64
+M30
+```
+
+### `haas.m02-while-non-xy-plane`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while G18\/G19 plane is active/`
+- **Summary:** Restore G17 (XY plane) before ending a program with M02.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G18
+G17
+M02
+```
+
+### `haas.m02-while-feed-per-revolution`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while feed per revolution \(G95\) is active/`
+- **Summary:** Restore G94 before ending a program with M02 when G95 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G95
+G94
+M02
+```
+
+### `haas.m02-while-inverse-time-feed`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while inverse-time feed mode \(G93\) is active/`
+- **Summary:** Restore G94 before ending a program with M02 when G93 is active.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G93
+G94
+M02
+```
+
+### `haas.m02-while-exact-stop`
+
+- **Severity:** warning
+- **Matcher:** `/M02 while exact stop mode \(G61\) is active/`
+- **Summary:** Restore G64 continuous path mode before ending a program with M02.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+M02
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G61
+G64
+M02
+```
+
+### `haas.staged-tool-without-m6-at-end`
+
+- **Severity:** warning
+- **Matcher:** `/Program ends with a staged tool \(T\) that was never changed with M6/`
+- **Summary:** Do not leave a staged T tool unconsumed at program end.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+T2 M6
+M30
+```
+
+### `haas.s-while-spindle-off`
+
+- **Severity:** warning
+- **Matcher:** `/Spindle speed \(S\) while spindle is off/`
+- **Summary:** Start the spindle with M3/M4 when changing S after a prior stop.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+S2000
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M5
+S2000 M3
+M5
 M30
 ```
 
