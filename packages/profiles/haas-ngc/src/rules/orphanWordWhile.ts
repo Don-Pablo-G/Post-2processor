@@ -30,7 +30,9 @@ const Q_WHILE_CODES = [
   "haas.q-while-scaling",
   "haas.q-while-incremental",
   "haas.q-while-coolant-on",
-  "haas.q-while-tool-length"
+  "haas.q-while-tool-length",
+  "haas.q-while-through-spindle-coolant",
+  "haas.q-while-spindle-orient"
 ] as const;
 
 const R_WHILE_CODES = [
@@ -40,7 +42,9 @@ const R_WHILE_CODES = [
   "haas.r-while-incremental",
   "haas.r-while-coolant-on",
   "haas.r-while-tool-length",
-  "haas.r-while-canned"
+  "haas.r-while-canned",
+  "haas.r-while-through-spindle-coolant",
+  "haas.r-while-spindle-orient"
 ] as const;
 
 const P_WHILE_CODES = [
@@ -50,7 +54,9 @@ const P_WHILE_CODES = [
   "haas.p-while-tool-length",
   "haas.p-while-incremental",
   "haas.p-while-coolant-on",
-  "haas.p-while-canned"
+  "haas.p-while-canned",
+  "haas.p-while-through-spindle-coolant",
+  "haas.p-while-spindle-orient"
 ] as const;
 
 const IJK_WHILE_CODES = [
@@ -60,7 +66,8 @@ const IJK_WHILE_CODES = [
   "haas.ijk-while-incremental",
   "haas.ijk-while-coolant-on",
   "haas.ijk-while-tool-length",
-  "haas.ijk-while-canned"
+  "haas.ijk-while-canned",
+  "haas.ijk-while-through-spindle-coolant"
 ] as const;
 
 const L_WHILE_CODES = orphanWhileModeCodes("l");
@@ -94,13 +101,24 @@ const ROTARY_ORPHAN_FAMILIES = [
       "incremental",
       "coolant-on",
       "tool-length",
-      "through-spindle-coolant"
+      "through-spindle-coolant",
+      "spindle-orient"
     ]
   },
   {
     letter: "C",
     prefix: "c",
-    modes: ["cutter-comp", "canned", "rotation", "scaling", "incremental", "coolant-on", "tool-length"]
+    modes: [
+      "cutter-comp",
+      "canned",
+      "rotation",
+      "scaling",
+      "incremental",
+      "coolant-on",
+      "tool-length",
+      "through-spindle-coolant",
+      "spindle-orient"
+    ]
   }
 ] as const;
 
@@ -237,7 +255,7 @@ export function lintHaasOrphanWordWhile(
         wordLabel: "Q word",
         contextHint: "outside a peck cycle",
         ctx,
-        modeSuffixes: ["tool-length"]
+        modeSuffixes: ["tool-length", "through-spindle-coolant", "spindle-orient"]
       });
     }
 
@@ -298,6 +316,13 @@ export function lintHaasOrphanWordWhile(
           blockIndex: index
         });
       }
+      pushOrphanWhileModes(issues, disabled, {
+        letterPrefix: "r",
+        wordLabel: "R word",
+        contextHint: "outside canned/arc/rotation context",
+        ctx,
+        modeSuffixes: ["through-spindle-coolant", "spindle-orient"]
+      });
     }
 
     if (!skipP && hasLetter(block, "P") && !hasPWordContext(block)) {
@@ -357,6 +382,13 @@ export function lintHaasOrphanWordWhile(
           blockIndex: index
         });
       }
+      pushOrphanWhileModes(issues, disabled, {
+        letterPrefix: "p",
+        wordLabel: "P word",
+        contextHint: "outside call/dwell/scaling/canned context",
+        ctx,
+        modeSuffixes: ["through-spindle-coolant", "spindle-orient"]
+      });
     }
 
     if (!skipIjk && hasIjkWord(block) && !hasIjkWordContext(block)) {
@@ -416,6 +448,13 @@ export function lintHaasOrphanWordWhile(
           blockIndex: index
         });
       }
+      pushOrphanWhileModes(issues, disabled, {
+        letterPrefix: "ijk",
+        wordLabel: "I/J/K word",
+        contextHint: "outside arc context",
+        ctx,
+        modeSuffixes: ["through-spindle-coolant"]
+      });
     }
   });
 

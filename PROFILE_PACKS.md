@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 691 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 701 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -703,6 +703,16 @@ Total rules: 691 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.a-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before an orphan A rotary word. |
 | `haas.a-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before an orphan A rotary word. |
 | `haas.b-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before an orphan B rotary word. |
+| `haas.b-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before an orphan B rotary word. |
+| `haas.c-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before an orphan C rotary word. |
+| `haas.c-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before an orphan C rotary word. |
+| `haas.q-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before using Q outside a peck cycle. |
+| `haas.q-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before using Q outside a peck cycle. |
+| `haas.r-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before using R outside canned/arc/rotation context. |
+| `haas.r-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before using R outside canned/arc/rotation context. |
+| `haas.p-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before using P outside call/dwell/scaling/canned context. |
+| `haas.p-while-spindle-orient` | warning | — | — | Clear latched M19 spindle orientation with M3/M4/M5 before using P outside call/dwell/scaling/canned context. |
+| `haas.ijk-while-through-spindle-coolant` | warning | — | — | Turn through-spindle coolant off with M89 before using I/J/K outside arc context. |
 
 ### `haas.m6-without-t`
 
@@ -22292,6 +22302,336 @@ S1200 M3
 M88
 G0 B10.
 M89
+M5
+M30
+```
+
+### `haas.b-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/B rotary word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before an orphan B rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+B10.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G0 B10.
+M5
+M30
+```
+
+### `haas.c-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+C10.
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+G0 C10.
+M89
+M5
+M30
+```
+
+### `haas.c-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/C rotary word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before an orphan C rotary word.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+C10.
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+G0 C10.
+M5
+M30
+```
+
+### `haas.q-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/Q word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before using Q outside a peck cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+Q0.1
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+Q0.1
+M5
+M30
+```
+
+### `haas.q-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/Q word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before using Q outside a peck cycle.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+Q0.1
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+Q0.1
+M30
+```
+
+### `haas.r-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/R word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+R0.1
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+R0.1
+M5
+M30
+```
+
+### `haas.r-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/R word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before using R outside canned/arc/rotation context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+R0.1
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+R0.1
+M30
+```
+
+### `haas.p-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/P word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+P100
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+P100
+M5
+M30
+```
+
+### `haas.p-while-spindle-orient`
+
+- **Severity:** warning
+- **Matcher:** `/P word while spindle orientation \(M19\) is still latched/`
+- **Summary:** Clear latched M19 spindle orientation with M3/M4/M5 before using P outside call/dwell/scaling/canned context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+P100
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M19
+M5
+P100
+M30
+```
+
+### `haas.ijk-while-through-spindle-coolant`
+
+- **Severity:** warning
+- **Matcher:** `/I\/J\/K word while through-spindle coolant \(M88\) is still active/`
+- **Summary:** Turn through-spindle coolant off with M89 before using I/J/K outside arc context.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+I1.
+M89
+M5
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+S1200 M3
+M88
+M89
+I1.
 M5
 M30
 ```

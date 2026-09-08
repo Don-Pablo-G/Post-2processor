@@ -5729,5 +5729,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Turn through-spindle coolant off with M89 before an orphan B rotary word.",
     positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nB10.\nM89\nM5\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG0 B10.\nM89\nM5\nM30\n"
+  },
+  {
+    id: "haas.b-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /B rotary word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before an orphan B rotary word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nB10.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG0 B10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.c-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /C rotary word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before an orphan C rotary word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nC10.\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nG0 C10.\nM89\nM5\nM30\n"
+  },
+  {
+    id: "haas.c-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /C rotary word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before an orphan C rotary word.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nC10.\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nG0 C10.\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /Q word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nQ0.1\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nQ0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.q-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /Q word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before using Q outside a peck cycle.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nQ0.1\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nQ0.1\nM30\n"
+  },
+  {
+    id: "haas.r-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /R word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nR0.1\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nR0.1\nM5\nM30\n"
+  },
+  {
+    id: "haas.r-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /R word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before using R outside canned/arc/rotation context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nR0.1\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nR0.1\nM30\n"
+  },
+  {
+    id: "haas.p-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /P word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nP100\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nP100\nM5\nM30\n"
+  },
+  {
+    id: "haas.p-while-spindle-orient",
+    severity: "warning",
+    messageMatcher: /P word while spindle orientation \(M19\) is still latched/,
+    summary: "Clear latched M19 spindle orientation with M3/M4/M5 before using P outside call/dwell/scaling/canned context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nP100\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM19\nM5\nP100\nM30\n"
+  },
+  {
+    id: "haas.ijk-while-through-spindle-coolant",
+    severity: "warning",
+    messageMatcher: /I\/J\/K word while through-spindle coolant \(M88\) is still active/,
+    summary: "Turn through-spindle coolant off with M89 before using I/J/K outside arc context.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nI1.\nM89\nM5\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nS1200 M3\nM88\nM89\nI1.\nM5\nM30\n"
   }
 ];
