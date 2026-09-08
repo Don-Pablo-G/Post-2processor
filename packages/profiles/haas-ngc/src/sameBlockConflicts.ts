@@ -170,7 +170,17 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
   ["g43", "g68", "G43 and G68 on the same block — apply tool length and coordinate rotation on separate blocks."],
   ["g43", "g51", "G43 and G51 on the same block — apply tool length and scaling on separate blocks."],
   ["g41Or42", "g68", "G41/G42 and G68 on the same block — apply cutter compensation and coordinate rotation on separate blocks."],
-  ["g41Or42", "g51", "G41/G42 and G51 on the same block — apply cutter compensation and scaling on separate blocks."]
+  ["g41Or42", "g51", "G41/G42 and G51 on the same block — apply cutter compensation and scaling on separate blocks."],
+  ["g65", "m02", "G65 and M02 on the same block — macro call and program end separately."],
+  ["g65", "m30", "G65 and M30 on the same block — macro call and program end separately."],
+  ["g43", "g80", "G43 and G80 on the same block — apply tool length and cancel canned cycle on separate blocks."],
+  ["g41Or42", "g80", "G41/G42 and G80 on the same block — apply cutter compensation and cancel canned cycle on separate blocks."],
+  ["g68", "g80", "G68 and G80 on the same block — apply coordinate rotation and cancel canned cycle on separate blocks."],
+  ["g51", "g80", "G51 and G80 on the same block — apply scaling and cancel canned cycle on separate blocks."],
+  ["g43", "g40", "G43 and G40 on the same block — apply tool length and cancel cutter compensation on separate blocks."],
+  ["g68", "g40", "G68 and G40 on the same block — apply coordinate rotation and cancel cutter compensation on separate blocks."],
+  ["g51", "g40", "G51 and G40 on the same block — apply scaling and cancel cutter compensation on separate blocks."],
+  ["g41Or42", "g49", "G41/G42 and G49 on the same block — apply cutter compensation and cancel tool length on separate blocks."]
 ];
 
 export function collectSameBlockMatrixIssues(

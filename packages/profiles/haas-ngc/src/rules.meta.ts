@@ -5969,5 +5969,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Apply cutter compensation and scaling on separate blocks.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G51 P2.\nG50\nG40\nM30\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG51 P2.\nG50\nG40\nM30\n"
+  },
+  {
+    id: "haas.g65-and-m02-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and M02 on the same block/,
+    summary: "Run a G65 macro call and M02 program end on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 M02\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nM02\n"
+  },
+  {
+    id: "haas.g65-and-m30-same-block",
+    severity: "warning",
+    messageMatcher: /G65 and M30 on the same block/,
+    summary: "Run a G65 macro call and M30 program end on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 M30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nM30\n"
+  },
+  {
+    id: "haas.g43-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G80 on the same block/,
+    summary: "Apply tool length and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G80\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG80\nG49\nM30\n"
+  },
+  {
+    id: "haas.g41-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G41\/G42 and G80 on the same block/,
+    summary: "Apply cutter compensation and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G80\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG80\nG40\nM30\n"
+  },
+  {
+    id: "haas.g68-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G80 on the same block/,
+    summary: "Apply coordinate rotation and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G80\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG80\nG69\nM30\n"
+  },
+  {
+    id: "haas.g51-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G80 on the same block/,
+    summary: "Apply scaling and cancel canned cycles on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2. G80\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG80\nG50\nM30\n"
+  },
+  {
+    id: "haas.g43-and-g40-same-block",
+    severity: "warning",
+    messageMatcher: /G43 and G40 on the same block/,
+    summary: "Apply tool length and cancel cutter compensation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25. G40\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG40\nG49\nM30\n"
+  },
+  {
+    id: "haas.g68-and-g40-same-block",
+    severity: "warning",
+    messageMatcher: /G68 and G40 on the same block/,
+    summary: "Apply coordinate rotation and cancel cutter compensation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45. G40\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG40\nG69\nM30\n"
+  },
+  {
+    id: "haas.g51-and-g40-same-block",
+    severity: "warning",
+    messageMatcher: /G51 and G40 on the same block/,
+    summary: "Apply scaling and cancel cutter compensation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2. G40\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG40\nG50\nM30\n"
+  },
+  {
+    id: "haas.g41-and-g49-same-block",
+    severity: "warning",
+    messageMatcher: /G41\/G42 and G49 on the same block/,
+    summary: "Apply cutter compensation and cancel tool length on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1 G49\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG49\nG40\nM30\n"
   }
 ];

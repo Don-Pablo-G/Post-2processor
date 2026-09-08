@@ -85,6 +85,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
+- Haas mill lint batch 84: added same-block checks for `G65` with program end and apply-vs-cancel cross-family combinations across tool length, cutter compensation, rotation, scaling, canned-cycle cancel, and compensation cancels.
 - Haas mill lint batch 83: finished `M30` scaling/`G91` end-state docs and added same-block dwell/end plus apply-family conflicts for `G68`/`G51`, `G43`, and `G41`/`G42`.
 - Pack manifests drive CLI + desktop end-to-end: `parseCompliance` / `grammar` / optional `rules` allowlist / `declarativeRules` from controller pack manifests apply on lint and job-check (not declaration-only).
 - Separable rules follow-up: desktop persists `lintController` / `rulePolicy` / custom declarative rules in template `uiDefaults`; Haas mill orphan-word and end-hygiene clusters are extracted so disabled rule ids skip work (not only filter issues).
