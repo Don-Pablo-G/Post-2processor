@@ -190,7 +190,21 @@ export const SAME_BLOCK_RESIDUAL_CONFLICTS: readonly Conflict[] = [
   ["g41Or42", "g50", "G41/G42 and G50 on the same block — apply cutter compensation and cancel scaling on separate blocks."],
   ["g68", "g50", "G68 and G50 on the same block — apply coordinate rotation and cancel scaling on separate blocks."],
   ["g65", "m00", "G65 and M00 on the same block — macro call and program stop separately."],
-  ["g65", "m01", "G65 and M01 on the same block — macro call and optional stop separately."]
+  ["g65", "m01", "G65 and M01 on the same block — macro call and optional stop separately."],
+  ["g4", "g68", "G4 dwell and G68 on the same block — dwell and coordinate rotation separately."],
+  ["g4", "g51", "G4 dwell and G51 on the same block — dwell and scaling separately."],
+  ["g4", "g43", "G4 dwell and G43 on the same block — dwell and tool length separately."],
+  ["g4", "g41Or42", "G4 dwell and G41/G42 on the same block — dwell and cutter compensation separately."],
+  ["g4", "g80", "G4 dwell and G80 on the same block — dwell and canned-cycle cancel separately."],
+  ["g4", "g40", "G4 dwell and G40 on the same block — dwell and cutter-comp cancel separately."],
+  ["g4", "g49", "G4 dwell and G49 on the same block — dwell and tool-length cancel separately."],
+  ["g4", "g69", "G4 dwell and G69 on the same block — dwell and rotation cancel separately."],
+  ["g4", "g50", "G4 dwell and G50 on the same block — dwell and scaling cancel separately."],
+  [
+    "g4",
+    "workOffset",
+    "G4 dwell and work offset (G54-G59/G154) on the same block — dwell and work-offset select separately."
+  ]
 ];
 
 export function collectSameBlockMatrixIssues(

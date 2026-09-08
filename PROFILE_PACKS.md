@@ -8,7 +8,7 @@ Every entry below is verified at generation time against the pack's own `validat
 
 ## Haas NGC (`@cnc/profile-haas-ngc`)
 
-Total rules: 741 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
+Total rules: 751 (of which 94 soft-deprecated; suppress via `--no-deprecated-rules`)
 
 | Rule id | Severity | Deprecated since | Replacement suggestion | Summary |
 | --- | --- | --- | --- | --- |
@@ -753,6 +753,16 @@ Total rules: 741 (of which 94 soft-deprecated; suppress via `--no-deprecated-rul
 | `haas.g68-and-g50-same-block` | warning | — | — | Apply coordinate rotation and cancel scaling on separate blocks. |
 | `haas.g65-and-m00-same-block` | warning | — | — | Run a G65 macro call and M00 program stop on separate blocks. |
 | `haas.g65-and-m01-same-block` | warning | — | — | Run a G65 macro call and M01 optional stop on separate blocks. |
+| `haas.g4-and-g68-same-block` | warning | — | — | Dwell and coordinate rotation on separate blocks. |
+| `haas.g4-and-g51-same-block` | warning | — | — | Dwell and scaling on separate blocks. |
+| `haas.g4-and-g43-same-block` | warning | — | — | Dwell and tool length on separate blocks. |
+| `haas.g4-and-g41-same-block` | warning | — | — | Dwell and cutter compensation on separate blocks. |
+| `haas.g4-and-g80-same-block` | warning | — | — | Dwell and canned-cycle cancel on separate blocks. |
+| `haas.g4-and-g40-same-block` | warning | — | — | Dwell and cutter-comp cancel on separate blocks. |
+| `haas.g4-and-g49-same-block` | warning | — | — | Dwell and tool-length cancel on separate blocks. |
+| `haas.g4-and-g69-same-block` | warning | — | — | Dwell and rotation cancel on separate blocks. |
+| `haas.g4-and-g50-same-block` | warning | — | — | Dwell and scaling cancel on separate blocks. |
+| `haas.g4-and-work-offset-same-block` | warning | — | — | Dwell and work-offset selection on separate blocks. |
 
 ### `haas.m6-without-t`
 
@@ -23843,6 +23853,292 @@ T1 M6
 G54
 G65 P9010
 M01
+```
+
+### `haas.g4-and-g68-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G68 on the same block/`
+- **Summary:** Dwell and coordinate rotation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1. G68 X0 Y0 R45.
+G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1.
+G68 X0 Y0 R45.
+G69
+M30
+```
+
+### `haas.g4-and-g51-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G51 on the same block/`
+- **Summary:** Dwell and scaling on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1. G51 P2.
+G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1.
+G51 P2.
+G50
+M30
+```
+
+### `haas.g4-and-g43-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G43 on the same block/`
+- **Summary:** Dwell and tool length on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1. G43 H1 Z25.
+G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1.
+G43 H1 Z25.
+G49
+M30
+```
+
+### `haas.g4-and-g41-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G41\/G42 on the same block/`
+- **Summary:** Dwell and cutter compensation on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1. G41 D1
+G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G4 P1.
+G41 D1
+G40
+M30
+```
+
+### `haas.g4-and-g80-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G80 on the same block/`
+- **Summary:** Dwell and canned-cycle cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G4 P1. G80
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G81 Z-1. R0.1 F10.
+G4 P1.
+G80
+M30
+```
+
+### `haas.g4-and-g40-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G40 on the same block/`
+- **Summary:** Dwell and cutter-comp cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G4 P1. G40
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G41 D1
+G4 P1.
+G40
+M30
+```
+
+### `haas.g4-and-g49-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G49 on the same block/`
+- **Summary:** Dwell and tool-length cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G4 P1. G49
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G43 H1 Z25.
+G4 P1.
+G49
+M30
+```
+
+### `haas.g4-and-g69-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G69 on the same block/`
+- **Summary:** Dwell and rotation cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G4 P1. G69
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G68 X0 Y0 R45.
+G4 P1.
+G69
+M30
+```
+
+### `haas.g4-and-g50-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and G50 on the same block/`
+- **Summary:** Dwell and scaling cancel on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G4 P1. G50
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G54
+G51 P2.
+G4 P1.
+G50
+M30
+```
+
+### `haas.g4-and-work-offset-same-block`
+
+- **Severity:** warning
+- **Matcher:** `/G4 dwell and work offset \(G54-G59\/G154\) on the same block/`
+- **Summary:** Dwell and work-offset selection on separate blocks.
+
+**Triggers (positive):**
+
+```gcode
+O0001
+T1 M6
+G4 P1. G54
+M30
+```
+
+**Does not trigger (negative):**
+
+```gcode
+O0001
+T1 M6
+G4 P1.
+G54
+M30
 ```
 
 ## Fanuc ISO (`@cnc/profile-fanuc-iso`)

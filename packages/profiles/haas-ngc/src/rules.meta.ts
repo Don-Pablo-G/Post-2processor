@@ -6129,5 +6129,85 @@ export const haasNgcRuleDocs: ProfileRuleDoc[] = [
     summary: "Run a G65 macro call and M01 optional stop on separate blocks.",
     positiveSnippet: "O0001\nT1 M6\nG54\nG65 P9010 M01\n",
     negativeSnippet: "O0001\nT1 M6\nG54\nG65 P9010\nM01\n"
+  },
+  {
+    id: "haas.g4-and-g68-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G68 on the same block/,
+    summary: "Dwell and coordinate rotation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G68 X0 Y0 R45.\nG69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nG68 X0 Y0 R45.\nG69\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g51-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G51 on the same block/,
+    summary: "Dwell and scaling on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G51 P2.\nG50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nG51 P2.\nG50\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g43-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G43 on the same block/,
+    summary: "Dwell and tool length on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G43 H1 Z25.\nG49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nG43 H1 Z25.\nG49\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g41-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G41\/G42 on the same block/,
+    summary: "Dwell and cutter compensation on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG4 P1. G41 D1\nG40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG4 P1.\nG41 D1\nG40\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g80-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G80 on the same block/,
+    summary: "Dwell and canned-cycle cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG4 P1. G80\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG81 Z-1. R0.1 F10.\nG4 P1.\nG80\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g40-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G40 on the same block/,
+    summary: "Dwell and cutter-comp cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG4 P1. G40\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG41 D1\nG4 P1.\nG40\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g49-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G49 on the same block/,
+    summary: "Dwell and tool-length cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG4 P1. G49\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG43 H1 Z25.\nG4 P1.\nG49\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g69-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G69 on the same block/,
+    summary: "Dwell and rotation cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG4 P1. G69\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG68 X0 Y0 R45.\nG4 P1.\nG69\nM30\n"
+  },
+  {
+    id: "haas.g4-and-g50-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and G50 on the same block/,
+    summary: "Dwell and scaling cancel on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG4 P1. G50\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG54\nG51 P2.\nG4 P1.\nG50\nM30\n"
+  },
+  {
+    id: "haas.g4-and-work-offset-same-block",
+    severity: "warning",
+    messageMatcher: /G4 dwell and work offset \(G54-G59\/G154\) on the same block/,
+    summary: "Dwell and work-offset selection on separate blocks.",
+    positiveSnippet: "O0001\nT1 M6\nG4 P1. G54\nM30\n",
+    negativeSnippet: "O0001\nT1 M6\nG4 P1.\nG54\nM30\n"
   }
 ];

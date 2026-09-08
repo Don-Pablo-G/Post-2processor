@@ -85,6 +85,7 @@ Browser app code is guarded against accidental `@cnc/core` default imports.
 
 ## Recent Updates
 
+- Haas mill lint batch 86: added `G4` dwell same-block checks against rotation/scaling apply, tool-length/cutter compensation apply, `G80`/`G40`/`G49`/`G69`/`G50` cancels, and work-offset selects.
 - Haas mill lint batch 85: finished apply-vs-cancel same-block coverage for rotation/scaling/tool-length/cutter-comp cross-family pairs and added `G65` macro-call conflicts with `M00`/`M01` stops.
 - Haas mill lint batch 84: added same-block checks for `G65` with program end and apply-vs-cancel cross-family combinations across tool length, cutter compensation, rotation, scaling, canned-cycle cancel, and compensation cancels.
 - Haas mill lint batch 83: finished `M30` scaling/`G91` end-state docs and added same-block dwell/end plus apply-family conflicts for `G68`/`G51`, `G43`, and `G41`/`G42`.
